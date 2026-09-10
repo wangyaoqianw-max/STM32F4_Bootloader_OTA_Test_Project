@@ -486,7 +486,7 @@ git commit -m "chore: establish firmware-centered project template"
 - Consumes: 完成后的模板目录、上下文合同、Agent 规则和 Git 历史。
 - Produces: 可供 Review Role 审核的验证证据和最终交接状态。
 
-- [ ] **Step 1: 验证必需文件存在**
+- [x] **Step 1: 验证必需文件存在**
 
 运行一个 PowerShell 检查数组，至少覆盖：
 
@@ -508,7 +508,7 @@ AGENTS.md
 
 预期：全部存在且非空。
 
-- [ ] **Step 2: 验证上下文一致性**
+- [x] **Step 2: 验证上下文一致性**
 
 核对 `PROJECT_CONTEXT.md` 与 `current_status.md` 的以下字段完全一致：
 
@@ -522,7 +522,7 @@ Next Action
 
 预期：不存在两个活动阶段或相互冲突的状态。
 
-- [ ] **Step 3: 验证路径和占位错误**
+- [x] **Step 3: 验证路径和占位错误**
 
 运行：
 
@@ -536,7 +536,7 @@ rg -n "00_Doc/02_架构设计|00_Doc/04_Agent|Memorym|Application/L|TBD|TODO" `
 
 预期：无非模板语义的错误匹配。阶段模板使用的是明确的 `{{field_name}}` 模板字段，不使用 `TBD` 或 `TODO`。
 
-- [ ] **Step 4: 验证 Git 状态和提交边界**
+- [x] **Step 4: 验证 Git 状态和提交边界**
 
 运行：
 
@@ -548,7 +548,7 @@ git diff --check
 
 预期：没有意外未跟踪文件，没有格式错误；历史能够分别看出设计、文档迁移、上下文工作流、Agent 规则和目录骨架提交。
 
-- [ ] **Step 5: 编写验证报告**
+- [x] **Step 5: 编写验证报告**
 
 `verification_report.md` 记录：
 
