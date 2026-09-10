@@ -276,7 +276,7 @@ git commit -m "docs: add repository context workflow"
 - Consumes: 原根目录 `AGENTS.md`、旧 `execution_rules.md`、详细 C 规范和工作流。
 - Produces: 简短的仓库级规则，以及聚焦固件架构与实时性约束的专项规则。
 
-- [ ] **Step 1: 重写根目录 `AGENTS.md`**
+- [x] **Step 1: 重写根目录 `AGENTS.md`**
 
 根文件必须覆盖：
 
@@ -295,7 +295,7 @@ Git 提交边界
 
 根文件不得重复 ISR、DMA、RingBuffer、FreeRTOS IPC 或具体 C 命名规则全文。
 
-- [ ] **Step 2: 创建 `03_Firmware/AGENTS.md`**
+- [x] **Step 2: 创建 `03_Firmware/AGENTS.md`**
 
 固件规则必须覆盖：
 
@@ -313,7 +313,7 @@ Coding Standard Review
 
 详细格式和命名只链接到 `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`。
 
-- [ ] **Step 3: 检查规则冲突和重复**
+- [x] **Step 3: 检查规则冲突和重复**
 
 运行：
 
@@ -325,7 +325,7 @@ rg -n "00_Doc/02_架构设计|00_Doc/04_Agent|04_Agent" AGENTS.md 03_Firmware/AG
 
 检查两个 `AGENTS.md` 的职责：根文件负责跨仓库流程，固件文件负责嵌入式开发约束；同一详细章节不得在两处重复。
 
-- [ ] **Step 4: 删除已完成规则迁移的旧文件**
+- [x] **Step 4: 删除已完成规则迁移的旧文件**
 
 删除前确认 `execution_rules.md` 的所有有效要求已分别进入两个 `AGENTS.md` 或详细 C 规范。然后仅删除：
 
@@ -335,7 +335,7 @@ rg -n "00_Doc/02_架构设计|00_Doc/04_Agent|04_Agent" AGENTS.md 03_Firmware/AG
 
 预期：不删除其他非空文件。
 
-- [ ] **Step 5: 提交 Agent 规则拆分**
+- [x] **Step 5: 提交 Agent 规则拆分**
 
 ```powershell
 git add -- AGENTS.md 03_Firmware/AGENTS.md 00_Doc/04_Agent/execution_rules.md
