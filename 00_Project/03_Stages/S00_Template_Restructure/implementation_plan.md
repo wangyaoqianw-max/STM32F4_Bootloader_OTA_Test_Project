@@ -164,7 +164,7 @@ git commit -m "docs: relocate requirements and firmware guidance"
 - Consumes: 冻结设计、迁移后的正式需求和阶段目录。
 - Produces: 任意工具均可读取的确定入口、阶段状态机和双向交接合同。
 
-- [ ] **Step 1: 编写 `PROJECT_CONTEXT.md`**
+- [x] **Step 1: 编写 `PROJECT_CONTEXT.md`**
 
 必须包含以下固定字段：
 
@@ -185,7 +185,7 @@ Prohibited Actions
 
 本阶段值设为 `S00_Template_Restructure`，状态设为 `IN_PROGRESS`，下一步指向当前实施计划。Commit 尚未产生的字段明确写 `Not created yet`，不得伪造哈希。
 
-- [ ] **Step 2: 编写 `00_Project/WORKFLOW.md`**
+- [x] **Step 2: 编写 `00_Project/WORKFLOW.md`**
 
 完整定义以下状态及合法转换：
 
@@ -203,7 +203,7 @@ CLOSED
 
 为 Design、Implementation、Verification、Review、Project Owner 五种角色分别定义进入条件、必读文件、允许修改、禁止修改、输出和退出条件。
 
-- [ ] **Step 3: 编写阶段模板**
+- [x] **Step 3: 编写阶段模板**
 
 四份模板使用明确的模板字段，例如 `{{stage_id}}`、`{{stage_title}}`、`{{baseline_commit}}`。模板必须覆盖：
 
@@ -214,22 +214,22 @@ CLOSED
 
 模板中不得包含模糊的“适当处理”“自行补充”等指令。
 
-- [ ] **Step 4: 编写路线图、需求和 ADR 说明**
+- [x] **Step 4: 编写路线图、需求和 ADR 说明**
 
 - `development_roadmap.md` 提供阶段编号、目标、前置条件、状态和完成标准的表格。
 - 需求目录 `README.md` 说明需求是设计和验收的上游真值。
 - ADR `README.md` 规定文件名 `ADR-NNNN-topic.md`，以及 Context、Decision、Consequences、Status 四个固定部分。
 
-- [ ] **Step 5: 初始化本阶段交接和审核文件**
+- [x] **Step 5: 初始化本阶段交接和审核文件**
 
 - `handoff.md` 填入本阶段目标、设计基准、允许修改范围、禁止事项和验收条件；施工输出保持 `NOT_COMPLETED`。
 - `review.md` 状态设为 `NOT_REVIEWED`，说明只有进入 `READY_FOR_REVIEW` 后才能填写审核结论。
 
-- [ ] **Step 6: 编写唯一活动状态文件**
+- [x] **Step 6: 编写唯一活动状态文件**
 
 `current_status.md` 必须与 `PROJECT_CONTEXT.md` 一致，记录当前阶段为 `S00_Template_Restructure`、状态为 `IN_PROGRESS`，并链接到本阶段四份文档。
 
-- [ ] **Step 7: 验证上下文合同完整性**
+- [x] **Step 7: 验证上下文合同完整性**
 
 运行：
 
@@ -250,7 +250,7 @@ $required | ForEach-Object {
 
 预期：命令无异常退出。
 
-- [ ] **Step 8: 提交上下文工作流**
+- [x] **Step 8: 提交上下文工作流**
 
 ```powershell
 git add -- PROJECT_CONTEXT.md 00_Project
