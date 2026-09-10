@@ -3,7 +3,7 @@
 ## 1. 文档状态
 
 - Stage：S00_Template_Restructure
-- Status：REVIEW_REQUIRED
+- Status：DESIGN_APPROVED
 - Scope：通用 RTOS 嵌入式软件工程模板
 - Date：2026-09-10
 
