@@ -361,7 +361,7 @@ git commit -m "docs: split repository and firmware agent rules"
 - Consumes: 目标目录设计、已经迁移的正式文档和两级 Agent 规则。
 - Produces: Git 可追踪、职责清晰、无无效空目录的通用工程骨架。
 
-- [ ] **Step 1: 编写根目录 `README.md`**
+- [x] **Step 1: 编写根目录 `README.md`**
 
 README 依次包含：
 
@@ -378,7 +378,7 @@ Application 与可选 Bootloader 说明
 
 “当前工具分工示例”可以写网页版 GPT 与本地 Codex，但必须注明它只是可替换的当前选择。
 
-- [ ] **Step 2: 创建可追踪的领域目录**
+- [x] **Step 2: 创建可追踪的领域目录**
 
 为设计中要求保留的目录创建简短 `README.md`，说明该目录保存什么、不得保存什么。至少覆盖：
 
@@ -394,7 +394,7 @@ Application 与可选 Bootloader 说明
 
 每份说明保持简短，不复制根 README 内容。
 
-- [ ] **Step 3: 创建 `.gitignore`**
+- [x] **Step 3: 创建 `.gitignore`**
 
 至少忽略：
 
@@ -415,7 +415,7 @@ Application 与可选 Bootloader 说明
 
 为保证目录说明仍被跟踪，对 `06_Output` 下各目录的 `README.md` 使用否定规则保留。
 
-- [ ] **Step 4: 只读确认旧目录剩余内容**
+- [x] **Step 4: 只读确认旧目录剩余内容**
 
 检查：
 
@@ -427,7 +427,7 @@ Get-ChildItem -Recurse -Force `
 
 预期：需要保留的内容均已迁移；旧目录中只剩空目录、空占位文件或已明确替代的结构。若发现未计划的非空文件，停止删除并更新实施计划。
 
-- [ ] **Step 5: 删除已确认无内容的旧骨架**
+- [x] **Step 5: 删除已确认无内容的旧骨架**
 
 仅对检查确认为空的目录使用 `Remove-Item -LiteralPath`，从最深层开始删除。允许删除的旧职责目录为：
 
@@ -444,7 +444,7 @@ Get-ChildItem -Recurse -Force `
 
 `02_Hardware` 和 `03_Firmware` 是目标目录，只删除其中已被替代且为空的旧子目录，不删除目标根目录。
 
-- [ ] **Step 6: 验证目录树和旧路径清理**
+- [x] **Step 6: 验证目录树和旧路径清理**
 
 运行：
 
@@ -459,7 +459,7 @@ rg -n "00_Project_Management|00_Reference/01_DataSheet|01_Function_Map|04_Agent|
 
 预期：文件清单与冻结设计一致；第二条命令无陈旧路径匹配。
 
-- [ ] **Step 7: 提交工程骨架**
+- [x] **Step 7: 提交工程骨架**
 
 ```powershell
 git add -- README.md .gitignore 01_Reference 02_Hardware 03_Firmware 04_Test 05_Tools 06_Output

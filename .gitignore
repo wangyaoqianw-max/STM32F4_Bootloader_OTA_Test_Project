@@ -1,0 +1,23 @@
+# Local worktrees and editor state
+.worktrees/
+*.user
+*.uvguix.*
+*.tmp
+*.log
+.vscode/
+.idea/
+
+# Common generated build directories
+**/build/
+03_Firmware/**/MDK-ARM/Objects/
+03_Firmware/**/MDK-ARM/Listings/
+03_Firmware/**/Debug/
+03_Firmware/**/Release/
+
+# Generated outputs
+06_Output/Firmware/*
+!06_Output/Firmware/README.md
+06_Output/Packages/*
+!06_Output/Packages/README.md
+06_Output/Logs/*
+!06_Output/Logs/README.md
