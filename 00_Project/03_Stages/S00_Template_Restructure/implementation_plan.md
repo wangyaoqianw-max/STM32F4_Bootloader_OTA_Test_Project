@@ -563,13 +563,13 @@ Git 工作区结果
 硬件验证状态：NOT_APPLICABLE
 ```
 
-- [ ] **Step 6: 更新施工交接和当前状态**
+- [x] **Step 6: 更新施工交接和当前状态**
 
 - 在 `handoff.md` 填写实际迁移内容、删除的空目录、提交列表、验证结果、已知问题和审核重点。
 - 将 `PROJECT_CONTEXT.md` 与 `current_status.md` 状态同步改为 `READY_FOR_REVIEW`。
 - `Next Action` 设为由 Review Role 检查本阶段设计、差异和验证报告。
 
-- [ ] **Step 7: 提交验证与交接**
+- [x] **Step 7: 提交验证与交接**
 
 ```powershell
 git add -- PROJECT_CONTEXT.md 00_Project/03_Stages/S00_Template_Restructure/handoff.md `

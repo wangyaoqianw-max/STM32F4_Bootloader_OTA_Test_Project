@@ -3,12 +3,12 @@
 ## Metadata
 
 - Stage: `S00_Template_Restructure`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Design Commit: `2c696d4`
 - Baseline Commit: `e9b71e4`
-- Implementation Commit: `Not created yet`
-- Verification Commit: `Not created yet`
+- Implementation Commits: `91ad2df`, `9a059a2`, `1c81bb9`, `878d0a1`, `7bee8e5`
+- Verification Commit: `015c2aa`
 
 ## Implementation Input
 
@@ -49,30 +49,43 @@
 
 ## Implementation Output
 
-- Status: `IN_PROGRESS`
+- Status: `COMPLETED`
 
 ### Completed Work
 
-- 已迁移项目需求、固件架构和嵌入式 C 代码规范。
+- 已迁移项目需求、固件架构和嵌入式 C 代码规范，并修正架构适用范围。
 - 已规范化迁移文档的 LF 行尾。
+- 已建立 `PROJECT_CONTEXT.md`、阶段状态机、路线图、ADR 约定和四份阶段模板。
+- 已将原根 Agent 规则拆分为仓库级 `AGENTS.md` 与 `03_Firmware/AGENTS.md`。
+- 已建立 Reference、Hardware、Firmware、Test、Tools 和 Output 精简骨架。
+- 已删除确认无内容的旧项目管理、Function Map、Software、Mechanical、FTC、旧 Doc 和旧命名空目录。
 
 ### Changed Files
 
-参见实施完成后的最终文件清单。
+- 根入口：`README.md`、`PROJECT_CONTEXT.md`、`AGENTS.md`、`.gitignore`；
+- 项目上下文：`00_Project`；
+- 参考与硬件输入：`01_Reference`、`02_Hardware`；
+- 固件规则和文档：`03_Firmware`；
+- 测试、工具和生成物说明：`04_Test`、`05_Tools`、`06_Output`。
 
 ### Deviations From Plan
 
 - 用户明确授权直接在 `main` 分支施工，因此未创建隔离工作树。
-- 源文档存在 Git 尾随空白检查问题，增加了一次 LF 行尾规范化提交。
+- 源文档的 CRLF 行尾触发 Git 尾随空白检查，增加 `9a059a2` 进行 LF 规范化。
+- 为避免验证报告自引用无法产生的 Commit，先提交报告 `015c2aa`，再提交本交接状态。
 
 ### Verification Results
 
-Task 1 文件存在性和陈旧路径扫描通过；全量结构验证尚未执行。
+全量结构验证通过。代码验证和硬件验证均为 `NOT_APPLICABLE`；详见 `04_Test/Reports/Stages/S00_Template_Restructure/verification_report.md`。
 
 ### Known Issues
 
-旧目录尚未清理，两级 Agent 规则尚未建立。
+- 阶段审核尚未执行。
+- 远程仓库推送状态尚未验证。
 
 ### Review Focus
 
-确认最终目录与冻结设计一致，并检查任意工具能否从 `PROJECT_CONTEXT.md` 恢复当前阶段。
+- 检查 `PROJECT_CONTEXT.md` 是否足以让新工具恢复当前阶段；
+- 检查两级 Agent 规则是否职责清晰且无关键规则遗漏；
+- 检查阶段模板是否足以支持设计、施工、验证和审核闭环；
+- 确认是否接受在 `main` 上产生的本阶段提交序列。

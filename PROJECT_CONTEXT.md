@@ -5,10 +5,10 @@
 ## Context Metadata
 
 - Active Stage: `S00_Template_Restructure`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `e9b71e4`
-- Current Role: `Implementation`
+- Current Role: `Review`
 - Updated At: `2026-09-10`
 
 ## Current Goal
@@ -17,7 +17,7 @@
 
 ## Next Action
 
-继续执行当前阶段实施计划，从上下文合同完成后进入两级 `AGENTS.md` 拆分。
+由 Review Role 对照冻结设计、实施差异和验证报告审核本阶段，决定关闭或返工。
 
 ## Required Reading
 
@@ -35,13 +35,14 @@
 
 ## Latest Verification
 
-- 三份原有非空工程文档已经迁移且内容存在。
-- 迁移文档已规范化为 LF 行尾。
-- 陈旧路径初步扫描无匹配。
+- Verification Commit: `015c2aa`
+- 13 个核心文件存在且非空。
+- 顶层目录、上下文字段、陈旧路径和 Git 差异检查全部通过。
+- 完整报告：`04_Test/Reports/Stages/S00_Template_Restructure/verification_report.md`
 
 ## Prohibited Actions
 
-- 不得删除尚未确认归属的非空文件。
+- 审核前不得将阶段状态改为 `CLOSED`。
+- 不得在审核阶段顺便实现 Bootloader 或 Application 功能。
 - 不得把聊天中的未确认结论直接写成冻结设计。
 - 不得把代码验证描述为硬件验证。
-- 不得在未更新交接文档和 Commit 信息时切换执行工具。
