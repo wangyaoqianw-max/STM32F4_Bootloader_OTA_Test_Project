@@ -5,7 +5,7 @@
 - Stage: `S01_Application_Foundation`
 - Status: `CLOSED`
 - Reviewer: `Review Role / Project Owner`
-- Review Commit: `Not created yet`
+- Review Commit: `65cdca6ca60064ae8e73e15fa0b4e66bbd83ffab`
 
 ## Review Inputs
 
