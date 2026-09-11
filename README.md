@@ -39,7 +39,7 @@ Project/
 | --- | --- |
 | `00_Project` | 工程准备、需求、路线图、阶段文档、ADR 和当前状态 |
 | `01_Reference` | Datasheet、Reference Manual、应用笔记和协议等外部原始资料 |
-| `02_Hardware` | 固件需要使用的原理图、Pinout 和硬件软件接口事实 |
+| `02_Hardware` | 固件需要使用的原理图及其他硬件输入资料 |
 | `03_Firmware` | Application、可选 Bootloader、共享代码和固件设计文档 |
 | `04_Test` | Host、Board、Integration 测试及正式验证报告 |
 | `05_Tools` | 项目脚本、打包、调试和 CI 工具 |
@@ -56,24 +56,27 @@ Project/
 - IDE、编译器、SDK、调试器和脚本环境版本；
 - 当前无法确认的硬件问题及其影响。
 
-准备阶段模板入口：
+准备阶段结构化数据统一填写在双语工作簿：
 
 ```text
 00_Project/00_Preparation/
 ├── README.md
-└── development_environment.md
-
-01_Reference/
-└── reference_index.md
-
-02_Hardware/
-├── hardware_resource_inventory.md
-├── hardware_open_issues.md
-├── Pinout/
-│   └── pinout.md
-└── Hardware_Software_Interface/
-    └── hardware_software_interface.md
+└── Engineering_Preparation.xlsx
 ```
+
+工作簿包含：
+
+```text
+00_说明_Instructions
+01_资料_References
+02_资源_Hardware
+03_引脚_Pinout
+04_接口_HSI
+05_问题_Issues
+06_环境_Environment
+```
+
+原始 Datasheet、Reference Manual、协议、原理图等文件仍分别保存在 `01_Reference` 和 `02_Hardware`。Excel 保存索引和准备阶段结构化事实，不代替原始资料。
 
 准备阶段只建立“事实输入”，不提前冻结 Flash 软件分区、Boot 决策、OTA 状态机、Metadata 格式等软件设计。
 
@@ -129,7 +132,7 @@ DRAFT
 1. 复制本模板或使用 GitHub Template 创建仓库。
 2. 删除 `S00_Template_Restructure` 示例阶段，保留 `_Template`。
 3. 用新项目需求替换 `00_Project/01_Requirements/项目需求V1.md`。
-4. 执行 `00_Project/00_Preparation/README.md`：收集资料并填写准备阶段模板。
+4. 执行 `00_Project/00_Preparation/README.md`：收集原始资料并填写 `Engineering_Preparation.xlsx`。
 5. 更新 `PROJECT_CONTEXT.md`、路线图和 `current_status.md`。
 6. 在 `03_Firmware/Application` 创建或导入主工程。
 7. 仅在实际需要时启用 Bootloader 和 Shared。
@@ -150,9 +153,9 @@ DRAFT
 
 ## 9. 构建与测试入口
 
-模板本身不预设编译命令。实例化项目后，在以下位置补充真实命令：
+模板本身不预设编译命令。实例化项目后，在以下位置补充真实信息：
 
-- 开发环境基线：`00_Project/00_Preparation/development_environment.md`；
+- 工程准备数据与开发环境基线：`00_Project/00_Preparation/Engineering_Preparation.xlsx`；
 - Application 构建：`03_Firmware/Application/README.md`；
 - Bootloader 构建：`03_Firmware/Bootloader/README.md`；
 - 测试方法：`04_Test/README.md`；
