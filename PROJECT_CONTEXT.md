@@ -46,12 +46,11 @@ Project Owner 已批准：
 
 ## Next Action
 
-Implementation Role 当前正在按以下顺序施工，Task 1 和 Task 2 已提交为 `35af9fb`、`95231a1`：
+Implementation Role 当前正在按以下顺序施工，Task 1–3 已提交为 `35af9fb`、`95231a1`、`52c51d4`：
 
-1. 执行 Task 3：建立日志链和最小 Application 入口；
-2. 执行 Task 4：收口 Keil/CubeMX 工程接线与构建输出；
-3. 执行 Task 5：Clean Rebuild、板测与阶段证据；
-4. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
+1. 执行 Task 4：收口 Keil/CubeMX 工程接线与构建输出；
+2. 执行 Task 5：Clean Rebuild、板测与阶段证据；
+3. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
 
 ## Required Reading
 

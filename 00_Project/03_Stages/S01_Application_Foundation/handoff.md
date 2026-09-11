@@ -7,7 +7,7 @@
 - Branch: `main`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
-- Implementation Commit: `Task 1: 35af9fb; Task 2: 95231a1`
+- Implementation Commit: `Task 1: 35af9fb; Task 2: 95231a1; Task 3: 52c51d4`
 - Verification Commit: `Not created yet`
 
 ## Implementation Input
@@ -76,6 +76,8 @@ Task 1 completed: 已清理上一项目的 Communication、Control、Acquisition
 
 Task 2 completed: Status LED 已绑定 `LED_1_GPIO_Port / LED_1_Pin`，Software I2C 保留 `I2C_SCL` / `I2C_SDA`，并从 S01 活跃 BSP 接口和实现移除 User Key / LCD 构造入口。
 
+Task 3 completed: 已新增 `app_main`，通过 Service Log 接入 EasyLogger/RTT，完成 Application 初始化日志和 Platform LED 周期闪烁；FreeRTOS 默认 Task 仅作为 App 入口载体。
+
 ### Changed Files
 
 - `PROJECT_CONTEXT.md`
@@ -85,6 +87,9 @@ Task 2 completed: Status LED 已绑定 `LED_1_GPIO_Port / LED_1_Pin`，Software 
 - `03_Firmware/Application/OTA_APP/00_Config/README.md`
 - `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/platform_bsp_gpio.h`
 - `03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_gpio.c`
+- `03_Firmware/Application/OTA_APP/01_APP/app_main.h`
+- `03_Firmware/Application/OTA_APP/01_APP/app_main.c`
+- `03_Firmware/Application/OTA_APP/Core/Src/freertos.c`
 
 ### Deviations From Plan
 
@@ -94,6 +99,7 @@ None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 �
 
 - Task 1 static configuration checks: `PASS`
 - Task 2 active BSP/Impl static checks: `PASS`
+- Task 3 App/Service/Platform/Impl/Vendor static chain checks: `PASS`
 - Code Verification: `NOT_APPLICABLE`（阶段级验证待 Task 5）
 - Hardware Verification: `PENDING`（阶段级板测待 Task 5）
 
@@ -101,6 +107,7 @@ None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 �
 
 - Task 1 已完成 Config 清理。
 - Task 2 已完成当前 Status LED / Software I2C BSP 适配。
+- Task 3 已完成日志链、最小 Application 入口和 Platform LED Blink 接入。
 - 当前 Keil 工程尚未接入 S01 自研分层源码，待 Task 4 收口。
 - 当前环境未发现 `armclang`、`armcc` 或 `UV4`，Keil 编译验证待具备工具链的环境执行。
 - 当前 Keil OutputDirectory 尚未调整为 `Objects\\` / `Listings\\`。
@@ -115,4 +122,4 @@ None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 �
 
 ## Next Action
 
-继续执行 Task 3：复用现有 Service Log / EasyLogger / RTT，建立最小 Application 入口和 Platform LED Blink。
+继续执行 Task 4：收口 Keil/CubeMX 工程接线、Source Groups、Include Paths 和 `Objects/` / `Listings/` 输出目录。
