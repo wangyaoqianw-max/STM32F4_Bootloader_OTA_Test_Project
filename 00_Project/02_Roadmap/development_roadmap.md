@@ -1,32 +1,185 @@
 # Development Roadmap
 
-路线图描述长期阶段顺序，不替代阶段实施计划。正式 Stage 必须在项目级规划讨论后确定，不根据早期设想直接冻结。
+路线图描述项目长期阶段顺序、能力演进、前置依赖和阶段完成标准，不替代单个 Stage 的 `design.md`、`implementation_plan.md`、`handoff.md` 和 `review.md`。
 
-## Current Roadmap
+正式 Stage 的工作流状态仍以 `00_Project/WORKFLOW.md` 和 `00_Project/05_Status/current_status.md` 为准。
 
-| Stage | Goal | Prerequisites | Status | Completion Criteria |
-| --- | --- | --- | --- | --- |
-| `S00_Template_Restructure` | 建立通用工程模板、跨工具上下文合同和工程准备机制 | 目录与工作流设计获批 | `CLOSED` | 结构与构建规范验证通过、Project Owner 审核通过，并已被当前项目实际采用 |
+本文中的 `PLANNED` 仅表示“已纳入项目路线、尚未创建正式 Stage”，不是正式工作流状态。
 
-## Next Planning Checkpoint
+## 1. Roadmap Principles
 
-当前尚未创建 `S01`。
+本项目按“先建立基础能力，再形成 OTA 下载链，再形成 Bootloader 安装与可靠性闭环，最后增加诊断和安全扩展”的顺序推进。
 
-下一次项目级 Design Discussion 需要基于以下输入正式拆分 Bootloader/OTA 开发路线：
+阶段拆分遵循以下原则：
 
-- `00_Project/01_Requirements/项目需求V1.md`
-- `00_Project/00_Preparation/Engineering_Preparation_Bilingual.xlsx`
-- `01_Reference/`
-- `02_Hardware/`
-- `03_Firmware/00_Doc/`
+1. 每个 Stage 必须增加一项可以独立验证的系统能力；
+2. 每个 Stage 应有明确前置依赖、工程交付物和硬件/软件验收证据；
+3. Application 与 Bootloader 分开设计，Bootloader 不机械复制 Application 的完整分层和 RTOS 架构；
+4. UART/Ymodem、Flash Driver 等基础模块只解决各自职责，不提前承载 OTA 业务语义；
+5. Firmware Image、Slot、Metadata 等跨模块契约在传输和 Bootloader 安装前明确；
+6. LCD、CK02AT 和其他非核心扩展不阻塞 V1 OTA 主链；
+7. 真实硬件资料不足时，在对应 Stage 再补充，不把当前非阻塞开放项提前冻结为强制前置条件。
 
-规划讨论至少需要确定：
+## 2. Phase Overview
 
-1. 整个 Bootloader/OTA 项目拆分为哪些可独立验收的 Stage；
-2. 每个 Stage 的学习目标、工程交付物和前置依赖；
-3. 哪些开放资料可以延后到对应 Stage 再补充；
-4. 第一个正式功能 Stage 的范围与验收条件。
+```text
+Phase A - Application Infrastructure
+S01 → S04
 
-在该讨论完成前，不预先给 `S01` 分配实现范围，也不直接进入功能编码。
+Phase B - OTA Download Path
+S05 → S07
 
-允许的正式 Stage 状态值参见 `00_Project/WORKFLOW.md`。
+Phase C - Bootloader & Reliability
+S08 → S10
+
+Phase D - Diagnostics & Security Extension
+S11 → S12
+```
+
+核心能力演进：
+
+```text
+S01  Application 能稳定运行
+ ↓
+S02  能可靠使用 External SPI Flash
+ ↓
+S03  能保存掉电状态
+ ↓
+S04  系统能够识别 Firmware Image / Slot / Metadata
+ ↓
+S05  能从 PC 接收 Firmware 文件
+ ↓
+S06  Application 具备后台并发运行环境
+ ↓
+S07  Application OTA 下载链完成
+ ↓
+S08  Bootloader 能验证并启动 Application
+ ↓
+S09  Bootloader 能安装 Pending Firmware
+ ↓
+S10  OTA 具备 Trial / Confirm / Rollback 可靠性闭环
+ ↓
+S11  增加可视化诊断与展示
+ ↓
+S12  增加 OTA 安全机制实验
+```
+
+## 3. Current Roadmap
+
+| Stage | Goal | Main Implementation | Prerequisites | Roadmap State | Completion Criteria |
+| --- | --- | --- | --- | --- | --- |
+| `S00_Template_Restructure` | 建立通用工程模板、跨工具上下文合同和工程准备机制 | 项目目录、阶段工作流、上下文合同、工程准备模板、构建规范 | 目录与工作流设计获批 | `CLOSED` | 结构与构建规范验证通过、Project Owner 审核通过，并已被当前项目实际采用 |
+| `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `PLANNED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过 |
+| `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 基础驱动；评估并接入 SFUD；实现 Read / Program / Erase / JEDEC ID / 容量与边界检查 | S01；W25Q64 与 SPI2 硬件资料 | `PLANNED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；错误返回可诊断 |
+| `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Driver；Byte/Page Read/Write；跨页处理；写周期等待；基础 NVM 数据访问接口 | S01；AT24C02 与 PB6/PB7 硬件资料 | `PLANNED` | Page/跨页读写正确；Reset/掉电后数据保持；地址边界与错误处理测试通过 |
+| `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | 设计 External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；基础 Metadata Contract；镜像整体 CRC 校验；明确 Application/Bootloader 共用数据契约 | S02；S03 | `PLANNED` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏镜像能够被正确区分 |
+| `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | OTA 专用 UART；接收缓冲；Ymodem 协议状态机；文件名/大小处理；Packet CRC；Timeout / Cancel / Retry；数据流式写入指定 External Flash 区域 | S02；S04；UART 硬件资料；补充 Ymodem 参考资料 | `PLANNED` | PC 通过 Ymodem 发送 `.bin`；MCU 完整接收并写入 Flash；接收 Size 与 CRC 和源文件一致；中断/取消场景可恢复 |
+| `S06_RTOS_Runtime` | 建立 Application 后台 OTA 所需的并发运行环境 | 集成 FreeRTOS；确定 Task 划分；建立 Task Notification / Queue / Mutex 等必要 IPC；明确 UART 接收、Flash 写入、普通业务和日志之间的并发边界 | S01；S05 的通信模型已明确 | `PLANNED` | 正常业务与 Firmware 接收可以并发；无工作任务能够阻塞；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁或资源竞争 |
+| `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | 实现 OTA Service；选择 Inactive Slot；启动/控制 Ymodem；接收 Firmware Metadata；写入 Firmware；整包 CRC；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | 完整执行 `PC → UART/Ymodem → External Flash → Firmware Validation → Metadata PENDING → Reset`；失败下载不破坏当前 Application 和 Confirmed Image |
+| `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立 Bootloader 工程；Internal Flash Layout；Vector Table 合法性检查；MSP / Reset_Handler / VTOR；中断与外设清理；APP Jump；Boot Reason 日志 | S01；S04 的共用契约；Internal Flash Layout 设计 | `PLANNED` | Reset 后进入 Bootloader；无升级请求时能验证并稳定跳转到 Firmware V1.0；非法 APP 能被拒绝；跳转后 APP 中断工作正常 |
+| `S09_Firmware_Installation` | 实现 Bootloader 从 External Flash 安装 Pending Firmware | Bootloader 读取 Metadata；识别 `PENDING`；再次校验 External Flash Firmware；擦除 Internal Flash APP 区；分块 Read/Program；Internal Flash 写后 CRC；启动新 Application | S07；S08 | `PLANNED` | 实际完成 Firmware V1.0 → V1.1 OTA 安装；V1.1 PWM Breathing LED 正常运行；写入或校验失败时不误标记成功 |
+| `S10_Trial_Confirm_Rollback` | 建立可靠 OTA 的 Trial Boot、运行确认、Watchdog 与回滚闭环 | 引入 `TRIAL / CONFIRMED / ROLLBACK` 状态；Application `firmware_confirm()`；IWDG；Reset Cause；Boot Failure Counter；上一版 Confirmed Image 保留；失败自动回滚；Metadata 一致性恢复 | S09 | `PLANNED` | 正常 V1.1 Trial 可 Confirm；故意制造 HardFault/死循环/未 Confirm 场景后可被 IWDG 检测；达到失败阈值后自动恢复上一 Confirmed Firmware |
+| `S11_Diagnostics_UI` | 增加 OTA 状态可视化诊断与演示能力 | LCD/Display Driver；显示 Firmware Version、Active/Pending Slot、OTA Progress、CRC Result、Boot State、Trial/Confirmed/Rollback/Error 等状态 | S10；LCD/CTP 资料补充 | `PLANNED` | 不依赖 RTT 即可观察主要 OTA 状态；UI 故障不影响 OTA 核心状态机和 Boot 决策 |
+| `S12_Security_Extension` | 在可靠 OTA 基础上学习和验证安全升级机制 | 分阶段实验 SHA-256、AES、HMAC 或 Digital Signature、CK02AT API、STM32 RDP；区分完整性、机密性、来源认证和运行固件保护 | S10；对应安全资料/CK02AT API 在需要时补充 | `PLANNED` | 每项安全机制都有独立设计、实现边界和验证证据；安全扩展不破坏既有可靠 OTA 主链 |
+
+## 4. Stage Boundaries
+
+### S01 - S04: Application Infrastructure
+
+这一阶段先解决 Application 工程基础、原始存储能力和 Firmware 数据模型。
+
+结束时系统应能够：
+
+```text
+Application
+├─ 正常运行和输出日志
+├─ 使用 W25Q64 保存大块数据
+├─ 使用 AT24C02 保存掉电状态
+└─ 识别 Firmware Image / Slot / Metadata
+```
+
+此时不要求设备能够 OTA 下载或安装 Firmware。
+
+### S05 - S07: OTA Download Path
+
+这一阶段解决 Firmware 如何从 PC 进入设备，以及 Application 如何在正常运行期间完成后台下载。
+
+结束时形成：
+
+```text
+PC
+ ↓
+UART / Ymodem
+ ↓
+Application OTA Service
+ ↓
+Inactive Slot
+ ↓
+Firmware Validation
+ ↓
+PENDING
+ ↓
+Reset
+```
+
+此时 Application 不直接覆盖当前 Internal Flash APP。
+
+### S08 - S10: Bootloader & Reliability
+
+这一阶段解决启动、安装、运行确认和异常恢复。
+
+结束时形成完整闭环：
+
+```text
+PENDING
+ ↓
+Bootloader Validate
+ ↓
+Install
+ ↓
+TRIAL
+ ├─ Confirm → CONFIRMED
+ └─ Fail / IWDG Reset
+          ↓
+      Failure Count
+          ↓
+       ROLLBACK
+```
+
+完成 S10 后，V1 的核心可靠 OTA 目标视为基本实现。
+
+### S11 - S12: Diagnostics & Security Extension
+
+这一阶段不再改变 V1 OTA 的核心职责，而是在稳定闭环之上增加可视化诊断、演示能力和安全机制实验。
+
+## 5. Deferred / On-demand Inputs
+
+以下资料目前不阻塞 S01，也不要求在项目规划阶段全部补齐：
+
+- CK02AT Datasheet / API：延后至 S12；
+- LCD / CTP 详细资料：最晚 S11 前补充；
+- Ymodem 原始协议或高可信参考资料：最晚 S05 前补充；
+- HC-05 参数：只有后续决定增加 Bluetooth OTA Transport 时再进入正式 Stage；
+- SHA / AES / HMAC / Digital Signature 的具体算法和库选择：S12 再冻结。
+
+## 6. Next Planning Checkpoint
+
+项目级 Stage 拆分已经完成第一版收束。
+
+下一步进入：
+
+```text
+S01_Application_Foundation
+Design Discussion
+```
+
+S01 设计阶段需要重点确定：
+
+1. 从既有 `stm32f4_DMA_UART_ring_RTOS` 项目中哪些代码可以直接复用；
+2. 哪些内容只复用设计思想、不直接复制实现；
+3. 哪些模块暂不迁入本项目；
+4. Application 最终基础目录和依赖方向；
+5. RTT + EasyLogger、Config、基础 Platform/Impl 和 LED Blink 的具体边界；
+6. S01 的交付物、板测步骤和关闭条件。
+
+在 S01 的 `design.md` 获得 Project Owner 批准并进入正式实施状态前，不开始 S01 功能编码。
