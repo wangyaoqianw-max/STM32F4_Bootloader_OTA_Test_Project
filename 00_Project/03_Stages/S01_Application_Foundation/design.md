@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S01_Application_Foundation`
-- Status: `DRAFT`
+- Status: `DESIGN_APPROVED`
 - Owner: `Project Owner / Design`
 - Date: `2026-09-11`
 
@@ -25,7 +25,7 @@
 - `05_Vendors` 已存在 SEGGER RTT 与 EasyLogger；
 - `project_config.h` 仍包含上一项目的 Communication/Control/Acquisition/Indicator/MPU6050/ST7789 等产品级配置；
 - `impl_platform_bsp_gpio.c` 仍包含当前 `.ioc` 不存在的 KEY/LCD GPIO 绑定；
-- Keil `OTA_APP.uvprojx` 当前输出目录仍为 `OTA_APP\`，未符合仓库已冻结的 `Objects\` / `Listings\` 构建规范；
+- Keil `OTA_APP.uvprojx` 当前输出目录仍为 `OTA_APP\\`，未符合仓库已冻结的 `Objects\\` / `Listings\\` 构建规范；
 - 当前实现基线 Commit：`0a3f97493560fbd3ff3a220dc7d0a433e348a95e`。
 
 ## In Scope
@@ -160,8 +160,8 @@ MDK-ARM/Listings/  -> .map/.lst 等分析输出
 Keil Target 配置必须改为：
 
 ```text
-Output Directory  = .\Objects\
-Listing Directory = .\Listings\
+Output Directory  = .\\Objects\\
+Listing Directory = .\\Listings\\
 ```
 
 S01 不新增“每次 Build 自动复制到 06_Output”的规则。
@@ -246,6 +246,6 @@ Board Flash / Debug
 
 ## Approval
 
-- Decision: `NOT_REVIEWED`
-- Approved By: `Not approved yet`
-- Design Commit: `Not created yet`
+- Decision: `APPROVED`
+- Approved By: `Project Owner`
+- Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
