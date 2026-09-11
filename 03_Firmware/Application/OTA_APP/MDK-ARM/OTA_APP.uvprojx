@@ -47,14 +47,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>OTA_APP\</OutputDirectory>
+          <OutputDirectory>Objects\</OutputDirectory>
           <OutputName>OTA_APP</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath></ListingPath>
+          <ListingPath>Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_mcu/gpio;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -592,6 +592,116 @@
               <FileName>port.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/01_APP</GroupName>
+          <Files>
+            <File>
+              <FileName>app_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/app_main.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/02_Service/Service Log</GroupName>
+          <Files>
+            <File>
+              <FileName>service_log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../02_Service/service_log/service_log.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/03_Platform</GroupName>
+          <Files>
+            <File>
+              <FileName>platform_bsp_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_bsp/led/platform_bsp_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>platform_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_bsp/led/platform_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>platform_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_mcu/gpio/platform_gpio.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/04_Impl</GroupName>
+          <Files>
+            <File>
+              <FileName>impl_platform_bsp_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_bsp/impl_platform_bsp_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_platform_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_mcu/impl_platform_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_freertos_time.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_os/freertos/impl_freertos_time.c</FilePath>
+            </File>
+            <File>
+              <FileName>easylogger_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_middleware/impl_log/easylogger_port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/05_Vendors/EasyLogger</GroupName>
+          <Files>
+            <File>
+              <FileName>elog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/easylogger/src/elog.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_async.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/easylogger/src/elog_async.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_buf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/easylogger/src/elog_buf.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/easylogger/src/elog_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/easylogger/port/elog_port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/05_Vendors/RTT</GroupName>
+          <Files>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/RTT/SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/RTT/SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>

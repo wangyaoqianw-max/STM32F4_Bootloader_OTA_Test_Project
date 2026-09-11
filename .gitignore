@@ -11,6 +11,7 @@
 **/build/
 03_Firmware/**/MDK-ARM/Objects/
 03_Firmware/**/MDK-ARM/Listings/
+03_Firmware/**/MDK-ARM/JLinkLog.txt
 03_Firmware/**/Debug/
 03_Firmware/**/Release/
 
