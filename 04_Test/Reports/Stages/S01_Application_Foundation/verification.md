@@ -68,23 +68,23 @@ UV4.exe -b 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx -t OTA_APP
 ### 4. CubeMX、J-Link、RTT 和硬件验证
 
 - CubeMX regenerate：PENDING。当前环境未找到 STM32CubeMX.exe；已完成 .ioc 和 USER CODE 区域静态核对。
-- J-Link 下载：PENDING。当前环境未找到可用 J-Link CLI/连接设备。
-- FreeRTOS 运行时：PENDING。
-- LED Blink 板测：PENDING。尚未连接真实 STM32F411CEU6 硬件。
-- RTT + EasyLogger 实时输出：PENDING。尚未连接目标板和 RTT Viewer。
+- J-Link 下载：PASS（根据用户现场反馈，固件已成功烧录并正常运行）。
+- FreeRTOS 运行时：PASS（RTT 日志显示 defaultTask 正常执行并完成 Application 初始化）。
+- LED Blink 板测：PASS（用户反馈烧录后 LED 正常闪烁，板测正常）。
+- RTT + EasyLogger 实时输出：PASS（用户提供的 RTT Viewer 截图显示 EasyLogger 初始化、Service Log 初始化、Application Foundation start、Log init result: 0 和 Application init result: 0）。
+- 本次硬件结论来源：用户现场板测反馈及 RTT Viewer 截图；未将截图之外的硬件细节推断为已验证。
 
 ## 阶段判定
 
-- 代码验证：FAIL（C/C++ 编译、静态依赖和 AXF/HEX/MAP 产物均通过；但 Listings 输出验收未通过，且 CubeMX/运行时/板测尚未完成）
-- 硬件验证：PENDING
+- 代码验证：FAIL（C/C++ 编译、静态依赖和 AXF/HEX/MAP 产物均通过；但 Listings 输出验收未通过，且 CubeMX regenerate 尚未完成）
+- 硬件验证：PASS
 - 当前阶段状态：READY_FOR_VERIFICATION
 
-本报告不将编译结果等同于硬件通过，也不将缺少 CubeMX、J-Link、RTT 和真实板卡的环境描述为已验证。
+本报告不将编译结果等同于硬件通过；本次硬件 PASS 结论来自用户现场板测反馈和 RTT Viewer 截图，CubeMX regenerate 与 Listings 输出仍单独保持待验证。
 
 ## 后续验证步骤
 
 1. 使用与项目规范一致的 UV4/Keil GUI Clean/Rebuild，确认 Objects/ 与 Listings/ 实际输出；若仍复现，记录 UV4 版本和完整工程设置。
 2. 使用 CubeMX 打开并重新生成 OTA_APP.ioc，确认 USER CODE 区域和 Keil 工程接线未被破坏。
-3. 使用 J-Link 将 Objects/OTA_APP.hex 下载到 STM32F411CEU6，复位并观察 PC13 对应 LED_1 是否按 500 ms 亮、500 ms 灭闪烁。
-4. 通过 RTT Viewer 检查 Application Foundation start、日志初始化结果和 Application 初始化结果。
-5. 连续复位至少三次，记录 FreeRTOS 启动、LED 和 RTT 日志均稳定后，再由 Verification/Review Role 决定是否进入下一状态。
+3. 如需补充硬件复测，连续复位至少三次并保存 FreeRTOS、LED 和 RTT 证据；现有用户证据已支持本次硬件验证 PASS。
+4. Listings 或 CubeMX 验证完成后，再由 Verification/Review Role 决定是否进入下一状态。

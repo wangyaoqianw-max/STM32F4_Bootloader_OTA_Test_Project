@@ -32,7 +32,7 @@
 - 已建立 `app_main`、Service Log 启动日志和 Platform LED 周期闪烁入口。
 - Task 4 已完成并提交：`dea56a9 build: align S01 Keil project configuration`。
 - Keil active groups/include paths、`Objects/` / `Listings/` 输出和 JLinkLog tracking 已完成收口。
-- Task 5 已完成当前环境可执行的静态依赖检查和 Keil Clean/Rebuild；构建为 0 Error、6 Warning，AXF/HEX/MAP 已生成，验证报告已建立。CubeMX、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 和 RTT 仍待 Verification Role 完成。
+- Task 5 已完成静态依赖检查和 Keil Clean/Rebuild；构建为 0 Error、6 Warning，AXF/HEX/MAP 已生成。用户已反馈 J-Link 烧录成功、LED 正常闪烁、FreeRTOS 启动正常，RTT Viewer 已收到完整初始化日志；CubeMX regenerate 和 Listings 输出仍待完成。
 
 ### Project Planning
 
@@ -51,7 +51,7 @@
 
 ## In Progress
 
-S01 已完成 Task 1–5 的实现和当前环境可执行验证，当前状态为 `READY_FOR_VERIFICATION`；阶段验收仍等待 Listings、CubeMX、J-Link、FreeRTOS 运行时、LED 和 RTT 证据。
+S01 已完成 Task 1–5 的实现、代码验证和硬件板测；当前状态为 `READY_FOR_VERIFICATION`。硬件验证已通过，阶段仍等待 Listings 输出确认和 CubeMX regenerate 证据。
 
 实施任务顺序：
 
@@ -71,15 +71,15 @@ S01 已完成 Task 1–5 的实现和当前环境可执行验证，当前状态�
 
 ## Blockers
 
-无阻塞代码实施的问题；CubeMX、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 和 RTT 验证仍受当前工具/硬件条件限制。
+无阻塞代码实施的问题；J-Link、FreeRTOS、LED 和 RTT 硬件验证已通过，CubeMX regenerate 和 Listings 稳定输出仍待完成。
 
 ## Next Action
 
 Verification Role / Project Owner 当前：
 
 1. 复核 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md` 和当前工具行为；
-2. 使用 CubeMX、Keil GUI、J-Link、RTT Viewer 和真实板卡完成剩余验证，保持缺失证据为 `PENDING`；
-3. 解决或确认 Listings 输出偏差后，将实际 Verification Commit 写入 `handoff.md`；
+2. 使用 CubeMX 完成 regenerate，并确认 Keil GUI/UV4 对 Listings 输出的实际行为；硬件板测证据已记录为 PASS。
+3. 解决或确认 Listings 输出偏差后，由 Review Role 复核并决定是否进入下一阶段；
 4. 在代码和硬件证据齐全前，不得将阶段标记为 `CLOSED`。
 
 ## Required Reading

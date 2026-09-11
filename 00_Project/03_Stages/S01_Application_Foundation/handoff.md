@@ -80,7 +80,7 @@ Task 3 completed: 已新增 `app_main`，通过 Service Log 接入 EasyLogger/RT
 
 Task 4 completed: Keil 工程已加入 S01 active source groups 和 include paths，Target 输出已统一到 `Objects\\` / `Listings\\`，并将 J-Link 自动日志移出 Git tracking。
 
-Task 5 completed: 已完成当前环境可执行的静态依赖检查、Keil Clean/Rebuild 和验证报告；代码编译为 0 Error、6 Warning，AXF/HEX/MAP 已生成。CubeMX regenerate、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 板测和 RTT 实时输出仍待具备相应工具与硬件的 Verification Role 完成。
+Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报告；代码编译为 0 Error、6 Warning，AXF/HEX/MAP 已生成。用户已提供 J-Link 烧录成功、LED 正常闪烁、FreeRTOS 启动正常和 RTT + EasyLogger 输出正常的现场证据；CubeMX regenerate 与 Listings 稳定输出仍待完成。
 
 ### Changed Files
 
@@ -113,14 +113,18 @@ Task 5 completed: 已完成当前环境可执行的静态依赖检查、Keil Cle
 - Task 5 Keil Clean/Rebuild: `PASS`（0 Error、6 Warning；Warnings 均来自本任务未修改文件）
 - Task 5 Objects AXF/HEX/MAP 产物: `PASS`
 - Task 5 Listings 输出: `FAIL / PENDING`（UV4 命令行未稳定使用 `MDK-ARM/Listings/`）
-- Code Verification: `FAIL`（编译和静态检查通过，但阶段验收仍缺 Listings、CubeMX 和运行时证据）
-- Hardware Verification: `PENDING`
+- Code Verification: `FAIL`（编译和静态检查通过，但阶段验收仍缺 Listings 和 CubeMX regenerate 证据）
+- J-Link 下载与固件启动: `PASS`（用户反馈已成功烧录）
+- FreeRTOS 运行时: `PASS`（RTT Viewer 已观察到 defaultTask/Application 初始化日志）
+- LED Blink 板测: `PASS`（用户反馈 LED 正常闪烁，板测正常）
+- RTT + EasyLogger 输出: `PASS`（用户提供 RTT Viewer 截图，启动链路和两个 result 均为 0）
+- Hardware Verification: `PASS`（基于用户现场反馈和 RTT 截图）
 
 ### Known Issues
 
 - CubeMX regenerate 尚未执行：当前环境未找到 `STM32CubeMX.exe`。
 - UV4 命令行已完成 Clean/Rebuild，但 `ListingPath=Listings\\` 未被 UV4 持久化使用，根目录 `.lst` 已清理。
-- 当前环境无法完成 J-Link 下载、FreeRTOS 运行时、真实 LED 板测或 RTT Viewer 检查。
+- J-Link、FreeRTOS、真实 LED 板测和 RTT Viewer 已由用户现场完成并反馈正常；证据为用户文字反馈和 RTT Viewer 截图。
 - 构建保留 6 个既有 Warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 1 个。
 
 ### Review Focus
@@ -130,8 +134,8 @@ Task 5 completed: 已完成当前环境可执行的静态依赖检查、Keil Cle
 - 是否保持层级依赖方向。
 - 是否遵守现有 Keil 构建输出规范。
 - UV4 版本和 GUI/命令行对 `Listings/` 输出的实际行为。
-- 是否具备真实板级 LED + RTT 验证证据。
+- 是否具备真实板级 LED + RTT 验证证据；本轮已收到用户提供的证据。
 
 ## Next Action
 
-交由 Verification Role / Project Owner：复核 `verification.md`，使用 CubeMX、Keil GUI、J-Link、RTT Viewer 和真实板卡完成剩余验证；在 Listings、CubeMX、FreeRTOS、LED、RTT 证据齐全前，不得关闭 S01。
+交由 Verification Role / Project Owner：复核 `verification.md`，完成 CubeMX regenerate 和 Listings 输出问题确认；硬件 LED、FreeRTOS、J-Link、RTT 证据已由用户提供并记录为 PASS，在剩余代码验收项完成前不得关闭 S01。
