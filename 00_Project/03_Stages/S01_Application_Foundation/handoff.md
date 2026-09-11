@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
@@ -68,7 +68,7 @@
 
 ## Implementation Output
 
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 
 ### Completed Work
 
@@ -101,7 +101,7 @@ Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报�
 
 ### Deviations From Plan
 
-`PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config 或 LCD BSP API。UV4 命令行 Clean/Rebuild 会把 ListingPath 改为空并在 MDK-ARM 根目录生成 `.lst`，已恢复提交配置中的 `ListingPath=Listings\\`，该输出偏差保留为验证问题。
+`PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config 或 LCD BSP API。用户已通过 Keil GUI 将输出路径调整为 `.\\Objects\\` / `.\\Listings\\`，并确认 Listings 实际文件已生成，根目录没有跑偏的 `.lst`。
 
 ### Verification Results
 
@@ -112,8 +112,9 @@ Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报�
 - Task 5 静态依赖与 `.ioc` 检查: `PASS`
 - Task 5 Keil Clean/Rebuild: `PASS`（0 Error、6 Warning；Warnings 均来自本任务未修改文件）
 - Task 5 Objects AXF/HEX/MAP 产物: `PASS`
-- Task 5 Listings 输出: `FAIL / PENDING`（UV4 命令行未稳定使用 `MDK-ARM/Listings/`）
-- Code Verification: `FAIL`（编译和静态检查通过，但阶段验收仍缺 Listings 和 CubeMX regenerate 证据）
+- Task 5 Listings 输出: `PASS`（用户调整路径后，`MDK-ARM/Listings/` 已生成 .lst/.txt 文件，根目录无 .lst）
+- CubeMX regenerate: `PASS`（用户确认重新生成检查无问题）
+- Code Verification: `PASS`
 - J-Link 下载与固件启动: `PASS`（用户反馈已成功烧录）
 - FreeRTOS 运行时: `PASS`（RTT Viewer 已观察到 defaultTask/Application 初始化日志）
 - LED Blink 板测: `PASS`（用户反馈 LED 正常闪烁，板测正常）
@@ -122,9 +123,6 @@ Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报�
 
 ### Known Issues
 
-- CubeMX regenerate 尚未执行：当前环境未找到 `STM32CubeMX.exe`。
-- UV4 命令行已完成 Clean/Rebuild，但 `ListingPath=Listings\\` 未被 UV4 持久化使用，根目录 `.lst` 已清理。
-- J-Link、FreeRTOS、真实 LED 板测和 RTT Viewer 已由用户现场完成并反馈正常；证据为用户文字反馈和 RTT Viewer 截图。
 - 构建保留 6 个既有 Warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 1 个。
 
 ### Review Focus
@@ -138,4 +136,4 @@ Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报�
 
 ## Next Action
 
-交由 Verification Role / Project Owner：复核 `verification.md`，完成 CubeMX regenerate 和 Listings 输出问题确认；硬件 LED、FreeRTOS、J-Link、RTT 证据已由用户提供并记录为 PASS，在剩余代码验收项完成前不得关闭 S01。
+交由 Review Role / Project Owner：复核 `verification.md`、Keil 输出配置和用户提供的硬件证据；确认无新增问题后决定是否将 S01 标记为 CLOSED。

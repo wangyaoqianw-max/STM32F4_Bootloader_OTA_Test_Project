@@ -49,25 +49,26 @@ UV4.exe -b 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx -t OTA_APP
   - platform_gpio.c 第 33、38、43、48、139 行：5 个无符号值与零比较告警；该文件未在本任务修改。
   - elog_port.c 第 143 行：文件末尾缺少换行告警；Vendor 文件未在本任务修改。
 
-### 3. 构建输出目录偏差
+### 3. 构建输出目录
 
-提交中的工程配置保持：
+用户已在 Keil GUI 中调整当前 Target 的输出路径：
 
 ~~~
-<OutputDirectory>Objects\</OutputDirectory>
-<ListingPath>Listings\</ListingPath>
-<GenerateListings>0</GenerateListings>
+<OutputDirectory>.\Objects\</OutputDirectory>
+<ListingPath>.\Listings\</ListingPath>
+<RvctClst>1</RvctClst>
 ~~~
 
-但本机 UV4 命令行 Clean/Rebuild 后会自动把 ListingPath 改为空，并在 MDK-ARM 根目录生成 startup_stm32f411xe.lst；MDK-ARM/Listings/ 未产生 listing 文件。已删除该工具生成的根目录 .lst， 并恢复工程文件中的 ListingPath=Listings\。因此：
+完成 Clean/Rebuild 后，实际结果为：
 
-- Objects 输出：PASS
-- Listings 输出：FAIL / 待现场工具确认
-- 该偏差是当前 UV4 命令行行为，尚未通过修改源码或放宽规范处理。
+- Objects 输出：PASS，已生成 OTA_APP.axf、OTA_APP.hex、OTA_APP.map。
+- Listings 输出：PASS，MDK-ARM/Listings/ 内已生成大量 .lst 和 .txt 文件。
+- 根目录 startup_stm32f411xe.lst：不存在。
+- 当前输出目录配置和实际落盘位置一致。
 
 ### 4. CubeMX、J-Link、RTT 和硬件验证
 
-- CubeMX regenerate：PENDING。当前环境未找到 STM32CubeMX.exe；已完成 .ioc 和 USER CODE 区域静态核对。
+- CubeMX regenerate：PASS（用户确认重新生成检查无问题，.ioc 和 USER CODE 区域保持正确）。
 - J-Link 下载：PASS（根据用户现场反馈，固件已成功烧录并正常运行）。
 - FreeRTOS 运行时：PASS（RTT 日志显示 defaultTask 正常执行并完成 Application 初始化）。
 - LED Blink 板测：PASS（用户反馈烧录后 LED 正常闪烁，板测正常）。
@@ -76,15 +77,13 @@ UV4.exe -b 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx -t OTA_APP
 
 ## 阶段判定
 
-- 代码验证：FAIL（C/C++ 编译、静态依赖和 AXF/HEX/MAP 产物均通过；但 Listings 输出验收未通过，且 CubeMX regenerate 尚未完成）
+- 代码验证：PASS（C/C++ 编译、静态依赖、CubeMX regenerate、Objects 和 Listings 输出均通过）
 - 硬件验证：PASS
-- 当前阶段状态：READY_FOR_VERIFICATION
+- 当前阶段状态：READY_FOR_REVIEW
 
-本报告不将编译结果等同于硬件通过；本次硬件 PASS 结论来自用户现场板测反馈和 RTT Viewer 截图，CubeMX regenerate 与 Listings 输出仍单独保持待验证。
+本报告区分代码和硬件证据：代码验证基于 Clean/Rebuild、CubeMX regenerate、依赖检查和实际输出文件；硬件验证基于用户现场板测反馈和 RTT Viewer 截图。
 
 ## 后续验证步骤
 
-1. 使用与项目规范一致的 UV4/Keil GUI Clean/Rebuild，确认 Objects/ 与 Listings/ 实际输出；若仍复现，记录 UV4 版本和完整工程设置。
-2. 使用 CubeMX 打开并重新生成 OTA_APP.ioc，确认 USER CODE 区域和 Keil 工程接线未被破坏。
-3. 如需补充硬件复测，连续复位至少三次并保存 FreeRTOS、LED 和 RTT 证据；现有用户证据已支持本次硬件验证 PASS。
-4. Listings 或 CubeMX 验证完成后，再由 Verification/Review Role 决定是否进入下一状态。
+1. 由 Review Role 复核验证报告、Keil 配置差异和用户提供的硬件证据。
+2. 确认无新增问题后，将 S01 状态推进到 CLOSED。

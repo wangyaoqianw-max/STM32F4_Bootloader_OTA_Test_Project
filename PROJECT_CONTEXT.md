@@ -5,11 +5,11 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
-- Current Role: `Verification`
+- Current Role: `Review`
 - Updated At: `2026-09-11`
 
 ## Current Goal
@@ -47,7 +47,7 @@ Project Owner 已批准：
 ## Next Action
 
 
-Task 1–5 的实现、代码验证和硬件板测已完成，Task 1–4 实现提交为 `35af9fb`、`95231a1`、`52c51d4`、`dea56a9`，验证报告提交为 `f9497ac`，最终交接同步为 `06ddb9f`。下一步由 Verification Role / Project Owner 完成 CubeMX regenerate 和 Listings 输出确认。
+Task 1–5 的实现、代码验证和硬件板测已完成，Task 1–4 实现提交为 `35af9fb`、`95231a1`、`52c51d4`、`dea56a9`，验证报告提交为 `f9497ac`，最终交接同步为 `06ddb9f`。下一步由 Review Role / Project Owner 复核并决定是否关闭 S01。
 
 ## Required Reading
 
@@ -68,15 +68,15 @@ Task 1–5 的实现、代码验证和硬件板测已完成，Task 1–4 实现�
 
 ## Blockers
 
-无阻塞代码实施的问题；J-Link、FreeRTOS、LED 和 RTT 硬件验证已通过，CubeMX regenerate 和 Listings 稳定输出仍待完成。
+无阻塞代码或验证的问题；S01 代码验证和硬件验证均已通过，仅待 Review Role 最终复核。
 
 ## Latest Review / Verification
 
 - `S00_Template_Restructure` 已 `CLOSED`。
 - S01 Design 已由 Project Owner 批准。
-- S01 当前状态为 `READY_FOR_VERIFICATION`。
+- S01 当前状态为 `READY_FOR_REVIEW`。
 - Keil Clean/Rebuild 已完成：0 Error、6 Warning，AXF/HEX/MAP 已生成。
-- UV4 命令行未稳定输出 `MDK-ARM/Listings/`；CubeMX regenerate 仍为 PENDING。
+- UV4/Keil GUI 已将输出调整为 `.\Listings\`，并确认目录内实际生成 .lst/.txt 文件；CubeMX regenerate 已由用户确认无问题。
 - 用户已提供板测结论和 RTT Viewer 截图：LED 正常闪烁，J-Link 烧录、FreeRTOS 启动、RTT + EasyLogger 输出均记录为 PASS。
 - 详细证据见 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md`。
 
