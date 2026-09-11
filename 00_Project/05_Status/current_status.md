@@ -22,6 +22,11 @@
 - 已建立 Design → Implementation → Verification → Review 阶段闭环。
 - 已建立 Keil 构建输出规范和 I/O 故障诊断规则。
 
+### S01 Implementation
+
+- Task 1 已完成并提交：`35af9fb refactor: clean S01 project configuration`。
+- `project_config.h` 已收口为 Status LED、LED Blink 和 Software I2C 基础配置。
+
 ### Project Planning
 
 - 项目级开发路线图已建立，S01-S12 的依赖关系与完成标准已有第一版。
@@ -39,7 +44,7 @@
 
 ## In Progress
 
-S01 已进入 `IN_PROGRESS`，当前执行 Task 1：清理上一项目 Config 产品语义。
+S01 已进入 `IN_PROGRESS`，Task 1 已完成，当前进入 Task 2：适配 BSP / Impl。
 
 实施任务顺序：
 
@@ -66,7 +71,7 @@ S01 已进入 `IN_PROGRESS`，当前执行 Task 1：清理上一项目 Config �
 Implementation Role 当前：
 
 1. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
-2. 完成 Task 1 的 Config 清理、验证和独立提交；
+2. 完成 Task 2 的 BSP / Impl 适配、验证和独立提交；
 3. 每个 Task 独立验证并提交，实际 Commit、偏差和结果持续写入 `handoff.md`；
 4. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
 

@@ -7,7 +7,7 @@
 - Branch: `main`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
-- Implementation Commit: `In progress - Task 1`
+- Implementation Commit: `Task 1: 35af9fb`
 - Verification Commit: `Not created yet`
 
 ## Implementation Input
@@ -68,28 +68,33 @@
 
 ## Implementation Output
 
-- Status: `NOT_COMPLETED`
+- Status: `IN_PROGRESS`
 
 ### Completed Work
 
-Task 1 in progress: 已完成 Config 现状和旧项目宏引用调查，尚未完成修改与提交。
+Task 1 completed: 已清理上一项目的 Communication、Control、Acquisition、Indicator、MPU6050 和 Display 配置，保留 S01 Status LED、LED Blink 和 Software I2C 基础参数。
 
 ### Changed Files
 
-施工中，Task 1 尚未提交。
+- `PROJECT_CONTEXT.md`
+- `00_Project/05_Status/current_status.md`
+- `03_Firmware/Application/OTA_APP/00_Config/project_config.h`
+- `03_Firmware/Application/OTA_APP/00_Config/project_log_config.h`
+- `03_Firmware/Application/OTA_APP/00_Config/README.md`
 
 ### Deviations From Plan
 
-None.
+None. `PROJECT_DISPLAY_` 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config。
 
 ### Verification Results
 
-- Code Verification: `NOT_APPLICABLE`
-- Hardware Verification: `NOT_APPLICABLE`
+- Task 1 static configuration checks: `PASS`
+- Code Verification: `NOT_APPLICABLE`（阶段级验证待 Task 5）
+- Hardware Verification: `PENDING`（阶段级板测待 Task 5）
 
 ### Known Issues
 
-- 当前 `project_config.h` 仍含上一项目产品级配置。
+- Task 1 已完成 Config 清理。
 - 当前 BSP GPIO 仍含 KEY/LCD 等未匹配当前 `.ioc` 的绑定。
 - 当前 Keil OutputDirectory 尚未调整为 `Objects\\` / `Listings\\`。
 
@@ -100,3 +105,7 @@ None.
 - 是否保持层级依赖方向。
 - 是否遵守现有 Keil 构建输出规范。
 - 是否具备真实板级 LED + RTT 验证证据。
+
+## Next Action
+
+继续执行 Task 2：对照 `OTA_APP.ioc` 和 `Core/Inc/main.h`，适配 S01 Status LED / Software I2C 的 BSP 与 Impl 绑定。
