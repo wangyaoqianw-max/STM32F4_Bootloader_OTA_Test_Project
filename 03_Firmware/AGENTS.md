@@ -92,6 +92,21 @@ Overflow Policy
 
 采用 Single Producer / Single Consumer 时保持该约束，不无必要加锁。UART DMA + IDLE 不等同于完整协议帧。
 
+## 5.1 Keil 构建边界
+
+使用或修改 Keil 工程前，必须读取：
+
+```text
+03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md
+```
+
+- 源码、`.ioc`、`.uvprojx`、人工维护的链接配置属于工程输入；构建生成物不得与其混放。
+- 每个 Keil 工程的输出统一进入本工程 `MDK-ARM/Objects/` 和 `MDK-ARM/Listings/`。
+- 两个输出目录只能保存可通过 Clean + Rebuild 恢复的文件，并由根 `.gitignore` 排除。
+- 构建期间不得修改本次构建使用的源码和配置，也不得并发清理、移动或重写构建输出。
+- 遇到 `couldn't write *.o`、`I/O error` 或 `Invalid argument` 时，先检查 Target 输出配置、目录、权限、文件占用、文件系统和实时扫描；没有源码诊断证据时，不得通过修改 `.c` 文件规避 I/O 故障。
+- 调整输出目录后必须执行 Clean Rebuild，并用 `git status` 确认没有生成物落到未忽略位置。
+
 ## 6. RTOS 规则
 
 - Task 必须具有独立执行节奏、阻塞等待或实时性职责，不采用“一个模块一个 Task”。
