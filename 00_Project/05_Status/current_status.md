@@ -2,87 +2,90 @@
 
 ## Context Metadata
 
-- Active Stage: `S00_Template_Restructure`
-- Status: `CLOSED`
+- Active Stage: `S01_Application_Foundation`
+- Status: `DRAFT`
 - Branch: `main`
-- Planning Handoff Baseline: `b094d3a`
+- Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
+- Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Current Role: `Project Owner / Design`
 - Updated At: `2026-09-11`
 
 ## Current Goal
 
-结束模板建设和工程准备阶段的前置工作，进入 STM32F411 Bootloader/OTA 项目的项目级规划讨论。
-
-当前目标不是直接编码，而是根据正式需求和已确认硬件输入拆分开发 Stage、确定依赖关系、阶段交付物和验收条件，并选出第一个正式功能 Stage。
+审核并冻结 `S01_Application_Foundation` 设计，使当前 `OTA_APP` 从“已创建并复制部分旧项目代码”收口为可复用、可重新生成、可稳定构建和板级验证的 STM32F411 Application 基础工程。
 
 ## Completed
 
 ### Template / Workflow
 
-- `S00_Template_Restructure` 已完成实现、复验和 Project Owner 最终审核，状态为 `CLOSED`。
+- `S00_Template_Restructure` 已 `CLOSED`。
 - 已建立 Design → Implementation → Verification → Review 阶段闭环。
-- 已建立跨工具上下文入口、Agent 规则、Keil 构建输出规范和 I/O 故障诊断规则。
+- 已建立 Keil 构建输出规范和 I/O 故障诊断规则。
 
-### Engineering Preparation
+### Project Planning
 
-- 已建立 `00_Project/00_Preparation/` 工程准备阶段。
-- 已建立双语工程准备工作簿 `Engineering_Preparation_Bilingual.xlsx`。
-- 已收集 STM32F411、W25Q64JVSSIQ、AT24C02、HC-05、LCD 等参考资料以及开发板原理图/Pinout。
-- 已整理硬件资源、主要 Pinout 和 Hardware-Software Interface 输入。
+- 项目级开发路线图已建立，S01-S12 的依赖关系与完成标准已有第一版。
+- 已创建 `S01_Application_Foundation` 的 `design.md`、`implementation_plan.md`、`handoff.md`、`review.md`。
+- S01 Baseline 为 `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`。
 
-### Confirmed Planning Inputs
+### S01 Confirmed Inputs
 
-- MCU：STM32F411CEU6，Internal Flash 512 KB。
-- External SPI NOR：W25Q64JVSSIQ，SPI2，3.3 V。
-- EEPROM：AT24C02，Software I2C，PB6/PB7，3.3 V，7-bit Address `0x50`，WP 接 GND。
-- Debug：J-Link + SWD；日志方向为 SEGGER RTT + EasyLogger。
-- 项目 V1 主线：Bootloader + OTA、External Flash A/B、Firmware Version/Rollback、完整性校验、异常恢复与工程化验证。
+- MCU：STM32F411CEU6。
+- 当前 Application 工程：`03_Firmware/Application/OTA_APP/`。
+- CubeMX 已启用 FreeRTOS、USART1 + DMA、SPI1、TIM2 HAL Time Base、PB6/PB7 Software I2C GPIO。
+- 日志方向：SEGGER RTT + EasyLogger + Service Log。
+- 当前主要适配点：`00_Config`、`04_Impl/impl_bsp`、Keil 工程接线和输出目录。
 
 ## In Progress
 
-无功能实现任务。
+当前处于 S01 Design Review 前的 `DRAFT` 状态。
 
-下一项工作是单独进行项目级任务拆分与路线图讨论。当前尚未创建 `S01`，也未冻结第一个功能 Stage 的实现范围。
+已确认的 S01 范围：
+
+1. 清理上一项目 Config 产品语义；
+2. 适配当前板级 BSP/Impl；
+3. 接入并验证 RTT + EasyLogger；
+4. 保留 FreeRTOS 基础运行，不冻结最终 Task/IPC 架构；
+5. 建立最小 App 入口和 LED Blink；
+6. 规范 Keil `Objects/` / `Listings/` 输出；
+7. 完成 CubeMX regenerate、Clean Rebuild 与板级验证。
 
 ## Non-blocking Open Items
 
-以下事项继续保留，但不阻塞项目级规划：
-
-- CK02AT 缺少可靠公开 Datasheet/API；V1 不依赖其进入正式安全链。
-- Ymodem 原始协议资料需要在协议设计 Stage 前补齐。
-- HC-05 的实际 UART 参数需要在蓝牙通信 Stage 实测确认。
-- LCD/CTP 的部分型号、触摸连接和参数可在对应显示功能需要时补充。
-- STM32CubeMX、FreeRTOS、CMSIS、HAL、Compiler 等精确工具链版本继续完善。
-- 工程准备工作簿属于持续维护数据源，本地有更新时应继续同步回仓库。
+- CK02AT Datasheet/API 延后到安全阶段。
+- Ymodem 资料延后到 S05 前补齐。
+- LCD/CTP 细节延后到 S11。
+- W25Q64、AT24C02 具体实现分别进入 S02/S03。
+- 当前 CubeMX 预启用 UART/SPI/FreeRTOS 仅作为基础能力，后续模块参数可在对应 Stage 修改。
 
 ## Blockers
 
-无阻塞项目规划的问题。
+无阻塞 S01 设计审核的问题。
 
 ## Next Action
 
-开启新的 Design Discussion：
+Project Owner 审核：
 
-1. 读取需求、工程准备数据、开发路线图和本状态文件；
-2. 将完整 Bootloader/OTA 目标拆分为若干可独立验收的正式 Stage；
-3. 明确各 Stage 的学习目标、工程输出、依赖和验收条件；
-4. 确定第一个正式功能 Stage；
-5. 再从 `_Template` 创建对应阶段文档并进入设计。
+1. `00_Project/03_Stages/S01_Application_Foundation/design.md`；
+2. `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
+3. 确认构建输出遵循既有 Keil 规范；
+4. 审核通过后推进到 `DESIGN_APPROVED`，再准备进入 `READY_FOR_IMPLEMENTATION`。
 
-## Required Reading for Next Discussion
+## Required Reading
 
 1. `PROJECT_CONTEXT.md`
 2. `00_Project/WORKFLOW.md`
-3. `00_Project/01_Requirements/项目需求V1.md`
-4. `00_Project/00_Preparation/README.md`
-5. `00_Project/00_Preparation/Engineering_Preparation_Bilingual.xlsx`
-6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S00_Template_Restructure/handoff.md`
-8. `00_Project/03_Stages/S00_Template_Restructure/review.md`
-9. `00_Project/05_Status/current_status.md`
+3. `00_Project/02_Roadmap/development_roadmap.md`
+4. `00_Project/03_Stages/S01_Application_Foundation/design.md`
+5. `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`
+6. `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
+7. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
+8. `03_Firmware/Application/OTA_APP/OTA_APP.ioc`
+9. `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
 
-## Prohibited Before Next Design Approval
+## Prohibited Before Design Approval
 
-- 不直接开始 Bootloader、Ymodem、SFUD、Rollback、AES 等功能实现。
-- 不提前冻结尚未讨论的 Flash 软件分区、Firmware Metadata 或 OTA 状态机。
-- 不要求把所有开放资料补齐后才能规划；缺失信息应在对应 Stage 需要时再处理。
+- 不开始 S01 生产代码正式施工。
+- 不提前实现 W25Q64/SFUD、AT24C02、Ymodem、OTA Service、LCD UI、Bootloader、Rollback 或 Security。
+- 不为旧项目残留模块扩大 S01 Config。
+- 不把普通构建产物提交进 Git。
