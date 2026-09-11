@@ -7,7 +7,7 @@
 - Active Stage: `S00_Template_Restructure`
 - Status: `CLOSED`
 - Branch: `main`
-- Planning Handoff Baseline: `67f9883`
+- Planning Handoff Baseline: `b094d3a`
 - Current Role: `Project Owner / Design`
 - Updated At: `2026-09-11`
 
