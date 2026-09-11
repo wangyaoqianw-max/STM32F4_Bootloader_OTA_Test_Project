@@ -5,18 +5,18 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `DRAFT`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
-- Current Role: `Project Owner / Design`
+- Current Role: `Implementation`
 - Updated At: `2026-09-11`
 
 ## Current Goal
 
-完成 `S01_Application_Foundation` 设计审核，将当前已经创建并复制部分通用代码的 `OTA_APP` 收口为稳定、可复用的 STM32F411 Application 基础工程。
+按已批准的 `S01_Application_Foundation` 设计和实施计划，将当前 `OTA_APP` 收口为稳定、可复用的 STM32F411 Application 基础工程。
 
-S01 重点包括：
+S01 已冻结范围：
 
 - 清理 `00_Config` 中上一项目产品级参数；
 - 对当前 CubeMX 工程适配 BSP/Impl；
@@ -28,14 +28,14 @@ S01 重点包括：
 
 ## Current Design Baseline
 
-S01 正式阶段文档已创建：
+Project Owner 已批准：
 
 - `00_Project/03_Stages/S01_Application_Foundation/design.md`
 - `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`
-- `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
-- `00_Project/03_Stages/S01_Application_Foundation/review.md`
 
-当前设计结论：
+批准的设计基线 Commit：`1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`。
+
+核心约束：
 
 - Application 继续使用 `App -> Service -> Platform -> Impl -> Vendor`；
 - 主要代码适配范围为 `00_Config`、`04_Impl/impl_bsp` 和必要的工程接线；
@@ -46,13 +46,15 @@ S01 正式阶段文档已创建：
 
 ## Next Action
 
-Project Owner 审核：
+Implementation Role 按以下顺序施工：
 
-1. `S01_Application_Foundation/design.md`；
-2. `S01_Application_Foundation/implementation_plan.md`；
-3. 确认范围、验收条件和构建输出边界；
-4. 审核通过后将状态推进到 `DESIGN_APPROVED` / `READY_FOR_IMPLEMENTATION`；
-5. 再交由 Implementation Role 按计划施工。
+1. 读取 S01 `design.md`、`implementation_plan.md` 和 `handoff.md`；
+2. 执行 Task 1：清理 Config 与旧项目产品语义；
+3. 执行 Task 2：适配 BSP / Impl；
+4. 执行 Task 3：建立日志链和最小 Application 入口；
+5. 执行 Task 4：收口 Keil/CubeMX 工程接线与构建输出；
+6. 执行 Task 5：Clean Rebuild、板测与阶段证据；
+7. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
 
 ## Required Reading
 
@@ -65,21 +67,27 @@ Project Owner 审核：
 7. `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`
 8. `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
 9. `00_Project/05_Status/current_status.md`
-10. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
+10. `03_Firmware/AGENTS.md`
+11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+12. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
+13. `03_Firmware/Application/OTA_APP/OTA_APP.ioc`
+14. `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
 
 ## Blockers
 
-无阻塞 S01 设计审核的问题。
+无阻塞 S01 实施的问题。
 
 ## Latest Review / Verification
 
 - `S00_Template_Restructure` 已 `CLOSED`。
-- S01 尚未开始实现或功能级硬件验证。
-- 当前只完成 S01 Design/Plan 建档，不得把文档创建视为实现完成。
+- S01 Design 已由 Project Owner 批准。
+- S01 尚未开始 Implementation 或功能级硬件验证。
+- 文档批准不等于代码或硬件验证完成。
 
 ## Prohibited Actions
 
-- S01 设计获批前，不修改生产代码进入正式施工。
 - 不提前实现 S02+ 的 W25Q64、EEPROM、Firmware Image、Ymodem、OTA、Bootloader、Rollback 或 Security。
 - 不为了兼容复制进来的旧模块，把上一项目产品配置继续保留在基础 Config 中。
+- 不大规模重构稳定 Platform/Impl 接口。
+- 不修改 Vendor 原始库以规避工程接线错误。
 - 不把未确认的硬件事实写成 `CONFIRMED`。
