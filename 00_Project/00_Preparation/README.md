@@ -9,7 +9,7 @@
 工程准备阶段的结构化数据统一填写在：
 
 ```text
-00_Project/00_Preparation/Engineering_Preparation.xlsx
+00_Project/00_Preparation/Engineering_Preparation_Bilingual.xlsx
 ```
 
 该工作簿是准备阶段人工填写数据的唯一正式数据源。不要再建立平行的 Markdown 表格保存相同数据，避免事实不一致。
