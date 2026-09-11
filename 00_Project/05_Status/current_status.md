@@ -3,52 +3,86 @@
 ## Context Metadata
 
 - Active Stage: `S00_Template_Restructure`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - Branch: `main`
-- Baseline Commit: `e9b71e4`
-- Current Role: `Review`
+- Planning Handoff Baseline: `b094d3a`
+- Current Role: `Project Owner / Design`
 - Updated At: `2026-09-11`
 
 ## Current Goal
 
-将现有目录整理为以 RTOS 固件开发为核心、支持跨工具交接的通用工程模板。
+结束模板建设和工程准备阶段的前置工作，进入 STM32F411 Bootloader/OTA 项目的项目级规划讨论。
+
+当前目标不是直接编码，而是根据正式需求和已确认硬件输入拆分开发 Stage、确定依赖关系、阶段交付物和验收条件，并选出第一个正式功能 Stage。
 
 ## Completed
 
-- 完成目录与上下文工作流设计并确认。
-- 完成实施计划并确认执行方式。
-- 迁移项目需求、固件架构和嵌入式 C 代码规范。
-- 规范化迁移文档的 LF 行尾。
-- 建立工具无关的上下文入口、状态机和阶段模板。
-- 拆分仓库级与固件级 Agent 规则。
-- 建立精简工程骨架并清理旧空目录。
-- 完成结构验证，Verification Commit 为 `015c2aa`。
-- 记录 S00 审核反馈，Review Feedback Commit 为 `894ac40`。
-- 增加适配当前目录的 Keil 构建输出与 I/O 故障诊断规范，Implementation Commit 为 `eaa64b8`。
-- 完成 Keil 规范复验，Verification Commit 为 `762f6fa`。
+### Template / Workflow
+
+- `S00_Template_Restructure` 已完成实现、复验和 Project Owner 最终审核，状态为 `CLOSED`。
+- 已建立 Design → Implementation → Verification → Review 阶段闭环。
+- 已建立跨工具上下文入口、Agent 规则、Keil 构建输出规范和 I/O 故障诊断规则。
+
+### Engineering Preparation
+
+- 已建立 `00_Project/00_Preparation/` 工程准备阶段。
+- 已建立双语工程准备工作簿 `Engineering_Preparation_Bilingual.xlsx`。
+- 已收集 STM32F411、W25Q64JVSSIQ、AT24C02、HC-05、LCD 等参考资料以及开发板原理图/Pinout。
+- 已整理硬件资源、主要 Pinout 和 Hardware-Software Interface 输入。
+
+### Confirmed Planning Inputs
+
+- MCU：STM32F411CEU6，Internal Flash 512 KB。
+- External SPI NOR：W25Q64JVSSIQ，SPI2，3.3 V。
+- EEPROM：AT24C02，Software I2C，PB6/PB7，3.3 V，7-bit Address `0x50`，WP 接 GND。
+- Debug：J-Link + SWD；日志方向为 SEGGER RTT + EasyLogger。
+- 项目 V1 主线：Bootloader + OTA、External Flash A/B、Firmware Version/Rollback、完整性校验、异常恢复与工程化验证。
 
 ## In Progress
 
-无施工任务；等待 Review Role 复核返工结果。
+无功能实现任务。
+
+下一项工作是单独进行项目级任务拆分与路线图讨论。当前尚未创建 `S01`，也未冻结第一个功能 Stage 的实现范围。
+
+## Non-blocking Open Items
+
+以下事项继续保留，但不阻塞项目级规划：
+
+- CK02AT 缺少可靠公开 Datasheet/API；V1 不依赖其进入正式安全链。
+- Ymodem 原始协议资料需要在协议设计 Stage 前补齐。
+- HC-05 的实际 UART 参数需要在蓝牙通信 Stage 实测确认。
+- LCD/CTP 的部分型号、触摸连接和参数可在对应显示功能需要时补充。
+- STM32CubeMX、FreeRTOS、CMSIS、HAL、Compiler 等精确工具链版本继续完善。
+- 工程准备工作簿属于持续维护数据源，本地有更新时应继续同步回仓库。
 
 ## Blockers
 
-无。
-
-## Latest Verification
-
-- Keil 规范相关 4 个文件存在且非空。
-- 9 项规范内容、2 个文档入口和 3 个目录级忽略路径检查通过。
-- 未发现过宽的 `*.hex`、`*.bin`、`*.map` 仓库级忽略规则。
-- 完整报告：`04_Test/Reports/Stages/S00_Template_Restructure/verification_report.md`。
+无阻塞项目规划的问题。
 
 ## Next Action
 
-由 Review Role 对照审核要求、实现提交 `eaa64b8` 和验证提交 `762f6fa` 决定 `CLOSED` 或继续 `CHANGES_REQUESTED`。
+开启新的 Design Discussion：
 
-## Stage Documents
+1. 读取需求、工程准备数据、开发路线图和本状态文件；
+2. 将完整 Bootloader/OTA 目标拆分为若干可独立验收的正式 Stage；
+3. 明确各 Stage 的学习目标、工程输出、依赖和验收条件；
+4. 确定第一个正式功能 Stage；
+5. 再从 `_Template` 创建对应阶段文档并进入设计。
 
-- Design: `00_Project/03_Stages/S00_Template_Restructure/design.md`
-- Implementation Plan: `00_Project/03_Stages/S00_Template_Restructure/implementation_plan.md`
-- Handoff: `00_Project/03_Stages/S00_Template_Restructure/handoff.md`
-- Review: `00_Project/03_Stages/S00_Template_Restructure/review.md`
+## Required Reading for Next Discussion
+
+1. `PROJECT_CONTEXT.md`
+2. `00_Project/WORKFLOW.md`
+3. `00_Project/01_Requirements/项目需求V1.md`
+4. `00_Project/00_Preparation/README.md`
+5. `00_Project/00_Preparation/Engineering_Preparation_Bilingual.xlsx`
+6. `00_Project/02_Roadmap/development_roadmap.md`
+7. `00_Project/03_Stages/S00_Template_Restructure/handoff.md`
+8. `00_Project/03_Stages/S00_Template_Restructure/review.md`
+9. `00_Project/05_Status/current_status.md`
+
+## Prohibited Before Next Design Approval
+
+- 不直接开始 Bootloader、Ymodem、SFUD、Rollback、AES 等功能实现。
+- 不提前冻结尚未讨论的 Flash 软件分区、Firmware Metadata 或 OTA 状态机。
+- 不要求把所有开放资料补齐后才能规划；缺失信息应在对应 Stage 需要时再处理。
