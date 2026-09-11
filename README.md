@@ -37,7 +37,7 @@ Project/
 
 | 目录 | 职责 |
 | --- | --- |
-| `00_Project` | 需求、路线图、阶段文档、ADR 和当前状态 |
+| `00_Project` | 工程准备、需求、路线图、阶段文档、ADR 和当前状态 |
 | `01_Reference` | Datasheet、Reference Manual、应用笔记和协议等外部原始资料 |
 | `02_Hardware` | 固件需要使用的原理图、Pinout 和硬件软件接口事实 |
 | `03_Firmware` | Application、可选 Bootloader、共享代码和固件设计文档 |
@@ -45,7 +45,39 @@ Project/
 | `05_Tools` | 项目脚本、打包、调试和 CI 工具 |
 | `06_Output` | 固件、升级包和日志等生成物，默认不提交 Git |
 
-## 4. 固件结构
+## 4. 工程准备阶段
+
+新项目开始正式 Design Stage 前，先执行 `00_Project/00_Preparation/README.md` 中定义的 Engineering Preparation Stage。
+
+准备阶段由项目维护者人工收集或确认以下输入：
+
+- MCU、外部器件和开发板的 Datasheet、Reference Manual、Errata、Application Note、协议规范、原理图与 Pinout；
+- 板级硬件资源、器件型号、接口、电平、引脚、IRQ、DMA、Reset、Debug 等事实；
+- IDE、编译器、SDK、调试器和脚本环境版本；
+- 当前无法确认的硬件问题及其影响。
+
+准备阶段模板入口：
+
+```text
+00_Project/00_Preparation/
+├── README.md
+└── development_environment.md
+
+01_Reference/
+└── reference_index.md
+
+02_Hardware/
+├── hardware_resource_inventory.md
+├── hardware_open_issues.md
+├── Pinout/
+│   └── pinout.md
+└── Hardware_Software_Interface/
+    └── hardware_software_interface.md
+```
+
+准备阶段只建立“事实输入”，不提前冻结 Flash 软件分区、Boot 决策、OTA 状态机、Metadata 格式等软件设计。
+
+## 5. 固件结构
 
 ```text
 03_Firmware/
@@ -64,9 +96,9 @@ Project/
 
 修改固件前必须读取 `03_Firmware/AGENTS.md` 和详细 C 代码规范。
 
-## 5. 阶段工作流
+## 6. 阶段工作流
 
-每个阶段保存在：
+每个正式开发阶段保存在：
 
 ```text
 00_Project/03_Stages/<stage_id>_<topic>/
@@ -90,18 +122,21 @@ DRAFT
 
 新阶段从 `00_Project/03_Stages/_Template` 复制四份模板，填写实际字段后再提交设计基线。
 
-## 6. 初始化新项目
+工程准备阶段不是一个普通功能 `Sxx` Stage；它是项目实例化时的前置输入阶段。准备完成后，再开始第一个正式设计阶段。
+
+## 7. 初始化新项目
 
 1. 复制本模板或使用 GitHub Template 创建仓库。
 2. 删除 `S00_Template_Restructure` 示例阶段，保留 `_Template`。
 3. 用新项目需求替换 `00_Project/01_Requirements/项目需求V1.md`。
-4. 更新 `PROJECT_CONTEXT.md`、路线图和 `current_status.md`。
-5. 根据硬件资料填写 `02_Hardware/Hardware_Software_Interface`。
+4. 执行 `00_Project/00_Preparation/README.md`：收集资料并填写准备阶段模板。
+5. 更新 `PROJECT_CONTEXT.md`、路线图和 `current_status.md`。
 6. 在 `03_Firmware/Application` 创建或导入主工程。
 7. 仅在实际需要时启用 Bootloader 和 Shared。
-8. 提交初始化基线，再开始第一个开发阶段。
+8. 提交项目初始化基线。
+9. 从 `_Template` 创建第一个正式 Design Stage，再开始功能设计与实现。
 
-## 7. 当前工具分工示例
+## 8. 当前工具分工示例
 
 当前可以采用：
 
@@ -113,10 +148,11 @@ DRAFT
 
 这只是可替换的当前选择。任何工具只要能读取和提交仓库，并遵守 `00_Project/WORKFLOW.md`，都可以承担相应角色。
 
-## 8. 构建与测试入口
+## 9. 构建与测试入口
 
 模板本身不预设编译命令。实例化项目后，在以下位置补充真实命令：
 
+- 开发环境基线：`00_Project/00_Preparation/development_environment.md`；
 - Application 构建：`03_Firmware/Application/README.md`；
 - Bootloader 构建：`03_Firmware/Bootloader/README.md`；
 - 测试方法：`04_Test/README.md`；
