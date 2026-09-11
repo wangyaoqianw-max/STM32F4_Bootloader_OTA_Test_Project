@@ -5,11 +5,11 @@
 ## Context Metadata
 
 - Active Stage: `S00_Template_Restructure`
-- Status: `READY_FOR_REVIEW`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Baseline Commit: `e9b71e4`
-- Current Role: `Review`
-- Updated At: `2026-09-10`
+- Current Role: `Implementation`
+- Updated At: `2026-09-11`
 
 ## Current Goal
 
@@ -17,7 +17,7 @@
 
 ## Next Action
 
-由 Review Role 对照冻结设计、实施差异和验证报告审核本阶段，决定关闭或返工。
+按 `review.md` 的返工要求补充 Keil 构建输出和 I/O 故障诊断规范，完成验证后重新交回审核。
 
 ## Required Reading
 
@@ -42,7 +42,7 @@
 
 ## Prohibited Actions
 
-- 审核前不得将阶段状态改为 `CLOSED`。
+- 返工验证完成前不得将阶段状态改为 `READY_FOR_REVIEW` 或 `CLOSED`。
 - 不得在审核阶段顺便实现 Bootloader 或 Application 功能。
 - 不得把聊天中的未确认结论直接写成冻结设计。
 - 不得把代码验证描述为硬件验证。

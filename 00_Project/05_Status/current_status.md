@@ -3,11 +3,11 @@
 ## Context Metadata
 
 - Active Stage: `S00_Template_Restructure`
-- Status: `READY_FOR_REVIEW`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Baseline Commit: `e9b71e4`
-- Current Role: `Review`
-- Updated At: `2026-09-10`
+- Current Role: `Implementation`
+- Updated At: `2026-09-11`
 
 ## Current Goal
 
@@ -26,7 +26,7 @@
 
 ## In Progress
 
-无施工任务；等待 Review Role 审核。
+- 根据审核反馈补充 Keil 构建输出管理与 I/O 故障诊断规则。
 
 ## Blockers
 
@@ -41,7 +41,7 @@
 
 ## Next Action
 
-由 Review Role 对照设计、实施提交和验证报告填写 `review.md`，决定 `CLOSED` 或 `CHANGES_REQUESTED`。
+按 `review.md` 的返工要求补充固件规范、规则入口和验证证据。
 
 ## Stage Documents
 
