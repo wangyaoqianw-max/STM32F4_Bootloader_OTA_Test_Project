@@ -5,10 +5,10 @@
 ## Context Metadata
 
 - Active Stage: `S00_Template_Restructure`
-- Status: `CHANGES_REQUESTED`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `e9b71e4`
-- Current Role: `Implementation`
+- Current Role: `Review`
 - Updated At: `2026-09-11`
 
 ## Current Goal
@@ -17,7 +17,7 @@
 
 ## Next Action
 
-按 `review.md` 的返工要求补充 Keil 构建输出和 I/O 故障诊断规范，完成验证后重新交回审核。
+由 Review Role 复核 Keil 构建输出和 I/O 故障诊断返工，决定关闭或继续返工。
 
 ## Required Reading
 
@@ -27,7 +27,8 @@
 4. `00_Project/03_Stages/S00_Template_Restructure/design.md`
 5. `00_Project/03_Stages/S00_Template_Restructure/implementation_plan.md`
 6. `00_Project/03_Stages/S00_Template_Restructure/handoff.md`
-7. `00_Project/05_Status/current_status.md`
+7. `00_Project/03_Stages/S00_Template_Restructure/review.md`
+8. `00_Project/05_Status/current_status.md`
 
 ## Blockers
 
@@ -35,14 +36,14 @@
 
 ## Latest Verification
 
-- Verification Commit: `015c2aa`
-- 13 个核心文件存在且非空。
-- 顶层目录、上下文字段、陈旧路径和 Git 差异检查全部通过。
+- Verification Commit: `762f6fa`
+- Keil 规范相关 4 个文件存在且非空，9 项内容要求和 2 个入口检查通过。
+- 3 个模拟构建输出路径的目录级忽略检查通过，未发现过宽的固件扩展名忽略规则。
 - 完整报告：`04_Test/Reports/Stages/S00_Template_Restructure/verification_report.md`
 
 ## Prohibited Actions
 
-- 返工验证完成前不得将阶段状态改为 `READY_FOR_REVIEW` 或 `CLOSED`。
+- 复核前不得将阶段状态改为 `CLOSED`。
 - 不得在审核阶段顺便实现 Bootloader 或 Application 功能。
 - 不得把聊天中的未确认结论直接写成冻结设计。
 - 不得把代码验证描述为硬件验证。
