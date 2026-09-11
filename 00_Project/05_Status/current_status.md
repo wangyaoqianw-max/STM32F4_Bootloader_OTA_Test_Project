@@ -26,6 +26,8 @@
 
 - Task 1 已完成并提交：`35af9fb refactor: clean S01 project configuration`。
 - `project_config.h` 已收口为 Status LED、LED Blink 和 Software I2C 基础配置。
+- Task 2 已完成并提交：`95231a1 refactor: adapt S01 board bindings`。
+- Status LED 已绑定当前 `LED_1`，活跃 BSP 已移除 User Key / LCD 构造入口。
 
 ### Project Planning
 
@@ -44,7 +46,7 @@
 
 ## In Progress
 
-S01 已进入 `IN_PROGRESS`，Task 1 已完成，当前进入 Task 2：适配 BSP / Impl。
+S01 已进入 `IN_PROGRESS`，Task 1 和 Task 2 已完成，当前进入 Task 3：建立日志链和最小 Application 入口。
 
 实施任务顺序：
 
@@ -71,7 +73,7 @@ S01 已进入 `IN_PROGRESS`，Task 1 已完成，当前进入 Task 2：适配 BS
 Implementation Role 当前：
 
 1. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
-2. 完成 Task 2 的 BSP / Impl 适配、验证和独立提交；
+2. 完成 Task 3 的日志链、Application 入口和 LED Blink，验证并独立提交；
 3. 每个 Task 独立验证并提交，实际 Commit、偏差和结果持续写入 `handoff.md`；
 4. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
 
