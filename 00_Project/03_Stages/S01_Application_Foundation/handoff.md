@@ -3,12 +3,13 @@
 ## Metadata
 
 - Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - Branch: `main`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Implementation Commit: `Task 1: 35af9fb; Task 2: 95231a1; Task 3: 52c51d4; Task 4: dea56a9`
 - Verification Commit: `f9497ac verification: record S01 validation results`
+- Final Verification Evidence: `2026-09-11 Project Owner repeated Reset x4 PASS`
 
 ## Implementation Input
 
@@ -52,35 +53,19 @@
 
 ### Acceptance Criteria
 
-以 `design.md` 的 Acceptance Criteria 为唯一阶段验收基准。
-
-### Required Verification
-
-- CubeMX regenerate
-- Keil Clean Rebuild
-- Build output path check
-- git status check
-- J-Link board flash
-- FreeRTOS runtime check
-- LED Blink board test
-- RTT + EasyLogger output check
-- dependency boundary review
+以 `design.md` 的 Acceptance Criteria 为阶段验收基准。
 
 ## Implementation Output
 
-- Status: `READY_FOR_REVIEW`
+- Status: `COMPLETED`
 
 ### Completed Work
 
-Task 1 completed: 已清理上一项目的 Communication、Control、Acquisition、Indicator、MPU6050 和 Display 配置，保留 S01 Status LED、LED Blink 和 Software I2C 基础参数。
-
-Task 2 completed: Status LED 已绑定 `LED_1_GPIO_Port / LED_1_Pin`，Software I2C 保留 `I2C_SCL` / `I2C_SDA`，并从 S01 活跃 BSP 接口和实现移除 User Key / LCD 构造入口。
-
-Task 3 completed: 已新增 `app_main`，通过 Service Log 接入 EasyLogger/RTT，完成 Application 初始化日志和 Platform LED 周期闪烁；FreeRTOS 默认 Task 仅作为 App 入口载体。
-
-Task 4 completed: Keil 工程已加入 S01 active source groups 和 include paths，Target 输出已统一到 `Objects\\` / `Listings\\`，并将 J-Link 自动日志移出 Git tracking。
-
-Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报告；代码编译为 0 Error、6 Warning，AXF/HEX/MAP 已生成。用户已提供 J-Link 烧录成功、LED 正常闪烁、FreeRTOS 启动正常和 RTT + EasyLogger 输出正常的现场证据；CubeMX regenerate 与 Listings 稳定输出仍待完成。
+- Task 1：清理上一项目的 Communication、Control、Acquisition、Indicator、MPU6050 和 Display 配置，保留 S01 Status LED、LED Blink 和 Software I2C 基础参数。
+- Task 2：Status LED 已绑定 `LED_1_GPIO_Port / LED_1_Pin`，Software I2C 保留 `I2C_SCL` / `I2C_SDA`，活跃 BSP 移除 User Key / LCD 构造入口。
+- Task 3：新增 `app_main`，通过 Service Log 接入 EasyLogger/RTT，完成 Application 初始化日志和 Platform LED 周期闪烁；FreeRTOS 默认 Task 仅作为 App 入口载体。
+- Task 4：Keil 工程加入 S01 active source groups 和 include paths，Target 输出统一到 `Objects\` / `Listings\`，J-Link 自动日志移出 Git tracking。
+- Task 5：完成静态依赖检查、Keil Clean/Rebuild、CubeMX regenerate、J-Link、FreeRTOS、LED、RTT 和连续 Reset 板测验证。
 
 ### Changed Files
 
@@ -101,39 +86,32 @@ Task 5 completed: 已完成静态依赖检查、Keil Clean/Rebuild 和验证报�
 
 ### Deviations From Plan
 
-`PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config 或 LCD BSP API。用户已通过 Keil GUI 将输出路径调整为 `.\\Objects\\` / `.\\Listings\\`，并确认 Listings 实际文件已生成，根目录没有跑偏的 `.lst`。
+`PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，但不在 S01 active Build 中，因此未恢复旧 Display Config 或 LCD BSP API。Keil GUI 实际配置与仓库构建输出规范保持一致。
+
+`implementation_plan.md` 保留为施工前冻结计划，其原始逐步 checkbox 不作为执行状态源；实际完成状态以本 `handoff.md`、验证报告和 `review.md` 为准。
 
 ### Verification Results
 
-- Task 1 static configuration checks: `PASS`
-- Task 2 active BSP/Impl static checks: `PASS`
-- Task 3 App/Service/Platform/Impl/Vendor static chain checks: `PASS`
-- Task 4 Keil XML/include/scope/output/JLink checks: `PASS`
-- Task 5 静态依赖与 `.ioc` 检查: `PASS`
-- Task 5 Keil Clean/Rebuild: `PASS`（0 Error、6 Warning；Warnings 均来自本任务未修改文件）
-- Task 5 Objects AXF/HEX/MAP 产物: `PASS`
-- Task 5 Listings 输出: `PASS`（用户调整路径后，`MDK-ARM/Listings/` 已生成 .lst/.txt 文件，根目录无 .lst）
-- CubeMX regenerate: `PASS`（用户确认重新生成检查无问题）
+- Static configuration / BSP / dependency checks: `PASS`
+- Keil Clean/Rebuild: `PASS`（0 Error、6 个已解释既有 Warning）
+- Objects / Listings 输出: `PASS`
+- CubeMX regenerate: `PASS`
+- J-Link 下载与固件启动: `PASS`
+- FreeRTOS 运行时: `PASS`
+- LED Blink: `PASS`
+- RTT + EasyLogger: `PASS`
+- 连续 Reset：`PASS`（Project Owner 连续复位 4 次均正常）
 - Code Verification: `PASS`
-- J-Link 下载与固件启动: `PASS`（用户反馈已成功烧录）
-- FreeRTOS 运行时: `PASS`（RTT Viewer 已观察到 defaultTask/Application 初始化日志）
-- LED Blink 板测: `PASS`（用户反馈 LED 正常闪烁，板测正常）
-- RTT + EasyLogger 输出: `PASS`（用户提供 RTT Viewer 截图，启动链路和两个 result 均为 0）
-- Hardware Verification: `PASS`（基于用户现场反馈和 RTT 截图）
+- Hardware Verification: `PASS`
 
 ### Known Issues
 
-- 构建保留 6 个既有 Warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 1 个。
+- 构建保留 6 个既有 Warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 1 个；均已解释并作为非阻塞技术债务保留。
 
 ### Review Focus
 
-- 是否真正去除了上一项目产品语义，而没有为了兼容未启用模块扩大 Config。
-- 是否只对 S01 所需 Impl/BSP 做最小适配。
-- 是否保持层级依赖方向。
-- 是否遵守现有 Keil 构建输出规范。
-- UV4 版本和 GUI/命令行对 `Listings/` 输出的实际行为。
-- 是否具备真实板级 LED + RTT 验证证据；本轮已收到用户提供的证据。
+Review 已完成，详细结论见 `review.md`。
 
 ## Next Action
 
-交由 Review Role / Project Owner：复核 `verification.md`、Keil 输出配置和用户提供的硬件证据；确认无新增问题后决定是否将 S01 标记为 CLOSED。
+S01 已关闭。下一步进入 `S02_External_Flash_Driver` Design Discussion，读取 W25Q64/SPI2 资料并冻结 External SPI Flash Driver 的职责、Platform/Impl 边界、SFUD 接入策略和板级验收方案。

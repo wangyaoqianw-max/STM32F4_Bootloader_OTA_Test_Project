@@ -5,49 +5,50 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
-- Current Role: `Review`
+- Current Role: `Project Owner / Design`
 - Updated At: `2026-09-11`
 
 ## Current Goal
 
-按已批准的 `S01_Application_Foundation` 设计和实施计划，将当前 `OTA_APP` 收口为稳定、可复用的 STM32F411 Application 基础工程。
+`S01_Application_Foundation` 已完成并关闭。当前从 Application 基础工程建设切换到 `S02_External_Flash_Driver` 的设计讨论。
 
-S01 已冻结范围：
+S01 已建立的稳定基线包括：
 
-- 清理 `00_Config` 中上一项目产品级参数；
-- 对当前 CubeMX 工程适配 BSP/Impl；
-- 接入 RTT + EasyLogger 与统一 Service Log；
-- 保留 FreeRTOS 基础运行环境，不提前冻结最终 Task/IPC 架构；
-- 建立最小 App 入口和 LED Blink 验证；
-- 按仓库规范统一 Keil `Objects/`、`Listings/` 构建输出；
-- 完成 CubeMX regenerate、Clean Rebuild、J-Link、LED 和 RTT 板级验证。
+- `App -> Service -> Platform -> Impl -> Vendor` Application 分层；
+- 收口后的基础 Config；
+- STM32F411 当前板级 Status LED / Software I2C 绑定；
+- FreeRTOS 基础运行环境；
+- RTT + EasyLogger + Service Log；
+- 最小 `app_main` 和 LED Blink；
+- Keil `Objects/` / `Listings/` 构建输出规范；
+- CubeMX regenerate、Clean/Rebuild、J-Link、LED、RTT 与连续 Reset 板测基线。
 
-## Current Design Baseline
+## Latest Review / Verification
 
-Project Owner 已批准：
-
-- `00_Project/03_Stages/S01_Application_Foundation/design.md`
-- `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`
-
-批准的设计基线 Commit：`1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`。
-
-核心约束：
-
-- Application 继续使用 `App -> Service -> Platform -> Impl -> Vendor`；
-- 主要代码适配范围为 `00_Config`、`04_Impl/impl_bsp` 和必要的工程接线；
-- Platform/Service/Vendor 以复用和验证为主，不做无关重构；
-- 当前 CubeMX 已启用的 FreeRTOS/UART/DMA/SPI 等视为个人常用基础能力，不代表后续模块参数已经冻结；
-- S01 不实现 W25Q64、AT24C02、Ymodem、OTA Service、LCD UI、Bootloader 或 Security；
-- 日常 Build Artifact 进入 `MDK-ARM/Objects/` 与 `MDK-ARM/Listings/`，`06_Output/` 只用于需要交付、打包或临时导出的制品。
+- S01 Code Verification：`PASS`。
+- S01 Hardware Verification：`PASS`。
+- Keil Clean/Rebuild：0 Error、6 个已解释既有 Warning。
+- CubeMX regenerate：`PASS`。
+- J-Link、FreeRTOS、LED Blink、RTT + EasyLogger：`PASS`。
+- Project Owner 连续 Reset 4 次：`PASS (4/4)`，满足至少 3 次稳定复现要求。
+- S01 Review Result：`PASS`。
+- S01 Status：`CLOSED`。
+- 完整证据见 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md` 和 `00_Project/03_Stages/S01_Application_Foundation/review.md`。
 
 ## Next Action
 
+开始 `S02_External_Flash_Driver` Design Discussion，不直接编码：
 
-Task 1–5 的实现、代码验证和硬件板测已完成，Task 1–4 实现提交为 `35af9fb`、`95231a1`、`52c51d4`、`dea56a9`，验证报告提交为 `f9497ac`，最终交接同步为 `06ddb9f`。下一步由 Review Role / Project Owner 复核并决定是否关闭 S01。
+1. 读取 W25Q64 Datasheet、开发板原理图/Pinout 与工程准备数据；
+2. 检查当前 SPI2 CubeMX 配置和 SPI Platform/Impl 代码；
+3. 讨论 W25Q64 Raw Driver 与 SFUD 的职责分工；
+4. 定义 Read / Page Program / Sector Erase / JEDEC ID / Busy Wait / 地址边界 / 错误返回；
+5. 设计跨页写入和板级验证方案；
+6. 冻结 S02 设计后再创建实施计划并进入施工。
 
 ## Required Reading
 
@@ -56,34 +57,21 @@ Task 1–5 的实现、代码验证和硬件板测已完成，Task 1–4 实现�
 3. `00_Project/WORKFLOW.md`
 4. `00_Project/01_Requirements/项目需求V1.md`
 5. `00_Project/02_Roadmap/development_roadmap.md`
-6. `00_Project/03_Stages/S01_Application_Foundation/design.md`
-7. `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`
-8. `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
-9. `00_Project/05_Status/current_status.md`
-10. `03_Firmware/AGENTS.md`
-11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-12. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
-13. `03_Firmware/Application/OTA_APP/OTA_APP.ioc`
-14. `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
+6. `00_Project/03_Stages/S01_Application_Foundation/review.md`
+7. `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
+8. `00_Project/05_Status/current_status.md`
+9. `03_Firmware/AGENTS.md`
+10. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+11. `03_Firmware/Application/OTA_APP/OTA_APP.ioc`
+12. W25Q64 / SPI2 相关硬件资料和当前 SPI Platform/Impl 代码
 
 ## Blockers
 
-无阻塞代码或验证的问题；S01 代码验证和硬件验证均已通过，仅待 Review Role 最终复核。
-
-## Latest Review / Verification
-
-- `S00_Template_Restructure` 已 `CLOSED`。
-- S01 Design 已由 Project Owner 批准。
-- S01 当前状态为 `READY_FOR_REVIEW`。
-- Keil Clean/Rebuild 已完成：0 Error、6 Warning，AXF/HEX/MAP 已生成。
-- UV4/Keil GUI 已将输出调整为 `.\Listings\`，并确认目录内实际生成 .lst/.txt 文件；CubeMX regenerate 已由用户确认无问题。
-- 用户已提供板测结论和 RTT Viewer 截图：LED 正常闪烁，J-Link 烧录、FreeRTOS 启动、RTT + EasyLogger 输出均记录为 PASS。
-- 详细证据见 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md`。
+无阻塞 S02 设计讨论的问题。
 
 ## Prohibited Actions
 
-- 不提前实现 S02+ 的 W25Q64、EEPROM、Firmware Image、Ymodem、OTA、Bootloader、Rollback 或 Security。
-- 不为了兼容复制进来的旧模块，把上一项目产品配置继续保留在基础 Config 中。
-- 不大规模重构稳定 Platform/Impl 接口。
-- 不修改 Vendor 原始库以规避工程接线错误。
-- 不把未确认的硬件事实写成 `CONFIRMED`。
+- S02 设计获批前，不直接开始 W25Q64/SFUD 功能实现。
+- 不在 Raw External Flash Driver 阶段提前冻结 Firmware Image、A/B Slot、Metadata、Ymodem、OTA Service 或 Bootloader 安装策略。
+- 不把 S01 已关闭结论重新解释为仍在施工。
+- 不把 6 个已解释既有 Warning 误写为 S01 新增缺陷；后续按技术债务单独处理。
