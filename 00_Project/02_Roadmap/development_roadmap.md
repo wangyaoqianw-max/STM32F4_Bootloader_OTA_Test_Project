@@ -69,7 +69,7 @@ S12  增加 OTA 安全机制实验
 | Stage | Goal | Main Implementation | Prerequisites | Roadmap State | Completion Criteria |
 | --- | --- | --- | --- | --- | --- |
 | `S00_Template_Restructure` | 建立通用工程模板、跨工具上下文合同和工程准备机制 | 项目目录、阶段工作流、上下文合同、工程准备模板、构建规范 | 目录与工作流设计获批 | `CLOSED` | 结构与构建规范验证通过、Project Owner 审核通过，并已被当前项目实际采用 |
-| `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `PLANNED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过 |
+| `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `CLOSED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过；连续 Reset 4 次稳定复现 |
 | `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 基础驱动；评估并接入 SFUD；实现 Read / Program / Erase / JEDEC ID / 容量与边界检查 | S01；W25Q64 与 SPI2 硬件资料 | `PLANNED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；错误返回可诊断 |
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Driver；Byte/Page Read/Write；跨页处理；写周期等待；基础 NVM 数据访问接口 | S01；AT24C02 与 PB6/PB7 硬件资料 | `PLANNED` | Page/跨页读写正确；Reset/掉电后数据保持；地址边界与错误处理测试通过 |
 | `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | 设计 External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；基础 Metadata Contract；镜像整体 CRC 校验；明确 Application/Bootloader 共用数据契约 | S02；S03 | `PLANNED` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏镜像能够被正确区分 |
@@ -154,7 +154,7 @@ TRIAL
 
 ## 5. Deferred / On-demand Inputs
 
-以下资料目前不阻塞 S01，也不要求在项目规划阶段全部补齐：
+以下资料目前不阻塞 S02，也不要求在项目规划阶段全部补齐：
 
 - CK02AT Datasheet / API：延后至 S12；
 - LCD / CTP 详细资料：最晚 S11 前补充；
@@ -164,22 +164,22 @@ TRIAL
 
 ## 6. Next Planning Checkpoint
 
-项目级 Stage 拆分已经完成第一版收束。
+`S01_Application_Foundation` 已完成实现、验证和 Review，并正式 `CLOSED`。
 
 下一步进入：
 
 ```text
-S01_Application_Foundation
+S02_External_Flash_Driver
 Design Discussion
 ```
 
-S01 设计阶段需要重点确定：
+S02 设计阶段重点确定：
 
-1. 从既有 `stm32f4_DMA_UART_ring_RTOS` 项目中哪些代码可以直接复用；
-2. 哪些内容只复用设计思想、不直接复制实现；
-3. 哪些模块暂不迁入本项目；
-4. Application 最终基础目录和依赖方向；
-5. RTT + EasyLogger、Config、基础 Platform/Impl 和 LED Blink 的具体边界；
-6. S01 的交付物、板测步骤和关闭条件。
+1. 当前开发板 W25Q64 与 SPI2 的真实硬件连接和 CubeMX 参数；
+2. SPI Platform/Impl 的复用范围和必要适配；
+3. W25Q64 Raw Driver 与 SFUD 的职责边界；
+4. JEDEC ID、Read、Page Program、Sector Erase、Busy Wait、跨页和地址边界行为；
+5. 错误返回、超时和日志策略；
+6. S02 板级测试矩阵和关闭条件。
 
-在 S01 的 `design.md` 获得 Project Owner 批准并进入正式实施状态前，不开始 S01 功能编码。
+在 S02 `design.md` 获得 Project Owner 批准并进入 `READY_FOR_IMPLEMENTATION` 前，不开始 W25Q64/SFUD 功能施工。
