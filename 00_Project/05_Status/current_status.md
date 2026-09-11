@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
@@ -39,7 +39,7 @@
 
 ## In Progress
 
-S01 已进入 `READY_FOR_IMPLEMENTATION`，尚未开始生产代码施工。
+S01 已进入 `IN_PROGRESS`，当前执行 Task 1：清理上一项目 Config 产品语义。
 
 实施任务顺序：
 
@@ -63,13 +63,12 @@ S01 已进入 `READY_FOR_IMPLEMENTATION`，尚未开始生产代码施工。
 
 ## Next Action
 
-Implementation Role：
+Implementation Role 当前：
 
-1. 按 `PROJECT_CONTEXT.md` Required Reading 恢复上下文；
-2. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
-3. 每个 Task 独立验证并提交；
-4. 实际 Commit、偏差和结果持续写入 `handoff.md`；
-5. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
+1. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
+2. 完成 Task 1 的 Config 清理、验证和独立提交；
+3. 每个 Task 独立验证并提交，实际 Commit、偏差和结果持续写入 `handoff.md`；
+4. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
 
 ## Required Reading
 

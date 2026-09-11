@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
@@ -46,15 +46,14 @@ Project Owner 已批准：
 
 ## Next Action
 
-Implementation Role 按以下顺序施工：
+Implementation Role 当前正在按以下顺序施工：
 
-1. 读取 S01 `design.md`、`implementation_plan.md` 和 `handoff.md`；
-2. 执行 Task 1：清理 Config 与旧项目产品语义；
-3. 执行 Task 2：适配 BSP / Impl；
-4. 执行 Task 3：建立日志链和最小 Application 入口；
-5. 执行 Task 4：收口 Keil/CubeMX 工程接线与构建输出；
-6. 执行 Task 5：Clean Rebuild、板测与阶段证据；
-7. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
+1. 执行 Task 1：清理 Config 与旧项目产品语义；
+2. 执行 Task 2：适配 BSP / Impl；
+3. 执行 Task 3：建立日志链和最小 Application 入口；
+4. 执行 Task 4：收口 Keil/CubeMX 工程接线与构建输出；
+5. 执行 Task 5：Clean Rebuild、板测与阶段证据；
+6. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
 
 ## Required Reading
 
