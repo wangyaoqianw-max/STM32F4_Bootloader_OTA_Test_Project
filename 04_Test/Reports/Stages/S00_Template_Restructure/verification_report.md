@@ -3,14 +3,14 @@
 ## Metadata
 
 - Stage: `S00_Template_Restructure`
-- Verification Date: `2026-09-10`
-- Verification Basis Commit: `7bee8e5`
+- Verification Date: `2026-09-11`
+- Verification Basis Commit: `eaa64b8`
 - Branch: `main`
 - Verification Role: `Codex local`
 
 ## Scope
 
-验证通用 RTOS 嵌入式软件工程模板的目录结构、必需文件、上下文一致性、陈旧路径和 Git 工作区状态。本阶段未修改或构建固件代码。
+验证通用 RTOS 嵌入式软件工程模板的目录结构、必需文件、上下文一致性、陈旧路径和 Git 工作区状态，并复验审核反馈要求的 Keil 构建输出管理与 I/O 故障诊断规则。本阶段未修改或构建固件代码。
 
 ## Results
 
@@ -23,6 +23,11 @@
 | Markdown 差异检查 | `PASS` | `git diff --check` 无输出 |
 | Git 工作区 | `PASS` | 生成本报告前工作区为 clean |
 | Git 文件数量 | `PASS` | 共识别 55 个仓库文件 |
+| Keil 规范文件 | `PASS` | 规范、固件 Agent 规则、固件 README 和根 `.gitignore` 共 4 个文件存在且非空 |
+| Keil 规范内容 | `PASS` | 当前工程位置、Objects、Listings、Output、I/O 分流、安全软件和验证状态共 9 项要求存在 |
+| 规范入口 | `PASS` | `03_Firmware/AGENTS.md` 和 `03_Firmware/README.md` 均链接详细规范 |
+| 目录级忽略 | `PASS` | Application Objects、Bootloader Listings 和 `06_Output/Firmware` 共 3 个模拟路径均被正确忽略 |
+| 过宽扩展名忽略 | `PASS` | 未发现仓库级 `*.hex`、`*.bin`、`*.map` 忽略规则 |
 
 ## Commands
 
@@ -34,11 +39,15 @@ git diff --check
 git status --short
 git log --oneline --decorate -8
 rg --files -g '!/.git/**'
+Select-String -LiteralPath <guidance-or-entry-file> -SimpleMatch <required-pattern>
+git check-ignore -v --no-index -- <simulated-build-output-paths>
 ```
 
 ## Recent Implementation Commits
 
 ```text
+eaa64b8 docs: add Keil build output guidance
+894ac40 docs: request Keil build guidance changes
 7bee8e5 chore: establish firmware-centered project template
 878d0a1 docs: split repository and firmware agent rules
 1c81bb9 docs: add repository context workflow
@@ -58,4 +67,5 @@ e9b71e4 docs: plan project template restructure
 ## Open Items
 
 - 阶段审核尚未执行。
+- Keil 规则返工已完成，等待重新审核。
 - 远程仓库推送状态尚未验证。
