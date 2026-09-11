@@ -30,6 +30,8 @@
 - Status LED 已绑定当前 `LED_1`，活跃 BSP 已移除 User Key / LCD 构造入口。
 - Task 3 已完成并提交：`52c51d4 feat: add S01 application foundation runtime`。
 - 已建立 `app_main`、Service Log 启动日志和 Platform LED 周期闪烁入口。
+- Task 4 已完成并提交：`dea56a9 build: align S01 Keil project configuration`。
+- Keil active groups/include paths、`Objects/` / `Listings/` 输出和 JLinkLog tracking 已完成收口。
 
 ### Project Planning
 
@@ -48,7 +50,7 @@
 
 ## In Progress
 
-S01 已进入 `IN_PROGRESS`，Task 1–3 已完成，当前进入 Task 4：收口 Keil/CubeMX 工程接线与构建输出。
+S01 已进入 `IN_PROGRESS`，Task 1–4 已完成，当前进入 Task 5：代码验证、验证报告和外部工具/硬件验证状态记录。
 
 实施任务顺序：
 
@@ -75,7 +77,7 @@ S01 已进入 `IN_PROGRESS`，Task 1–3 已完成，当前进入 Task 4：收�
 Implementation Role 当前：
 
 1. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
-2. 完成 Task 4 的 Keil/CubeMX 工程接线和构建输出收口，验证并独立提交；
+2. 完成 Task 5 的可用验证、验证报告和阶段交接；Keil/CubeMX/J-Link/板测缺失时保持明确的 `PENDING`，不得伪造通过。
 3. 每个 Task 独立验证并提交，实际 Commit、偏差和结果持续写入 `handoff.md`；
 4. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
 
