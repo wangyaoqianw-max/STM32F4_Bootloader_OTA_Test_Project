@@ -61,7 +61,7 @@ Project/
 ```text
 00_Project/00_Preparation/
 ├── README.md
-└── Engineering_Preparation.xlsx
+└── Engineering_Preparation_Bilingual.xlsx
 ```
 
 工作簿包含：
@@ -132,7 +132,7 @@ DRAFT
 1. 复制本模板或使用 GitHub Template 创建仓库。
 2. 删除 `S00_Template_Restructure` 示例阶段，保留 `_Template`。
 3. 用新项目需求替换 `00_Project/01_Requirements/项目需求V1.md`。
-4. 执行 `00_Project/00_Preparation/README.md`：收集原始资料并填写 `Engineering_Preparation.xlsx`。
+4. 执行 `00_Project/00_Preparation/README.md`：收集原始资料并填写 `Engineering_Preparation_Bilingual.xlsx`。
 5. 更新 `PROJECT_CONTEXT.md`、路线图和 `current_status.md`。
 6. 在 `03_Firmware/Application` 创建或导入主工程。
 7. 仅在实际需要时启用 Bootloader 和 Shared。
@@ -155,7 +155,7 @@ DRAFT
 
 模板本身不预设编译命令。实例化项目后，在以下位置补充真实信息：
 
-- 工程准备数据与开发环境基线：`00_Project/00_Preparation/Engineering_Preparation.xlsx`；
+- 工程准备数据与开发环境基线：`00_Project/00_Preparation/Engineering_Preparation_Bilingual.xlsx`；
 - Application 构建：`03_Firmware/Application/README.md`；
 - Bootloader 构建：`03_Firmware/Bootloader/README.md`；
 - 测试方法：`04_Test/README.md`；
