@@ -5,11 +5,11 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
-- Current Role: `Implementation`
+- Current Role: `Verification`
 - Updated At: `2026-09-11`
 
 ## Current Goal
@@ -46,10 +46,8 @@ Project Owner 已批准：
 
 ## Next Action
 
-Implementation Role 当前正在按以下顺序施工，Task 1–4 已提交为 `35af9fb`、`95231a1`、`52c51d4`、`dea56a9`：
 
-1. 执行 Task 5：Clean Rebuild、板测与阶段证据；
-2. 每个 Task 独立验证并提交，实际 Commit 写入 `handoff.md`。
+Task 1–5 的实现和当前环境可执行验证已完成，Task 1–4 实现提交为 `35af9fb`、`95231a1`、`52c51d4`、`dea56a9`。下一步由 Verification Role / Project Owner 使用 CubeMX、Keil GUI、J-Link、RTT Viewer 和真实板卡完成剩余验证，并将实际 Verification Commit 写入 `handoff.md`。
 
 ## Required Reading
 
@@ -70,14 +68,16 @@ Implementation Role 当前正在按以下顺序施工，Task 1–4 已提交为 
 
 ## Blockers
 
-无阻塞 S01 实施的问题。
+无阻塞代码实施的问题；CubeMX、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 和 RTT 验证仍受当前工具/硬件条件限制。
 
 ## Latest Review / Verification
 
 - `S00_Template_Restructure` 已 `CLOSED`。
 - S01 Design 已由 Project Owner 批准。
-- S01 尚未开始 Implementation 或功能级硬件验证。
-- 文档批准不等于代码或硬件验证完成。
+- S01 当前状态为 `READY_FOR_VERIFICATION`。
+- Keil Clean/Rebuild 已完成：0 Error、6 Warning，AXF/HEX/MAP 已生成。
+- UV4 命令行未稳定输出 `MDK-ARM/Listings/`；CubeMX、J-Link、FreeRTOS 运行时、LED 和 RTT 仍为 PENDING。
+- 详细证据见 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md`。
 
 ## Prohibited Actions
 

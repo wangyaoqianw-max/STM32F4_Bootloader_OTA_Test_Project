@@ -3,11 +3,11 @@
 ## Context Metadata
 
 - Active Stage: `S01_Application_Foundation`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
-- Current Role: `Implementation`
+- Current Role: `Verification`
 - Updated At: `2026-09-11`
 
 ## Current Goal
@@ -32,6 +32,7 @@
 - 已建立 `app_main`、Service Log 启动日志和 Platform LED 周期闪烁入口。
 - Task 4 已完成并提交：`dea56a9 build: align S01 Keil project configuration`。
 - Keil active groups/include paths、`Objects/` / `Listings/` 输出和 JLinkLog tracking 已完成收口。
+- Task 5 已完成当前环境可执行的静态依赖检查和 Keil Clean/Rebuild；构建为 0 Error、6 Warning，AXF/HEX/MAP 已生成，验证报告已建立。CubeMX、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 和 RTT 仍待 Verification Role 完成。
 
 ### Project Planning
 
@@ -50,7 +51,7 @@
 
 ## In Progress
 
-S01 已进入 `IN_PROGRESS`，Task 1–4 已完成，当前进入 Task 5：代码验证、验证报告和外部工具/硬件验证状态记录。
+S01 已完成 Task 1–5 的实现和当前环境可执行验证，当前状态为 `READY_FOR_VERIFICATION`；阶段验收仍等待 Listings、CubeMX、J-Link、FreeRTOS 运行时、LED 和 RTT 证据。
 
 实施任务顺序：
 
@@ -70,16 +71,16 @@ S01 已进入 `IN_PROGRESS`，Task 1–4 已完成，当前进入 Task 5：代�
 
 ## Blockers
 
-无阻塞 S01 实施的问题。
+无阻塞代码实施的问题；CubeMX、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 和 RTT 验证仍受当前工具/硬件条件限制。
 
 ## Next Action
 
-Implementation Role 当前：
+Verification Role / Project Owner 当前：
 
-1. 严格执行 `00_Project/03_Stages/S01_Application_Foundation/implementation_plan.md`；
-2. 完成 Task 5 的可用验证、验证报告和阶段交接；Keil/CubeMX/J-Link/板测缺失时保持明确的 `PENDING`，不得伪造通过。
-3. 每个 Task 独立验证并提交，实际 Commit、偏差和结果持续写入 `handoff.md`；
-4. 实现完成后进入 `READY_FOR_VERIFICATION`，不得跳过验证直接关闭阶段。
+1. 复核 `04_Test/Reports/Stages/S01_Application_Foundation/verification.md` 和当前工具行为；
+2. 使用 CubeMX、Keil GUI、J-Link、RTT Viewer 和真实板卡完成剩余验证，保持缺失证据为 `PENDING`；
+3. 解决或确认 Listings 输出偏差后，将实际 Verification Commit 写入 `handoff.md`；
+4. 在代码和硬件证据齐全前，不得将阶段标记为 `CLOSED`。
 
 ## Required Reading
 

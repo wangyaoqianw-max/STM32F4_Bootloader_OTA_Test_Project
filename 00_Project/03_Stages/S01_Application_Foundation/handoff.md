@@ -3,12 +3,12 @@
 ## Metadata
 
 - Stage: `S01_Application_Foundation`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Design Commit: `1345db1d5e6cb72a81cd30255bbfaa2d25d54bc2`
 - Baseline Commit: `0a3f97493560fbd3ff3a220dc7d0a433e348a95e`
 - Implementation Commit: `Task 1: 35af9fb; Task 2: 95231a1; Task 3: 52c51d4; Task 4: dea56a9`
-- Verification Commit: `Not created yet`
+- Verification Commit: `Pending report commit`
 
 ## Implementation Input
 
@@ -68,7 +68,7 @@
 
 ## Implementation Output
 
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 
 ### Completed Work
 
@@ -79,6 +79,8 @@ Task 2 completed: Status LED 已绑定 `LED_1_GPIO_Port / LED_1_Pin`，Software 
 Task 3 completed: 已新增 `app_main`，通过 Service Log 接入 EasyLogger/RTT，完成 Application 初始化日志和 Platform LED 周期闪烁；FreeRTOS 默认 Task 仅作为 App 入口载体。
 
 Task 4 completed: Keil 工程已加入 S01 active source groups 和 include paths，Target 输出已统一到 `Objects\\` / `Listings\\`，并将 J-Link 自动日志移出 Git tracking。
+
+Task 5 completed: 已完成当前环境可执行的静态依赖检查、Keil Clean/Rebuild 和验证报告；代码编译为 0 Error、6 Warning，AXF/HEX/MAP 已生成。CubeMX regenerate、Listings 稳定输出、J-Link、FreeRTOS 运行时、LED 板测和 RTT 实时输出仍待具备相应工具与硬件的 Verification Role 完成。
 
 ### Changed Files
 
@@ -95,10 +97,11 @@ Task 4 completed: Keil 工程已加入 S01 active source groups 和 include path
 - `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
 - `.gitignore`
 - `03_Firmware/Application/OTA_APP/MDK-ARM/JLinkLog.txt`（从 tracking 移除，保留本地生成）
+- `04_Test/Reports/Stages/S01_Application_Foundation/verification.md`
 
 ### Deviations From Plan
 
-None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config 或 LCD BSP API。
+`PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 源码引用，按计划在 Task 4 从当前 Build 排除，不恢复旧 Display Config 或 LCD BSP API。UV4 命令行 Clean/Rebuild 会把 ListingPath 改为空并在 MDK-ARM 根目录生成 `.lst`，已恢复提交配置中的 `ListingPath=Listings\\`，该输出偏差保留为验证问题。
 
 ### Verification Results
 
@@ -106,17 +109,19 @@ None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 �
 - Task 2 active BSP/Impl static checks: `PASS`
 - Task 3 App/Service/Platform/Impl/Vendor static chain checks: `PASS`
 - Task 4 Keil XML/include/scope/output/JLink checks: `PASS`
-- Code Verification: `NOT_APPLICABLE`（阶段级验证待 Task 5）
-- Hardware Verification: `PENDING`（阶段级板测待 Task 5）
+- Task 5 静态依赖与 `.ioc` 检查: `PASS`
+- Task 5 Keil Clean/Rebuild: `PASS`（0 Error、6 Warning；Warnings 均来自本任务未修改文件）
+- Task 5 Objects AXF/HEX/MAP 产物: `PASS`
+- Task 5 Listings 输出: `FAIL / PENDING`（UV4 命令行未稳定使用 `MDK-ARM/Listings/`）
+- Code Verification: `FAIL`（编译和静态检查通过，但阶段验收仍缺 Listings、CubeMX 和运行时证据）
+- Hardware Verification: `PENDING`
 
 ### Known Issues
 
-- Task 1 已完成 Config 清理。
-- Task 2 已完成当前 Status LED / Software I2C BSP 适配。
-- Task 3 已完成日志链、最小 Application 入口和 Platform LED Blink 接入。
-- Task 4 已完成 Keil 工程接线和输出目录收口。
-- 当前环境未发现 `armclang`、`armcc` 或 `UV4`，Keil 编译验证待具备工具链的环境执行。
-- 当前环境无法运行 CubeMX GUI、Keil Clean Rebuild、J-Link 下载或 RTT Viewer，相关验证保持待执行。
+- CubeMX regenerate 尚未执行：当前环境未找到 `STM32CubeMX.exe`。
+- UV4 命令行已完成 Clean/Rebuild，但 `ListingPath=Listings\\` 未被 UV4 持久化使用，根目录 `.lst` 已清理。
+- 当前环境无法完成 J-Link 下载、FreeRTOS 运行时、真实 LED 板测或 RTT Viewer 检查。
+- 构建保留 6 个既有 Warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 1 个。
 
 ### Review Focus
 
@@ -124,8 +129,9 @@ None. `PROJECT_DISPLAY_` 和已移除的 LCD BSP API 仍被未启用的 ST7789 �
 - 是否只对 S01 所需 Impl/BSP 做最小适配。
 - 是否保持层级依赖方向。
 - 是否遵守现有 Keil 构建输出规范。
+- UV4 版本和 GUI/命令行对 `Listings/` 输出的实际行为。
 - 是否具备真实板级 LED + RTT 验证证据。
 
 ## Next Action
 
-继续执行 Task 5：执行当前环境可用的代码/工程静态验证，生成 `verification.md`，并明确记录 Keil/CubeMX/硬件验证状态。
+交由 Verification Role / Project Owner：复核 `verification.md`，使用 CubeMX、Keil GUI、J-Link、RTT Viewer 和真实板卡完成剩余验证；在 Listings、CubeMX、FreeRTOS、LED、RTT 证据齐全前，不得关闭 S01。
