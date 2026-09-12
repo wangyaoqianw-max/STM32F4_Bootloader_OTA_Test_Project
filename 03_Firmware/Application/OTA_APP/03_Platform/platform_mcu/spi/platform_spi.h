@@ -41,6 +41,10 @@ typedef struct
         platform_spi_bus_t *bus,
         const uint8_t *data,
         platform_size_t dataLength);
+    platform_error_t (*read)(
+        platform_spi_bus_t *bus,
+        uint8_t *data,
+        platform_size_t dataLength);
 } platform_spi_bus_ops_t;
 
 /*Platform SPI Bus 设备对象*/
@@ -161,6 +165,19 @@ platform_error_t platform_spi_transaction_begin(platform_spi_device_t *device);
 platform_error_t platform_spi_write(
     platform_spi_device_t *device,
     const uint8_t *data,
+    platform_size_t dataLength);
+
+/**
+ * @brief 在当前显式事务中阻塞接收字节流
+ * @param[in,out] device : 当前 Bus activeDevice
+ * @param[out] data : 接收缓冲区，函数返回前保持有效
+ * @param[in] dataLength : 接收字节数，必须大于 0
+ * @return platform_error_t : 函数执行状态
+ * @note 接收失败不会隐式结束事务。
+ */
+platform_error_t platform_spi_read(
+    platform_spi_device_t *device,
+    uint8_t *data,
     platform_size_t dataLength);
 
 /**
