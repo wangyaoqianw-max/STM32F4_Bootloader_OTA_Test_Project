@@ -102,6 +102,27 @@
 
 Agent 无法操作真实硬件时，不得把编译或模拟结果描述为硬件验证通过。阶段完成前将验证命令、结果、Commit 和未验证项写入验证报告及交接文件。
 
+### 8.1 统一本地工具入口
+
+本仓库通过 `05_Tools` 对本机开发工具提供稳定入口，避免不同 Agent 重复探测本机安装路径。
+
+Application 固件默认编译命令：
+
+```text
+05_Tools\Scripts\build_app.bat
+```
+
+规则：
+
+1. 修改 Application 固件后，优先执行上述脚本，不自行搜索 `UV4.exe`、ARMCC 或 `.uvprojx`；
+2. 本机工具路径只写入 `05_Tools\Config\toolchain.local.bat`，该文件不得提交；
+3. 新环境从 `toolchain.local.example.bat` 复制本地配置后再调整路径；
+4. 脚本报告本地配置缺失或无效时，才允许调查本机工具安装位置；
+5. 编译失败时读取脚本输出和 `06_Output/Logs/OTA_APP_build.log`，修复后重新执行；
+6. 编译成功不等于硬件验证通过，板级验证仍按当前 Stage 的 Verification 要求执行。
+
+后续增加 J-Link、RTT、打包等自动化时，继续通过 `05_Tools` 提供统一入口，不把机器相关路径写入生产代码或阶段设计。
+
 ## 9. Git 规则
 
 - 一个 Commit 保持单一职责，并能解释修改原因。

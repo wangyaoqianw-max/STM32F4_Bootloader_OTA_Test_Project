@@ -7,6 +7,9 @@
 .vscode/
 .idea/
 
+# Machine-local toolchain configuration
+05_Tools/Config/toolchain.local.bat
+
 # Common generated build directories
 **/build/
 03_Firmware/**/MDK-ARM/Objects/
