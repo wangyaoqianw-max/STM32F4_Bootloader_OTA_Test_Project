@@ -3,12 +3,13 @@
 ## Verification Boundary
 
 - Stage: `S02_External_Flash_Driver`
-- Verification status: `PASS`
+- Verification status: `READY_FOR_VERIFICATION`
 - Code verification: `PASS`
-- Hardware verification: `PASS`，基于 Project Owner 提供的 RTT 实机日志
-- Keil/MDK normal Build: `PASS`，0 Error、8 Warning
+- Original S02 Hardware Verification: `PASS`，基于 Project Owner 提供的 RTT 实机日志
+- Keil/MDK normal Build: `PASS`，0 Error、8 Warning（原 S02 验证）
 - Keil Clean/Rebuild: `PASS`，由 Project Owner 于 `2026-09-12` 实际执行并确认成功；本次未单独记录 warning 数量
-- Board and RTT evidence: `PASS`
+- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- Original S02 Board and RTT evidence: `PASS`
 - Logic-analyzer evidence: `NOT_USED`
 - Rework Code Verification (Finding 1): `PASS`，见文末 “Rework Verification”
 - Rework Hardware Regression (Finding 1): `PENDING`，等待 Project Owner 板测
@@ -98,7 +99,7 @@ Project Owner 已于 `2026-09-12` 在 Keil MDK 中对当前 `OTA_APP` 工程执�
 - Warning：本次未单独记录数量，不据此覆盖普通 Build 已记录的 `8 Warning`
 - 结论：满足 S02 Acceptance Criteria 中的 Clean Rebuild 门禁
 
-## Hardware Case Matrix
+## Original S02 Hardware Case Matrix — PASS
 
 以下结果来自 Project Owner 提供的三次启动 RTT 日志；后两次启动包含完整测试项。
 
@@ -128,20 +129,27 @@ Project Owner 已于 `2026-09-12` 在 Keil MDK 中对当前 `OTA_APP` 工程执�
 05_Tools/Config/toolchain.local.example.bat
 ```
 
-该入口已写入 `AGENTS.md` 和 `05_Tools/Scripts/README.md`，用于人工与 Agent 稳定调用本机 Keil。机器相关路径保存在被忽略的 `toolchain.local.bat` 中，不进入生产代码或 Git 历史。该能力作为跨阶段可复用工程资产保留。
+该入口已写入 `AGENTS.md` 和 `05_Tools/Scripts/README.md`，用于人工与 Agent 稳定调用本机 Keil。
+`toolchain.local.bat` 属于 machine-local 配置，当前版本不再由 Git 跟踪，本机文件可以保留；
+仓库只保留 `toolchain.local.example.bat` 作为模板。该文件此前曾出现在 Git 历史，本次不重写
+历史。该能力作为跨阶段可复用工程资产保留。
 
 ## Verification Conclusion
 
-S02 Verification 所需证据已经完整：
+原 S02 Verification 所需证据已经完整；Finding 1 的返工代码和构建证据也已完成，但返工后的
+硬件回归尚未完成：
 
 - Code Verification：`PASS`
 - Normal Keil Build：`PASS`
 - Keil Clean/Rebuild：`PASS`
-- Hardware Verification：`PASS`
+- Original S02 Hardware Verification：`PASS`
+- Rework Hardware Regression：`PENDING`
 - Destructive Test Cleanup：`PASS`
 - SFUD Boundary Evaluation：已完成，实际集成延后
 
-Verification Role 无剩余阻塞项。阶段可以进入 `READY_FOR_REVIEW`，由 Review Role 对照冻结 Design、Implementation Plan、代码差异、Handoff 和本验证报告决定 `PASS / CHANGES_REQUESTED / BLOCKED`。
+阶段保持 `READY_FOR_VERIFICATION`。Project Owner 完成最小真实硬件回归并补齐证据后，才进入
+`READY_FOR_REVIEW`，再由 Review Role 对照冻结 Design、Implementation Plan、代码差异、Handoff
+和本验证报告决定 `PASS / CHANGES_REQUESTED / BLOCKED`。
 
 ---
 
@@ -257,8 +265,8 @@ RESULT: FAIL (18 checks, 10 failed)
 ### Keil Build Verification
 
 构建记录：Target `OTA_APP`，Compiler `V5.06 update 7 (build 960)`，
-Build 类型 = Normal Build + Clean Rebuild，源码为本次返工工作区
-（`Rework Commit: Not created yet`，尚未提交）。构建期间未修改源码或工程配置，
+Build 类型 = Normal Build + Clean Rebuild，源码为本次返工工作区内容，对应 Rework Commit
+`42c02b891d7f32b728857c44024c3c91a15ea604`。构建期间未修改源码或工程配置，
 `git status --short` 未出现构建生成物。
 
 Normal Build（`05_Tools\Scripts\build_app.bat`）：
@@ -291,14 +299,18 @@ Agent 无法操作真实开发板；本节不把编译结果当作硬件结果�
 Project Owner 在真实硬件上执行并回传 RTT 日志：
 
 ```text
-1. W25Q64 Init / JEDEC ID
-2. 普通 Read
-3. 至少一个 Read Back / Compare Case
+1. W25Q64 Init
+2. JEDEC ID == EF 40 17
+3. 普通 Read 成功
+4. 至少一个真实 Read Back / Compare Case
 ```
 
 返工前已 PASS 的 Sector Erase 全 4 KiB、300 Byte Cross-page Write、Reset Persistence
 和 destructive 边界用例无需重跑：本次改动只影响 `> 0xFFFF` 的长度路径，`<= 0xFFFF`
 仍保持“每笔请求一次 HAL 调用”的原行为（Host Test 已证明 `1` 与 `0xFFFF` 均为 1 次 HAL 调用）。
+
+除非最小回归出现异常，不要求重新执行完整 Sector Erase、300 Byte Cross-page Write、全部
+边界负向测试或 Reset Persistence。
 
 真实 `> 0xFFFF` Byte 读取的板级证据本次未提供：测试代码需要 ≥64 KiB Buffer，
 会明显占用 STM32F411 的 128 KiB SRAM；是否为此占用 RAM 属于 Project Owner 决策，

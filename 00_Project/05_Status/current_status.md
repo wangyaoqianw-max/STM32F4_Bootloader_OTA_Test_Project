@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
@@ -12,15 +12,17 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Rework Commit: `Not created yet`
-- Current Role: `Review`
+- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- Current Role: `Verification`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
 S02 的主体实现、Keil Build/Clean-Rebuild 和真实 W25Q64 板测均已完成。
 
-正式 Review 的 Finding 1（SPI Impl 单次 0xFFFF 长度限制泄漏为 Platform/W25Q64 公共接口上限）已完成返工并通过针对性验证，状态由 `CHANGES_REQUESTED` 回到 `READY_FOR_REVIEW`，等待 Review Role 独立复核。
+SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
+硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 继续保留正式 Review 的
+`CHANGES_REQUESTED` 历史结论，S02 关闭必须由 Review Role 独立重新执行。
 
 返工不重做已通过的 W25Q64 功能，不涉及 SFUD、OTA、Bootloader 或其他后续阶段。
 
@@ -96,9 +98,11 @@ Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅�
 
 ## Pending Items
 
-1. 板级最小回归：W25Q64 Init / JEDEC ID、普通 Read、一个真实 Read Back / Compare Case；
-2. 返工 Commit 与推送：当前环境无法写入 `.git`，Rework Commit 仍为 `Not created yet`；
-3. `review.md` 仍记录 `CHANGES_REQUESTED`，S02 关闭必须由 Review Role 独立重新执行。
+1. 板级最小回归：W25Q64 Init、JEDEC ID == `EF 40 17`、普通 Read、至少一个真实 Read Back /
+   Compare Case；除非最小回归异常，不要求重跑完整 destructive 套件；
+2. Verification Role 根据真实板测结果更新 Rework Hardware Regression；通过后进入
+   `READY_FOR_REVIEW`；
+3. `review.md` 继续记录 `CHANGES_REQUESTED`，随后由 Review Role 独立重新执行正式 Review。
 
 ## Non-blocking Items
 
@@ -109,9 +113,10 @@ Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅�
 
 ## Blockers
 
-- 无实现或验证阻塞；返工 Commit 尚未创建，仅受当前提交权限限制。
+- 无实现阻塞；Finding 1 返工代码、Host Test 和 Keil Build 证据已完成，当前唯一待办是
+  Project Owner 的最小真实硬件回归。
 
 ## Next Action
 
-Review Role 独立复核 Finding 1 的关闭证据和是否引入回归；Project Owner 在此之前确认板级最小回归并完成返工提交。
-
+Project Owner 执行最小板级回归；Verification Role 根据结果更新硬件证据并决定是否进入
+`READY_FOR_REVIEW`，之后再由 Review Role 独立复核 Finding 1。

@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
@@ -14,8 +14,8 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Rework Commit: `Not created yet`
-- Current Role: `Review`
+- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- Current Role: `Verification`
 - Updated At: `2026-09-12`
 
 ## Current Goal
@@ -27,9 +27,9 @@
 正式 Review 提出的唯一 Finding 已完成返工：STM32 HAL SPI 的 `uint16_t Size` 限制不再泄漏为
 Platform/W25Q64 公共 API 的 `65535 Byte` 隐式上限。
 
-返工已提交 Host Test、Keil Build 与 Keil Clean/Rebuild 证据；板级最小回归（Init/JEDEC ID、
-普通 Read、Read Back Compare）仍需 Project Owner 在真实硬件上确认。`review.md` 仍记录
-`CHANGES_REQUESTED`，S02 关闭必须由 Review Role 独立重新执行。
+SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
+硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 仍记录 `CHANGES_REQUESTED`，S02
+关闭必须由 Review Role 独立重新执行。
 
 ## S02 Stable Results
 
@@ -65,7 +65,8 @@ platform_w25q64_read()
   → stm32_spi_read()
 ```
 
-STM32 Impl 对 `dataLength > 0xFFFF` 直接返回 `PLATFORM_ERR_OVERFLOW`，但 `platform_size_t` 是 32-bit，Platform SPI 公共接口也没有声明 65535 Byte 上限。
+返工前 STM32 Impl 对 `dataLength > 0xFFFF` 直接返回 `PLATFORM_ERR_OVERFLOW`，但
+`platform_size_t` 是 32-bit，Platform SPI 公共接口也没有声明 65535 Byte 上限。
 
 所以一个地址合法的 `65536 Byte` W25Q64 Read 会失败，属于冻结设计与实现不一致。
 
@@ -99,7 +100,8 @@ while remaining > 0
    `FAIL`，可直接复现 Finding；
 3. Keil Normal Build：`0 Error`、`1 Warning`（增量构建）；Keil Clean/Rebuild：`0 Error`、
    `8 Warning`，与返工前已记录的 warning 基线一致；
-4. 待办：板级最小回归由 Project Owner 在真实硬件上确认，返工 Commit 尚未创建。
+4. 待办：板级最小回归由 Project Owner 在真实硬件上确认；返工 Commit 已记录为
+   `42c02b891d7f32b728857c44024c3c91a15ea604`。
 
 ## Reusable Keil Tooling
 
@@ -110,7 +112,9 @@ while remaining > 0
 05_Tools/Config/toolchain.local.example.bat
 ```
 
-其已作为 Agent/Developer 的统一 Keil Build 入口写入 `AGENTS.md`，本机实际路径继续只保存在被忽略的 `toolchain.local.bat`。
+其已作为 Agent/Developer 的统一 Keil Build 入口写入 `AGENTS.md`。`toolchain.local.bat`
+属于 machine-local 配置，当前版本不再由 Git 跟踪，本机文件可以保留；仓库只保留
+`toolchain.local.example.bat` 作为模板。
 
 ## Current Stage Documents
 
@@ -124,9 +128,10 @@ while remaining > 0
 
 ## Next Action
 
-1. Project Owner 确认板级最小回归：W25Q64 Init / JEDEC ID、普通 Read、一个真实 Read Back /
-   Compare Case（本次返工的 Impl 改动只影响 SPI 传输长度，正常长度读取路径未变）；
-2. 创建返工 Commit 并推送；当前环境无法写入 `.git`，返工 Commit 仍为 `Not created yet`；
+1. Project Owner 执行板级最小回归：W25Q64 Init、JEDEC ID == `EF 40 17`、普通 Read、至少
+   一个真实 Read Back / Compare Case（无需重新执行完整 destructive 套件，除非最小回归异常）；
+2. Verification Role 根据真实板测结果更新 Rework Hardware Regression；通过后再进入
+   `READY_FOR_REVIEW`；
 3. Review Role 独立复核 Finding 1 的关闭证据和是否引入回归，再决定 `PASS` 或再次返工。
 
 返工证据见 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的

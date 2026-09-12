@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
@@ -12,13 +12,15 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Rework Commit: `Not created yet`
-- Current Role: `Review`
+- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- Current Role: `Verification`
 
 ## Goal
 
-建立并验证 W25Q64 Raw Driver V1。主体实现、真实硬件验证和 Keil Build/Clean-Rebuild 已完成；
-本轮返工只处理正式 Review 的 Finding 1，并把阶段从 `CHANGES_REQUESTED` 推进回 `READY_FOR_REVIEW`。
+建立并验证 W25Q64 Raw Driver V1。主体实现、真实硬件验证和 Keil Build/Clean-Rebuild 已完成。
+SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
+硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 的 `CHANGES_REQUESTED` 历史结论
+继续保留，直到下一次正式 Review。
 
 ## Rework Input（来自 review.md Finding 1）
 
@@ -49,6 +51,10 @@ STM32 HAL SPI 的 `Size` 参数是 16-bit，Impl 不能把这个限制暴露给 
 00_Project/05_Status/current_status.md
 PROJECT_CONTEXT.md
 ```
+
+本次收口还修正了工程状态和配置跟踪：`toolchain.local.bat` 属于 machine-local 配置，
+当前版本不再由 Git 跟踪，本机文件可以保留；仓库只保留
+`toolchain.local.example.bat` 作为模板。该文件曾出现在 Git 历史，本次不重写历史。
 
 ### Impl 内的拆分方式
 
@@ -106,7 +112,6 @@ Project Owner 的决策，不在本轮返工范围内自动实施。
 ## Pending / Not Verified
 
 - 板级最小回归：等待 Project Owner 在真实硬件上执行并回传 RTT 日志；
-- 返工 Commit 与 Push：当前环境无法写入 `.git`，Commit 尚未创建；
 - `review.md` 仍记录 `CHANGES_REQUESTED`，正式 Review 需要再次独立执行，S02 未关闭。
 
 ## Coding Standard Review
@@ -129,7 +134,16 @@ Coding Standard Review: PASS
 
 ## Next Action
 
-Review Role 复核 Finding 1 的关闭证据与是否引入回归；Project Owner 在此之前完成板级最小回归和返工提交。
+Project Owner 执行以下最小板级回归：
+
+1. W25Q64 Init；
+2. JEDEC ID == `EF 40 17`；
+3. 普通 Read 成功；
+4. 至少一个真实 Read Back / Compare Case。
+
+除非最小回归出现异常，不要求重新执行完整 Sector Erase、300 Byte Cross-page Write、全部
+边界负向测试或 Reset Persistence。通过后由 Verification Role 更新硬件证据并将阶段推进到
+`READY_FOR_REVIEW`，再由 Review Role 独立复核。
 
 ## Non-blocking Notes
 
