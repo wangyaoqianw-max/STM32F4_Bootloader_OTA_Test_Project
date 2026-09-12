@@ -36,6 +36,11 @@ static impl_platform_gpio_context_t g_softI2cSdaContext = {
     I2C_SDA_Pin
 };
 
+static impl_platform_gpio_context_t g_flashCsContext = {
+    FLASH_CS_GPIO_Port,
+    FLASH_CS_Pin
+};
+
 //******************************** Constants ********************************//
 
 //******************************** Functions *********************************//
@@ -73,6 +78,18 @@ platform_error_t platform_bsp_gpio_construct_soft_i2c_sda(
     return impl_platform_gpio_construct(gpio,
                                         "soft_i2c_sda_gpio",
                                         &g_softI2cSdaContext);
+}
+
+platform_error_t platform_bsp_gpio_construct_flash_cs(
+    platform_gpio_t *gpio)
+{
+    if (gpio == NULL) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    return impl_platform_gpio_construct(gpio,
+                                        "flash_cs_gpio",
+                                        &g_flashCsContext);
 }
 
 //******************************** Functions *********************************//

@@ -27,6 +27,10 @@
 #define PROJECT_STATUS_LED_ACTIVE_LEVEL       PLATFORM_GPIO_LEVEL_LOW
 #define PROJECT_STATUS_LED_BLINK_ON_MS        (500U)
 #define PROJECT_STATUS_LED_BLINK_OFF_MS       (500U)
+
+/* S02 W25Q64 Platform 校验上限和专用可破坏测试扇区。 */
+#define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
+#define PROJECT_FLASH_TEST_SECTOR_ADDRESS     (0x7FF000U)
 //******************************** Defines *********************************//
 
 #endif
