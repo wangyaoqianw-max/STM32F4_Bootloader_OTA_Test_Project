@@ -27,6 +27,9 @@
 #define PROJECT_STATUS_LED_ACTIVE_LEVEL       PLATFORM_GPIO_LEVEL_LOW
 #define PROJECT_STATUS_LED_BLINK_ON_MS        (500U)
 #define PROJECT_STATUS_LED_BLINK_OFF_MS       (500U)
+
+/* W25Q64 Platform 校验上限。 */
+#define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
 //******************************** Defines *********************************//
 
 #endif

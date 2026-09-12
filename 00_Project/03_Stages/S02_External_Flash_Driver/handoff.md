@@ -3,12 +3,12 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_IMPLEMENTATION`
-- Branch: `main`
+- Status: `READY_FOR_VERIFICATION`
+- Branch: `codex/s02-external-flash-driver`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Baseline Code Commit: `207f125fc1153daaf70b711f8075ef166f6e65cf`
-- Implementation Commit: `Not created yet`
+- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
+- Implementation Commit: `e2d1ad53e9b24f2cb55fb2a663f34d0095bd276b`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 
@@ -146,15 +146,23 @@ platform_error_t platform_w25q64_sector_erase(
 
 ## Implementation Output
 
-- Status: `NOT_STARTED`
-- Completed Work: `None`
-- Changed Files: `None`
-- Deviations From Plan: `None`
-- Known Issues: `None recorded for S02 implementation yet`
-- Verification Evidence: `Not created yet`
+- Status: `READY_FOR_VERIFICATION`
+- Completed Work: `Task 1-5` completed as five feature commits, followed by startup correction and board-test cleanup. Platform SPI now supports blocking read and SPI2 multi-instance construction; W25Q64 Raw Driver covers JEDEC/SR1/Read/WEL/BUSY/Page Program/cross-page Write/4 KiB Sector Erase; App owns Storage SPI Bus lifecycle; board test source is retained under `04_Test/Board` and removed from the production Application/Keil project.
+- Changed Files: Platform SPI/Impl/BSP, W25Q64 Raw Driver/BSP, App/config, Keil project wiring, and `04_Test/Board/S02_External_Flash_Driver/`.
+- Deviations From Plan: App invocation/gating was intentionally kept in Task 5 to avoid Task 2 creating an un-gated destructive startup path. No approved design interface was expanded; no SFUD source was added.
+- Known Issues: Automated Keil Build now passes through `05_Tools\Scripts\build_app.bat` with 0 Error and 8 existing warnings; Clean/Rebuild and Review Role remain pending. Development board and RTT evidence are recorded in the verification report.
+- Verification Evidence: [S02 verification input](../../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
+- SFUD Evaluation: [SFUD boundary evaluation](sfud_evaluation.md); actual middleware integration deferred.
+
+### Verification-time Startup Correction
+
+- 日志服务初始化已放入 `freertos.c` 的 CubeMX `USER CODE BEGIN Init` 区域。
+- `defaultTask` 仅负责创建 `app_system` 后退出，`app_system` 通过 Platform Thread API 运行 `app_main`。
+- `app_system.c` 不直接依赖 CMSIS-RTOS；对应 FreeRTOS Thread Impl 已加入 Keil 工程。
+- 自动 Keil Build 结果为 `0 Error、8 Warning`；warning 暂按用户要求保留。
 
 施工完成后由 Implementation Role 更新本节，不修改已冻结的设计结论来迁就实现。
 
 ## Next Action
 
-按 `implementation_plan.md` 从 Task 1 开始：先补 Platform SPI `read()`、SPI2 多实例和 APB 时钟判断；每个 Task 独立构建、验证和提交。完成实现后状态进入 `READY_FOR_VERIFICATION`，不得直接关闭 S02。
+由 Verification Role 继续执行 Keil Clean/Rebuild，确认普通启动工程不包含临时板测入口；当前不得直接关闭 S02，随后交 Review Role。

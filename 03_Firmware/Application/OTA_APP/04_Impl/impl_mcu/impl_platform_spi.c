@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file impl_platform_spi.c
- * @brief STM32 SPI1 的 Platform SPI 固定配置校验与阻塞发送实现
+ * @brief STM32 SPI Platform 固定配置校验与阻塞收发实现
  * @author YaoQian Wang
  * @date 2026-09-05
  * @version V1.0
@@ -25,7 +25,7 @@
 //******************************** Defines *********************************//
 
 //******************************** Declaring *********************************//
-/*SPI1 Impl 私有上下文；HAL Handle 不越过 Impl 边界。*/
+/*STM32 SPI Impl 私有上下文；HAL Handle 不越过 Impl 边界。*/
 typedef struct
 {
     SPI_HandleTypeDef *halSpi;
@@ -35,6 +35,10 @@ typedef struct
 //******************************** Variables *********************************//
 static stm32_spi_impl_context_t g_spi1Context = {
     &hspi1
+};
+
+static stm32_spi_impl_context_t g_spi2Context = {
+    &hspi2
 };
 //******************************** Variables *********************************//
 
@@ -53,6 +57,9 @@ static platform_error_t stm32_spi_get_bit_order(
 static platform_error_t stm32_spi_get_clock_divisor(
     uint32_t halPrescaler,
     uint32_t *divisor);
+static platform_error_t stm32_spi_get_peripheral_clock_hz(
+    const SPI_HandleTypeDef *halSpi,
+    uint32_t *clockHz);
 static platform_error_t stm32_spi_get_actual_clock_hz(
     const SPI_HandleTypeDef *halSpi,
     uint32_t *actualClockHz);
@@ -63,6 +70,15 @@ static platform_error_t stm32_spi_write(
     platform_spi_bus_t *bus,
     const uint8_t *data,
     platform_size_t dataLength);
+static platform_error_t stm32_spi_read(
+    platform_spi_bus_t *bus,
+    uint8_t *data,
+    platform_size_t dataLength);
+static platform_error_t stm32_spi_construct(
+    platform_spi_bus_t *bus,
+    const char *name,
+    uint32_t caps,
+    stm32_spi_impl_context_t *context);
 static platform_error_t stm32_spi_lifecycle_init(void *self);
 static platform_error_t stm32_spi_lifecycle_start(void *self);
 static platform_error_t stm32_spi_lifecycle_process(void *self);
@@ -81,7 +97,8 @@ static const platform_lifecycle_ops_t g_stm32SpiLifecycleOps = {
 
 static const platform_spi_bus_ops_t g_stm32SpiOps = {
     stm32_spi_apply_config,
-    stm32_spi_write
+    stm32_spi_write,
+    stm32_spi_read
 };
 //******************************** Constants *********************************//
 
@@ -249,13 +266,34 @@ static platform_error_t stm32_spi_get_actual_clock_hz(
         return result;
     }
 
-    peripheralClockHz = HAL_RCC_GetPCLK2Freq();
-    if (peripheralClockHz == 0U) {
-        return PLATFORM_ERR_NOT_INITIALIZED;
+    result = stm32_spi_get_peripheral_clock_hz(halSpi,
+                                               &peripheralClockHz);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
     }
 
     *actualClockHz = peripheralClockHz / divisor;
     return PLATFORM_ERR_OK;
+}
+
+static platform_error_t stm32_spi_get_peripheral_clock_hz(
+    const SPI_HandleTypeDef *halSpi,
+    uint32_t *clockHz)
+{
+    if ((halSpi == NULL) || (clockHz == NULL)) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    if (halSpi->Instance == SPI1) {
+        *clockHz = HAL_RCC_GetPCLK2Freq();
+    } else if (halSpi->Instance == SPI2) {
+        *clockHz = HAL_RCC_GetPCLK1Freq();
+    } else {
+        return PLATFORM_ERR_NOT_SUPPORTED;
+    }
+
+    return (*clockHz == 0U) ?
+           PLATFORM_ERR_NOT_INITIALIZED : PLATFORM_ERR_OK;
 }
 
 static platform_error_t stm32_spi_apply_config(
@@ -328,6 +366,34 @@ static platform_error_t stm32_spi_write(
     return stm32_spi_map_hal_status(HAL_SPI_Transmit(
         context->halSpi,
         (uint8_t *)data,
+        (uint16_t)dataLength,
+        STM32_SPI_BLOCKING_TIMEOUT_MS));
+}
+
+static platform_error_t stm32_spi_read(
+    platform_spi_bus_t *bus,
+    uint8_t *data,
+    platform_size_t dataLength)
+{
+    platform_error_t result = PLATFORM_ERR_OK;
+    stm32_spi_impl_context_t *context = NULL;
+
+    if ((data == NULL) || (dataLength == 0U)) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    if (dataLength > STM32_SPI_HAL_MAX_TRANSFER_SIZE) {
+        return PLATFORM_ERR_OVERFLOW;
+    }
+
+    result = stm32_spi_get_context(bus, &context);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return stm32_spi_map_hal_status(HAL_SPI_Receive(
+        context->halSpi,
+        data,
         (uint16_t)dataLength,
         STM32_SPI_BLOCKING_TIMEOUT_MS));
 }
@@ -480,9 +546,32 @@ platform_error_t impl_platform_spi1_construct(
     const char *name,
     uint32_t caps)
 {
+    return stm32_spi_construct(bus,
+                               name,
+                               caps,
+                               &g_spi1Context);
+}
+
+platform_error_t impl_platform_spi2_construct(
+    platform_spi_bus_t *bus,
+    const char *name,
+    uint32_t caps)
+{
+    return stm32_spi_construct(bus,
+                               name,
+                               caps,
+                               &g_spi2Context);
+}
+
+static platform_error_t stm32_spi_construct(
+    platform_spi_bus_t *bus,
+    const char *name,
+    uint32_t caps,
+    stm32_spi_impl_context_t *context)
+{
     platform_spi_bus_init_params_t params;
 
-    if ((bus == NULL) || (name == NULL)) {
+    if ((bus == NULL) || (name == NULL) || (context == NULL)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
@@ -490,7 +579,7 @@ platform_error_t impl_platform_spi1_construct(
     params.caps = caps;
     params.lifecycle = &g_stm32SpiLifecycleOps;
     params.ops = &g_stm32SpiOps;
-    params.implContext = &g_spi1Context;
+    params.implContext = context;
 
     return platform_spi_bus_init(bus, &params);
 }
