@@ -3,12 +3,13 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_IMPLEMENTATION`
-- Branch: `main`
-- Baseline Code Commit: `207f125fc1153daaf70b711f8075ef166f6e65cf`
+- Status: `READY_FOR_VERIFICATION`
+- Branch: `codex/s02-external-flash-driver`
+- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Current Role: `Project Owner / Design`
+- Implementation Commit: `82573b2532cc2ca7645d9a6698eefcca3234f867`
+- Current Role: `Verification`
 - Updated At: `2026-09-12`
 
 ## Current Goal
@@ -43,6 +44,12 @@
 - `design.md` 已获 Project Owner 批准。
 - `implementation_plan.md`、`handoff.md`、`review.md` 已建立。
 
+### S02 Implementation
+
+- Task 1-5 已按独立本地提交完成：SPI read/SPI2、多实例与 PCLK 校验；W25Q64 初始化、诊断、读取、编程、擦除、跨页写入与边界测试；App Storage SPI Bus 编排；破坏性板测门禁和双启动持久化逻辑。
+- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE` 当前为 `0U`，普通启动不会自动擦除或写入测试 Sector。
+- 实现提交范围：`f89a394`、`70f179e`、`42217e2`、`86ecbb3`、`82573b2`。
+
 ## Implementation Sequence
 
 1. Task 1：Platform SPI `read()` + SPI2 multi-instance + PCLK1/PCLK2 修正。
@@ -68,6 +75,14 @@
 - Reset 后数据保持；
 - RTT/EasyLogger 输出每个 Test Case 的地址、长度、返回码和实际 PASS/FAIL。
 
+## Verification Status
+
+- 代码验证：`PASS`，统一 GCC 静态语法检查、工程 XML/源路径检查和差异检查已完成。
+- Keil Clean/Rebuild：`NOT_RUN`，当前主机未安装 UV4/UV5、armcc 或 armclang。
+- 硬件验证：`PENDING`，当前无开发板、J-Link、RTT 或逻辑分析仪证据。
+- Verification Input：[S02 verification.md](../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
+- SFUD Evaluation：[sfud_evaluation.md](../03_Stages/S02_External_Flash_Driver/sfud_evaluation.md)
+
 ## Known Non-blocking Items
 
 - S01 遗留 `platform_gpio.c` 5 个既有 Warning；后续作为代码质量技术债务处理。
@@ -79,13 +94,11 @@
 
 ## Blockers
 
-无。
+实现无已知代码阻塞；阶段关闭仍受 Keil 构建和真实硬件证据约束。
 
 ## Next Action
 
-进入 Implementation Role，按 `implementation_plan.md` Task 1 开始施工。
-
-施工前必须确认当前分支/HEAD 与仓库最新状态一致。每个 Task 应独立构建、验证和提交；实现完成后状态进入 `READY_FOR_VERIFICATION`，不得直接标记 S02 `CLOSED`。
+进入 Verification Role：执行 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的真实结果；证据完整后交 Review Role，不得直接标记 S02 `CLOSED`。
 
 ## Required Reading for Implementation
 

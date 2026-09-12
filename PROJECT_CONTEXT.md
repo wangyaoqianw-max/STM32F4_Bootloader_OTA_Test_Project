@@ -5,12 +5,13 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_IMPLEMENTATION`
-- Branch: `main`
-- Baseline Code Commit: `207f125fc1153daaf70b711f8075ef166f6e65cf`
+- Status: `READY_FOR_VERIFICATION`
+- Branch: `codex/s02-external-flash-driver`
+- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Current Role: `Project Owner / Design`
+- Implementation Commit: `82573b2532cc2ca7645d9a6698eefcca3234f867`
+- Current Role: `Verification`
 - Updated At: `2026-09-12`
 
 ## Current Goal
@@ -34,6 +35,8 @@ W25Q64JV
 ```
 
 阶段完成后应具备经过真实硬件验证的 External SPI Flash 原始访问能力，为后续 Firmware Image Storage、Ymodem 和 OTA Service 提供存储基础。
+
+当前实现已完成 Task 1-5，代码验证已通过；真实硬件验证、Keil Clean/Rebuild 和阶段 Review 尚未完成。默认破坏性板测门禁为 `0U`。
 
 ## Stable Baseline From S01
 
@@ -151,13 +154,11 @@ RTT + EasyLogger 是主要运行时观测接口，但 PASS/FAIL 必须来自真�
 
 ## Blockers
 
-无。
+实现无已知代码阻塞；当前仍等待 Keil 构建和真实开发板验证证据。
 
 ## Next Action
 
-进入 S02 Implementation Role，从 `implementation_plan.md` Task 1 开始。每个 Task 独立构建、验证、提交。
-
-实现完成后进入 `READY_FOR_VERIFICATION`，由 Verification Role 记录真实板测证据；Review Role 在证据完整后决定 `PASS / CHANGES_REQUESTED / BLOCKED`，不得跳过 Verification 直接关闭 Stage。
+进入 S02 Verification Role：执行 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`；证据完整后交 Review Role，由 Review Role 决定 `PASS / CHANGES_REQUESTED / BLOCKED`，不得跳过 Verification 直接关闭 Stage。
 
 ## Prohibited Actions
 
