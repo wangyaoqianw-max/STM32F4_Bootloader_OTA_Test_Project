@@ -4,139 +4,112 @@
 
 ## Context Metadata
 
-- Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Last Closed Stage: `S02_External_Flash_Driver`
+- Status: `CLOSED`
 - Branch: `main`
-- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
-- Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
-- Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
-- Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
-- Verification Commit: `c3527b3cd2fc10c3dd7fef89a0757f1199cd7c5d`
-- Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
-- Current Role: `Review`
+- S02 Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
+- S02 Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
+- S02 Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
+- S02 Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- S02 Verification Commit: `c3527b3cd2fc10c3dd7fef89a0757f1199cd7c5d`
+- S02 Final Review Commit: `b5e5e8a00ba4a9c08b5677d364883e3722bfa258`
+- Next Stage: `S03_EEPROM_Storage`
+- Next Stage Roadmap State: `PLANNED`
+- Current Role: `Project Owner / Design Preparation`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
-`S01_Application_Foundation` 已关闭。
+`S01_Application_Foundation` 与 `S02_External_Flash_Driver` 均已关闭。
 
-`S02_External_Flash_Driver` 已完成主体实现、真实硬件验证和 Keil Build/Clean-Rebuild。
+下一步准备 `S03_EEPROM_Storage`。S03 尚未正式启动，当前应先读取仓库现状、AT24C02 相关硬件资料与现有 Software I2C 实现，再讨论阶段设计；未获 Design Approval 前不进入生产代码施工。
 
-正式 Review 提出的唯一 Finding 已完成返工：STM32 HAL SPI 的 `uint16_t Size` 限制不再泄漏为
-Platform/W25Q64 公共 API 的 `65535 Byte` 隐式上限。
+## Stable Baseline from S02
 
-SPI 大长度返工代码、Host/Build 验证和最小真实硬件回归均已完成，返工硬件证据为 PASS。
-阶段现进入 `READY_FOR_REVIEW`。`review.md` 仍记录 `CHANGES_REQUESTED`，S02
-关闭必须由 Review Role 独立重新执行。
+后续阶段可以直接依赖以下已验证能力：
 
-## S02 Stable Results
+```text
+Application
+   ↓
+W25Q64 Raw Driver
+   ↓
+Platform SPI Device / Bus
+   ↓
+STM32 SPI2 Impl
+   ↓
+W25Q64JV
+```
 
-以下能力已经实现并通过验证，返工时应保持：
+已稳定验证：
 
-- SPI Bus / Device / Transaction 模型；
-- 同步 `platform_spi_read()`；
+- Platform SPI 同步 `read()`；
 - SPI1/SPI2 共用 Impl；
-- SPI1→PCLK2、SPI2→PCLK1；
-- W25Q64 JEDEC/SR1/Read/Page Program/Cross-page Write/4 KiB Sector Erase；
-- WEL + BUSY；
+- SPI1 使用 PCLK2、SPI2 使用 PCLK1；
+- W25Q64 JEDEC / SR1 / Read / Page Program / Cross-page Write / 4 KiB Sector Erase；
+- WREN / WEL / BUSY；
 - Page/Sector/地址边界保护；
-- destructive test 仅使用 `0x7FF000 ~ 0x7FFFFF`；
-- Erase / Program / Cross-page / Boundary / Reset Persistence 板测 PASS；
-- destructive test 已从生产工程移除；
-- `app_system` Application Thread 启动修正；
+- Raw Driver 不隐式 Erase；
+- STM32 HAL 单次 `0xFFFF` Size 限制由 Impl 内部 chunking 吸收；
+- Erase / Program / Cross-page / Boundary / Reset Persistence 真实板测 `PASS`；
+- Review Finding 1 的 Host/Build/Hardware Regression 均 `PASS`；
+- destructive test 已退出生产启动路径；
 - SFUD 只完成边界评估，未实际集成。
 
-## Review Finding
-
-冻结 Design 对 W25Q64 Read 的语义：
-
-```text
-Read 可跨 Page / Sector
-只受整个 8 MiB 地址范围限制
-```
-
-当前链路：
-
-```text
-platform_w25q64_read()
-  → platform_spi_read()
-  → stm32_spi_read()
-```
-
-返工前 STM32 Impl 对 `dataLength > 0xFFFF` 直接返回 `PLATFORM_ERR_OVERFLOW`，但
-`platform_size_t` 是 32-bit，Platform SPI 公共接口也没有声明 65535 Byte 上限。
-
-所以一个地址合法的 `65536 Byte` W25Q64 Read 会失败，属于冻结设计与实现不一致。
-
-正式结论见：
-
-`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
-
-## Required Rework
-
-推荐在 STM32 SPI Impl 内部对较长请求进行 HAL chunking：
-
-```text
-platform_size_t request
-      ↓
-while remaining > 0
-    chunk = min(remaining, 0xFFFF)
-    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
-```
-
-整个 Platform transaction 的 CS 仍由上层 `transaction_begin/end` 管理，不因 HAL chunk 被切断。
-
-`read()` 与 `write()` 建议保持对称，避免相同的 Impl 限制继续从另一个方向泄漏。
-
-修正内容与证据：
-
-1. `impl_platform_spi.c` 内新增 `stm32_spi_get_transfer_chunk_length()`，`stm32_spi_write()` /
-   `stm32_spi_read()` 改为在 Impl 内按 `<= 0xFFFF` 拆分 HAL blocking transfer，删除
-   `dataLength > 0xFFFF` 直接返回 `PLATFORM_ERR_OVERFLOW` 的分支；
-2. 新增 Host Test `04_Test/Host/S02_External_Flash_Driver/`，覆盖 1 / 0xFFFF / 0x10000 / 0x30000
-   四个长度、chunk 数据覆盖、失败即停和错误映射，18 项检查 `PASS`；同一测试对返工前文件为
-   `FAIL`，可直接复现 Finding；
-3. Keil Normal Build：`0 Error`、`1 Warning`（增量构建）；Keil Clean/Rebuild：`0 Error`、
-   `8 Warning`，与返工前已记录的 warning 基线一致；
-4. 板级最小回归已由 Project Owner 在真实硬件上确认 PASS；返工 Commit 已记录为
-   `42c02b891d7f32b728857c44024c3c91a15ea604`。
-
-## Reusable Keil Tooling
-
-保留：
-
-```text
-05_Tools/Scripts/build_app.bat
-05_Tools/Config/toolchain.local.example.bat
-```
-
-其已作为 Agent/Developer 的统一 Keil Build 入口写入 `AGENTS.md`。`toolchain.local.bat`
-属于 machine-local 配置，当前版本不再由 Git 跟踪，本机文件可以保留；仓库只保留
-`toolchain.local.example.bat` 作为模板。
-
-## Current Stage Documents
+S02 正式文档：
 
 - Design: `00_Project/03_Stages/S02_External_Flash_Driver/design.md`
 - Implementation Plan: `00_Project/03_Stages/S02_External_Flash_Driver/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S02_External_Flash_Driver/handoff.md`
 - Verification: `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
 - SFUD Evaluation: `00_Project/03_Stages/S02_External_Flash_Driver/sfud_evaluation.md`
-- Review: `00_Project/03_Stages/S02_External_Flash_Driver/review.md`
-- Status: `00_Project/05_Status/current_status.md`
+- Final Review: `00_Project/03_Stages/S02_External_Flash_Driver/review.md`
+
+## Reusable Tooling
+
+保留跨阶段使用：
+
+```text
+05_Tools/Scripts/build_app.bat
+05_Tools/Config/toolchain.local.example.bat
+```
+
+`toolchain.local.bat` 为 machine-local 配置，当前不由 Git 跟踪。
+
+## Next Stage Preparation — S03 EEPROM Storage
+
+Roadmap 目标：建立掉电后可保存的小容量状态存储能力。
+
+当前只作为 Design Preparation 输入，不在本文件预先冻结实现：
+
+- AT24C02 Driver；
+- Software I2C 复用边界；
+- Byte/Page Read/Write；
+- 跨页处理；
+- EEPROM 写周期等待；
+- 地址和容量边界；
+- 基础 NVM 数据访问接口；
+- Reset / 掉电数据保持验证。
+
+正式设计必须以届时仓库代码和硬件资料为准。
+
+## Required Reading for Next Conversation
+
+1. `AGENTS.md`
+2. `README.md`
+3. `PROJECT_CONTEXT.md`
+4. `00_Project/WORKFLOW.md`
+5. `00_Project/02_Roadmap/development_roadmap.md`
+6. `00_Project/03_Stages/S02_External_Flash_Driver/handoff.md`
+7. `00_Project/03_Stages/S02_External_Flash_Driver/review.md`
+8. AT24C02 / Software I2C 对应硬件与代码资料
 
 ## Next Action
 
-1. Review Role 独立复核 Finding 1 的代码、Host/Build 和硬件回归证据；
-2. `review.md` 继续记录 `CHANGES_REQUESTED`，待正式 Review 后决定 `CLOSED`、再次返工或阻塞。
-
-返工证据见 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的
-“Rework Verification” 章节和 `04_Test/Host/S02_External_Flash_Driver/README.md`。
+进入 S03 Design Preparation：先检查当前仓库中的 AT24C02、Software I2C、Platform GPIO/Time 等可复用基础，再讨论并冻结 S03 Design。
 
 ## Prohibited Actions
 
-- 不修改冻结 Design 来声明 65535 Byte 为新上限；
-- 不重做或重构已经通过的 W25Q64 主体功能；
-- 不顺带引入 DMA/Interrupt SPI、SFUD、OTA、Bootloader；
-- 不因为已有硬件板测 PASS 而忽略公共接口契约不一致。
+- 不再向已关闭 S02 追加范围外功能；
+- 不在 S03 Design Approval 前直接施工 EEPROM 生产代码；
+- 不提前把 Firmware Metadata、OTA 状态机或 Bootloader 业务塞入 S03 EEPROM Driver；
+- S03 具体接口和存储布局以正式设计为准，不由本上下文文件预先决定。
