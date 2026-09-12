@@ -2,9 +2,13 @@
 
 路线图描述项目长期阶段顺序、能力演进、前置依赖和阶段完成标准，不替代单个 Stage 的 `design.md`、`implementation_plan.md`、`handoff.md` 和 `review.md`。
 
-正式 Stage 的工作流状态仍以 `00_Project/WORKFLOW.md` 和 `00_Project/05_Status/current_status.md` 为准。
+正式 Stage 的工作流状态以 `00_Project/WORKFLOW.md` 和 `00_Project/05_Status/current_status.md` 为准。
 
-本文中的 `PLANNED` 仅表示“已纳入项目路线、尚未创建正式 Stage”，不是正式工作流状态。
+Roadmap State 语义：
+
+- `PLANNED`：已纳入长期路线，但尚未创建或启动正式 Stage；
+- `ACTIVE`：正式 Stage 已创建且尚未关闭，具体工作流状态以 `current_status.md` 为准；
+- `CLOSED`：Stage 已完成 Verification / Review 并正式关闭。
 
 ## 1. Roadmap Principles
 
@@ -70,7 +74,7 @@ S12  增加 OTA 安全机制实验
 | --- | --- | --- | --- | --- | --- |
 | `S00_Template_Restructure` | 建立通用工程模板、跨工具上下文合同和工程准备机制 | 项目目录、阶段工作流、上下文合同、工程准备模板、构建规范 | 目录与工作流设计获批 | `CLOSED` | 结构与构建规范验证通过、Project Owner 审核通过，并已被当前项目实际采用 |
 | `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `CLOSED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过；连续 Reset 4 次稳定复现 |
-| `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 基础驱动；评估并接入 SFUD；实现 Read / Program / Erase / JEDEC ID / 容量与边界检查 | S01；W25Q64 与 SPI2 硬件资料 | `PLANNED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；错误返回可诊断 |
+| `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 Raw Driver；Read / Program / Erase / JEDEC ID / BUSY/WEL / 跨页和边界检查；RTT 板测；Raw Driver 稳定后评估 SFUD 接入 | S01；W25Q64 与 SPI2 硬件资料 | `ACTIVE` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；Reset 后数据保持；错误返回可诊断；形成 SFUD 适配基线 |
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Driver；Byte/Page Read/Write；跨页处理；写周期等待；基础 NVM 数据访问接口 | S01；AT24C02 与 PB6/PB7 硬件资料 | `PLANNED` | Page/跨页读写正确；Reset/掉电后数据保持；地址边界与错误处理测试通过 |
 | `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | 设计 External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；基础 Metadata Contract；镜像整体 CRC 校验；明确 Application/Bootloader 共用数据契约 | S02；S03 | `PLANNED` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏镜像能够被正确区分 |
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | OTA 专用 UART；接收缓冲；Ymodem 协议状态机；文件名/大小处理；Packet CRC；Timeout / Cancel / Retry；数据流式写入指定 External Flash 区域 | S02；S04；UART 硬件资料；补充 Ymodem 参考资料 | `PLANNED` | PC 通过 Ymodem 发送 `.bin`；MCU 完整接收并写入 Flash；接收 Size 与 CRC 和源文件一致；中断/取消场景可恢复 |
@@ -154,7 +158,7 @@ TRIAL
 
 ## 5. Deferred / On-demand Inputs
 
-以下资料目前不阻塞 S02，也不要求在项目规划阶段全部补齐：
+以下资料目前不阻塞 S02：
 
 - CK02AT Datasheet / API：延后至 S12；
 - LCD / CTP 详细资料：最晚 S11 前补充；
@@ -162,24 +166,29 @@ TRIAL
 - HC-05 参数：只有后续决定增加 Bluetooth OTA Transport 时再进入正式 Stage；
 - SHA / AES / HMAC / Digital Signature 的具体算法和库选择：S12 再冻结。
 
-## 6. Next Planning Checkpoint
+## 6. Current Execution Checkpoint
 
-`S01_Application_Foundation` 已完成实现、验证和 Review，并正式 `CLOSED`。
-
-下一步进入：
+当前活动阶段：
 
 ```text
 S02_External_Flash_Driver
-Design Discussion
+Status: READY_FOR_IMPLEMENTATION
 ```
 
-S02 设计阶段重点确定：
+S02 已完成并批准设计，正式施工顺序为：
 
-1. 当前开发板 W25Q64 与 SPI2 的真实硬件连接和 CubeMX 参数；
-2. SPI Platform/Impl 的复用范围和必要适配；
-3. W25Q64 Raw Driver 与 SFUD 的职责边界；
-4. JEDEC ID、Read、Page Program、Sector Erase、Busy Wait、跨页和地址边界行为；
-5. 错误返回、超时和日志策略；
-6. S02 板级测试矩阵和关闭条件。
+1. Platform SPI `read()`、SPI2 multi-instance 和 PCLK1/PCLK2 修正；
+2. W25Q64 BSP Binding、JEDEC ID、SR1、Read；
+3. Write Enable、BUSY Poll、Page Program、4 KiB Sector Erase；
+4. Cross-page Write 和边界负向测试；
+5. RTT + EasyLogger 板测、Read Back、Reset persistence；
+6. 基于已验证 Raw Driver 评估 SFUD 适配。
 
-在 S02 `design.md` 获得 Project Owner 批准并进入 `READY_FOR_IMPLEMENTATION` 前，不开始 W25Q64/SFUD 功能施工。
+正式执行细节以：
+
+- `00_Project/03_Stages/S02_External_Flash_Driver/design.md`
+- `00_Project/03_Stages/S02_External_Flash_Driver/implementation_plan.md`
+- `00_Project/03_Stages/S02_External_Flash_Driver/handoff.md`
+- `00_Project/05_Status/current_status.md`
+
+为准。
