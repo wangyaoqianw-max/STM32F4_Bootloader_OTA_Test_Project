@@ -3,158 +3,114 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Baseline Code Commit: `207f125fc1153daaf70b711f8075ef166f6e65cf`
-- Implementation Commit: `Not created yet`
-- Verification Commit: `Not created yet`
-- Review Commit: `Not created yet`
+- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
+- Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
+- Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
+- Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
+- Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 
-## Implementation Input
+## Goal
 
-### Goal
+建立并验证 W25Q64 Raw Driver V1。主体实现和硬件闭环已经完成；当前 handoff 仅记录 Review 返工输入。
 
-在现有 STM32F411 Application 基础上建立可靠的 W25Q64 Raw Driver V1：补齐 SPI2 同步读取能力，完成 JEDEC ID、SR1、Read、Page Program、跨页 Write、4 KiB Sector Erase、范围/对齐校验，并使用 RTT + EasyLogger 和真实 Read Back/Compare 完成板级验证。
+## Completed Implementation / Verification
 
-### Required Reading
+以下结果保持有效：
 
-1. `AGENTS.md`
-2. `README.md`
-3. `PROJECT_CONTEXT.md`
-4. `00_Project/WORKFLOW.md`
-5. `00_Project/01_Requirements/项目需求V1.md`
-6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S02_External_Flash_Driver/design.md`
-8. `00_Project/03_Stages/S02_External_Flash_Driver/implementation_plan.md`
-9. `00_Project/03_Stages/S01_Application_Foundation/handoff.md`
-10. `00_Project/03_Stages/S01_Application_Foundation/review.md`
-11. `03_Firmware/AGENTS.md`
-12. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-13. `02_Hardware/Hardware_Software_Interface/W25Q64JVSSIQ_外部Flash硬件软件接口参考.md`
-14. `03_Firmware/Application/OTA_APP/OTA_APP.ioc`
-15. 当前 SPI Platform/Impl、BSP GPIO/SPI、App Main 代码。
+- Platform SPI 同步 `read()`；
+- SPI1/SPI2 多实例和 PCLK2/PCLK1 判断；
+- Storage SPI Bus / Flash CS BSP；
+- W25Q64 Init/Deinit、JEDEC ID、SR1、Read、WEL/BUSY、Page Program、跨页 Write、4 KiB Sector Erase；
+- 地址范围、Page、Sector 对齐保护；
+- JEDEC ID=`EF 40 17`；
+- Sector Erase + 4 KiB Read Back 全 `0xFF`；
+- Single-page Program + Compare；
+- `0x7FF0F0` 300 Byte Cross-page Write + Compare；
+- 边界拒绝与 Reset Persistence；
+- Normal Keil Build / Clean-Rebuild；
+- destructive board test 已从生产工程移除；
+- `app_system` 启动修正；
+- SFUD Boundary Evaluation；
+- `05_Tools/Scripts/build_app.bat` 统一 Keil Build 入口。
 
-### Frozen Hardware Facts
+完整原始证据：
 
-- W25Q64JVSSIQ：8 MiB，地址 `0x000000 ~ 0x7FFFFF`。
-- Page：256 Byte；Sector：4096 Byte。
-- SPI2：PB13 SCK、PB14 MISO、PB15 MOSI。
-- `FLASH_CS`：PB12，软件 CS，Low Active。
-- SPI2：Mode 0、MSB First、8-bit、Full Duplex、Software NSS。
-- APB1=50 MHz，SPI2 Prescaler=/4，实际 SCK=12.5 MHz。
-- SPI1：APB2=100 MHz，Prescaler=/8，实际 SCK=12.5 MHz。
-- W25Q64 V1 使用 Standard SPI，不使用 Dual/Quad。
-- S02 可破坏测试 Sector：`0x7FF000 ~ 0x7FFFFF`。
+`04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
 
-### Allowed Changes
+## Review Output
 
-- `03_Firmware/Application/OTA_APP/03_Platform/platform_mcu/spi/`
-- `03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_spi.*`
-- `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/platform_bsp_spi.h`
-- `03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_spi.c`
-- `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/platform_bsp_gpio.h`
-- `03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_gpio.c`
-- 新增 `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/w25q64/`
-- S02 需要的 `project_config.h`、`app_main.c` 和 Keil 工程接线。
-- `04_Test/Board/S02_External_Flash_Driver/`
-- `04_Test/Reports/Stages/S02_External_Flash_Driver/`
-- S02 阶段文档、status/context 和 SFUD 评估文档。
+Review Result：`CHANGES_REQUESTED`
 
-### Prohibited Changes
+唯一阻塞 Finding：
 
-- 不修改 Vendor 原始库。
-- 不引入 Chip Erase 公共 API。
-- 不引入 Fast Read、Dual/Quad、DMA SPI、Interrupt SPI 或异步 Flash API。
-- 不新增 `transfer()`，除非实际实现证明 approved design 无法完成并返回 Design Role。
-- 不在 Raw Driver 内自动 Erase、自动向下对齐 Sector、自动分区或判断 OTA 状态。
-- 不提前实现 Firmware Image、A/B Slot、Metadata、Ymodem、OTA Service、Bootloader 或 Security。
-- 不把 HAL Handle 暴露到 Platform/BSP Driver。
-- 不用固定 Delay 替代 BUSY 完成判断。
-- 不把 RTT 打印的“OK”本身当作硬件验证证据。
+```text
+Design:
+platform_w25q64_read() 只受 8 MiB 合法地址范围限制
 
-### Required Public Interfaces
-
-```c
-platform_error_t platform_spi_read(
-    platform_spi_device_t *device,
-    uint8_t *data,
-    platform_size_t dataLength);
-
-platform_error_t impl_platform_spi2_construct(
-    platform_spi_bus_t *bus,
-    const char *name,
-    uint32_t caps);
-
-platform_error_t platform_bsp_spi_construct_storage_bus(
-    platform_spi_bus_t *bus);
-
-platform_error_t platform_bsp_w25q64_construct_flash(
-    platform_w25q64_t *flash);
-
-platform_error_t platform_w25q64_init(
-    platform_w25q64_t *flash,
-    platform_spi_bus_t *spiBus);
-
-platform_error_t platform_w25q64_deinit(platform_w25q64_t *flash);
-
-platform_error_t platform_w25q64_read_jedec_id(
-    platform_w25q64_t *flash,
-    platform_w25q64_jedec_id_t *jedecId);
-
-platform_error_t platform_w25q64_read_status1(
-    platform_w25q64_t *flash,
-    uint8_t *status);
-
-platform_error_t platform_w25q64_read(
-    platform_w25q64_t *flash,
-    uint32_t address,
-    uint8_t *data,
-    platform_size_t dataLength);
-
-platform_error_t platform_w25q64_page_program(
-    platform_w25q64_t *flash,
-    uint32_t address,
-    const uint8_t *data,
-    platform_size_t dataLength);
-
-platform_error_t platform_w25q64_write(
-    platform_w25q64_t *flash,
-    uint32_t address,
-    const uint8_t *data,
-    platform_size_t dataLength);
-
-platform_error_t platform_w25q64_sector_erase(
-    platform_w25q64_t *flash,
-    uint32_t sectorAddress);
+Current Impl:
+dataLength > 0xFFFF
+→ PLATFORM_ERR_OVERFLOW
 ```
 
-### Acceptance Criteria
+原因是 STM32 HAL SPI 的 Size 参数为 16-bit，而当前 Impl 直接把这个限制暴露给了 32-bit `platform_size_t` Platform API。
 
-以 `design.md` 的 Acceptance Criteria 为准，至少包括：
+例如：
 
-- SPI read、SPI2 multi-instance、PCLK1/PCLK2 时钟判断正确；
-- Clean Rebuild 无 S02 新错误；
-- JEDEC ID=`EF 40 17`；
-- SR1/BUSY/WEL 可解释；
-- Read、Sector Erase、Page Program、跨页 Write 均通过真实 Read Back；
-- 越界、跨页原子 Program、未对齐 Erase 被拒绝；
-- Reset 后数据保持；
-- RTT/EasyLogger 可诊断过程和失败，但不替代实际校验；
-- Raw Driver 结果可作为 SFUD 适配基线。
+```c
+platform_w25q64_read(&flash, 0x000000U, buffer, 65536U);
+```
 
-## Implementation Output
+地址范围合法，但当前实现会失败。
 
-- Status: `NOT_STARTED`
-- Completed Work: `None`
-- Changed Files: `None`
-- Deviations From Plan: `None`
-- Known Issues: `None recorded for S02 implementation yet`
-- Verification Evidence: `Not created yet`
+详见：
 
-施工完成后由 Implementation Role 更新本节，不修改已冻结的设计结论来迁就实现。
+`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
+
+## Rework Input
+
+推荐在 STM32 SPI Impl 中拆分 HAL 调用：
+
+```text
+remaining = dataLength
+while remaining > 0
+    chunk = min(remaining, 0xFFFF)
+    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
+    advance buffer
+```
+
+约束：
+
+- 不改变 Platform SPI Bus / Device / Transaction 架构；
+- HAL chunk 期间不能结束上层 transaction，CS 必须保持原事务语义；
+- `read()` / `write()` 建议对称处理；
+- 不通过修改 Design 或公共接口文档来降低原要求；
+- 不扩展 DMA/Interrupt SPI、SFUD、OTA 或 Bootloader。
+
+## Required Re-verification
+
+修正后至少提供：
+
+1. `>0xFFFF` Byte 长度路径不再直接 `OVERFLOW` 的针对性证据；
+2. Code Verification；
+3. Keil Build / Clean-Rebuild；
+4. JEDEC ID / 普通 Read / 一个真实 Read Back Case；
+5. `verification.md` 更新；
+6. 新的修正 Commit；
+7. 状态恢复到 `READY_FOR_REVIEW` 后重新审核。
+
+不要求重新执行全部 destructive Flash 板测，除非修正过程中改变了 W25Q64 transaction 或擦写逻辑。
+
+## Non-blocking Notes
+
+- `project_config.h` / `app_main.c` 文件头仍有 S01 文案，可后续整理；
+- `.uvoptx` IDE 状态 churn 后续尽量减少；
+- Storage SPI RTOS 并发锁留待正式并发阶段设计；
+- 既有 Warning 不属于本轮返工。
 
 ## Next Action
 
-按 `implementation_plan.md` 从 Task 1 开始：先补 Platform SPI `read()`、SPI2 多实例和 APB 时钟判断；每个 Task 独立构建、验证和提交。完成实现后状态进入 `READY_FOR_VERIFICATION`，不得直接关闭 S02。
+Implementation Role 根据本 handoff 和 `review.md` 完成最小返工，验证后重新交 Review Role。

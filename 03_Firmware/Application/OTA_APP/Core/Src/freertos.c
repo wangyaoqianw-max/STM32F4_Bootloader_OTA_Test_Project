@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "app_main.h"
+#include "app_system.h"
+#include "service_log.h"
 
 /* USER CODE END Includes */
 
@@ -72,6 +73,9 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+  if (service_log_init() != PLATFORM_ERR_OK) {
+    Error_Handler();
+  }
 
   /* USER CODE END Init */
 
@@ -116,7 +120,9 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   (void)argument;
-  app_main();
+  if (app_system_start() != PLATFORM_ERR_OK) {
+    Error_Handler();
+  }
   vTaskDelete(NULL);
   /* USER CODE END StartDefaultTask */
 }

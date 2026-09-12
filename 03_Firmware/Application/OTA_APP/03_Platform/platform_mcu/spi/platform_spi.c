@@ -123,7 +123,8 @@ platform_error_t platform_spi_bus_init(
 
     if ((bus == NULL) || (params == NULL) || (params->name == NULL) ||
         (params->lifecycle == NULL) || (params->ops == NULL) ||
-        (params->ops->applyConfig == NULL) || (params->ops->write == NULL)) {
+        (params->ops->applyConfig == NULL) || (params->ops->write == NULL) ||
+        (params->ops->read == NULL)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
@@ -356,6 +357,39 @@ platform_error_t platform_spi_write(
     }
 
     return bus->ops->write(bus, data, dataLength);
+}
+
+platform_error_t platform_spi_read(
+    platform_spi_device_t *device,
+    uint8_t *data,
+    platform_size_t dataLength)
+{
+    platform_error_t result = PLATFORM_ERR_OK;
+    platform_spi_bus_t *bus = NULL;
+
+    if (data == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (dataLength == 0U) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    result = platform_spi_validate_device(device);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    bus = device->bus;
+    if (bus->device.object.state != PLATFORM_OBJECT_STARTED) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    if (bus->activeDevice != device) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    return bus->ops->read(bus, data, dataLength);
 }
 
 platform_error_t platform_spi_transaction_end(platform_spi_device_t *device)

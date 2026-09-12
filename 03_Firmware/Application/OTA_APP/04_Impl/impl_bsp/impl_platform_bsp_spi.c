@@ -29,4 +29,16 @@ platform_error_t platform_bsp_spi_construct_display_bus(
                                         "display_spi_bus",
                                         PLATFORM_DEVICE_CAP_NONE);
 }
+
+platform_error_t platform_bsp_spi_construct_storage_bus(
+    platform_spi_bus_t *bus)
+{
+    if (bus == NULL) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    return impl_platform_spi2_construct(bus,
+                                        "storage_spi_bus",
+                                        PLATFORM_DEVICE_CAP_NONE);
+}
 //******************************** Functions ********************************//
