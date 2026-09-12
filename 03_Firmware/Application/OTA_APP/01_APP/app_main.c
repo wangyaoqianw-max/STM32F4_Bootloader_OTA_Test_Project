@@ -22,7 +22,6 @@
 #include "platform_time.h"
 #include "project_config.h"
 #include "service_log.h"
-#include "s02_flash_board_test.h"
 //******************************** Includes *********************************//
 
 //******************************** Variables ********************************//
@@ -80,11 +79,6 @@ void app_main(void)
         for (;;) {
             (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
         }
-    }
-
-    if (PROJECT_S02_FLASH_BOARD_TEST_ENABLE != 0U) {
-        appResult = s02_flash_board_test_run(&g_storageSpiBus);
-        SERVICE_LOG_I("S02 flash board test result: %d", appResult);
     }
 
     for (;;) {
