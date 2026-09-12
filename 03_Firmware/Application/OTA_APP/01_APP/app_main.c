@@ -17,16 +17,21 @@
 #define LOG_TAG "app_main"
 
 #include "platform_bsp_led.h"
+#include "platform_bsp_spi.h"
+#include "platform_spi.h"
 #include "platform_time.h"
 #include "project_config.h"
 #include "service_log.h"
+#include "s02_flash_board_test.h"
 //******************************** Includes *********************************//
 
 //******************************** Variables ********************************//
 static platform_led_t g_statusLed = PLATFORM_LED_INITIALIZER;
+static platform_spi_bus_t g_storageSpiBus = PLATFORM_SPI_BUS_INITIALIZER;
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+/* 构造并启动 Application 基础资源与共享 Storage SPI Bus。 */
 static platform_error_t app_main_init(void)
 {
     platform_error_t result = platform_bsp_led_construct_status_led(
@@ -36,7 +41,26 @@ static platform_error_t app_main_init(void)
         return result;
     }
 
-    return platform_led_init(&g_statusLed);
+    result = platform_led_init(&g_statusLed);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_bsp_spi_construct_storage_bus(&g_storageSpiBus);
+    SERVICE_LOG_I("Storage SPI construct result: %d", result);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_spi_bus_lifecycle_init(&g_storageSpiBus);
+    SERVICE_LOG_I("Storage SPI init result: %d", result);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_spi_bus_lifecycle_start(&g_storageSpiBus);
+    SERVICE_LOG_I("Storage SPI start result: %d", result);
+    return result;
 }
 //******************************** Private Functions *************************//
 
@@ -58,6 +82,11 @@ void app_main(void)
         for (;;) {
             (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
         }
+    }
+
+    if (PROJECT_S02_FLASH_BOARD_TEST_ENABLE != 0U) {
+        appResult = s02_flash_board_test_run(&g_storageSpiBus);
+        SERVICE_LOG_I("S02 flash board test result: %d", appResult);
     }
 
     for (;;) {

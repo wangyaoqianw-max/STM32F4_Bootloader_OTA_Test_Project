@@ -31,6 +31,9 @@
 /* S02 W25Q64 Platform 校验上限和专用可破坏测试扇区。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
 #define PROJECT_FLASH_TEST_SECTOR_ADDRESS     (0x7FF000U)
+
+/* S02 破坏性板测默认关闭；仅在明确的板级验证启动中临时开启。 */
+#define PROJECT_S02_FLASH_BOARD_TEST_ENABLE   (0U)
 //******************************** Defines *********************************//
 
 #endif
