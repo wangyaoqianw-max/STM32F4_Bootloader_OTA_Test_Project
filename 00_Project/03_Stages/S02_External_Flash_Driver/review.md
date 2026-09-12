@@ -3,115 +3,174 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Review State: `CHANGES_REQUESTED`
-- Stage Status: `CHANGES_REQUESTED`
+- Review State: `PASS`
+- Stage Status: `CLOSED`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
+- Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
-- Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
-- Review Commit: `This commit`
+- Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
+- Verification Commit: `c3527b3cd2fc10c3dd7fef89a0757f1199cd7c5d`
+- Previous Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 - Reviewed At: `2026-09-12`
 
-## Review Entry Conditions
+## Final Review Scope
 
-Review 入口条件均已满足：批准设计、冻结实施计划、实现合并、Code Verification、Keil Build、Keil Clean/Rebuild、真实 W25Q64 板测和 destructive-test 清理均已有证据。
+本次为 S02 的最终 Review。审核范围包括：
 
-## Review Scope
+- 已批准的 `design.md` 与冻结的 `implementation_plan.md`；
+- 原始实现及 Verification 证据；
+- Previous Review `CHANGES_REQUESTED` 中唯一阻塞 Finding；
+- Rework Commit `42c02b8...` 的 SPI 大长度传输修正；
+- Host Test、Keil Build/Clean-Rebuild 与返工后真实硬件最小回归；
+- Rework Commit 到当前 Review 前 HEAD 的后续差异，确认没有再次修改生产 SPI/W25Q64 行为；
+- destructive test、machine-local toolchain 配置与阶段边界的最终清理状态。
 
-本轮对照以下内容进行审核：
+## Previously Passed Items
 
-- `design.md` 与 `implementation_plan.md`；
-- Baseline `5ac069f...` 到 Merge `c6c77a2...` 的代码差异；
-- Platform SPI / STM32 SPI Impl；
-- W25Q64 Raw Driver / BSP；
-- Application 启动修正；
-- S02 Board Test 与 Verification Report；
-- `05_Tools` Keil Build 入口；
-- SFUD Boundary Evaluation。
+以下 S02 主体能力在第一次 Review 中已经通过，本次复核后继续成立：
 
-## Passed Review Items
-
-以下项目与冻结设计一致，可接受：
-
-1. Platform SPI 保留 Bus / Device / Transaction 模型，只新增同步 `read()`；
-2. SPI1/SPI2 共用同一个 STM32 SPI Impl，SPI1 使用 PCLK2、SPI2 使用 PCLK1；
+1. Platform SPI 保留 Bus / Device / Transaction 模型，只增加同步 `read()`；
+2. SPI1/SPI2 共用 STM32 SPI Impl，SPI1 使用 PCLK2、SPI2 使用 PCLK1；
 3. W25Q64 Driver 未直接依赖 HAL、`hspi2`、`SPI2` 或 Service Log；
-4. JEDEC ID、SR1、Read、Page Program、Sector Erase 的 Opcode 和 24-bit 地址顺序正确；
-5. `platform_w25q64_page_program()` 严格禁止跨 256 Byte Page；
-6. `platform_w25q64_write()` 按 Page 剩余空间拆分，未隐式 Erase；
-7. Sector Erase 要求 4 KiB 对齐，不自动向下修正地址；
-8. Program/Erase 每笔重新 Write Enable，并检查 WEL；完成条件通过 BUSY 轮询而非固定 Delay；
-9. transaction begin 成功后，Read/Write/Program/Erase 路径均通过 finish/end 逻辑尽力释放 CS 和 `activeDevice`；
-10. 地址范围校验采用 `length <= TOTAL_SIZE - address`，避免加法溢出；
-11. destructive board test 只使用 `0x7FF000 ~ 0x7FFFFF`，并已从生产 Application/Keil 工程移除；
-12. Hardware PASS 由真实 Read Back / Compare 支撑，包含 Erase、单页 Program、跨页 Write、边界拒绝和 Reset Persistence；
-13. `app_system` 修正没有让 App 层直接依赖 CMSIS-RTOS，属于可接受的启动基础设施修正；
-14. `build_app.bat + toolchain.local.bat` 将机器路径与仓库脚本隔离，适合作为跨阶段工程资产保留；
-15. SFUD 只完成边界评估，没有提前扩大 S02 为 Middleware 集成阶段。
+4. JEDEC ID、SR1、Read、Page Program、Sector Erase 的 Opcode 与 24-bit 地址序正确；
+5. 原子 Page Program 严格禁止跨 256 Byte Page；
+6. 连续 Write 按 Page 拆分且不隐式 Erase；
+7. Sector Erase 要求 4 KiB 对齐，不自动修正错误地址；
+8. Program/Erase 使用 WREN、WEL 检查和 BUSY 轮询；
+9. transaction begin 成功后的失败路径会尽力 transaction end，避免 CS/activeDevice 泄漏；
+10. 地址范围校验使用减法形式避免加法溢出；
+11. destructive board test 仅使用 `0x7FF000 ~ 0x7FFFFF`，且已从生产 Application/Keil 工程移除；
+12. Erase / Program / Cross-page / Boundary / Reset Persistence 均由真实 Read Back / Compare 支撑；
+13. `app_system` 启动修正未引入 App → CMSIS-RTOS 直接依赖；
+14. `05_Tools/Scripts/build_app.bat` 已形成可复用 Keil Build 入口，`toolchain.local.bat` 当前不再由 Git 跟踪；
+15. SFUD 仅完成边界评估，没有提前扩大 S02 实现范围。
 
-## Finding 1 — Important: SPI 单次 0xFFFF 限制违反 W25Q64 Read 冻结语义
+## Finding 1 Closure — SPI HAL 0xFFFF Length Limit
 
-### Evidence
+### Previous Finding
 
-冻结设计规定：
+Previous Review 发现 STM32 HAL SPI 的 `uint16_t Size` 限制被直接暴露成 Platform/W25Q64 公共接口的隐式 `65535 Byte` 上限，导致地址合法的 `>0xFFFF` Read 被拒绝，与冻结 Design 不一致。
+
+Previous Review Result：`CHANGES_REQUESTED`。
+
+### Rework Implementation
+
+返工后 STM32 SPI Impl 在内部处理 HAL 单次传输限制：
 
 ```text
-platform_w25q64_read()
-- Read 可跨 Page/Sector
-- 只受整个 8 MiB 地址范围限制
+platform_size_t request
+      ↓
+while remaining > 0
+    chunk = min(remaining, 0xFFFF)
+    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
+    data += chunk
+    remaining -= chunk
 ```
 
-同时：
+审核确认：
 
-- `platform_size_t` 为 32-bit；
-- `platform_spi_read()` / `platform_spi_write()` 的 Platform 公共接口没有声明 `65535 Byte` 上限；
-- STM32 SPI Impl 内部定义 `STM32_SPI_HAL_MAX_TRANSFER_SIZE = 0xFFFF`；
-- 当 `dataLength > 0xFFFF` 时，`stm32_spi_read()` / `stm32_spi_write()` 直接返回 `PLATFORM_ERR_OVERFLOW`；
-- `platform_w25q64_read()` 当前把完整 `dataLength` 一次传给 `platform_spi_read()`，没有拆分。
+- `stm32_spi_write()` 与 `stm32_spi_read()` 对称分块；
+- `dataLength > 0xFFFF` 不再直接返回 `PLATFORM_ERR_OVERFLOW`；
+- `0xFFFF` 仅作为 STM32 HAL Impl 内部 chunk 上限；
+- Platform SPI 公共接口、`platform_size_t`、W25Q64 Driver、Bus/Device/Transaction 模型均未修改；
+- HAL chunk 之间不会结束 Platform transaction，CS 继续由上层事务保持；
+- 任一 chunk 的 `HAL_BUSY / HAL_TIMEOUT / HAL_ERROR` 会立即停止后续传输并保持原有错误映射；
+- 未引入 DMA、Interrupt SPI、动态内存或范围外重构。
 
-因此类似以下调用虽然完全位于 W25Q64 8 MiB 合法地址空间内：
+Finding 1：`CLOSED`。
 
-```c
-platform_w25q64_read(&flash, 0x000000U, buffer, 65536U);
+## Rework Verification Review
+
+### Host / Code Evidence
+
+Host Test 对生产 `impl_platform_spi.c` 直接验证，18 项检查 `PASS`，覆盖：
+
+```text
+length = 1
+length = 0xFFFF
+length = 0x10000
+length = 0x30000
+HAL_TIMEOUT
+HAL_BUSY
+HAL_ERROR
+NULL
+length = 0
 ```
 
-仍会因为 STM32 HAL 的 `uint16_t Size` 实现细节返回 `PLATFORM_ERR_OVERFLOW`。
+关键 chunk 结果：
 
-这使 Impl 层限制泄漏到 Platform/W25Q64 公共语义，与已批准 Design 不一致。
+```text
+0xFFFF  → 0xFFFF
+0x10000 → 0xFFFF + 1
+0x30000 → 0xFFFF + 0xFFFF + 0xFFFF + 3
+```
 
-### Required Change
+同一测试对返工前实现能够复现 Finding 1，因此该测试具备针对性的回归价值。
 
-不得通过降低或修改冻结 Design 来规避问题。建议优先在 STM32 SPI Impl 内部把 `platform_size_t` 请求拆成多个 `<= 0xFFFF` 的 HAL blocking transfer，使 Platform API 对调用者继续保持 32-bit 长度语义；`write()` 与 `read()` 应保持对称行为。
+### Build Evidence
 
-如果选择在 W25Q64 Driver 内拆分，也必须保证：
+- Code Verification：`PASS`；
+- Keil Normal Build：`PASS`；
+- Keil Clean/Rebuild：`PASS`；
+- 未发现返工引入的新编译错误；
+- 既有 Warning 作为非阻塞技术债务保留。
 
-- 单次 `platform_w25q64_read()` 的 CS 在整笔 Read Data 命令期间保持 Low；
-- 后续 chunk 继续时不重新发送错误地址或提前结束 transaction；
-- HAL 的 16-bit Size 限制不暴露到 W25Q64 公共接口。
+### Hardware Regression Evidence
 
-### Required Verification
+Project Owner 在真实硬件完成返工后的最小回归，RTT 证据包括：
 
-修正后至少补充：
+```text
+W25Q64 Init                      PASS
+JEDEC ID = EF 40 17             PASS
+SR1 Read                        PASS
+Ordinary Read                   PASS
+Persistence Marker Read         PASS
+0x7FF0F0 / 300 Byte Read Back   PASS
+```
 
-1. `> 0xFFFF` Byte 的 Platform SPI/Flash Read 长度路径验证，证明不会直接 `OVERFLOW`；
-2. Keil Build / Clean-Rebuild；
-3. 现有 W25Q64 基础板测无需全部重做，但至少重新验证 JEDEC/普通 Read 和一个真实 Read Back Case，确认拆分修改没有破坏现有 SPI transaction 行为；
-4. 更新 `verification.md` 与 `handoff.md`，记录修正 Commit 和验证结果。
+该回归确认 SPI Impl 的返工没有破坏真实 W25Q64 链路。原始 S02 已通过的完整 destructive test 无需重复执行。
+
+Hardware Regression：`PASS`。
+
+## Final Difference / Scope Review
+
+从 Rework Commit `42c02b8...` 到最终 Review 前的后续仓库变更仅涉及：
+
+- S02 Verification / Handoff / Status / Project Context 的状态同步；
+- machine-local `toolchain.local.bat` 停止跟踪；
+- `toolchain.local.example.bat` 泛化；
+- 临时收口计划清理。
+
+未发现后续再次修改生产 SPI/W25Q64 实现的情况，因此 Finding 1 的关闭证据仍适用于当前生产代码。
 
 ## Non-blocking Observations
 
-- `project_config.h`、`app_main.c` 的文件头 `@brief` 仍保留 S01 文案，后续文档/代码质量整理时可更新，不阻塞本次 Review；
-- `.uvoptx` 存在较大 IDE 状态变动，后续提交应继续遵守“避免无意义 IDE churn”的 Git 规则；本轮未发现它造成 S02 功能错误；
-- 当前 SPI Bus 没有跨多 transaction 的 RTOS 锁；S02 单线程/同步使用场景可接受，正式后台 OTA 并发策略应在 S06/SFUD 实际集成前设计。
+以下内容不阻塞 S02 关闭：
 
-## Review Result
+- `project_config.h` / `app_main.c` 个别文件头仍有 S01 文案，可后续统一清理；
+- `.uvoptx` IDE 状态 churn 后续继续避免无意义提交；
+- Storage SPI 跨 transaction 的 RTOS 并发锁应在正式并发/OTA 阶段设计；
+- 既有 ARMCC Warning 继续作为技术债务管理；
+- SFUD 实际集成继续延后到确有需求的后续阶段。
 
-`CHANGES_REQUESTED`
+## Final Review Result
 
-原因不是现有 W25Q64 板测失败，而是公共 Read 接口存在一个可复现的冻结设计不一致：合法的 `> 65535 Byte` Read 会被 STM32 Impl 的 HAL Size 限制拒绝。
+`PASS`
 
-本轮返工范围仅限于该长度语义及其验证，不要求重做 W25Q64 其他已通过能力，不扩大到 SFUD、OTA、Bootloader 或其他后续功能。
+S02 已满足批准 Design 和 Acceptance Criteria：
 
-修正并完成针对性 Verification 后，重新进入 `READY_FOR_REVIEW`，Review Role 只需复核该 Finding 的关闭证据以及是否引入回归。
+- External SPI Flash 基础链路可用；
+- W25Q64 Raw Driver V1 的 Read / Program / Erase / JEDEC / WEL / BUSY / Boundary 行为已实现并验证；
+- Cross-page Write、Reset Persistence 和错误路径已有真实硬件证据；
+- Previous Review Finding 1 已完成代码修正、Host 回归、Keil 构建和真实硬件回归；
+- destructive test 已退出生产启动路径；
+- 本阶段未越界实现 OTA、Bootloader 或 SFUD Middleware 集成。
+
+## Closure Decision
+
+`S02_External_Flash_Driver`：`CLOSED`
+
+下一阶段按 Roadmap 进入 `S03_EEPROM_Storage` 的设计准备。S03 尚未正式启动前，不在本次 Review 中预先冻结其实现方案。
