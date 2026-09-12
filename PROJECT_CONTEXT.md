@@ -10,7 +10,7 @@
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Implementation Commit: `82573b2532cc2ca7645d9a6698eefcca3234f867`
+- Implementation Commit: `e2d1ad53e9b24f2cb55fb2a663f34d0095bd276b`
 - Current Role: `Verification`
 - Updated At: `2026-09-12`
 
@@ -36,7 +36,7 @@ W25Q64JV
 
 阶段完成后应具备经过真实硬件验证的 External SPI Flash 原始访问能力，为后续 Firmware Image Storage、Ymodem 和 OTA Service 提供存储基础。
 
-当前实现已完成 Task 1-5，代码验证和自动 Keil Build 已通过；真实硬件验证、Keil Clean/Rebuild 和阶段 Review 尚未完成。默认破坏性板测门禁为 `0U`。
+当前实现已完成 Task 1-5，并补齐了可保留的日志初始化和 Application 独立任务启动链；代码验证和自动 Keil Build 已通过；真实硬件验证、Keil Clean/Rebuild 和阶段 Review 尚未完成。提交中的破坏性板测门禁为 `0U`，当前工作区可临时改为 `1U` 进行板测。
 
 ## Stable Baseline From S01
 

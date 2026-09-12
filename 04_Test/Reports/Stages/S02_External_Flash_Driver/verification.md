@@ -6,7 +6,7 @@
 - Verification input status: `READY_FOR_VERIFICATION`
 - Code verification: `PASS` for the host-side static checks listed below
 - Hardware verification: `PENDING`
-- Keil/MDK Build: `PASS`; Clean/Rebuild: `NOT_RUN`
+- Keil/MDK Build: `PASS`，0 Error、1 Warning；Clean/Rebuild: `NOT_RUN`
 - Board, RTT and logic-analyzer evidence: `NOT_AVAILABLE`
 
 本文件记录 Implementation Role 已完成的可回读证据和下一步 Verification Role 输入，不替代真实开发板验收，也不把静态编译结果描述为硬件通过。
@@ -20,6 +20,14 @@
 | `42217e2baf193a3e52a77be983bda44d81afd1c8` | WEL/BUSY、Page Program、Sector Erase |
 | `86ecbb322819d726f18026b6cc248aed50832b60` | 跨页 Write 和边界负向测试 |
 | `82573b2532cc2ca7645d9a6698eefcca3234f867` | App 编排、默认门禁和双启动持久化板测 |
+| `e2d1ad53e9b24f2cb55fb2a663f34d0095bd276b` | 日志初始化时序、App 系统任务和 Platform Thread 工程接线 |
+
+## Application Startup Verification
+
+- `service_log_init()` 位于 `freertos.c` 的 `USER CODE BEGIN Init` 区域，在 `osKernelInitialize()` 后、创建默认任务前执行，CubeMX 重新生成时会保留。
+- `defaultTask` 只调用 `app_system_start()`，成功后立即删除自身；`app_system` 使用 4096 Byte 独立栈运行 `app_main()`。
+- App 层通过 `platform_thread_create()` 创建任务，不直接包含或调用 CMSIS-RTOS；FreeRTOS 适配文件已加入 Keil 工程。
+- 该调整只解决任务启动和日志观测基础设施，不替代真实 Flash Read Back/Compare 硬件证据。
 
 ## Host-side Code Verification
 
@@ -47,7 +55,7 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 - `OTA_APP.uvprojx` XML 解析及工程内全部 `FilePath` 存在性：`PASS`。
 - W25Q64 Raw Driver 直接引用 HAL、`hspi2` 或 `SPI2`：未发现，`PASS`。
 - Chip Erase `0x60/0xC7` 或 Chip Erase 公共 API：未发现，`PASS`。
-- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE`：提交值为 `0U`，正常启动破坏性板测门禁关闭，`PASS`。
+- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE`：提交值为 `0U`，正常启动破坏性板测门禁关闭，`PASS`；本次板测编译使用工作区临时 `1U`，未提交。
 
 ## MDK Build Verification
 
@@ -57,13 +65,13 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 05_Tools\Scripts\build_app.bat
 ```
 
-- Source Commit：`ec46172`
+- Source Commit：`e2d1ad5`
 - Target：`OTA_APP`
 - Tool：Keil UV4
 - Compiler：`V5.06 update 7 (build 960)`
 - Build：`PASS`
 - Error：`0`
-- Warning：`0`
+- Warning：`1`（`impl_freertos_thread.c` 既有 ARMCC 警告，当前按用户要求暂不处理）
 - Script exit code：`0`
 - Build log：`06_Output/Logs/OTA_APP_build.log`
 - 主要输出：`03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.axf`、`.hex`，以及 `Listings/OTA_APP.map`

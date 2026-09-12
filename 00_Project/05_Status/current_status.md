@@ -8,7 +8,7 @@
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
-- Implementation Commit: `82573b2532cc2ca7645d9a6698eefcca3234f867`
+- Implementation Commit: `e2d1ad53e9b24f2cb55fb2a663f34d0095bd276b`
 - Current Role: `Verification`
 - Updated At: `2026-09-12`
 
@@ -47,8 +47,9 @@
 ### S02 Implementation
 
 - Task 1-5 已按独立本地提交完成：SPI read/SPI2、多实例与 PCLK 校验；W25Q64 初始化、诊断、读取、编程、擦除、跨页写入与边界测试；App Storage SPI Bus 编排；破坏性板测门禁和双启动持久化逻辑。
-- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE` 当前为 `0U`，普通启动不会自动擦除或写入测试 Sector。
-- 实现提交范围：`f89a394`、`70f179e`、`42217e2`、`86ecbb3`、`82573b2`。
+- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE` 提交值为 `0U`，普通启动不会自动擦除或写入测试 Sector；当前工作区可临时改为 `1U` 进行板测。
+- 日志初始化已放入 `freertos.c` 的 CubeMX 用户初始化区；`defaultTask` 只创建 `app_system` 后退出，App 通过 Platform Thread API 使用独立任务栈运行。
+- 实现提交范围：`f89a394`、`70f179e`、`42217e2`、`86ecbb3`、`82573b2`、`e2d1ad5`。
 
 ## Implementation Sequence
 
@@ -78,7 +79,7 @@
 ## Verification Status
 
 - 代码验证：`PASS`，统一 GCC 静态语法检查、工程 XML/源路径检查和差异检查已完成。
-- Keil Build：`PASS`，通过 `05_Tools\Scripts\build_app.bat` 调用 Keil UV4，0 Error、0 Warning；Clean/Rebuild：`NOT_RUN`。
+- Keil Build：`PASS`，通过 `05_Tools\Scripts\build_app.bat` 调用 Keil UV4，0 Error、1 Warning（既有 Platform Thread 适配警告，暂不处理）；Clean/Rebuild：`NOT_RUN`。
 - 硬件验证：`PENDING`，当前无开发板、J-Link、RTT 或逻辑分析仪证据。
 - Verification Input：[S02 verification.md](../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
 - SFUD Evaluation：[sfud_evaluation.md](../03_Stages/S02_External_Flash_Driver/sfud_evaluation.md)
