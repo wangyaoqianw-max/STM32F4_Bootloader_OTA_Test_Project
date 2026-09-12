@@ -20,6 +20,7 @@
 //******************************** Includes *********************************//
 
 //******************************** Defines *********************************//
+/* 单个 HAL blocking transfer 的 Size 参数是 16-bit；超出部分在 Impl 内拆分，不是 Platform 语义上限。 */
 #define STM32_SPI_HAL_MAX_TRANSFER_SIZE ((platform_size_t)0xFFFFU)
 #define STM32_SPI_BLOCKING_TIMEOUT_MS   (1000U)
 //******************************** Defines *********************************//
@@ -66,6 +67,8 @@ static platform_error_t stm32_spi_get_actual_clock_hz(
 static platform_error_t stm32_spi_apply_config(
     platform_spi_bus_t *bus,
     const platform_spi_device_config_t *config);
+static platform_size_t stm32_spi_get_transfer_chunk_length(
+    platform_size_t remainingLength);
 static platform_error_t stm32_spi_write(
     platform_spi_bus_t *bus,
     const uint8_t *data,
@@ -342,6 +345,13 @@ static platform_error_t stm32_spi_apply_config(
     return PLATFORM_ERR_OK;
 }
 
+static platform_size_t stm32_spi_get_transfer_chunk_length(
+    platform_size_t remainingLength)
+{
+    return (remainingLength > STM32_SPI_HAL_MAX_TRANSFER_SIZE) ?
+           STM32_SPI_HAL_MAX_TRANSFER_SIZE : remainingLength;
+}
+
 static platform_error_t stm32_spi_write(
     platform_spi_bus_t *bus,
     const uint8_t *data,
@@ -349,13 +359,12 @@ static platform_error_t stm32_spi_write(
 {
     platform_error_t result = PLATFORM_ERR_OK;
     stm32_spi_impl_context_t *context = NULL;
+    const uint8_t *currentData = NULL;
+    platform_size_t chunkLength = 0U;
+    platform_size_t remaining = 0U;
 
     if ((data == NULL) || (dataLength == 0U)) {
         return PLATFORM_ERR_INVALID_PARAM;
-    }
-
-    if (dataLength > STM32_SPI_HAL_MAX_TRANSFER_SIZE) {
-        return PLATFORM_ERR_OVERFLOW;
     }
 
     result = stm32_spi_get_context(bus, &context);
@@ -363,11 +372,27 @@ static platform_error_t stm32_spi_write(
         return result;
     }
 
-    return stm32_spi_map_hal_status(HAL_SPI_Transmit(
-        context->halSpi,
-        (uint8_t *)data,
-        (uint16_t)dataLength,
-        STM32_SPI_BLOCKING_TIMEOUT_MS));
+    /* 同一 Platform transaction 内拆成多个 HAL chunk，CS 仍由上层保持全程有效。 */
+    currentData = data;
+    remaining = dataLength;
+
+    while (remaining > 0U) {
+        chunkLength = stm32_spi_get_transfer_chunk_length(remaining);
+
+        result = stm32_spi_map_hal_status(HAL_SPI_Transmit(
+            context->halSpi,
+            (uint8_t *)currentData,
+            (uint16_t)chunkLength,
+            STM32_SPI_BLOCKING_TIMEOUT_MS));
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+
+        currentData += chunkLength;
+        remaining -= chunkLength;
+    }
+
+    return PLATFORM_ERR_OK;
 }
 
 static platform_error_t stm32_spi_read(
@@ -377,13 +402,12 @@ static platform_error_t stm32_spi_read(
 {
     platform_error_t result = PLATFORM_ERR_OK;
     stm32_spi_impl_context_t *context = NULL;
+    uint8_t *currentData = NULL;
+    platform_size_t chunkLength = 0U;
+    platform_size_t remaining = 0U;
 
     if ((data == NULL) || (dataLength == 0U)) {
         return PLATFORM_ERR_INVALID_PARAM;
-    }
-
-    if (dataLength > STM32_SPI_HAL_MAX_TRANSFER_SIZE) {
-        return PLATFORM_ERR_OVERFLOW;
     }
 
     result = stm32_spi_get_context(bus, &context);
@@ -391,11 +415,27 @@ static platform_error_t stm32_spi_read(
         return result;
     }
 
-    return stm32_spi_map_hal_status(HAL_SPI_Receive(
-        context->halSpi,
-        data,
-        (uint16_t)dataLength,
-        STM32_SPI_BLOCKING_TIMEOUT_MS));
+    /* 与 stm32_spi_write() 保持对称：长度语义不依赖 HAL 单次传输上限。 */
+    currentData = data;
+    remaining = dataLength;
+
+    while (remaining > 0U) {
+        chunkLength = stm32_spi_get_transfer_chunk_length(remaining);
+
+        result = stm32_spi_map_hal_status(HAL_SPI_Receive(
+            context->halSpi,
+            currentData,
+            (uint16_t)chunkLength,
+            STM32_SPI_BLOCKING_TIMEOUT_MS));
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+
+        currentData += chunkLength;
+        remaining -= chunkLength;
+    }
+
+    return PLATFORM_ERR_OK;
 }
 
 static platform_error_t stm32_spi_lifecycle_init(void *self)

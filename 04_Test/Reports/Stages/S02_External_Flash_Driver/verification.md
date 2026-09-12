@@ -10,6 +10,8 @@
 - Keil Clean/Rebuild: `PASS`，由 Project Owner 于 `2026-09-12` 实际执行并确认成功；本次未单独记录 warning 数量
 - Board and RTT evidence: `PASS`
 - Logic-analyzer evidence: `NOT_USED`
+- Rework Code Verification (Finding 1): `PASS`，见文末 “Rework Verification”
+- Rework Hardware Regression (Finding 1): `PENDING`，等待 Project Owner 板测
 
 本文件记录 S02 的正式 Verification 证据。代码验证、Keil 构建验证和真实开发板验证分别记录，不以编译结果替代硬件结果，也不以 RTT 文本本身替代 Read Back / Compare。
 
@@ -140,3 +142,176 @@ S02 Verification 所需证据已经完整：
 - SFUD Boundary Evaluation：已完成，实际集成延后
 
 Verification Role 无剩余阻塞项。阶段可以进入 `READY_FOR_REVIEW`，由 Review Role 对照冻结 Design、Implementation Plan、代码差异、Handoff 和本验证报告决定 `PASS / CHANGES_REQUESTED / BLOCKED`。
+
+---
+
+## Rework Verification — Finding 1（2026-09-12）
+
+### 返工范围
+
+只修正 Review Finding 1：STM32 SPI Impl 不能把 HAL 单次 `0xFFFF` Byte 限制暴露为
+Platform SPI / W25Q64 公共接口的长度上限。未重做 S02 其他已通过能力，未引入
+SFUD、DMA/Interrupt SPI、OTA 或 Bootloader。
+
+### 修改文件
+
+```text
+03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_spi.c   （修正）
+04_Test/Host/S02_External_Flash_Driver/s02_spi_chunking_host_test.c    （新增）
+04_Test/Host/S02_External_Flash_Driver/stubs/spi.h                     （新增）
+04_Test/Host/S02_External_Flash_Driver/README.md                       （新增）
+```
+
+### 实现结论
+
+`stm32_spi_write()` / `stm32_spi_read()` 现在在 Impl 内按 `min(remaining, 0xFFFF)` 拆分
+HAL blocking transfer，`dataLength > 0xFFFF → PLATFORM_ERR_OVERFLOW` 分支已删除。
+
+拆分发生在 `04_Impl/impl_mcu/impl_platform_spi.c`，不在 W25Q64 Driver 内；
+`platform_size_t`、Platform SPI 公共 API、Bus / Device / Transaction 模型和 CS 控制逻辑均未修改。
+
+对既有行为的影响可判定为“无”：
+
+```text
+length = 1        → 1 次 HAL 调用（与返工前一致）
+length = 0xFFFF   → 1 次 HAL 调用（与返工前一致）
+length = 0x10000  → 2 次 HAL 调用（返工前直接返回 OVERFLOW）
+length = 0x30000  → 4 次 HAL 调用（返工前直接返回 OVERFLOW）
+```
+
+### Code Verification
+
+1）静态语法检查：`PASS`，无告警。
+
+```text
+gcc -std=c99 -Wall -Wextra -fsyntax-only -DSTM32F411xE -DUSE_HAL_DRIVER <S02 include paths> \
+    impl_platform_spi.c platform_spi.c
+退出码 0，无 warning / error
+```
+
+2）静态代码路径检查：`impl_platform_spi.c` 中已不存在 `PLATFORM_ERR_OVERFLOW`。
+
+```text
+Get-ChildItem -Recurse -File -Include *.c,*.h 03_Firmware,04_Test |
+    Select-String -Pattern 'STM32_SPI_HAL_MAX_TRANSFER_SIZE|PLATFORM_ERR_OVERFLOW'
+命中：ring_buffer.c / platform_uart.c / service_uart.c / impl_platform_uart.c / platform_error.h
+未命中：impl_platform_spi.c
+```
+
+3）Host Test（HAL 替身，PC 运行）：`PASS`，18 项检查。
+
+```text
+S02 SPI Impl chunking host test (HAL stub, PC only)
+[PASS] write length=1 -> 1 HAL chunk
+       HAL calls=1 sizes=[1]
+[PASS] write length=0xFFFF -> 1 HAL chunk of 0xFFFF
+       HAL calls=1 sizes=[65535]
+[PASS] write length=0x10000 -> 0xFFFF + 1, no PLATFORM_ERR_OVERFLOW
+       HAL calls=2 sizes=[65535,1]
+[PASS] write keeps per-chunk HAL timeout and bound HAL handle
+[PASS] write length=0x30000 -> 0xFFFF + 0xFFFF + 0xFFFF + 3
+       HAL calls=4 sizes=[65535,65535,65535,3]
+[PASS] read length=1 -> 1 HAL chunk
+       HAL calls=1 sizes=[1]
+[PASS] read length=0xFFFF -> 1 HAL chunk of 0xFFFF
+       HAL calls=1 sizes=[65535]
+[PASS] read length=0x10000 -> 0xFFFF + 1, no PLATFORM_ERR_OVERFLOW
+       HAL calls=2 sizes=[65535,1]
+[PASS] read length=0x30000 -> 0xFFFF + 0xFFFF + 0xFFFF + 3
+       HAL calls=4 sizes=[65535,65535,65535,3]
+[PASS] write 0x10000 timeout on chunk 2 -> PLATFORM_ERR_TIMEOUT and stop
+       HAL calls=2 sizes=[65535,1]
+[PASS] read 0x10000 busy on chunk 1 -> PLATFORM_ERR_BUSY and stop
+       HAL calls=1 sizes=[65535]
+[PASS] write 0x30000 HAL_ERROR on chunk 3 -> PLATFORM_ERR_IO and stop
+       HAL calls=3 sizes=[65535,65535,65535]
+[PASS] write NULL -> PLATFORM_ERR_INVALID_PARAM without HAL call
+[PASS] read NULL -> PLATFORM_ERR_INVALID_PARAM without HAL call
+[PASS] write length=0 -> PLATFORM_ERR_INVALID_PARAM without HAL call
+[PASS] read length=0 -> PLATFORM_ERR_INVALID_PARAM without HAL call
+[PASS] missing Impl context -> PLATFORM_ERR_INVALID_PARAM without HAL call
+[PASS] unbound HAL handle -> PLATFORM_ERR_NOT_INITIALIZED without HAL call
+RESULT: PASS (18 checks)
+退出码 0
+```
+
+测试直接 `#include` 仓库中的 `impl_platform_spi.c`，验证对象是生产源码而不是副本；
+`04_Test/Host/S02_External_Flash_Driver/README.md` 记录了运行命令、用例表和局限。
+
+4）返工前文件对照（负向对照）：对 `HEAD` 版本的 `impl_platform_spi.c` 运行同一测试为
+`FAIL`（10/18 失败），`length=0x10000` 时为 `HAL calls=0`，直接复现 Finding 1。
+
+```text
+[FAIL] write length=0x10000 -> 0xFFFF + 1, no PLATFORM_ERR_OVERFLOW
+       HAL calls=0 sizes=[]
+[FAIL] write length=0x30000 -> 0xFFFF + 0xFFFF + 0xFFFF + 3
+       HAL calls=0 sizes=[]
+[FAIL] read length=0x10000 -> 0xFFFF + 1, no PLATFORM_ERR_OVERFLOW
+       HAL calls=0 sizes=[]
+RESULT: FAIL (18 checks, 10 failed)
+退出码 1
+```
+
+5）`git diff --check`：`PASS`。
+
+### Keil Build Verification
+
+构建记录：Target `OTA_APP`，Compiler `V5.06 update 7 (build 960)`，
+Build 类型 = Normal Build + Clean Rebuild，源码为本次返工工作区
+（`Rework Commit: Not created yet`，尚未提交）。构建期间未修改源码或工程配置，
+`git status --short` 未出现构建生成物。
+
+Normal Build（`05_Tools\Scripts\build_app.bat`）：
+
+```text
+Build target 'OTA_APP'
+compiling impl_platform_spi.c...
+linking...
+Program Size: Code=35200 RO-data=1020 RW-data=264 ZI-data=44256
+".\Objects\OTA_APP.axf" - 0 Error(s), 1 Warning(s).
+```
+
+`0 Error`，无新增 Error。增量构建只重编部分文件，因此 Warning 计数为 1（既有
+`platform_w25q64.c(277) #188-D`），不代表 warning 总数下降。
+
+Clean/Rebuild（`UV4 -r`，全量重编）：
+
+```text
+Program Size: Code=35200 RO-data=1020 RW-data=264 ZI-data=44256
+".\Objects\OTA_APP.axf" - 0 Error(s), 8 Warning(s).
+Build Time Elapsed:  00:00:07
+```
+
+`0 Error`、`8 Warning`，与返工前已记录的 8 Warning 基线一致，无新增 Error。
+构建日志：`06_Output/Logs/OTA_APP_build.log`、`06_Output/Logs/OTA_APP_rebuild.log`。
+
+### Hardware Verification — `PENDING`
+
+Agent 无法操作真实开发板；本节不把编译结果当作硬件结果。返工后的板级最小回归仍需
+Project Owner 在真实硬件上执行并回传 RTT 日志：
+
+```text
+1. W25Q64 Init / JEDEC ID
+2. 普通 Read
+3. 至少一个 Read Back / Compare Case
+```
+
+返工前已 PASS 的 Sector Erase 全 4 KiB、300 Byte Cross-page Write、Reset Persistence
+和 destructive 边界用例无需重跑：本次改动只影响 `> 0xFFFF` 的长度路径，`<= 0xFFFF`
+仍保持“每笔请求一次 HAL 调用”的原行为（Host Test 已证明 `1` 与 `0xFFFF` 均为 1 次 HAL 调用）。
+
+真实 `> 0xFFFF` Byte 读取的板级证据本次未提供：测试代码需要 ≥64 KiB Buffer，
+会明显占用 STM32F411 的 128 KiB SRAM；是否为此占用 RAM 属于 Project Owner 决策，
+本轮返工未自动实施。
+
+### Verification Result
+
+```text
+Code Verification（返工）      : PASS
+Keil Normal Build              : PASS（0 Error）
+Keil Clean/Rebuild             : PASS（0 Error）
+Hardware Regression（返工）    : PENDING（等待 Project Owner）
+```
+
+Finding 1 的代码级关闭证据已完整；S02 不能由本次返工直接关闭，`review.md` 仍记录
+`CHANGES_REQUESTED`，需要 Review Role 再次独立执行。

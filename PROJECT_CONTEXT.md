@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `CHANGES_REQUESTED`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
@@ -14,16 +14,22 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Current Role: `Implementation`
+- Rework Commit: `Not created yet`
+- Current Role: `Review`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
 `S01_Application_Foundation` 已关闭。
 
-`S02_External_Flash_Driver` 已完成主体实现、真实硬件验证和 Keil Build/Clean-Rebuild，但正式 Review 发现一个需要返工的 Platform/Impl 长度语义问题，因此当前不能关闭阶段。
+`S02_External_Flash_Driver` 已完成主体实现、真实硬件验证和 Keil Build/Clean-Rebuild。
 
-当前只修正这一项：STM32 HAL SPI 的 `uint16_t Size` 限制不能直接泄漏为 Platform/W25Q64 公共 API 的 `65535 Byte` 隐式上限。
+正式 Review 提出的唯一 Finding 已完成返工：STM32 HAL SPI 的 `uint16_t Size` 限制不再泄漏为
+Platform/W25Q64 公共 API 的 `65535 Byte` 隐式上限。
+
+返工已提交 Host Test、Keil Build 与 Keil Clean/Rebuild 证据；板级最小回归（Init/JEDEC ID、
+普通 Read、Read Back Compare）仍需 Project Owner 在真实硬件上确认。`review.md` 仍记录
+`CHANGES_REQUESTED`，S02 关闭必须由 Review Role 独立重新执行。
 
 ## S02 Stable Results
 
@@ -83,13 +89,17 @@ while remaining > 0
 
 `read()` 与 `write()` 建议保持对称，避免相同的 Impl 限制继续从另一个方向泄漏。
 
-修正后：
+修正内容与证据：
 
-1. 增加 `>0xFFFF` 长度路径的针对性验证；
-2. Keil Build / Clean-Rebuild；
-3. 至少重新跑 JEDEC / 普通 Read / 一个真实 Read Back Case；
-4. 更新 `verification.md`、`handoff.md`；
-5. 返回 `READY_FOR_REVIEW`。
+1. `impl_platform_spi.c` 内新增 `stm32_spi_get_transfer_chunk_length()`，`stm32_spi_write()` /
+   `stm32_spi_read()` 改为在 Impl 内按 `<= 0xFFFF` 拆分 HAL blocking transfer，删除
+   `dataLength > 0xFFFF` 直接返回 `PLATFORM_ERR_OVERFLOW` 的分支；
+2. 新增 Host Test `04_Test/Host/S02_External_Flash_Driver/`，覆盖 1 / 0xFFFF / 0x10000 / 0x30000
+   四个长度、chunk 数据覆盖、失败即停和错误映射，18 项检查 `PASS`；同一测试对返工前文件为
+   `FAIL`，可直接复现 Finding；
+3. Keil Normal Build：`0 Error`、`1 Warning`（增量构建）；Keil Clean/Rebuild：`0 Error`、
+   `8 Warning`，与返工前已记录的 warning 基线一致；
+4. 待办：板级最小回归由 Project Owner 在真实硬件上确认，返工 Commit 尚未创建。
 
 ## Reusable Keil Tooling
 
@@ -114,7 +124,13 @@ while remaining > 0
 
 ## Next Action
 
-Implementation Role 只处理 Review Finding，不扩大功能范围。修正和验证完成后重新提交 Review。
+1. Project Owner 确认板级最小回归：W25Q64 Init / JEDEC ID、普通 Read、一个真实 Read Back /
+   Compare Case（本次返工的 Impl 改动只影响 SPI 传输长度，正常长度读取路径未变）；
+2. 创建返工 Commit 并推送；当前环境无法写入 `.git`，返工 Commit 仍为 `Not created yet`；
+3. Review Role 独立复核 Finding 1 的关闭证据和是否引入回归，再决定 `PASS` 或再次返工。
+
+返工证据见 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的
+“Rework Verification” 章节和 `04_Test/Host/S02_External_Flash_Driver/README.md`。
 
 ## Prohibited Actions
 

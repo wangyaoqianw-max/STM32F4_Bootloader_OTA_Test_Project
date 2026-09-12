@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `CHANGES_REQUESTED`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
@@ -12,97 +12,124 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
+- Rework Commit: `Not created yet`
+- Current Role: `Review`
 
 ## Goal
 
-建立并验证 W25Q64 Raw Driver V1。主体实现和硬件闭环已经完成；当前 handoff 仅记录 Review 返工输入。
+建立并验证 W25Q64 Raw Driver V1。主体实现、真实硬件验证和 Keil Build/Clean-Rebuild 已完成；
+本轮返工只处理正式 Review 的 Finding 1，并把阶段从 `CHANGES_REQUESTED` 推进回 `READY_FOR_REVIEW`。
 
-## Completed Implementation / Verification
-
-以下结果保持有效：
-
-- Platform SPI 同步 `read()`；
-- SPI1/SPI2 多实例和 PCLK2/PCLK1 判断；
-- Storage SPI Bus / Flash CS BSP；
-- W25Q64 Init/Deinit、JEDEC ID、SR1、Read、WEL/BUSY、Page Program、跨页 Write、4 KiB Sector Erase；
-- 地址范围、Page、Sector 对齐保护；
-- JEDEC ID=`EF 40 17`；
-- Sector Erase + 4 KiB Read Back 全 `0xFF`；
-- Single-page Program + Compare；
-- `0x7FF0F0` 300 Byte Cross-page Write + Compare；
-- 边界拒绝与 Reset Persistence；
-- Normal Keil Build / Clean-Rebuild；
-- destructive board test 已从生产工程移除；
-- `app_system` 启动修正；
-- SFUD Boundary Evaluation；
-- `05_Tools/Scripts/build_app.bat` 统一 Keil Build 入口。
-
-完整原始证据：
-
-`04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
-
-## Review Output
-
-Review Result：`CHANGES_REQUESTED`
-
-唯一阻塞 Finding：
+## Rework Input（来自 review.md Finding 1）
 
 ```text
 Design:
-platform_w25q64_read() 只受 8 MiB 合法地址范围限制
+platform_w25q64_read() 只受整个 8 MiB 合法地址范围限制
 
 Current Impl:
 dataLength > 0xFFFF
 → PLATFORM_ERR_OVERFLOW
 ```
 
-原因是 STM32 HAL SPI 的 Size 参数为 16-bit，而当前 Impl 直接把这个限制暴露给了 32-bit `platform_size_t` Platform API。
+STM32 HAL SPI 的 `Size` 参数是 16-bit，Impl 不能把这个限制暴露给 32-bit 的
+`platform_size_t` Platform API。`platform_w25q64_read(&flash, 0x000000U, buffer, 65536U)`
+地址合法，但返工前会失败。
 
-例如：
+## Rework Output
 
-```c
-platform_w25q64_read(&flash, 0x000000U, buffer, 65536U);
-```
-
-地址范围合法，但当前实现会失败。
-
-详见：
-
-`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
-
-## Rework Input
-
-推荐在 STM32 SPI Impl 中拆分 HAL 调用：
+### 修改的文件
 
 ```text
-remaining = dataLength
-while remaining > 0
-    chunk = min(remaining, 0xFFFF)
-    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
-    advance buffer
+03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_spi.c   （修正）
+04_Test/Host/S02_External_Flash_Driver/s02_spi_chunking_host_test.c   （新增 Host Test）
+04_Test/Host/S02_External_Flash_Driver/stubs/spi.h                    （新增 HAL 替身）
+04_Test/Host/S02_External_Flash_Driver/README.md                      （新增运行说明）
+04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md      （返工验证记录）
+00_Project/03_Stages/S02_External_Flash_Driver/handoff.md             （本文件）
+00_Project/05_Status/current_status.md
+PROJECT_CONTEXT.md
 ```
 
-约束：
+### Impl 内的拆分方式
 
-- 不改变 Platform SPI Bus / Device / Transaction 架构；
-- HAL chunk 期间不能结束上层 transaction，CS 必须保持原事务语义；
-- `read()` / `write()` 建议对称处理；
-- 不通过修改 Design 或公共接口文档来降低原要求；
-- 不扩展 DMA/Interrupt SPI、SFUD、OTA 或 Bootloader。
+```text
+static platform_size_t stm32_spi_get_transfer_chunk_length(remaining)
+    → (remaining > 0xFFFF) ? 0xFFFF : remaining
 
-## Required Re-verification
+stm32_spi_write() / stm32_spi_read():
+    currentData = data; remaining = dataLength;
+    while (remaining > 0) {
+        chunkLength = stm32_spi_get_transfer_chunk_length(remaining);
+        HAL_SPI_Transmit/_Receive(chunkLength);  失败立即返回映射后的错误
+        currentData += chunkLength; remaining -= chunkLength;
+    }
+```
 
-修正后至少提供：
+约束遵守情况：
 
-1. `>0xFFFF` Byte 长度路径不再直接 `OVERFLOW` 的针对性证据；
-2. Code Verification；
-3. Keil Build / Clean-Rebuild；
-4. JEDEC ID / 普通 Read / 一个真实 Read Back Case；
-5. `verification.md` 更新；
-6. 新的修正 Commit；
-7. 状态恢复到 `READY_FOR_REVIEW` 后重新审核。
+- 未修改 `platform_size_t`，未给 Platform SPI 公共 API 增加 65535 Byte 上限；
+- 未在 W25Q64 Driver 内做 HAL chunk，未新增 `transfer()`，未改动 Bus / Device / Transaction 模型与 CS 逻辑；
+- chunk 之间不调用 `transaction_end()`，CS 仍由上层 `transaction_begin/end` 保持；
+- 任一 chunk 失败立即停止剩余传输并返回映射后的错误（`HAL_BUSY→BUSY`、`HAL_TIMEOUT→TIMEOUT`、`HAL_ERROR→IO`）；
+- 未使用动态内存，未引入 DMA / Interrupt SPI，未重构无关 SPI / W25Q64 代码。
 
-不要求重新执行全部 destructive Flash 板测，除非修正过程中改变了 W25Q64 transaction 或擦写逻辑。
+### 冻结 Implementation Plan 的偏离记录
+
+`implementation_plan.md` Task 2 Step 4 仍写着 `dataLength > STM32_SPI_HAL_MAX_TRANSFER_SIZE → PLATFORM_ERR_OVERFLOW`。
+该片段已被 Review Finding 1 判定为实现约束泄漏，本轮按 Review 要求删除该分支；
+`implementation_plan.md` 作为冻结计划文档未改动，偏离在此记录并交回 Review/Project Owner 确认。
+
+## Verification Evidence
+
+| 项目 | 结果 | 证据位置 |
+| --- | --- | --- |
+| Host Test（HAL 替身） | `PASS`，18 项检查 | `04_Test/Host/S02_External_Flash_Driver/README.md` + verification.md |
+| 返工前文件对照 | `FAIL`，10 项，复现 Finding 1 | verification.md |
+| 静态语法检查 | `PASS`，`gcc -std=c99 -Wall -Wextra` | verification.md |
+| Keil Normal Build | `PASS`，0 Error / 1 Warning | `06_Output/Logs/OTA_APP_build.log` |
+| Keil Clean/Rebuild | `PASS`，0 Error / 8 Warning | `06_Output/Logs/OTA_APP_rebuild.log` |
+| Hardware Regression | `PENDING` | 待 Project Owner 板测 |
+
+硬件最小回归范围（不需要重跑整个 destructive 套件）：
+
+1. W25Q64 Init / JEDEC ID；
+2. 普通 Read；
+3. 至少一个 Read Back / Compare Case。
+
+Sector Erase 全 4 KiB、300 Byte Cross-page Write、Reset Persistence 和 destructive 边界用例
+在返工前已 PASS，本次未改动其代码路径，除非板测发现异常否则无需重做。
+
+可选的针对性板级证据（本次未实现）：真实 `> 0xFFFF` Byte 读取需要在测试代码里准备
+64 KiB 以上 Buffer，会显著占用 STM32F411 的 128 KiB SRAM；是否值得占用该 RAM 属于
+Project Owner 的决策，不在本轮返工范围内自动实施。
+
+## Pending / Not Verified
+
+- 板级最小回归：等待 Project Owner 在真实硬件上执行并回传 RTT 日志；
+- 返工 Commit 与 Push：当前环境无法写入 `.git`，Commit 尚未创建；
+- `review.md` 仍记录 `CHANGES_REQUESTED`，正式 Review 需要再次独立执行，S02 未关闭。
+
+## Coding Standard Review
+
+```text
+Coding Standard:
+03_Firmware/00_Doc/Standards/嵌入式C代码规范.md
+Status: READ
+```
+
+```text
+Coding Standard Review: PASS
+```
+
+- 命名与文件组织沿用 `impl_platform_spi.c` 现有风格（`g_stm32SpiOps`、`stm32_spi_*`、`chunkLength`）；
+- NULL / 长度 0 / Context 无效 / HAL Handle 未绑定均保持显式校验，返回码可诊断；
+- chunk 拆分不引入新 Buffer、不复制数据，不使用动态内存；
+- HAL 返回值继续经 `stm32_spi_map_hal_status()` 映射，不吞 `HAL_BUSY / HAL_TIMEOUT / HAL_ERROR`；
+- 未修改 Vendor / 生成代码，未新增 Compiler Warning（Normal Build 1 Warning、Clean Rebuild 8 Warning 均为既有项）。
+
+## Next Action
+
+Review Role 复核 Finding 1 的关闭证据与是否引入回归；Project Owner 在此之前完成板级最小回归和返工提交。
 
 ## Non-blocking Notes
 
@@ -110,7 +137,3 @@ while remaining > 0
 - `.uvoptx` IDE 状态 churn 后续尽量减少；
 - Storage SPI RTOS 并发锁留待正式并发阶段设计；
 - 既有 Warning 不属于本轮返工。
-
-## Next Action
-
-Implementation Role 根据本 handoff 和 `review.md` 完成最小返工，验证后重新交 Review Role。

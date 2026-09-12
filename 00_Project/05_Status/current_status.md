@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `CHANGES_REQUESTED`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
@@ -12,43 +12,63 @@
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
-- Current Role: `Implementation`
+- Rework Commit: `Not created yet`
+- Current Role: `Review`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
-S02 的主体实现、Keil Build/Clean-Rebuild 和真实 W25Q64 板测均已完成。正式 Review 发现一个需要在关闭阶段前修正的接口语义问题，因此状态由 `READY_FOR_REVIEW` 进入 `CHANGES_REQUESTED`。
+S02 的主体实现、Keil Build/Clean-Rebuild 和真实 W25Q64 板测均已完成。
 
-返工只处理 SPI 大长度传输语义，不重做已经通过的 W25Q64 功能，不扩大到 SFUD、OTA、Bootloader 或其他后续阶段。
+正式 Review 的 Finding 1（SPI Impl 单次 0xFFFF 长度限制泄漏为 Platform/W25Q64 公共接口上限）已完成返工并通过针对性验证，状态由 `CHANGES_REQUESTED` 回到 `READY_FOR_REVIEW`，等待 Review Role 独立复核。
 
-## Review Finding
+返工不重做已通过的 W25Q64 功能，不涉及 SFUD、OTA、Bootloader 或其他后续阶段。
 
-冻结 Design 规定 `platform_w25q64_read()` 可跨 Page/Sector，合法读取只受整个 8 MiB Flash 地址范围限制。
+## Rework Result — Finding 1
 
-当前实现存在：
+修正位置：
 
 ```text
-platform_size_t = uint32
-        ↓
-platform_w25q64_read(dataLength)
-        ↓
-platform_spi_read(dataLength)
-        ↓
-stm32_spi_read()
-        ↓
-if dataLength > 0xFFFF
-    PLATFORM_ERR_OVERFLOW
+04_Impl/impl_mcu/impl_platform_spi.c
+  stm32_spi_get_transfer_chunk_length()
+  stm32_spi_write()
+  stm32_spi_read()
 ```
 
-因此合法的 `65536 Byte` Read 会因为 HAL `uint16_t Size` 的 Impl 细节失败，和冻结 Platform/W25Q64 公共语义不一致。
+修正后的语义：
 
-详细 Review：
+```text
+platform_size_t request
+      ↓
+while remaining > 0
+    chunk = min(remaining, 0xFFFF)
+    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
+    data += chunk, remaining -= chunk
+```
 
-`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
+- 一个 Platform transaction 内可执行多个 HAL chunk，CS 仍由上层 `transaction_begin/end` 保持有效；
+- 未修改 `platform_size_t`、Platform SPI 公共 API、W25Q64 Driver、Bus/Device/Transaction 模型和 CS 控制逻辑；
+- 任一 chunk 失败立即返回映射后的错误，不吞掉 `HAL_BUSY / HAL_TIMEOUT / HAL_ERROR`。
+
+验证证据：
+
+| 项目 | 结果 |
+| --- | --- |
+| Host Test（HAL 替身） | `PASS`，18 项检查；同一测试对返工前文件为 `FAIL`（10 项） |
+| 长度覆盖 | `1` / `0xFFFF` / `0x10000` / `0x30000` |
+| HAL chunk 序列 | `1` / `0xFFFF` / `0xFFFF + 1` / `0xFFFF + 0xFFFF + 0xFFFF + 3` |
+| 静态语法检查 | `PASS`，`gcc -std=c99 -Wall -Wextra` |
+| Keil Normal Build | `PASS`，0 Error，1 Warning（增量构建） |
+| Keil Clean/Rebuild | `PASS`，0 Error，8 Warning |
+| Hardware Regression | `PENDING`，等待 Project Owner |
+
+完整记录：
+
+`04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
 
 ## Previously Verified S02 Capabilities
 
-以下结果保持有效，不因本次 Review Finding 被否定：
+以下结果保持有效，不因本次返工被否定：
 
 - Platform SPI `read()` 和 SPI2 multi-instance；
 - SPI1 PCLK2 / SPI2 PCLK1；
@@ -74,17 +94,11 @@ if dataLength > 0xFFFF
 
 Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅放在被忽略的 `toolchain.local.bat`。
 
-## Required Rework
+## Pending Items
 
-优先修正 STM32 SPI Impl，使 `platform_spi_read()` / `platform_spi_write()` 的 32-bit `platform_size_t` 请求可在 Impl 内拆成多个 `<= 0xFFFF` 的 HAL blocking transfer，而不是把 HAL Size 限制泄漏给 Platform 调用者。
-
-修正后至少验证：
-
-1. `> 0xFFFF` Byte 请求不再直接返回 `PLATFORM_ERR_OVERFLOW`；
-2. Keil Build / Clean-Rebuild；
-3. W25Q64 JEDEC/普通 Read + 一个真实 Read Back Case，确认 transaction 没有回归；
-4. 更新 `verification.md` 和 `handoff.md`；
-5. 状态重新进入 `READY_FOR_REVIEW`。
+1. 板级最小回归：W25Q64 Init / JEDEC ID、普通 Read、一个真实 Read Back / Compare Case；
+2. 返工 Commit 与推送：当前环境无法写入 `.git`，Rework Commit 仍为 `Not created yet`；
+3. `review.md` 仍记录 `CHANGES_REQUESTED`，S02 关闭必须由 Review Role 独立重新执行。
 
 ## Non-blocking Items
 
@@ -95,8 +109,9 @@ Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅�
 
 ## Blockers
 
-- Review Finding：SPI Impl 单次 `0xFFFF` 长度限制与冻结 W25Q64 Read 语义不一致。
+- 无实现或验证阻塞；返工 Commit 尚未创建，仅受当前提交权限限制。
 
 ## Next Action
 
-Implementation Role 针对 Review Finding 做最小修正和针对性验证。不得修改冻结 Design 来降低接口要求，也不得顺带扩展 SFUD、DMA SPI、OTA 或 Bootloader。
+Review Role 独立复核 Finding 1 的关闭证据和是否引入回归；Project Owner 在此之前确认板级最小回归并完成返工提交。
+
