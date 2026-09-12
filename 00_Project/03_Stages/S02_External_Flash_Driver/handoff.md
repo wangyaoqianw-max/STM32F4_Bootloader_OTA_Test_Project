@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
@@ -11,88 +11,106 @@
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
-- Review Commit: `Not created yet`
+- Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 
 ## Goal
 
-在 STM32F411 Application 基础上建立可靠的 W25Q64 Raw Driver V1，并完成从 SPI2 Platform/Impl、板级绑定、Flash Driver 到真实硬件 Read Back 的完整验证闭环。
+建立并验证 W25Q64 Raw Driver V1。主体实现和硬件闭环已经完成；当前 handoff 仅记录 Review 返工输入。
 
-## Implementation Output
+## Completed Implementation / Verification
 
-- Status: `COMPLETED`
-- Platform SPI 已增加同步阻塞 `platform_spi_read()`；
-- STM32 SPI Impl 已支持 SPI1/SPI2 多实例，并正确区分 PCLK2/PCLK1；
-- 已新增 Storage SPI Bus 与 Flash CS BSP；
-- W25Q64 Raw Driver 已实现 Init/Deinit、JEDEC ID、SR1、Read、WEL/BUSY、Page Program、跨页 Write 和 4 KiB Sector Erase；
-- 已实现地址范围、Page 边界和 Sector 对齐保护；
-- S02 destructive board test 与 Reset persistence 测试已完成；
-- 板测结束后，测试接线已从生产 Application/Keil 工程移除，源码保留在 `04_Test/Board`；
-- 验证期间新增 `app_system` 独立 Application Thread，修正日志初始化和任务启动时序；
-- SFUD 仅完成边界评估，未在 S02 强行接入 Middleware。
+以下结果保持有效：
 
-## Reusable Tooling Added
+- Platform SPI 同步 `read()`；
+- SPI1/SPI2 多实例和 PCLK2/PCLK1 判断；
+- Storage SPI Bus / Flash CS BSP；
+- W25Q64 Init/Deinit、JEDEC ID、SR1、Read、WEL/BUSY、Page Program、跨页 Write、4 KiB Sector Erase；
+- 地址范围、Page、Sector 对齐保护；
+- JEDEC ID=`EF 40 17`；
+- Sector Erase + 4 KiB Read Back 全 `0xFF`；
+- Single-page Program + Compare；
+- `0x7FF0F0` 300 Byte Cross-page Write + Compare；
+- 边界拒绝与 Reset Persistence；
+- Normal Keil Build / Clean-Rebuild；
+- destructive board test 已从生产工程移除；
+- `app_system` 启动修正；
+- SFUD Boundary Evaluation；
+- `05_Tools/Scripts/build_app.bat` 统一 Keil Build 入口。
 
-施工期间新增：
-
-```text
-05_Tools/Scripts/build_app.bat
-05_Tools/Config/toolchain.local.example.bat
-```
-
-该机制已写入 `AGENTS.md` 和 `05_Tools/Scripts/README.md`，作为跨阶段可复用工程资产：
-
-- Agent/开发者统一通过脚本调用 Keil；
-- 本机 Keil 路径只保存在被 Git Ignore 的 `toolchain.local.bat`；
-- Build Log 统一写入 `06_Output/Logs/OTA_APP_build.log`；
-- 后续 J-Link、RTT、打包等自动化可沿用同一模式扩展。
-
-## Verification Output
-
-- Code Verification: `PASS`
-- Normal Keil Build: `PASS`，0 Error、8 Warning；
-- Keil Clean/Rebuild: `PASS`，由 Project Owner 于 `2026-09-12` 实际执行并确认成功；本次未单独记录 warning 数量；
-- Hardware Verification: `PASS`；
-- JEDEC ID：`EF 40 17`；
-- Sector Erase + 4 KiB Read Back 全 `0xFF`：`PASS`；
-- Single-page Program + Compare：`PASS`；
-- `0x7FF0F0`、300 Byte Cross-page Write + Compare：`PASS`；
-- 越界 Read/Write、跨页原子 Program、未对齐 Erase 拒绝：`PASS`；
-- Reset Persistence：`PASS`；
-- RTT + EasyLogger：`PASS`，但结论来自实际 Read Back/Compare；
-- 普通生产启动不包含 S02 destructive test：`PASS`。
-
-完整验证证据：
+完整原始证据：
 
 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
 
-SFUD 评估：
+## Review Output
 
-`00_Project/03_Stages/S02_External_Flash_Driver/sfud_evaluation.md`
+Review Result：`CHANGES_REQUESTED`
 
-## Deviations From Plan
+唯一阻塞 Finding：
 
-- destructive test 的 Application 调用与门禁集中在板测任务中完成，避免早期 Task 引入无门禁擦写路径；
-- 验证期间发现默认任务栈/日志初始化链需要修正，因此增加 `app_system` 和 Platform Thread 接线；该调整未改变已批准的 Flash Driver 接口或职责；
-- 未新增 SFUD 源码，实际 Middleware 集成继续延后。
+```text
+Design:
+platform_w25q64_read() 只受 8 MiB 合法地址范围限制
 
-## Known Non-blocking Items
+Current Impl:
+dataLength > 0xFFFF
+→ PLATFORM_ERR_OVERFLOW
+```
 
-- S01 遗留 `platform_gpio.c` 5 个既有 Warning；
-- Vendor `elog_port.c` 1 个文件末尾换行 Warning；
-- 普通 Build 中其余 ARMCC 兼容性 Warning 当前不作为 S02 阻塞项；
-- SFUD 实际接入延后到后续确有需求时再决定。
+原因是 STM32 HAL SPI 的 Size 参数为 16-bit，而当前 Impl 直接把这个限制暴露给了 32-bit `platform_size_t` Platform API。
 
-## Review Input
+例如：
 
-Review Role 应读取：
+```c
+platform_w25q64_read(&flash, 0x000000U, buffer, 65536U);
+```
 
-1. `design.md`
-2. `implementation_plan.md`
-3. 本 `handoff.md`
-4. `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
-5. `sfud_evaluation.md`
-6. Baseline `5ac069f...` 到 Merge `c6c77a2...` 的代码差异
+地址范围合法，但当前实现会失败。
+
+详见：
+
+`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
+
+## Rework Input
+
+推荐在 STM32 SPI Impl 中拆分 HAL 调用：
+
+```text
+remaining = dataLength
+while remaining > 0
+    chunk = min(remaining, 0xFFFF)
+    HAL_SPI_Transmit / HAL_SPI_Receive(chunk)
+    advance buffer
+```
+
+约束：
+
+- 不改变 Platform SPI Bus / Device / Transaction 架构；
+- HAL chunk 期间不能结束上层 transaction，CS 必须保持原事务语义；
+- `read()` / `write()` 建议对称处理；
+- 不通过修改 Design 或公共接口文档来降低原要求；
+- 不扩展 DMA/Interrupt SPI、SFUD、OTA 或 Bootloader。
+
+## Required Re-verification
+
+修正后至少提供：
+
+1. `>0xFFFF` Byte 长度路径不再直接 `OVERFLOW` 的针对性证据；
+2. Code Verification；
+3. Keil Build / Clean-Rebuild；
+4. JEDEC ID / 普通 Read / 一个真实 Read Back Case；
+5. `verification.md` 更新；
+6. 新的修正 Commit；
+7. 状态恢复到 `READY_FOR_REVIEW` 后重新审核。
+
+不要求重新执行全部 destructive Flash 板测，除非修正过程中改变了 W25Q64 transaction 或擦写逻辑。
+
+## Non-blocking Notes
+
+- `project_config.h` / `app_main.c` 文件头仍有 S01 文案，可后续整理；
+- `.uvoptx` IDE 状态 churn 后续尽量减少；
+- Storage SPI RTOS 并发锁留待正式并发阶段设计；
+- 既有 Warning 不属于本轮返工。
 
 ## Next Action
 
-进入 Review Role。依据 `review.md` 对需求、冻结设计、实现差异和验证证据进行正式审核；审核通过后再由 Project Owner 将 S02 标记为 `CLOSED`。当前不得跳过 Review 直接关闭阶段。
+Implementation Role 根据本 handoff 和 `review.md` 完成最小返工，验证后重新交 Review Role。
