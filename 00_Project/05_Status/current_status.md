@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_REVIEW`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
@@ -11,114 +11,92 @@
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
 - Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
-- Current Role: `Review`
+- Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
+- Current Role: `Implementation`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
-`S02_External_Flash_Driver` 的设计、实现和 Verification 已完成。当前目标是进行正式 Review，确认冻结设计、实现差异、验证证据和阶段范围一致，然后决定 `PASS / CHANGES_REQUESTED / BLOCKED`。
+S02 的主体实现、Keil Build/Clean-Rebuild 和真实 W25Q64 板测均已完成。正式 Review 发现一个需要在关闭阶段前修正的接口语义问题，因此状态由 `READY_FOR_REVIEW` 进入 `CHANGES_REQUESTED`。
 
-## Completed
+返工只处理 SPI 大长度传输语义，不重做已经通过的 W25Q64 功能，不扩大到 SFUD、OTA、Bootloader 或其他后续阶段。
 
-### Previous Stages
+## Review Finding
 
-- `S00_Template_Restructure`：`CLOSED`；
-- `S01_Application_Foundation`：`CLOSED`。
+冻结 Design 规定 `platform_w25q64_read()` 可跨 Page/Sector，合法读取只受整个 8 MiB Flash 地址范围限制。
 
-### S02 Design
+当前实现存在：
 
-- W25Q64/SPI2 硬件接口已确认；
-- SPI1/SPI2 均使用 12.5 MHz；
-- 保留 SPI Bus / Device / Transaction 架构，只增加同步 `read()`；
-- SPI1/SPI2 共用 STM32 SPI Impl；
-- SPI1 使用 PCLK2，SPI2 使用 PCLK1；
-- Raw Driver V1 指令范围：`0x9F / 0x05 / 0x06 / 0x03 / 0x02 / 0x20`；
-- Read 可跨 Page/Sector；原子 Page Program 不可跨页；
-- 连续 Write 自动拆 Page，但不自动 Erase；
-- Sector Erase 强制 4 KiB 对齐；
-- Program/Erase 使用 WEL + BUSY 状态机制；
-- S02 destructive test Sector：`0x7FF000 ~ 0x7FFFFF`。
+```text
+platform_size_t = uint32
+        ↓
+platform_w25q64_read(dataLength)
+        ↓
+platform_spi_read(dataLength)
+        ↓
+stm32_spi_read()
+        ↓
+if dataLength > 0xFFFF
+    PLATFORM_ERR_OVERFLOW
+```
 
-### S02 Implementation
+因此合法的 `65536 Byte` Read 会因为 HAL `uint16_t Size` 的 Impl 细节失败，和冻结 Platform/W25Q64 公共语义不一致。
 
-- Platform SPI `read()`、SPI2 multi-instance、PCLK1/PCLK2 修正完成；
-- W25Q64 Init/JEDEC/SR1/Read/Page Program/Cross-page Write/Sector Erase 完成；
-- 地址/Page/Sector 边界保护完成；
-- App Storage SPI Bus 生命周期接入完成；
-- `app_system` 独立 Application Thread 和日志初始化时序修正完成；
-- destructive board test 已从生产 Application/Keil 工程移除，测试源码保留；
-- SFUD 边界评估完成，实际 Middleware 集成延后；
-- PR #3 已合并到 `main`。
+详细 Review：
 
-### Reusable Tooling
+`00_Project/03_Stages/S02_External_Flash_Driver/review.md`
 
-新增并保留：
+## Previously Verified S02 Capabilities
+
+以下结果保持有效，不因本次 Review Finding 被否定：
+
+- Platform SPI `read()` 和 SPI2 multi-instance；
+- SPI1 PCLK2 / SPI2 PCLK1；
+- W25Q64 JEDEC ID=`EF 40 17`；
+- SR1 / WEL / BUSY；
+- 4 KiB Sector Erase + 全量 Read Back `0xFF`；
+- Single-page Program + Compare；
+- `0x7FF0F0` 300 Byte Cross-page Write + Compare；
+- 越界、跨页原子 Program、未对齐 Erase 拒绝；
+- Reset Persistence；
+- Code Verification / Normal Keil Build / Keil Clean-Rebuild；
+- destructive board test 已从生产启动路径移除；
+- SFUD Boundary Evaluation 已完成，实际集成延后。
+
+## Reusable Tooling
+
+以下工程资产继续保留：
 
 ```text
 05_Tools/Scripts/build_app.bat
 05_Tools/Config/toolchain.local.example.bat
 ```
 
-该机制已经成为仓库级统一 Keil Build 入口，并在 `AGENTS.md` 中规定 Agent 优先调用，不再重复探测本机 Keil 安装路径。
+Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅放在被忽略的 `toolchain.local.bat`。
 
-## Verification Status
+## Required Rework
 
-- Code Verification：`PASS`；
-- Normal Keil Build：`PASS`，0 Error、8 Warning；
-- Keil Clean/Rebuild：`PASS`，Project Owner 已于 `2026-09-12` 实际执行并确认成功；
-- Hardware Verification：`PASS`；
-- JEDEC ID=`EF 40 17`：`PASS`；
-- SR1/BUSY/WEL：`PASS`；
-- 4 KiB Sector Erase + 全量 Read Back `0xFF`：`PASS`；
-- Single-page Program + Compare：`PASS`；
-- `0x7FF0F0` 300 Byte Cross-page Write + Compare：`PASS`；
-- 越界/跨页原子 Program/未对齐 Erase 拒绝：`PASS`；
-- Reset Persistence：`PASS`；
-- 生产启动不包含 destructive test：`PASS`。
+优先修正 STM32 SPI Impl，使 `platform_spi_read()` / `platform_spi_write()` 的 32-bit `platform_size_t` 请求可在 Impl 内拆成多个 `<= 0xFFFF` 的 HAL blocking transfer，而不是把 HAL Size 限制泄漏给 Platform 调用者。
 
-完整证据：
+修正后至少验证：
 
-`04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
+1. `> 0xFFFF` Byte 请求不再直接返回 `PLATFORM_ERR_OVERFLOW`；
+2. Keil Build / Clean-Rebuild；
+3. W25Q64 JEDEC/普通 Read + 一个真实 Read Back Case，确认 transaction 没有回归；
+4. 更新 `verification.md` 和 `handoff.md`；
+5. 状态重新进入 `READY_FOR_REVIEW`。
 
-## Known Non-blocking Items
+## Non-blocking Items
 
-- S01 遗留 `platform_gpio.c` 5 个既有 Warning；
-- Vendor `elog_port.c` 文件末尾换行 Warning；
-- 其余普通 Build ARMCC 兼容性 Warning 当前不阻塞 S02；
-- CK02AT、Ymodem、LCD/CTP 按 Roadmap 延后；
-- SFUD 实际接入按后续需求决定。
+- `project_config.h` / `app_main.c` 的文件头仍有 S01 文案，可后续清理；
+- `.uvoptx` 有较大的 IDE 状态 churn，后续提交应尽量避免无意义变动；
+- Storage SPI 跨 transaction 的 RTOS lock 留待正式并发阶段设计；
+- 既有 Warning 继续按技术债务处理，不属于本轮返工。
 
 ## Blockers
 
-无 Verification 阻塞项。
+- Review Finding：SPI Impl 单次 `0xFFFF` 长度限制与冻结 W25Q64 Read 语义不一致。
 
 ## Next Action
 
-进入 S02 Review Role：
-
-1. 对照 `design.md` 与实际实现；
-2. 检查 Baseline `5ac069f...` 到 Merge `c6c77a2...` 的差异是否越界；
-3. 读取 `handoff.md`、`verification.md`、`sfud_evaluation.md`；
-4. 检查 W25Q64 Driver 分层、事务释放、Page/Sector 边界、WEL/BUSY 和生产测试清理；
-5. 在 `review.md` 写入正式结论；
-6. Review PASS 后再由 Project Owner 将 S02 置为 `CLOSED`。
-
-## Required Reading for Review
-
-1. `PROJECT_CONTEXT.md`
-2. `00_Project/WORKFLOW.md`
-3. `00_Project/01_Requirements/项目需求V1.md`
-4. `00_Project/02_Roadmap/development_roadmap.md`
-5. `00_Project/03_Stages/S02_External_Flash_Driver/design.md`
-6. `00_Project/03_Stages/S02_External_Flash_Driver/implementation_plan.md`
-7. `00_Project/03_Stages/S02_External_Flash_Driver/handoff.md`
-8. `00_Project/03_Stages/S02_External_Flash_Driver/review.md`
-9. `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
-10. `00_Project/03_Stages/S02_External_Flash_Driver/sfud_evaluation.md`
-
-## Prohibited Before Review Conclusion
-
-- 不直接标记 S02 `CLOSED`；
-- 不把非阻塞 Warning 改写成新的 S02 功能缺陷；
-- 不在 Review 阶段顺手扩展 SFUD、OTA、Bootloader 或其他后续功能；
-- 发现实质设计偏差时必须给出 `CHANGES_REQUESTED`，不得通过修改验收条件掩盖问题。
+Implementation Role 针对 Review Finding 做最小修正和针对性验证。不得修改冻结 Design 来降低接口要求，也不得顺带扩展 SFUD、DMA SPI、OTA 或 Bootloader。
