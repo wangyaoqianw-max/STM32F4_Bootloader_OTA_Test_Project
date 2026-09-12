@@ -47,9 +47,9 @@
 ### S02 Implementation
 
 - Task 1-5 已按独立本地提交完成：SPI read/SPI2、多实例与 PCLK 校验；W25Q64 初始化、诊断、读取、编程、擦除、跨页写入与边界测试；App Storage SPI Bus 编排；破坏性板测门禁和双启动持久化逻辑。
-- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE` 提交值为 `0U`，普通启动不会自动擦除或写入测试 Sector；当前工作区可临时改为 `1U` 进行板测。
+- 临时 S02 板测配置、Application 调用和 Keil 工程接线已移除；板测源码保留在 `04_Test/Board` 供后续按需接入。
 - 日志初始化已放入 `freertos.c` 的 CubeMX 用户初始化区；`defaultTask` 只创建 `app_system` 后退出，App 通过 Platform Thread API 使用独立任务栈运行。
-- 实现提交范围：`f89a394`、`70f179e`、`42217e2`、`86ecbb3`、`82573b2`、`e2d1ad5`。
+- 实现提交范围：`f89a394`、`70f179e`、`42217e2`、`86ecbb3`、`82573b2`、`e2d1ad5`、`8cc3e0f`。
 
 ## Implementation Sequence
 
@@ -79,8 +79,8 @@
 ## Verification Status
 
 - 代码验证：`PASS`，统一 GCC 静态语法检查、工程 XML/源路径检查和差异检查已完成。
-- Keil Build：`PASS`，通过 `05_Tools\Scripts\build_app.bat` 调用 Keil UV4，0 Error、1 Warning（既有 Platform Thread 适配警告，暂不处理）；Clean/Rebuild：`NOT_RUN`。
-- 硬件验证：`PENDING`，当前无开发板、J-Link、RTT 或逻辑分析仪证据。
+- Keil Build：`PASS`，通过 `05_Tools\Scripts\build_app.bat` 调用 Keil UV4，0 Error、8 Warning（既有 ARMCC 兼容性和文件末尾换行提示，暂不处理）；Clean/Rebuild：`NOT_RUN`。
+- 硬件验证：`PASS`，用户提供的三次 RTT 启动日志已覆盖 JEDEC、SR1、擦除、单页写入、跨页写入、边界拒绝和重启持久化。
 - Verification Input：[S02 verification.md](../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
 - SFUD Evaluation：[sfud_evaluation.md](../03_Stages/S02_External_Flash_Driver/sfud_evaluation.md)
 
@@ -95,11 +95,11 @@
 
 ## Blockers
 
-实现无已知代码阻塞；阶段关闭仍受 Keil Clean/Rebuild 和真实硬件证据约束。
+实现无已知代码阻塞；阶段关闭仍受 Keil Clean/Rebuild 和 Review Role 审核约束。
 
 ## Next Action
 
-进入 Verification Role：补做 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的真实结果；证据完整后交 Review Role，不得直接标记 S02 `CLOSED`。
+进入 Verification Role：补做 Keil Clean/Rebuild，确认普通启动工程不包含临时板测入口；随后交 Review Role，不得直接标记 S02 `CLOSED`。
 
 ## Required Reading for Implementation
 

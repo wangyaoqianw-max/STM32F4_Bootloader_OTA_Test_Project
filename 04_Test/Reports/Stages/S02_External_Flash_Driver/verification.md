@@ -5,9 +5,9 @@
 - Stage: `S02_External_Flash_Driver`
 - Verification input status: `READY_FOR_VERIFICATION`
 - Code verification: `PASS` for the host-side static checks listed below
-- Hardware verification: `PENDING`
-- Keil/MDK Build: `PASS`，0 Error、1 Warning；Clean/Rebuild: `NOT_RUN`
-- Board, RTT and logic-analyzer evidence: `NOT_AVAILABLE`
+- Hardware verification: `PASS`，基于用户提供的 RTT 实机日志
+- Keil/MDK Build: `PASS`，0 Error、8 Warning；Clean/Rebuild: `NOT_RUN`
+- Board and RTT evidence: `PASS`; logic-analyzer evidence: `NOT_USED`
 
 本文件记录 Implementation Role 已完成的可回读证据和下一步 Verification Role 输入，不替代真实开发板验收，也不把静态编译结果描述为硬件通过。
 
@@ -27,6 +27,7 @@
 - `service_log_init()` 位于 `freertos.c` 的 `USER CODE BEGIN Init` 区域，在 `osKernelInitialize()` 后、创建默认任务前执行，CubeMX 重新生成时会保留。
 - `defaultTask` 只调用 `app_system_start()`，成功后立即删除自身；`app_system` 使用 4096 Byte 独立栈运行 `app_main()`。
 - App 层通过 `platform_thread_create()` 创建任务，不直接包含或调用 CMSIS-RTOS；FreeRTOS 适配文件已加入 Keil 工程。
+- 板测完成后，`s02_flash_board_test.c` 仍保留在 `04_Test/Board`，但已从 Application 源码、配置和 Keil 工程移除。
 - 该调整只解决任务启动和日志观测基础设施，不替代真实 Flash Read Back/Compare 硬件证据。
 
 ## Host-side Code Verification
@@ -55,7 +56,7 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 - `OTA_APP.uvprojx` XML 解析及工程内全部 `FilePath` 存在性：`PASS`。
 - W25Q64 Raw Driver 直接引用 HAL、`hspi2` 或 `SPI2`：未发现，`PASS`。
 - Chip Erase `0x60/0xC7` 或 Chip Erase 公共 API：未发现，`PASS`。
-- `PROJECT_S02_FLASH_BOARD_TEST_ENABLE`：提交值为 `0U`，正常启动破坏性板测门禁关闭，`PASS`；本次板测编译使用工作区临时 `1U`，未提交。
+- S02 板测配置和 Keil 工程接线已移除，生产 Application 不再自动执行破坏性 Flash 测试；测试源码仅保留在 `04_Test/Board`。
 
 ## MDK Build Verification
 
@@ -65,14 +66,14 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 05_Tools\Scripts\build_app.bat
 ```
 
-- Source Commit：`e2d1ad5`
+- Source Commit：`8cc3e0f`
 - Target：`OTA_APP`
 - Tool：Keil UV4
 - Compiler：`V5.06 update 7 (build 960)`
-- Build：`PASS`
+- Build：`PASS`（目标已生成，脚本仅因 warning 返回非零）
 - Error：`0`
-- Warning：`1`（`impl_freertos_thread.c` 既有 ARMCC 警告，当前按用户要求暂不处理）
-- Script exit code：`0`
+- Warning：`8`（既有 ARMCC 兼容性和文件末尾换行提示，当前按用户要求暂不处理）
+- Script exit code：`1`（warning gate）
 - Build log：`06_Output/Logs/OTA_APP_build.log`
 - 主要输出：`03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.axf`、`.hex`，以及 `Listings/OTA_APP.map`
 - Clean/Rebuild：`NOT_RUN`；当前脚本调用 UV4 `-b`，不包含 Clean 操作
@@ -80,28 +81,27 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 
 ## Hardware Case Matrix
 
-所有硬件栏位均保持 `PENDING`，原因是当前会话没有真实开发板、J-Link、RTT 终端或逻辑分析仪。
+以下结果来自用户提供的三次启动 RTT 日志；后两次启动包含完整测试项。
 
 | Case | 目标证据 | 当前状态 |
 | --- | --- | --- |
-| JEDEC ID | 实际读取 `EF 40 17` | `PENDING` |
-| SR1 | 实际读取稳定且可解释 BUSY/WEL | `PENDING` |
-| Test Sector | 仅使用 `0x7FF000 ~ 0x7FFFFF` | 代码范围已检查；硬件 `PENDING` |
-| Sector Erase | 擦除后完整 4096 Byte 逐字节为 `0xFF` | `PENDING` |
-| Single-page Program | `0x7FF000`、64 Byte、真实 Read Back Compare | `PENDING` |
-| Cross-page Write | `0x7FF0F0`、300 Byte、预期拆分 `16 + 256 + 28`、真实 Compare | `PENDING` |
-| Boundary Read/Write | 越界读写被拒绝，合法尾地址读成功 | `PENDING` |
-| Atomic Page Program | `0x...F0` + 32 Byte 跨页被拒绝 | `PENDING` |
-| Unaligned Erase | `0x7FF001` 被拒绝 | `PENDING` |
-| Reset Persistence | 第二次启动先读取并比较 `0x7FF0F0` 的 300 Byte | `PENDING` |
-| RTT/EasyLogger | 每个 Case 的地址、长度、返回码和数据校验结果 | `PENDING` |
+| JEDEC ID | 实际读取 `EF 40 17` | `PASS` |
+| SR1 | 实际读取 `00`，初始化后 BUSY/WEL 清除 | `PASS` |
+| Test Sector | 仅使用 `0x7FF000 ~ 0x7FFFFF` | `PASS` |
+| Sector Erase | 擦除后完整 Read Back 为 `0xFF` | `PASS` |
+| Single-page Program | `0x7FF000`、64 Byte、真实 Read Back Compare | `PASS` |
+| Cross-page Write | `0x7FF0F0`、300 Byte、真实 Compare | `PASS` |
+| Boundary Read/Write | 越界读写被拒绝，合法尾地址读成功 | `PASS` |
+| Atomic Page Program | `0x...F0` 跨页被拒绝 | `PASS` |
+| Unaligned Erase | `0x7FF001` 被拒绝 | `PASS` |
+| Reset Persistence | 重启后读取并比较 `0x7FF0F0` 的 300 Byte | `PASS` |
+| RTT/EasyLogger | 日志初始化、任务名、地址、长度、返回码和 PASS/FAIL 均可观测 | `PASS` |
 | Logic Analyzer | 仅在 RTT 异常时抽查 CS/SCK/MOSI/MISO | `NOT_USED` |
 
-板测入口包含持久化标记，且在重新擦除前读取上一次标记和 300 Byte 数据；但没有实际 Reset 观察结果前，不得填写 `PASS`。
+日志中 `appSystem` 任务名确认 Application 已在独立任务中运行；`persistence addr=0x7FF0F0 len=300 PASS` 确认重启后的持久化数据校验通过。
 
 ## Verification Role Next Action
 
 1. 使用 Keil MDK 对 `OTA_APP.uvprojx` 执行 Clean/Rebuild，记录 warning、错误和固件产物路径。
-2. 确认 `PROJECT_S02_FLASH_BOARD_TEST_ENABLE` 仅在专用板测启动中临时设为 `1U`，完成两次启动持久化测试后恢复 `0U`。
-3. 逐项保存 RTT 输出和真实 Read Back/Compare 结果；若 JEDEC 或事务异常，再补充逻辑分析仪证据。
-4. Verification Role 完成后，再由 Review Role 决定 `PASS`、返工或阻塞；当前不关闭 S02。
+2. 确认普通启动固件不再包含 S02 板测入口，保留测试源码供后续按需重新接入。
+3. Verification Role 完成后，再由 Review Role 决定 `PASS`、返工或阻塞；当前不关闭 S02。

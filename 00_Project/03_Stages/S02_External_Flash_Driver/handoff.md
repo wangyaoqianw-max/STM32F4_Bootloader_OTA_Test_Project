@@ -147,10 +147,10 @@ platform_error_t platform_w25q64_sector_erase(
 ## Implementation Output
 
 - Status: `READY_FOR_VERIFICATION`
-- Completed Work: `Task 1-5` completed as five feature commits, followed by one verification-time startup correction. Platform SPI now supports blocking read and SPI2 multi-instance construction; W25Q64 Raw Driver covers JEDEC/SR1/Read/WEL/BUSY/Page Program/cross-page Write/4 KiB Sector Erase; App owns Storage SPI Bus lifecycle; destructive board test is explicitly gated and defaults to `0U`.
+- Completed Work: `Task 1-5` completed as five feature commits, followed by startup correction and board-test cleanup. Platform SPI now supports blocking read and SPI2 multi-instance construction; W25Q64 Raw Driver covers JEDEC/SR1/Read/WEL/BUSY/Page Program/cross-page Write/4 KiB Sector Erase; App owns Storage SPI Bus lifecycle; board test source is retained under `04_Test/Board` and removed from the production Application/Keil project.
 - Changed Files: Platform SPI/Impl/BSP, W25Q64 Raw Driver/BSP, App/config, Keil project wiring, and `04_Test/Board/S02_External_Flash_Driver/`.
 - Deviations From Plan: App invocation/gating was intentionally kept in Task 5 to avoid Task 2 creating an un-gated destructive startup path. No approved design interface was expanded; no SFUD source was added.
-- Known Issues: Automated Keil Build now passes through `05_Tools\Scripts\build_app.bat` with 0 Error and 1 existing warning; Clean/Rebuild, development board, J-Link, RTT terminal and logic analyzer evidence remain pending.
+- Known Issues: Automated Keil Build now passes through `05_Tools\Scripts\build_app.bat` with 0 Error and 8 existing warnings; Clean/Rebuild and Review Role remain pending. Development board and RTT evidence are recorded in the verification report.
 - Verification Evidence: [S02 verification input](../../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
 - SFUD Evaluation: [SFUD boundary evaluation](sfud_evaluation.md); actual middleware integration deferred.
 
@@ -159,10 +159,10 @@ platform_error_t platform_w25q64_sector_erase(
 - 日志服务初始化已放入 `freertos.c` 的 CubeMX `USER CODE BEGIN Init` 区域。
 - `defaultTask` 仅负责创建 `app_system` 后退出，`app_system` 通过 Platform Thread API 运行 `app_main`。
 - `app_system.c` 不直接依赖 CMSIS-RTOS；对应 FreeRTOS Thread Impl 已加入 Keil 工程。
-- 自动 Keil Build 结果为 `0 Error、1 Warning`；warning 暂按用户要求保留。
+- 自动 Keil Build 结果为 `0 Error、8 Warning`；warning 暂按用户要求保留。
 
 施工完成后由 Implementation Role 更新本节，不修改已冻结的设计结论来迁就实现。
 
 ## Next Action
 
-由 Verification Role 继续执行 Keil Clean/Rebuild 和真实开发板验证，重点记录 JEDEC/SR1、Erase 全 `0xFF`、Program/跨页 Write Read Back、边界拒绝及双启动持久化。当前不得直接关闭 S02；硬件证据完整后再交 Review Role。
+由 Verification Role 继续执行 Keil Clean/Rebuild，确认普通启动工程不包含临时板测入口；当前不得直接关闭 S02，随后交 Review Role。

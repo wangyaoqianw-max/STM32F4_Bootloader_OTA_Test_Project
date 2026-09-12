@@ -36,7 +36,7 @@ W25Q64JV
 
 阶段完成后应具备经过真实硬件验证的 External SPI Flash 原始访问能力，为后续 Firmware Image Storage、Ymodem 和 OTA Service 提供存储基础。
 
-当前实现已完成 Task 1-5，并补齐了可保留的日志初始化和 Application 独立任务启动链；代码验证和自动 Keil Build 已通过；真实硬件验证、Keil Clean/Rebuild 和阶段 Review 尚未完成。提交中的破坏性板测门禁为 `0U`，当前工作区可临时改为 `1U` 进行板测。
+当前实现已完成 Task 1-5，并补齐了可保留的日志初始化和 Application 独立任务启动链；代码验证、自动 Keil Build 和真实板级测试已通过；Keil Clean/Rebuild 和阶段 Review 尚未完成。临时 S02 板测代码已从生产 Application/Keil 工程移除，测试源码保留在 `04_Test/Board`。
 
 ## Stable Baseline From S01
 
@@ -154,11 +154,11 @@ RTT + EasyLogger 是主要运行时观测接口，但 PASS/FAIL 必须来自真�
 
 ## Blockers
 
-实现无已知代码阻塞；当前仍等待 Keil Clean/Rebuild 和真实开发板验证证据。
+实现无已知代码阻塞；当前仍等待 Keil Clean/Rebuild 和阶段 Review。
 
 ## Next Action
 
-进入 S02 Verification Role：补做 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`；证据完整后交 Review Role，由 Review Role 决定 `PASS / CHANGES_REQUESTED / BLOCKED`，不得跳过 Verification 直接关闭 Stage。
+进入 S02 Verification Role：补做 Keil Clean/Rebuild，确认普通启动工程不包含临时板测入口并回填结果；随后交 Review Role，由 Review Role 决定 `PASS / CHANGES_REQUESTED / BLOCKED`，不得跳过 Review 直接关闭 Stage。
 
 ## Prohibited Actions
 
