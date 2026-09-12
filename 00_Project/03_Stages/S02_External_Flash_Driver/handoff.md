@@ -3,23 +3,23 @@
 ## Metadata
 
 - Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
-- Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
+- Verification Commit: `Not created yet`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 - Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
-- Current Role: `Verification`
+- Current Role: `Review`
 
 ## Goal
 
 建立并验证 W25Q64 Raw Driver V1。主体实现、真实硬件验证和 Keil Build/Clean-Rebuild 已完成。
-SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
-硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 的 `CHANGES_REQUESTED` 历史结论
+SPI 大长度返工代码、Host/Build 验证和最小真实硬件回归均已完成，返工硬件证据为 PASS。
+阶段现进入 `READY_FOR_REVIEW`。`review.md` 的 `CHANGES_REQUESTED` 历史结论
 继续保留，直到下一次正式 Review。
 
 ## Rework Input（来自 review.md Finding 1）
@@ -94,7 +94,7 @@ stm32_spi_write() / stm32_spi_read():
 | 静态语法检查 | `PASS`，`gcc -std=c99 -Wall -Wextra` | verification.md |
 | Keil Normal Build | `PASS`，0 Error / 1 Warning | `06_Output/Logs/OTA_APP_build.log` |
 | Keil Clean/Rebuild | `PASS`，0 Error / 8 Warning | `06_Output/Logs/OTA_APP_rebuild.log` |
-| Hardware Regression | `PENDING` | 待 Project Owner 板测 |
+| Hardware Regression | `PASS` | Project Owner 提供 RTT 实机日志 |
 
 硬件最小回归范围（不需要重跑整个 destructive 套件）：
 
@@ -111,8 +111,7 @@ Project Owner 的决策，不在本轮返工范围内自动实施。
 
 ## Pending / Not Verified
 
-- 板级最小回归：等待 Project Owner 在真实硬件上执行并回传 RTT 日志；
-- `review.md` 仍记录 `CHANGES_REQUESTED`，正式 Review 需要再次独立执行，S02 未关闭。
+- `review.md` 仍记录 `CHANGES_REQUESTED`，正式 Review 需要再次独立执行，S02 尚未关闭。
 
 ## Coding Standard Review
 
@@ -134,16 +133,15 @@ Coding Standard Review: PASS
 
 ## Next Action
 
-Project Owner 执行以下最小板级回归：
+Project Owner 已完成以下最小板级回归并提供 RTT 日志：
 
 1. W25Q64 Init；
 2. JEDEC ID == `EF 40 17`；
 3. 普通 Read 成功；
-4. 至少一个真实 Read Back / Compare Case。
+4. 既有持久化数据 Read Back / Compare 成功。
 
-除非最小回归出现异常，不要求重新执行完整 Sector Erase、300 Byte Cross-page Write、全部
-边界负向测试或 Reset Persistence。通过后由 Verification Role 更新硬件证据并将阶段推进到
-`READY_FOR_REVIEW`，再由 Review Role 独立复核。
+硬件回归结果为 `PASS`。最小回归测试代码已在板测完成后从 Application/Keil 工程移除，
+生产启动路径不会自动执行该测试。下一步由 Review Role 独立复核并决定是否关闭 S02。
 
 ## Non-blocking Notes
 

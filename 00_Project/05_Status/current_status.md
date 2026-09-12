@@ -3,25 +3,25 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
-- Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
+- Verification Commit: `Not created yet`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 - Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
-- Current Role: `Verification`
+- Current Role: `Review`
 - Updated At: `2026-09-12`
 
 ## Current Goal
 
 S02 的主体实现、Keil Build/Clean-Rebuild 和真实 W25Q64 板测均已完成。
 
-SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
-硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 继续保留正式 Review 的
+SPI 大长度返工代码、Host/Build 验证和最小真实硬件回归均已完成，返工硬件证据为 PASS。
+阶段现进入 `READY_FOR_REVIEW`。`review.md` 继续保留正式 Review 的
 `CHANGES_REQUESTED` 历史结论，S02 关闭必须由 Review Role 独立重新执行。
 
 返工不重做已通过的 W25Q64 功能，不涉及 SFUD、OTA、Bootloader 或其他后续阶段。
@@ -62,7 +62,7 @@ while remaining > 0
 | 静态语法检查 | `PASS`，`gcc -std=c99 -Wall -Wextra` |
 | Keil Normal Build | `PASS`，0 Error，1 Warning（增量构建） |
 | Keil Clean/Rebuild | `PASS`，0 Error，8 Warning |
-| Hardware Regression | `PENDING`，等待 Project Owner |
+| Hardware Regression | `PASS`，Project Owner 提供 RTT 实机日志 |
 
 完整记录：
 
@@ -98,11 +98,8 @@ Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅�
 
 ## Pending Items
 
-1. 板级最小回归：W25Q64 Init、JEDEC ID == `EF 40 17`、普通 Read、至少一个真实 Read Back /
-   Compare Case；除非最小回归异常，不要求重跑完整 destructive 套件；
-2. Verification Role 根据真实板测结果更新 Rework Hardware Regression；通过后进入
-   `READY_FOR_REVIEW`；
-3. `review.md` 继续记录 `CHANGES_REQUESTED`，随后由 Review Role 独立重新执行正式 Review。
+1. Review Role 独立复核 Finding 1 的代码、Host/Build 和硬件回归证据；
+2. `review.md` 继续记录 `CHANGES_REQUESTED`，待正式 Review 后决定 `CLOSED`、再次返工或阻塞。
 
 ## Non-blocking Items
 
@@ -113,10 +110,8 @@ Agent/Developer 应继续优先通过统一脚本调用 Keil，本机路径仅�
 
 ## Blockers
 
-- 无实现阻塞；Finding 1 返工代码、Host Test 和 Keil Build 证据已完成，当前唯一待办是
-  Project Owner 的最小真实硬件回归。
+- 无实现或硬件验证阻塞；当前仅等待 Review Role 独立复核。
 
 ## Next Action
 
-Project Owner 执行最小板级回归；Verification Role 根据结果更新硬件证据并决定是否进入
-`READY_FOR_REVIEW`，之后再由 Review Role 独立复核 Finding 1。
+Review Role 独立复核 Finding 1 的关闭证据，确认后再决定是否将 S02 推进到 `CLOSED`。

@@ -3,7 +3,7 @@
 ## Verification Boundary
 
 - Stage: `S02_External_Flash_Driver`
-- Verification status: `READY_FOR_VERIFICATION`
+- Verification status: `READY_FOR_REVIEW`
 - Code verification: `PASS`
 - Original S02 Hardware Verification: `PASS`，基于 Project Owner 提供的 RTT 实机日志
 - Keil/MDK normal Build: `PASS`，0 Error、8 Warning（原 S02 验证）
@@ -12,7 +12,7 @@
 - Original S02 Board and RTT evidence: `PASS`
 - Logic-analyzer evidence: `NOT_USED`
 - Rework Code Verification (Finding 1): `PASS`，见文末 “Rework Verification”
-- Rework Hardware Regression (Finding 1): `PENDING`，等待 Project Owner 板测
+- Rework Hardware Regression (Finding 1): `PASS`，Project Owner 于 `2026-09-12` 提供 RTT 实机日志
 
 本文件记录 S02 的正式 Verification 证据。代码验证、Keil 构建验证和真实开发板验证分别记录，不以编译结果替代硬件结果，也不以 RTT 文本本身替代 Read Back / Compare。
 
@@ -293,17 +293,23 @@ Build Time Elapsed:  00:00:07
 `0 Error`、`8 Warning`，与返工前已记录的 8 Warning 基线一致，无新增 Error。
 构建日志：`06_Output/Logs/OTA_APP_build.log`、`06_Output/Logs/OTA_APP_rebuild.log`。
 
-### Hardware Verification — `PENDING`
+### Hardware Verification — `PASS`
 
-Agent 无法操作真实开发板；本节不把编译结果当作硬件结果。返工后的板级最小回归仍需
-Project Owner 在真实硬件上执行并回传 RTT 日志：
+Project Owner 于 `2026-09-12` 在真实开发板上执行返工后的最小回归，并提供 RTT 日志。日志
+确认 W25Q64 初始化、识别、普通读取和既有持久化数据回读均成功：
 
 ```text
-1. W25Q64 Init
-2. JEDEC ID == EF 40 17
-3. 普通 Read 成功
-4. 至少一个真实 Read Back / Compare Case
+[S02-R] w25q64 init result=0
+[S02-R] jedec=EF 40 17 result=0 PASS
+[S02-R] sr1=00 result=0 PASS
+[S02-R] ordinary read addr=0x000000 len=1 data=FF result=0 PASS
+[S02-R] persistence marker addr=0x7FFFF8 len=8 result=0 PASS
+[S02-R] readback compare addr=0x7FF0F0 len=300 result=0 PASS
+[S02-R] regression result=0 PASS
 ```
+
+`result=0` 即 `PLATFORM_ERR_OK`。普通读取返回 `FF` 仅表示该地址当前数据为 `FF`，读取接口
+本身成功。持久化标记和 300 Byte Read Back / Compare 均为实际 Flash 读取结果，不是预设日志。
 
 返工前已 PASS 的 Sector Erase 全 4 KiB、300 Byte Cross-page Write、Reset Persistence
 和 destructive 边界用例无需重跑：本次改动只影响 `> 0xFFFF` 的长度路径，`<= 0xFFFF`
@@ -316,14 +322,17 @@ Project Owner 在真实硬件上执行并回传 RTT 日志：
 会明显占用 STM32F411 的 128 KiB SRAM；是否为此占用 RAM 属于 Project Owner 决策，
 本轮返工未自动实施。
 
+本次临时最小回归测试已在取得上述硬件证据后从 Application 启动路径、Keil 工程和测试目录
+接线中移除；原有生产启动路径恢复为仅初始化 Application 并运行状态灯循环。
+
 ### Verification Result
 
 ```text
 Code Verification（返工）      : PASS
 Keil Normal Build              : PASS（0 Error）
 Keil Clean/Rebuild             : PASS（0 Error）
-Hardware Regression（返工）    : PENDING（等待 Project Owner）
+Hardware Regression（返工）    : PASS（Project Owner RTT 实机日志）
 ```
 
-Finding 1 的代码级关闭证据已完整；S02 不能由本次返工直接关闭，`review.md` 仍记录
-`CHANGES_REQUESTED`，需要 Review Role 再次独立执行。
+Finding 1 的代码、构建和硬件回归证据已完整；阶段推进到 `READY_FOR_REVIEW`。
+`review.md` 仍记录 `CHANGES_REQUESTED`，需要 Review Role 再次独立执行，S02 尚未关闭。

@@ -5,17 +5,17 @@
 ## Context Metadata
 
 - Active Stage: `S02_External_Flash_Driver`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Code Commit: `5ac069f19c7f401f56e8fa5aad00c92a76aaaedf`
 - Design Commit: `44fddb1484441a98d336df7783170267c166f4af`
 - Plan Commit: `aee30916c5c784828269668d99a2b4e63689f80e`
 - Implementation Branch Tip: `5bc4ccf7d0b367c37dfca45b5d3fbff83d2a1bed`
 - Merge Commit: `c6c77a240fce463afa4c86d797bb52d2781fb651`
-- Verification Commit: `df9ec99d411f83b3a2f5c21ccc9f13c6b5e0ac64`
+- Verification Commit: `Not created yet`
 - Review Commit: `3154c0c07f5041eb1ea2a2e9fdf524fe7ecba26a`
 - Rework Commit: `42c02b891d7f32b728857c44024c3c91a15ea604`
-- Current Role: `Verification`
+- Current Role: `Review`
 - Updated At: `2026-09-12`
 
 ## Current Goal
@@ -27,8 +27,8 @@
 正式 Review 提出的唯一 Finding 已完成返工：STM32 HAL SPI 的 `uint16_t Size` 限制不再泄漏为
 Platform/W25Q64 公共 API 的 `65535 Byte` 隐式上限。
 
-SPI 大长度返工代码和 Host/Build 验证已完成；当前只剩 Project Owner 执行最小真实硬件回归。
-硬件证据补齐后再进入 `READY_FOR_REVIEW`。`review.md` 仍记录 `CHANGES_REQUESTED`，S02
+SPI 大长度返工代码、Host/Build 验证和最小真实硬件回归均已完成，返工硬件证据为 PASS。
+阶段现进入 `READY_FOR_REVIEW`。`review.md` 仍记录 `CHANGES_REQUESTED`，S02
 关闭必须由 Review Role 独立重新执行。
 
 ## S02 Stable Results
@@ -100,7 +100,7 @@ while remaining > 0
    `FAIL`，可直接复现 Finding；
 3. Keil Normal Build：`0 Error`、`1 Warning`（增量构建）；Keil Clean/Rebuild：`0 Error`、
    `8 Warning`，与返工前已记录的 warning 基线一致；
-4. 待办：板级最小回归由 Project Owner 在真实硬件上确认；返工 Commit 已记录为
+4. 板级最小回归已由 Project Owner 在真实硬件上确认 PASS；返工 Commit 已记录为
    `42c02b891d7f32b728857c44024c3c91a15ea604`。
 
 ## Reusable Keil Tooling
@@ -128,11 +128,8 @@ while remaining > 0
 
 ## Next Action
 
-1. Project Owner 执行板级最小回归：W25Q64 Init、JEDEC ID == `EF 40 17`、普通 Read、至少
-   一个真实 Read Back / Compare Case（无需重新执行完整 destructive 套件，除非最小回归异常）；
-2. Verification Role 根据真实板测结果更新 Rework Hardware Regression；通过后再进入
-   `READY_FOR_REVIEW`；
-3. Review Role 独立复核 Finding 1 的关闭证据和是否引入回归，再决定 `PASS` 或再次返工。
+1. Review Role 独立复核 Finding 1 的代码、Host/Build 和硬件回归证据；
+2. `review.md` 继续记录 `CHANGES_REQUESTED`，待正式 Review 后决定 `CLOSED`、再次返工或阻塞。
 
 返工证据见 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的
 “Rework Verification” 章节和 `04_Test/Host/S02_External_Flash_Driver/README.md`。
