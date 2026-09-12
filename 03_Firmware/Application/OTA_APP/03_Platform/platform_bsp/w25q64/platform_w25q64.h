@@ -130,6 +130,22 @@ platform_error_t platform_w25q64_page_program(
     platform_size_t dataLength);
 
 /**
+ * @brief 按 Page 边界拆分执行连续写入
+ * @param[in,out] flash : 已初始化的 W25Q64JV 对象
+ * @param[in] address : 起始地址
+ * @param[in] data : 待写入数据缓冲区
+ * @param[in] dataLength : 写入字节数，必须完全位于 Flash 地址范围内
+ * @return PLATFORM_ERR_OK : 所有 Page 编程均完成
+ * @return 其他值 : 参数无效或任一 Page 编程失败
+ * @note 本接口只负责 Page 拆分，不自动擦除，也不预读检查目标区域。
+ */
+platform_error_t platform_w25q64_write(
+    platform_w25q64_t *flash,
+    uint32_t address,
+    const uint8_t *data,
+    platform_size_t dataLength);
+
+/**
  * @brief 擦除一个对齐的 4 KiB Sector
  * @param[in,out] flash : 已初始化的 W25Q64JV 对象
  * @param[in] sectorAddress : 4 KiB 对齐的 Sector 起始地址

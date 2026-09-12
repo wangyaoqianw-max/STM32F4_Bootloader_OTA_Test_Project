@@ -32,12 +32,17 @@ platform_error_t s02_flash_board_test_run(platform_spi_bus_t *spiBus)
     uint8_t eraseRead[PLATFORM_W25Q64_PAGE_SIZE_BYTES] = {0U};
     uint8_t tx[64U] = {0U};
     uint8_t pageRead[64U] = {0U};
+    uint8_t crossTx[300U] = {0U};
+    uint8_t crossRead[300U] = {0U};
     uint8_t status = 0U;
     uint32_t offset = 0U;
     uint32_t index = 0U;
     platform_size_t readLength = 0U;
     platform_bool_t allErased = PLATFORM_TRUE;
     platform_bool_t pageMatch = PLATFORM_TRUE;
+    platform_bool_t crossMatch = PLATFORM_TRUE;
+    platform_bool_t boundaryPass = PLATFORM_TRUE;
+    platform_error_t boundaryResult = PLATFORM_ERR_OK;
 
     if (spiBus == NULL) {
         return PLATFORM_ERR_NULL_POINTER;
@@ -156,6 +161,110 @@ platform_error_t s02_flash_board_test_run(platform_spi_bus_t *spiBus)
     }
     SERVICE_LOG_I("[S02] page compare %s",
                   (result == PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    if (result == PLATFORM_ERR_OK) {
+        for (index = 0U; index < sizeof(crossTx); index++) {
+            crossTx[index] = (uint8_t)(0x5AU ^ index);
+        }
+
+        result = platform_w25q64_write(
+            &flash,
+            PROJECT_FLASH_TEST_SECTOR_ADDRESS + 0xF0U,
+            crossTx,
+            sizeof(crossTx));
+    }
+
+    if (result == PLATFORM_ERR_OK) {
+        result = platform_w25q64_read(
+            &flash,
+            PROJECT_FLASH_TEST_SECTOR_ADDRESS + 0xF0U,
+            crossRead,
+            sizeof(crossRead));
+        if (result == PLATFORM_ERR_OK) {
+            for (index = 0U; index < sizeof(crossRead); index++) {
+                if (crossRead[index] != crossTx[index]) {
+                    crossMatch = PLATFORM_FALSE;
+                    break;
+                }
+            }
+            if (crossMatch != PLATFORM_TRUE) {
+                result = PLATFORM_ERR_IO;
+            }
+        }
+    }
+    SERVICE_LOG_I("[S02] cross-page write addr=0x%06X len=%u %s",
+                  (unsigned int)(PROJECT_FLASH_TEST_SECTOR_ADDRESS + 0xF0U),
+                  (unsigned int)sizeof(crossTx),
+                  (result == PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_read(
+        &flash,
+        PLATFORM_W25Q64_TOTAL_SIZE_BYTES,
+        pageRead,
+        1U);
+    if (boundaryResult == PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] out-of-range read rejected %s",
+                  (boundaryResult != PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_read(
+        &flash,
+        PLATFORM_W25Q64_ADDRESS_MAX,
+        pageRead,
+        2U);
+    if (boundaryResult == PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] crossing-end read rejected %s",
+                  (boundaryResult != PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_write(
+        &flash,
+        PLATFORM_W25Q64_ADDRESS_MAX,
+        crossTx,
+        2U);
+    if (boundaryResult == PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] out-of-range write rejected %s",
+                  (boundaryResult != PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_page_program(
+        &flash,
+        PROJECT_FLASH_TEST_SECTOR_ADDRESS + 0xF0U,
+        tx,
+        32U);
+    if (boundaryResult == PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] atomic page-cross rejected %s",
+                  (boundaryResult != PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_sector_erase(
+        &flash,
+        PROJECT_FLASH_TEST_SECTOR_ADDRESS + 1U);
+    if (boundaryResult == PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] unaligned erase rejected %s",
+                  (boundaryResult != PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    boundaryResult = platform_w25q64_read(
+        &flash,
+        PLATFORM_W25Q64_ADDRESS_MAX,
+        pageRead,
+        1U);
+    if (boundaryResult != PLATFORM_ERR_OK) {
+        boundaryPass = PLATFORM_FALSE;
+    }
+    SERVICE_LOG_I("[S02] legal tail read accepted %s",
+                  (boundaryResult == PLATFORM_ERR_OK) ? "PASS" : "FAIL");
+
+    if ((result == PLATFORM_ERR_OK) &&
+        (boundaryPass != PLATFORM_TRUE)) {
+        result = PLATFORM_ERR_IO;
+    }
 
     deinitResult = platform_w25q64_deinit(&flash);
     if (result == PLATFORM_ERR_OK) {

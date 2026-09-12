@@ -490,6 +490,55 @@ platform_error_t platform_w25q64_page_program(
         PLATFORM_W25Q64_PROGRAM_TIMEOUT_MS);
 }
 
+platform_error_t platform_w25q64_write(
+    platform_w25q64_t *flash,
+    uint32_t address,
+    const uint8_t *data,
+    platform_size_t dataLength)
+{
+    platform_error_t result = platform_w25q64_validate_initialized(flash);
+    uint32_t currentAddress = address;
+    const uint8_t *currentData = data;
+    platform_size_t remaining = dataLength;
+    platform_size_t pageOffset = 0U;
+    platform_size_t pageRemaining = 0U;
+    platform_size_t chunkLength = 0U;
+
+    if (data == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_w25q64_validate_range(address, dataLength);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    while (remaining > 0U) {
+        pageOffset = currentAddress % PLATFORM_W25Q64_PAGE_SIZE_BYTES;
+        pageRemaining = PLATFORM_W25Q64_PAGE_SIZE_BYTES - pageOffset;
+        chunkLength = (remaining < pageRemaining) ? remaining : pageRemaining;
+
+        result = platform_w25q64_page_program(
+            flash,
+            currentAddress,
+            currentData,
+            chunkLength);
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+
+        currentAddress += (uint32_t)chunkLength;
+        currentData += chunkLength;
+        remaining -= chunkLength;
+    }
+
+    return PLATFORM_ERR_OK;
+}
+
 platform_error_t platform_w25q64_sector_erase(
     platform_w25q64_t *flash,
     uint32_t sectorAddress)
