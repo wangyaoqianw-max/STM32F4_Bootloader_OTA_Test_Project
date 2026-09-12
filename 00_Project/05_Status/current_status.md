@@ -78,7 +78,7 @@
 ## Verification Status
 
 - 代码验证：`PASS`，统一 GCC 静态语法检查、工程 XML/源路径检查和差异检查已完成。
-- Keil Clean/Rebuild：`NOT_RUN`，当前主机未安装 UV4/UV5、armcc 或 armclang。
+- Keil Build：`PASS`，通过 `05_Tools\Scripts\build_app.bat` 调用 Keil UV4，0 Error、0 Warning；Clean/Rebuild：`NOT_RUN`。
 - 硬件验证：`PENDING`，当前无开发板、J-Link、RTT 或逻辑分析仪证据。
 - Verification Input：[S02 verification.md](../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
 - SFUD Evaluation：[sfud_evaluation.md](../03_Stages/S02_External_Flash_Driver/sfud_evaluation.md)
@@ -94,11 +94,11 @@
 
 ## Blockers
 
-实现无已知代码阻塞；阶段关闭仍受 Keil 构建和真实硬件证据约束。
+实现无已知代码阻塞；阶段关闭仍受 Keil Clean/Rebuild 和真实硬件证据约束。
 
 ## Next Action
 
-进入 Verification Role：执行 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的真实结果；证据完整后交 Review Role，不得直接标记 S02 `CLOSED`。
+进入 Verification Role：补做 Keil Clean/Rebuild 和两次启动板测，回填 `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md` 的真实结果；证据完整后交 Review Role，不得直接标记 S02 `CLOSED`。
 
 ## Required Reading for Implementation
 

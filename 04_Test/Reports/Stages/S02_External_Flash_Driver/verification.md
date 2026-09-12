@@ -6,7 +6,7 @@
 - Verification input status: `READY_FOR_VERIFICATION`
 - Code verification: `PASS` for the host-side static checks listed below
 - Hardware verification: `PENDING`
-- Keil/MDK Clean/Rebuild: `NOT_RUN`
+- Keil/MDK Build: `PASS`; Clean/Rebuild: `NOT_RUN`
 - Board, RTT and logic-analyzer evidence: `NOT_AVAILABLE`
 
 本文件记录 Implementation Role 已完成的可回读证据和下一步 Verification Role 输入，不替代真实开发板验收，也不把静态编译结果描述为硬件通过。
@@ -51,12 +51,24 @@ gcc -std=c99 -Wall -Wextra -Werror=implicit-function-declaration \
 
 ## MDK Build Verification
 
-主机未发现 `UV4`、`UV5`、`armcc` 或 `armclang` 命令，因此无法执行 Keil Clean/Rebuild。
+本次使用仓库统一入口执行普通 Build，未执行 Clean/Rebuild：
 
-- Clean/Rebuild：`NOT_RUN`
-- 新 S02 warning 与既有 S01 warning 区分：`NOT_APPLICABLE`，没有 MDK 输出可供比较
-- 生成的 `.axf/.hex/.bin`：无本次验证产物
-- 已知既有 warning：`platform_gpio.c` 5 个、Vendor `elog_port.c` 文件末尾换行 warning，沿用项目状态记录，未将其伪装成 S02 新验证结果
+```text
+05_Tools\Scripts\build_app.bat
+```
+
+- Source Commit：`ec46172`
+- Target：`OTA_APP`
+- Tool：Keil UV4
+- Compiler：`V5.06 update 7 (build 960)`
+- Build：`PASS`
+- Error：`0`
+- Warning：`0`
+- Script exit code：`0`
+- Build log：`06_Output/Logs/OTA_APP_build.log`
+- 主要输出：`03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.axf`、`.hex`，以及 `Listings/OTA_APP.map`
+- Clean/Rebuild：`NOT_RUN`；当前脚本调用 UV4 `-b`，不包含 Clean 操作
+- 本机配置：`05_Tools/Config/toolchain.local.bat`，已被 `.gitignore` 排除，不进入 Git
 
 ## Hardware Case Matrix
 

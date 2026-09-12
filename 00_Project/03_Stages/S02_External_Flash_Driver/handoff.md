@@ -150,7 +150,7 @@ platform_error_t platform_w25q64_sector_erase(
 - Completed Work: `Task 1-5` completed as five local commits. Platform SPI now supports blocking read and SPI2 multi-instance construction; W25Q64 Raw Driver covers JEDEC/SR1/Read/WEL/BUSY/Page Program/cross-page Write/4 KiB Sector Erase; App owns Storage SPI Bus lifecycle; destructive board test is explicitly gated and defaults to `0U`.
 - Changed Files: Platform SPI/Impl/BSP, W25Q64 Raw Driver/BSP, App/config, Keil project wiring, and `04_Test/Board/S02_External_Flash_Driver/`.
 - Deviations From Plan: App invocation/gating was intentionally kept in Task 5 to avoid Task 2 creating an un-gated destructive startup path. No approved design interface was expanded; no SFUD source was added.
-- Known Issues: Keil/UV4 is not installed in the current host environment; no development board, J-Link, RTT terminal or logic analyzer was available. Hardware evidence and generated MDK artifacts are therefore pending.
+- Known Issues: Automated Keil Build now passes through `05_Tools\Scripts\build_app.bat` with 0 Error and 0 Warning; Clean/Rebuild, development board, J-Link, RTT terminal and logic analyzer evidence remain pending.
 - Verification Evidence: [S02 verification input](../../../04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md)
 - SFUD Evaluation: [SFUD boundary evaluation](sfud_evaluation.md); actual middleware integration deferred.
 
