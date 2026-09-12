@@ -21,9 +21,15 @@
 #define PLATFORM_W25Q64_CMD_READ_JEDEC_ID    (0x9FU)
 #define PLATFORM_W25Q64_CMD_READ_STATUS1     (0x05U)
 #define PLATFORM_W25Q64_CMD_READ_DATA        (0x03U)
+#define PLATFORM_W25Q64_CMD_WRITE_ENABLE     (0x06U)
+#define PLATFORM_W25Q64_CMD_PAGE_PROGRAM     (0x02U)
+#define PLATFORM_W25Q64_CMD_SECTOR_ERASE     (0x20U)
 
 #define PLATFORM_W25Q64_SR1_BUSY_MASK        (0x01U)
+#define PLATFORM_W25Q64_SR1_WEL_MASK         (0x02U)
 #define PLATFORM_W25Q64_INIT_READY_TIMEOUT_MS (1000U)
+#define PLATFORM_W25Q64_PROGRAM_TIMEOUT_MS   (10U)
+#define PLATFORM_W25Q64_ERASE_TIMEOUT_MS     (500U)
 #define PLATFORM_W25Q64_POLL_INTERVAL_MS     (1U)
 //******************************** Defines *********************************//
 
@@ -54,6 +60,8 @@ static platform_error_t platform_w25q64_wait_ready(
 static platform_error_t platform_w25q64_read_jedec_id_raw(
     platform_w25q64_t *flash,
     platform_w25q64_jedec_id_t *jedecId);
+static platform_error_t platform_w25q64_write_enable(
+    platform_w25q64_t *flash);
 //******************************** Declaring *********************************//
 
 //******************************** Private Functions *************************//
@@ -224,6 +232,40 @@ static platform_error_t platform_w25q64_read_jedec_id_raw(
     jedecId->capacityId = response[2];
     return PLATFORM_ERR_OK;
 }
+
+/* 发送 Write Enable，并确认 Status Register-1 的 WEL 位置位。 */
+static platform_error_t platform_w25q64_write_enable(
+    platform_w25q64_t *flash)
+{
+    platform_error_t result = PLATFORM_ERR_OK;
+    uint8_t status = 0U;
+    const uint8_t command = PLATFORM_W25Q64_CMD_WRITE_ENABLE;
+
+    if (flash == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    result = platform_spi_transaction_begin(&flash->spiDevice);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_spi_write(&flash->spiDevice,
+                                &command,
+                                1U);
+    result = platform_w25q64_finish_transaction(flash, result);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_w25q64_read_status1_raw(flash, &status);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return ((status & PLATFORM_W25Q64_SR1_WEL_MASK) != 0U) ?
+           PLATFORM_ERR_OK : PLATFORM_ERR_IO;
+}
 //******************************** Private Functions *************************//
 
 //******************************** Functions *********************************//
@@ -381,5 +423,117 @@ platform_error_t platform_w25q64_read(
                                          sizeof(command),
                                          data,
                                          dataLength);
+}
+
+platform_error_t platform_w25q64_page_program(
+    platform_w25q64_t *flash,
+    uint32_t address,
+    const uint8_t *data,
+    platform_size_t dataLength)
+{
+    platform_error_t result = platform_w25q64_validate_initialized(flash);
+    uint32_t pageOffset = address % PLATFORM_W25Q64_PAGE_SIZE_BYTES;
+    uint8_t command[4] = {PLATFORM_W25Q64_CMD_PAGE_PROGRAM, 0U, 0U, 0U};
+
+    if (data == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_w25q64_validate_range(address, dataLength);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if ((dataLength > PLATFORM_W25Q64_PAGE_SIZE_BYTES) ||
+        (dataLength > (PLATFORM_W25Q64_PAGE_SIZE_BYTES - pageOffset))) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    result = platform_w25q64_wait_ready(
+        flash,
+        PLATFORM_W25Q64_PROGRAM_TIMEOUT_MS);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_w25q64_write_enable(flash);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    platform_w25q64_encode_address(address, &command[1]);
+    result = platform_spi_transaction_begin(&flash->spiDevice);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_spi_write(&flash->spiDevice,
+                                command,
+                                sizeof(command));
+    if (result == PLATFORM_ERR_OK) {
+        result = platform_spi_write(&flash->spiDevice,
+                                    data,
+                                    dataLength);
+    }
+
+    result = platform_w25q64_finish_transaction(flash, result);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return platform_w25q64_wait_ready(
+        flash,
+        PLATFORM_W25Q64_PROGRAM_TIMEOUT_MS);
+}
+
+platform_error_t platform_w25q64_sector_erase(
+    platform_w25q64_t *flash,
+    uint32_t sectorAddress)
+{
+    platform_error_t result = platform_w25q64_validate_initialized(flash);
+    uint8_t command[4] = {PLATFORM_W25Q64_CMD_SECTOR_ERASE, 0U, 0U, 0U};
+
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if ((sectorAddress >= PLATFORM_W25Q64_TOTAL_SIZE_BYTES) ||
+        ((sectorAddress % PLATFORM_W25Q64_SECTOR_SIZE_BYTES) != 0U)) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    result = platform_w25q64_wait_ready(
+        flash,
+        PLATFORM_W25Q64_ERASE_TIMEOUT_MS);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_w25q64_write_enable(flash);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    platform_w25q64_encode_address(sectorAddress, &command[1]);
+    result = platform_spi_transaction_begin(&flash->spiDevice);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_spi_write(&flash->spiDevice,
+                                command,
+                                sizeof(command));
+    result = platform_w25q64_finish_transaction(flash, result);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return platform_w25q64_wait_ready(
+        flash,
+        PLATFORM_W25Q64_ERASE_TIMEOUT_MS);
 }
 //******************************** Functions *********************************//

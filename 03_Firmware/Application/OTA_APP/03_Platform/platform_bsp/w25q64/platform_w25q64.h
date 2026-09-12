@@ -112,6 +112,34 @@ platform_error_t platform_w25q64_read(
     uint32_t address,
     uint8_t *data,
     platform_size_t dataLength);
+
+/**
+ * @brief 对 W25Q64JV 单页执行 Page Program
+ * @param[in,out] flash : 已初始化的 W25Q64JV 对象
+ * @param[in] address : 起始地址，数据不得跨越 256 Byte Page
+ * @param[in] data : 待写入数据缓冲区
+ * @param[in] dataLength : 写入字节数，范围为 1 至 256 Byte
+ * @return PLATFORM_ERR_OK : 编程完成且 Flash 已恢复 Ready
+ * @return 其他值 : 编程失败或参数不满足单页约束
+ * @note 本接口不会自动擦除 Flash，也不会跨 Page 执行写入。
+ */
+platform_error_t platform_w25q64_page_program(
+    platform_w25q64_t *flash,
+    uint32_t address,
+    const uint8_t *data,
+    platform_size_t dataLength);
+
+/**
+ * @brief 擦除一个对齐的 4 KiB Sector
+ * @param[in,out] flash : 已初始化的 W25Q64JV 对象
+ * @param[in] sectorAddress : 4 KiB 对齐的 Sector 起始地址
+ * @return PLATFORM_ERR_OK : 擦除完成且 Flash 已恢复 Ready
+ * @return 其他值 : 擦除失败或地址未按 Sector 对齐
+ * @note 本接口只使用 0x20 Sector Erase，不提供 Chip Erase，也不会自动对齐地址。
+ */
+platform_error_t platform_w25q64_sector_erase(
+    platform_w25q64_t *flash,
+    uint32_t sectorAddress);
 //******************************** Declaring *********************************//
 
 #endif
