@@ -67,11 +67,9 @@ static platform_error_t app_main_init(void)
 //******************************** Functions *********************************//
 void app_main(void)
 {
-    platform_error_t logResult = service_log_init();
     platform_error_t appResult;
 
     SERVICE_LOG_I("Application Foundation start");
-    SERVICE_LOG_I("Log init result: %d", logResult);
 
     appResult = app_main_init();
     SERVICE_LOG_I("Application init result: %d", appResult);
