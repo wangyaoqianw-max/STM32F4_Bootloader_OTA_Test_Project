@@ -708,8 +708,6 @@
         </Group>
         <Group>
           <GroupName>Application/06_Test/S02 External Flash Driver</GroupName>
-          <Files>
-          </Files>
         </Group>
         <Group>
           <GroupName>Application/05_Vendors/EasyLogger</GroupName>
