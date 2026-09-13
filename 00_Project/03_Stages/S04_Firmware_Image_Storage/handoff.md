@@ -3,12 +3,13 @@
 ## Metadata
 
 - Stage: `S04_Firmware_Image_Storage`
-- Status: `DESIGN_APPROVED`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `codex/s04-firmware-image-storage`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
+- Plan Owner Acceptance: `PASS`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
@@ -16,9 +17,9 @@
 
 ## Current Objective
 
-S04 设计已经由 Project Owner 批准，`implementation_plan.md` 已生成并完成自检。
+S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准，阶段正式进入 `READY_FOR_IMPLEMENTATION`。
 
-当前仍处于 `DESIGN_APPROVED`，等待 Project Owner 对实施计划本身的接受；在明确接受前不进入生产代码施工。计划接受后将状态推进至 `READY_FOR_IMPLEMENTATION`。
+Implementation Role 可以开始施工，但必须严格遵循冻结设计、计划任务顺序与范围边界。若实现发现设计冲突，不得自行改协议或扩展 OTA 范围，应先记录并回到设计/阻塞处理。
 
 ## Required Reading
 
@@ -300,7 +301,8 @@ Design Discussion      PASS
 Design Approval        PASS
 Design Document        CREATED
 Implementation Plan    CREATED
-Plan Owner Acceptance  PENDING
+Plan Owner Acceptance  PASS
+Stage Status           READY_FOR_IMPLEMENTATION
 Production Code        NOT_STARTED
 Verification           NOT_STARTED
 Review                 NOT_STARTED
@@ -308,11 +310,6 @@ Review                 NOT_STARTED
 
 ## Next Action
 
-Project Owner 审阅并接受 `implementation_plan.md`。接受后：
+Implementation Role 从 `implementation_plan.md` Task 1 开始施工，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
 
-```text
-DESIGN_APPROVED
-→ READY_FOR_IMPLEMENTATION
-```
-
-然后 Implementation Role 才按 Task 1 → Task 8 顺序施工。
+Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。
