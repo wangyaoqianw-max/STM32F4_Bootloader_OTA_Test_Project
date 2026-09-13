@@ -11,16 +11,16 @@
 - S03 Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - S03 Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - S03 Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
-- S03 Handoff Commit: `1f563893df302d206fbe648ebf69934479ae61c1`
+- S03 Handoff Commit: `ffbfcdd`
 - S03 Review Skeleton Commit: `982b8afb715e47808ea5731d81f2ca5cd49b7a22`
-- Current Role: `Implementation Role complete / Verification Role pending`
+- Current Role: `Implementation Role complete / Verification evidence recorded; formal Verification Role pending`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
 `S01_Application_Foundation` 与 `S02_External_Flash_Driver` 已关闭。
 
-`S03_EEPROM_Storage` 设计已批准并完成 Implementation Plan / Handoff。当前实现已完成，等待独立 Verification Role；仍禁止扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
+`S03_EEPROM_Storage` 实现与用户真实板测已完成，临时板测源已保留在 `04_Test/Board/S03_EEPROM_Storage` 并移出生产 Application/Keil 工程。正式 Verification Report/Review 仍按工作流执行；仍禁止扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
 
 ## Stable Baseline from S02
 
