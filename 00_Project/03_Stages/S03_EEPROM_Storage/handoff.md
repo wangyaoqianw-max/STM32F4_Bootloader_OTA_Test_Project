@@ -156,7 +156,7 @@ Power-cycle Persistence
 - `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
 - `03_Firmware/Application/OTA_APP/06_Test/S03_EEPROM_Storage/app_s03_eeprom_test.h`
 - `03_Firmware/Application/OTA_APP/06_Test/S03_EEPROM_Storage/app_s03_eeprom_test.c`
-- Stage context files updated for branch `codex/s03-eeprom-storage` and status `IN_PROGRESS`.
+- Stage context files updated for branch `codex/s03-eeprom-storage` and status `READY_FOR_VERIFICATION`.
 
 ### Deviations From Plan
 
