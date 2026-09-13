@@ -2,112 +2,175 @@
 
 ## Context Metadata
 
+- Active Stage: `S04_Firmware_Image_Storage`
+- Status: `DESIGN_APPROVED`
+- Branch: `codex/s04-firmware-image-storage`
+- Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
+- Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
+- Handoff Commit: `46f19c7a9624a7109b69d9133124e0fee505b08f`
+- Implementation Plan Commit: `Not created yet`
+- Implementation Commit: `Not created yet`
+- Verification Commit: `Not created yet`
+- Review Commit: `Not created yet`
 - Last Closed Stage: `S03_EEPROM_Storage`
-- Status: `CLOSED`
-- Branch: `main`
-- Merge Commit: `4d14973c86e02a3855cb6ca62b8d995c621de4a5`
-- Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
-- Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
-- Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
-- Handoff Commit: `ffbfcdde51e4b2d1aa6e20ffbaebfd8c59741dd5`
-- Review Skeleton Commit: `982b8afb715e47808ea5731d81f2ca5cd49b7a22`
-- Implementation Commit: `93c93b6982f2a74e646f83a673f4c2c2a8062fe6` (latest implementation cleanup; see handoff for all implementation commits)
-- Verification Commit: `eb511a4ea0e1d443a422518bc2a0588df9cde0e5`
-- Final Review Commit: `3c827293332e10dd660361470555bc453450430c`
-- Next Stage: `S04_Firmware_Image_Storage`
-- Next Stage Roadmap State: `PLANNED`
-- Current Role: `Project Owner / Stage Transition`
+- Last Closed Stage Status: `CLOSED`
+- Current Role: `Project Owner / S04 Design Approved`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
-`S03_EEPROM_Storage` 已完成实现、真实硬件板测、Verification 和最终 Review，并已通过 PR #4 合并回 `main`。
+`S04_Firmware_Image_Storage` 已完成设计讨论并获得 Project Owner 批准。
 
-当前不再向 S03 追加功能。下一步按 Roadmap 准备 `S04_Firmware_Image_Storage`，先进入 Design Preparation，讨论并冻结 Firmware Image、External Flash A/B Slot、Image Header、Version / Size / CRC 与 EEPROM Metadata Contract，再决定实施任务。
+本阶段冻结了 Firmware Image、External Flash A/B Slot、Image Header、Firmware Version、CRC、AT24C02 Metadata 双副本以及 S04 UART test-only 注入与 RTT 板测方案。
 
-## Frozen S03 Scope
+当前尚未创建 `implementation_plan.md`，因此不得开始生产代码施工。下一步生成并审核 S04 Implementation Plan，之后再进入 `READY_FOR_IMPLEMENTATION`。
 
-```text
-PB6 / PB7
-   ↓
-Platform GPIO
-   ↓
-Software I2C
-   └─ platform_i2c_probe()
-        ↓
-AT24C02 Raw Driver
-   ├─ init / deinit
-   ├─ read
-   ├─ write
-   ├─ 8 Byte Page split
-   └─ ACK polling
-        ↓
-RTT + EasyLogger board verification
-```
+## Frozen S04 Design Summary
 
-核心设计：
-
-- AT24C02 = 256 Byte，Page Size = 8 Byte；
-- A0/A1/A2 = GND → 7-bit address = `0x50`；
-- WP = GND；
-- PB6/PB7 = Open Drain + `GPIO_NOPULL` + initial HIGH；
-- SCL/SDA 外部各有 4.7 kΩ 上拉至 `FLASH_VCC`；
-- Software I2C 当前约 100 kHz；
-- `platform_i2c_probe()` 只做一次无数据地址探测；
-- AT24C02 Driver 负责 Page Split 与写后 ACK Polling；
-- ACK Polling: 1 ms interval, 10 ms software timeout；
-- `NOT_FOUND` 只在写后 ready-wait 上下文解释为 Busy；
-- Raw Driver 不承诺掉电原子性。
-
-## S03 Closure Evidence
+### External Flash Layout
 
 ```text
-Implementation             PASS
-Keil Normal Build          PASS
-Keil Clean/Rebuild         PASS
-Real Hardware Verification PASS
-Reset Persistence          PASS
-Power-cycle Persistence    PASS
-Verification               PASS
-Final Review               PASS
-Stage                      CLOSED
-Merge to main              PASS
+Slot A: 0x000000 ~ 0x07FFFF, 512 KiB
+Slot B: 0x080000 ~ 0x0FFFFF, 512 KiB
+Reserved: 0x100000 ~ 0x7FFFFF
 ```
 
-正式证据：
+每个 Slot：
 
-- Design: `00_Project/03_Stages/S03_EEPROM_Storage/design.md`
-- Implementation Plan: `00_Project/03_Stages/S03_EEPROM_Storage/implementation_plan.md`
-- Handoff: `00_Project/03_Stages/S03_EEPROM_Storage/handoff.md`
-- Verification: `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`
-- Review: `00_Project/03_Stages/S03_EEPROM_Storage/review.md`
+```text
++0x0000 ~ +0x0FFF : Header Sector
++0x1000 ~          : Firmware Payload
+```
 
-## Explicitly Deferred From S03
+S04 板测固定使用 Slot B。
 
-以下内容不进入 S03：
+### Firmware Header V1
 
-- Firmware Metadata 结构和 EEPROM 地址布局；
-- CRC / 双副本 / Sequence / Journal；
-- OTA `PENDING/TRIAL/CONFIRMED/ROLLBACK`；
-- Device Manager；
-- `platform_storage_device_t`；
-- 通用 NVM Manager；
-- EEPROM Emulation on W25Q64；
-- RTOS 总线互斥。
+- 64 Byte fixed binary format；
+- little-endian；
+- Magic `FWIM`；
+- Header Format Version = 1；
+- Firmware Version = major/minor/patch；
+- Image Size；
+- Payload CRC32；
+- Header CRC32；
+- fixed offsets，不直接持久化 C struct layout。
 
-统一 Device / Manager / Storage 架构延后到 Bootloader + OTA 主项目完成后的专项重构。
+### CRC Common
+
+冻结算法：
+
+- CRC-8/SMBUS；
+- CRC-16/XMODEM；
+- CRC-32/ISO-HDLC；
+- one-shot + streaming；
+- V1 为纯软件 bitwise implementation。
+
+### AT24C02 Metadata
+
+```text
+0x00 ~ 0x7F : Metadata Copy A
+0x80 ~ 0xFF : Metadata Copy B
+```
+
+采用：
+
+```text
+Double Copy
++ uint32_t sequence
++ Metadata CRC32
++ Commit Marker
+```
+
+S04 基础 Slot State：
+
+```text
+EMPTY
+VALID
+INVALID
+```
+
+不提前引入 OTA `PENDING / TRIAL / CONFIRMED / ROLLBACK` 状态机。
+
+### Authority Boundary
+
+```text
+W25Q64 Image Header
+→ Firmware Version / Size / CRC 的权威来源
+
+AT24C02 Metadata
+→ active / confirmed / slot state / confirmed_version 的系统状态权威来源
+```
+
+### Module Boundary
+
+当前实现目标位于 Application：
+
+```text
+02_Service/
+├─ service_common/crc/
+└─ service_firmware/
+```
+
+`03_Firmware/Shared` 仍保持“Application 与 Bootloader 已经共同使用后再抽取”的现有约束。
+
+## S04 Board Test Boundary
+
+允许复用现有 `service_uart` 作为 test-only raw binary injection，但不实现 Ymodem。
+
+测试链：
+
+```text
+PC pack_firmware.py
+        ↓
+[64 Byte Header][Payload]
+        ↓
+Serial Assistant raw binary send
+        ↓
+existing service_uart
+        ↓
+Slot B Payload first
+        ↓
+Payload CRC PASS
+        ↓
+Header commit last
+        ↓
+firmware_storage_validate_image(SLOT_B)
+        ↓
+RTT + EasyLogger
+```
+
+中断、UART Data Loss 或 CRC mismatch 时不得提交 Header，因此半成品不得成为 VALID Image。
+
+## Formal Documents
+
+- Design: `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
+- Handoff: `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
+- Implementation Plan: `Not created yet`
+- Verification: `Not created yet`
+- Review: `Not created yet`
+
+## Explicitly Deferred
+
+- Ymodem；
+- Application OTA Service；
+- FreeRTOS OTA 并发；
+- Bootloader Firmware Installation；
+- Trial / Confirm / Rollback；
+- Watchdog Boot Failure；
+- Security mechanisms；
+- Device Manager / 通用 Storage / NVM Manager。
 
 ## Next Action
 
-进入 `S04_Firmware_Image_Storage` Design Preparation：
+创建并审核：
 
-1. 读取当前 W25Q64 Raw Driver、AT24C02 Raw Driver 和项目需求；
-2. 明确 External Flash A/B Slot 分区模型；
-3. 设计 Firmware Image Header 与 Version / Size / CRC；
-4. 明确 EEPROM Metadata Contract 与 External Flash Image Data 的职责边界；
-5. 明确 Application 与未来 Bootloader 共用的数据契约；
-6. 设计获批后再创建 S04 Implementation Plan。
+```text
+00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md
+```
+
+计划批准后，将 Stage 从 `DESIGN_APPROVED` 推进至 `READY_FOR_IMPLEMENTATION`。
 
 ## Blockers
 
-当前无已知阻塞项。
+当前无已知设计阻塞项。
