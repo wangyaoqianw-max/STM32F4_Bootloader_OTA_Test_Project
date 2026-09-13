@@ -22,16 +22,19 @@
 //******************************** Types ***********************************//
 typedef struct
 {
+    /** 当前 CRC-8/SMBUS 流式计算内部值。 */
     uint8_t value;
 } crc8_smbus_context_t;
 
 typedef struct
 {
+    /** 当前 CRC-16/XMODEM 流式计算内部值。 */
     uint16_t value;
 } crc16_xmodem_context_t;
 
 typedef struct
 {
+    /** 当前 CRC-32/ISO-HDLC 流式计算内部值，尚未执行 final xor。 */
     uint32_t value;
 } crc32_iso_hdlc_context_t;
 //******************************** Types ***********************************//
