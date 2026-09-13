@@ -330,6 +330,8 @@ Review                 NOT_STARTED
 
 如果擦除期间连续发送整个文件导致 RingBuffer Data Loss，板测会按设计 abort 且不提交 Header；这属于安全失败路径，不得视为正常传输方式。
 
+2026-09-13 本机硬件探测结果：J-Link V9（S/N `602713300`）可识别且 `VTref=3.285V`，但在 `4000 kHz` 与 `100 kHz` 下均报告 `Failed to initialized DAP`，普通连接和 connect-under-reset 都无法连接 STM32F411CE；系统同时未枚举通信串口。因此固件未烧录，UART/RTT、Reset 与 Power-cycle 证据保持 `PENDING`。恢复前应检查 SWDIO、SWCLK、GND、NRST、目标板供电与其他调试会话占用，并接入 USART1 对应 USB-UART。
+
 ## Next Action
 
 Implementation Role 等待 Task 7 真实 UART/RTT、Reset 和 Power-cycle 板测证据。获得证据后先回填结果，再执行 Task 8：移除 production 启动路径和正式 Keil Target 中的破坏性板测，运行全量 Host Test、normal build、Clean/Rebuild 与 Coding Standard Review。
