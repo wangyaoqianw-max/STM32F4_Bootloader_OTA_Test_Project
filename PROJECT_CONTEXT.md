@@ -6,21 +6,21 @@
 
 - Last Closed Stage: `S02_External_Flash_Driver`
 - Active Stage: `S03_EEPROM_Storage`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `codex/s03-eeprom-storage`
 - S03 Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - S03 Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - S03 Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
 - S03 Handoff Commit: `1f563893df302d206fbe648ebf69934479ae61c1`
 - S03 Review Skeleton Commit: `982b8afb715e47808ea5731d81f2ca5cd49b7a22`
-- Current Role: `Implementation Role / Ready to execute`
+- Current Role: `Implementation Role complete / Verification Role pending`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
 `S01_Application_Foundation` 与 `S02_External_Flash_Driver` 已关闭。
 
-`S03_EEPROM_Storage` 设计已批准并完成 Implementation Plan / Handoff。当前已进入施工，仍禁止扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
+`S03_EEPROM_Storage` 设计已批准并完成 Implementation Plan / Handoff。当前实现已完成，等待独立 Verification Role；仍禁止扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
 
 ## Stable Baseline from S02
 
@@ -131,7 +131,7 @@ Device / Manager / Storage 的完整统一架构，计划在 Bootloader + OTA �
 
 ## Next Action
 
-当前执行 S03 Implementation Plan Task 1：实现通用 `platform_i2c_probe()`，通过编译后再进入 AT24C02 Raw Driver。
+当前下一步：由 Verification Role 打开 S03 板测配置并执行真实板 RTT、Reset Persistence 和 Power-cycle Persistence 验证。
 
 实现完成后必须经过真实硬件 RTT 测试、Reset Persistence、实际 Power-cycle Persistence，再移交独立 Verification / Review。
 
