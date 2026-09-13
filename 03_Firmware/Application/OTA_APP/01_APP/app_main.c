@@ -16,14 +16,20 @@
 
 #define LOG_TAG "app_main"
 
-#include "platform_bsp_led.h"
-#include "platform_bsp_spi.h"
-#include "platform_spi.h"
 #include "platform_time.h"
 #include "project_config.h"
 #include "service_log.h"
+
+#if (PROJECT_ENABLE_S04_BOARD_TEST == 1U)
+#include "app_s04_firmware_image_test.h"
+#else
+#include "platform_bsp_led.h"
+#include "platform_bsp_spi.h"
+#include "platform_spi.h"
+#endif
 //******************************** Includes *********************************//
 
+#if (PROJECT_ENABLE_S04_BOARD_TEST == 0U)
 //******************************** Variables ********************************//
 static platform_led_t g_statusLed = PLATFORM_LED_INITIALIZER;
 static platform_spi_bus_t g_storageSpiBus = PLATFORM_SPI_BUS_INITIALIZER;
@@ -62,12 +68,22 @@ static platform_error_t app_main_init(void)
     return result;
 }
 //******************************** Private Functions *************************//
+#endif
 
 //******************************** Functions *********************************//
 void app_main(void)
 {
     platform_error_t appResult;
 
+#if (PROJECT_ENABLE_S04_BOARD_TEST == 1U)
+    SERVICE_LOG_I("S04 Firmware Image board test start");
+    appResult = app_s04_firmware_image_test_run();
+    SERVICE_LOG_I("S04 Firmware Image board test result: %d", appResult);
+
+    for (;;) {
+        (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
+    }
+#else
     SERVICE_LOG_I("Application Foundation start");
 
     appResult = app_main_init();
@@ -87,5 +103,6 @@ void app_main(void)
         (void)platform_led_off(&g_statusLed);
         (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
     }
+#endif
 }
 //******************************** Functions *********************************//

@@ -303,7 +303,7 @@ Design Document        CREATED
 Implementation Plan    CREATED
 Plan Owner Acceptance  PASS
 Stage Status           READY_FOR_IMPLEMENTATION
-Production Code        IN_PROGRESS (Task 1 complete)
+Production Code        IN_PROGRESS (Task 1-7 implementation complete; hardware execution pending)
 Verification           NOT_STARTED
 Review                 NOT_STARTED
 ```
@@ -316,9 +316,22 @@ Review                 NOT_STARTED
 - Task 4 — Firmware Storage Service：已新增 W25Q64/AT24C02 存储编排、整镜像流式 CRC 验证、I/O 与镜像无效区分、Metadata 双副本原子提交；Host Stub 已覆盖提交中断后的旧副本恢复与 sequence 递增。提交记录见当前阶段分支历史。
 - Task 5 — PC Firmware Pack Tool：已新增固定偏移 little-endian 打包工具与 Python 单元测试；Python 生成 `.img` 已由 C Host Test 验证 Header、Version、长度及 Payload CRC 合同一致。提交记录见当前阶段分支历史。
 - Task 6 — Keil Production Integration：已将 CRC 与 4 个 Firmware production source 加入独立 Keil Group，并追加对应 include path；normal build 与 Clean/Rebuild 均为 0 errors、8 个既有 warning，S04 source 无新增 warning。提交记录见当前阶段分支历史。
+- Task 7 — S04 UART → Slot B Board Test：已新增独立板测入口，完成 Storage/UART Service 初始化、64 Byte Header 分片接收与擦除前校验、固定 Slot B 擦除、Payload 流式写入与 CRC、Header 最后提交、整镜像回读验证，以及 Metadata 双提交和单副本破坏恢复。临时测试开关为 `PROJECT_ENABLE_S04_BOARD_TEST=1`，正式 Target 已接入所需 UART/Service/Impl 与板测源码。Clean 成功；Rebuild 为 0 errors、14 warnings，其中 8 个与 Task 6 相同，新增 6 个均来自既有 `platform_uart.c`，S04 板测源码无 warning。真实板测尚待人工执行。
+
+## Task 7 Hardware Execution Gate
+
+当前固件使用 `115200 8N1`，测试输入仍为 `[64 Byte Header][image_size Byte Payload]` raw binary。由于冻结流程要求先验证 Header、再擦除 Slot B，且 S04 不实现流控或正式 Transport，人工发送时必须：
+
+1. 先发送 `.img` 的前 64 Byte；
+2. 等待 RTT 输出 `erase complete, send payload bytes=...`；
+3. 再发送同一 `.img` 从 offset `64` 开始的全部 Payload；
+4. 收集直到 `[S04] final result=PASS` 的 RTT 日志；
+5. 按 Required Verification Cases 执行中断、CRC、单副本、Reset 与 Power-cycle 场景。
+
+如果擦除期间连续发送整个文件导致 RingBuffer Data Loss，板测会按设计 abort 且不提交 Header；这属于安全失败路径，不得视为正常传输方式。
 
 ## Next Action
 
-Implementation Role 按 `implementation_plan.md` 继续 Task 7，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
+Implementation Role 等待 Task 7 真实 UART/RTT、Reset 和 Power-cycle 板测证据。获得证据后先回填结果，再执行 Task 8：移除 production 启动路径和正式 Keil Target 中的破坏性板测，运行全量 Host Test、normal build、Clean/Rebuild 与 Coding Standard Review。
 
 Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。

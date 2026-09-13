@@ -31,6 +31,9 @@
 
 /* W25Q64 Platform 校验上限。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
+
+/* S04 破坏性板测临时开关；Task 8 必须关闭并移除正式 Target 中的板测源码。 */
+#define PROJECT_ENABLE_S04_BOARD_TEST         (1U)
 //******************************** Defines *********************************//
 
 #endif
