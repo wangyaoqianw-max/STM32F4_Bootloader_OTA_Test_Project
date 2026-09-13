@@ -19,10 +19,11 @@ Roadmap State 语义：
 1. 每个 Stage 必须增加一项可以独立验证的系统能力；
 2. 每个 Stage 应有明确前置依赖、工程交付物和硬件/软件验收证据；
 3. Application 与 Bootloader 分开设计，Bootloader 不机械复制 Application 的完整分层和 RTOS 架构；
-4. UART/Ymodem、Flash Driver 等基础模块只解决各自职责，不提前承载 OTA 业务语义；
+4. UART/Ymodem、Flash/EEPROM Raw Driver 等基础模块只解决各自职责，不提前承载 OTA 业务语义；
 5. Firmware Image、Slot、Metadata 等跨模块契约在传输和 Bootloader 安装前明确；
 6. LCD、CK02AT 和其他非核心扩展不阻塞 V1 OTA 主链；
-7. 真实硬件资料不足时，在对应 Stage 再补充，不把当前非阻塞开放项提前冻结为强制前置条件。
+7. 真实硬件资料不足时，在对应 Stage 再补充，不把当前非阻塞开放项提前冻结为强制前置条件；
+8. Device Manager、Storage Device 等大型统一架构不为单一阶段强行引入，等主项目完成后基于真实使用场景专项重构。
 
 ## 2. Phase Overview
 
@@ -75,7 +76,7 @@ S12  增加 OTA 安全机制实验
 | `S00_Template_Restructure` | 建立通用工程模板、跨工具上下文合同和工程准备机制 | 项目目录、阶段工作流、上下文合同、工程准备模板、构建规范 | 目录与工作流设计获批 | `CLOSED` | 结构与构建规范验证通过、Project Owner 审核通过，并已被当前项目实际采用 |
 | `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `CLOSED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过；连续 Reset 4 次稳定复现 |
 | `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 Raw Driver；Read / Program / Erase / JEDEC ID / BUSY/WEL / 跨页和边界检查；RTT 板测；Raw Driver 稳定后评估 SFUD 接入 | S01；W25Q64 与 SPI2 硬件资料 | `CLOSED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；Reset 后数据保持；错误返回可诊断；SPI 大长度语义返工通过 Host/Build/Hardware Regression；形成 SFUD 适配基线 |
-| `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Driver；Byte/Page Read/Write；跨页处理；写周期等待；基础 NVM 数据访问接口 | S01；AT24C02 与 PB6/PB7 硬件资料 | `PLANNED` | Page/跨页读写正确；Reset/掉电后数据保持；地址边界与错误处理测试通过 |
+| `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C `probe()`；AT24C02 Raw Driver；Random/Sequential Read；8 Byte Page 自动拆分写；ACK Polling；地址边界；RTT 板测 | S01；AT24C02 与 PB6/PB7 硬件资料 | `ACTIVE` | 单字节/页内/跨页读写正确；`0xFF` 与越界保护正确；Reset/实际掉电后数据保持；错误返回与 RTT 日志可诊断 |
 | `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | 设计 External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；基础 Metadata Contract；镜像整体 CRC 校验；明确 Application/Bootloader 共用数据契约 | S02；S03 | `PLANNED` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏镜像能够被正确区分 |
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | OTA 专用 UART；接收缓冲；Ymodem 协议状态机；文件名/大小处理；Packet CRC；Timeout / Cancel / Retry；数据流式写入指定 External Flash 区域 | S02；S04；UART 硬件资料；补充 Ymodem 参考资料 | `PLANNED` | PC 通过 Ymodem 发送 `.bin`；MCU 完整接收并写入 Flash；接收 Size 与 CRC 和源文件一致；中断/取消场景可恢复 |
 | `S06_RTOS_Runtime` | 建立 Application 后台 OTA 所需的并发运行环境 | 集成 FreeRTOS；确定 Task 划分；建立 Task Notification / Queue / Mutex 等必要 IPC；明确 UART 接收、Flash 写入、普通业务和日志之间的并发边界 | S01；S05 的通信模型已明确 | `PLANNED` | 正常业务与 Firmware 接收可以并发；无工作任务能够阻塞；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁或资源竞争 |
@@ -166,6 +167,15 @@ TRIAL
 - HC-05 参数：只有后续决定增加 Bluetooth OTA Transport 时再进入正式 Stage；
 - SHA / AES / HMAC / Digital Signature 的具体算法和库选择：S12 再冻结。
 
+S03 已明确延期的架构工作：
+
+- Device Manager；
+- `platform_storage_device_t`；
+- 通用 NVM Manager；
+- W25Q64 EEPROM Emulation。
+
+这些内容不阻塞 OTA 主链，主项目完成后再根据真实使用场景进行架构专项重构。
+
 ## 6. Current Execution Checkpoint
 
 最近关闭阶段：
@@ -176,27 +186,30 @@ Status: CLOSED
 Final Review: PASS
 ```
 
-S02 已建立并验证 External SPI Flash Raw Driver 基线，Previous Review Finding 1 也已完成返工和真实硬件回归。
-
-下一阶段：
+当前活动阶段：
 
 ```text
 S03_EEPROM_Storage
-Roadmap State: PLANNED
-Formal Stage: Not started yet
+Roadmap State: ACTIVE
+Workflow Status: READY_FOR_IMPLEMENTATION
 ```
 
-S03 下一步不是直接施工，而是先进入 Design Preparation：
+S03 已完成：
 
-1. 读取当前仓库中的 Software I2C、Platform GPIO/Time 与相关 BSP；
-2. 核对 AT24C02 硬件连接、容量、Page Size、地址模型和写周期要求；
-3. 讨论 EEPROM Driver 与基础 NVM 接口边界；
-4. 冻结 S03 Design；
-5. Design Approval 后再生成 `implementation_plan.md` 并进入正式施工。
+1. AT24C02 Datasheet / 原理图 / Software I2C 基线核对；
+2. PB6/PB7 Open Drain + `GPIO_NOPULL` 配置核对；
+3. SCL/SDA 外部 4.7 kΩ 上拉确认；
+4. AT24C02 `0x50`、256 Byte、8 Byte Page、5 ms `tWR` 等关键事实确认；
+5. `platform_i2c_probe()`、AT24C02 Raw Driver、Page Split、ACK Polling 设计冻结；
+6. 决定 S03 不引入通用 NVM / Device Manager / Storage Device；
+7. 板测统一采用 RTT + EasyLogger；
+8. `design.md`、`implementation_plan.md`、`handoff.md` 已建立。
 
-S02 正式关闭证据：
+下一步：按 `S03_EEPROM_Storage/implementation_plan.md` 从 Task 1 开始进入生产代码施工。
 
-- `00_Project/03_Stages/S02_External_Flash_Driver/handoff.md`
-- `00_Project/03_Stages/S02_External_Flash_Driver/review.md`
-- `04_Test/Reports/Stages/S02_External_Flash_Driver/verification.md`
+S03 正式入口：
+
+- `00_Project/03_Stages/S03_EEPROM_Storage/design.md`
+- `00_Project/03_Stages/S03_EEPROM_Storage/implementation_plan.md`
+- `00_Project/03_Stages/S03_EEPROM_Storage/handoff.md`
 - `00_Project/05_Status/current_status.md`
