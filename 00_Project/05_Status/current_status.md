@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S04_Firmware_Image_Storage`
-- Status: `DESIGN_APPROVED`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `codex/s04-firmware-image-storage`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
@@ -15,19 +15,21 @@
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Project Owner / S04 Plan Review`
+- Current Role: `Implementation Role / Ready to Execute`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
-`S04_Firmware_Image_Storage` 的设计与正式 `implementation_plan.md` 已创建。
+`S04_Firmware_Image_Storage` 的设计和 `implementation_plan.md` 已由 Project Owner 批准。
 
-当前不再补充新的架构范围；Project Owner 需要审核并接受 Implementation Plan。接受前 Stage 保持 `DESIGN_APPROVED`，生产代码不得施工。接受后推进：
+阶段已正式通过实现门禁：
 
 ```text
 DESIGN_APPROVED
 → READY_FOR_IMPLEMENTATION
 ```
+
+后续应严格按照 Implementation Plan 的 Task 1 → Task 8 施工；若实现过程中发现冻结设计存在冲突或缺失信息，应停止扩大范围并回到设计/阻塞处理，而不是自行改变数据契约。
 
 ## Frozen S04 Design Summary
 
@@ -163,10 +165,14 @@ RTT + EasyLogger
 
 ## Next Action
 
-Project Owner 审阅并接受 S04 `implementation_plan.md`。
+Implementation Role 按以下入口执行：
 
-Plan 接受后同步状态为 `READY_FOR_IMPLEMENTATION`，再交给 Codex / Implementation Role 按 Task 1~8 执行。
+```text
+00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md
+```
+
+从 Task 1 开始，逐任务完成 Host Test / Build / Commit / Handoff 更新。全部实现完成后推进至 `READY_FOR_VERIFICATION`，不得由 Implementation Role 自行关闭阶段。
 
 ## Blockers
 
-当前无已知技术阻塞；唯一门禁为 Implementation Plan Owner Acceptance。
+当前无已知技术阻塞或流程门禁。
