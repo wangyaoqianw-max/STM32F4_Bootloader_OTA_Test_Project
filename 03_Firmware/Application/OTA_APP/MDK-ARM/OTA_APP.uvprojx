@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine />
-              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/spi;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -647,6 +647,11 @@
               <FilePath>../03_Platform/platform_mcu/gpio/platform_gpio.c</FilePath>
             </File>
             <File>
+              <FileName>platform_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_mcu/i2c/platform_i2c.c</FilePath>
+            </File>
+            <File>
               <FileName>platform_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>../03_Platform/platform_mcu/spi/platform_spi.c</FilePath>
@@ -660,6 +665,11 @@
               <FileName>platform_bsp_w25q64.c</FileName>
               <FileType>1</FileType>
               <FilePath>../03_Platform/platform_bsp/w25q64/platform_bsp_w25q64.c</FilePath>
+            </File>
+            <File>
+              <FileName>platform_at24c02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_bsp/at24c02/platform_at24c02.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -685,6 +695,11 @@
               <FileName>impl_platform_bsp_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>../04_Impl/impl_bsp/impl_platform_bsp_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_platform_delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_mcu/impl_platform_delay.c</FilePath>
             </File>
             <File>
               <FileName>impl_freertos_time.c</FileName>

@@ -22,6 +22,7 @@
 /* Software I2C 的半周期和时钟拉伸等待上限，单位为微秒。 */
 #define PROJECT_SOFT_I2C_HALF_PERIOD_US       (5U)
 #define PROJECT_SOFT_I2C_SCL_TIMEOUT_US       (100U)
+#define PROJECT_AT24C02_I2C_ADDRESS            (0x50U)
 
 /* Status LED 的有效电平和基础闪烁节奏，时间单位为毫秒。 */
 #define PROJECT_STATUS_LED_ACTIVE_LEVEL       PLATFORM_GPIO_LEVEL_LOW
