@@ -6,7 +6,7 @@
 - Verification status: `PASS`
 - Stage status after verification: `READY_FOR_REVIEW`; final stage status after Review: `CLOSED`
 - Source under verification: `93c93b6`（包含板测入口移出生产工程的收口）
-- Verification Commit: `Not created yet`
+- Verification Commit: `eb511a4ea0e1d443a422518bc2a0588df9cde0e5`
 - Review Commit: `3c827293332e10dd660361470555bc453450430c`
 - Code verification: `PASS`
 - Hardware verification: `PASS`，基于 Project Owner 提供的真实开发板 RTT 日志
