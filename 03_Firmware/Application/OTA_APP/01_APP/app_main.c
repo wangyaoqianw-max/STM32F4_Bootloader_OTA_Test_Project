@@ -13,7 +13,6 @@
 
 //******************************** Includes *********************************//
 #include "app_main.h"
-#include "app_s03_eeprom_test.h"
 
 #define LOG_TAG "app_main"
 
@@ -81,18 +80,6 @@ void app_main(void)
             (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
         }
     }
-
-#if (PROJECT_S03_EEPROM_BOARD_TEST_ENABLE != 0U)
-    appResult = app_s03_eeprom_test_run();
-    SERVICE_LOG_I("S03 EEPROM board test result: %d", appResult);
-    if (appResult != PLATFORM_ERR_OK) {
-        SERVICE_LOG_E("S03 EEPROM board test failed: %d", appResult);
-
-        for (;;) {
-            (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
-        }
-    }
-#endif
 
     for (;;) {
         (void)platform_led_on(&g_statusLed);
