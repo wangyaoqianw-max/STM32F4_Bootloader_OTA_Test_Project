@@ -303,13 +303,17 @@ Design Document        CREATED
 Implementation Plan    CREATED
 Plan Owner Acceptance  PASS
 Stage Status           READY_FOR_IMPLEMENTATION
-Production Code        NOT_STARTED
+Production Code        IN_PROGRESS (Task 1 complete)
 Verification           NOT_STARTED
 Review                 NOT_STARTED
 ```
 
+## Implementation Progress
+
+- Task 1 — CRC Common：已新增 CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC 的软件 bitwise 实现和 Host Test；标准向量与流式分块计算已验证。提交记录见当前阶段分支历史。
+
 ## Next Action
 
-Implementation Role 从 `implementation_plan.md` Task 1 开始施工，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
+Implementation Role 按 `implementation_plan.md` 继续 Task 2，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
 
 Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。
