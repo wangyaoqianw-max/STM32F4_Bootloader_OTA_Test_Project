@@ -4,23 +4,23 @@
 
 ## Context Metadata
 
-- Last Closed Stage: `S02_External_Flash_Driver`
+- Last Closed Stage: `S03_EEPROM_Storage`
 - Active Stage: `S03_EEPROM_Storage`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED`
 - Branch: `codex/s03-eeprom-storage`
 - S03 Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - S03 Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - S03 Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
 - S03 Handoff Commit: `ffbfcdd`
 - S03 Review Skeleton Commit: `982b8afb715e47808ea5731d81f2ca5cd49b7a22`
-- Current Role: `Verification Role complete / Review Role pending`
+- Current Role: `Review Role complete`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
 `S01_Application_Foundation` 与 `S02_External_Flash_Driver` 已关闭。
 
-`S03_EEPROM_Storage` 实现、用户真实板测和 Verification Report 已完成，验证结果为 `PASS`；临时板测源已保留在 `04_Test/Board/S03_EEPROM_Storage` 并移出生产 Application/Keil 工程。当前进入 Review Role；仍禁止扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
+`S03_EEPROM_Storage` 实现、用户真实板测、Verification Report 和 Review 已完成，结果为 `PASS`，阶段已 `CLOSED`；临时板测源已保留在 `04_Test/Board/S03_EEPROM_Storage` 并移出生产 Application/Keil 工程。后续如继续推进，需单独创建 S04 Design Stage；仍禁止把 S03 扩大到 Firmware Metadata、OTA 状态机或完整 Device/Manager/Storage 架构。
 
 ## Stable Baseline from S02
 
@@ -131,9 +131,9 @@ Device / Manager / Storage 的完整统一架构，计划在 Bootloader + OTA �
 
 ## Next Action
 
-当前下一步：Review Role 根据 S03 Verification Report、handoff、冻结设计和代码差异执行最终审核；通过后再关闭 S03。
+当前下一步：如继续推进，由 Project Owner 决定是否创建 `S04_Firmware_Image_Storage` Design Stage；S03 不再追加范围外实现。
 
-实现完成后必须经过真实硬件 RTT 测试、Reset Persistence、实际 Power-cycle Persistence，再移交独立 Verification / Review。当前硬件证据已由用户提供并记录在 Verification Report。
+实现完成后必须经过真实硬件 RTT 测试、Reset Persistence、实际 Power-cycle Persistence，再移交独立 Verification / Review；S03 的硬件证据已由用户提供并记录在 Verification Report。
 
 ## Prohibited Actions
 
