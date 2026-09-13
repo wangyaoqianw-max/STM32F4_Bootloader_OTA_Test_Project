@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S03_EEPROM_Storage`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `codex/s03-eeprom-storage`
 - Baseline Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
@@ -156,7 +156,8 @@ Power-cycle Persistence
 - `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
 - `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.h`
 - `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.c`
-- Stage context files updated for branch `codex/s03-eeprom-storage` and status `READY_FOR_VERIFICATION`.
+- `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`
+- Stage context files updated for branch `codex/s03-eeprom-storage` and status `READY_FOR_REVIEW`.
 
 ### Deviations From Plan
 
@@ -171,10 +172,11 @@ Power-cycle Persistence
 - XML/project audit after cleanup: PASS; formal AT24C02 and Software I2C sources remain in the Keil target, while the board-test source is absent.
 - Code verification: PASS for build and static implementation checks.
 - Hardware verification: PASS based on user-provided real-board RTT evidence, with the missing direct Reset Persistence line documented above.
+- Verification Role report: `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`, status `PASS`.
 
 ### Known Issues
 
-Implementation and requested board testing are complete. The destructive board-test source is retained only under `04_Test/Board/S03_EEPROM_Storage`; it is not part of the production Application or Keil target.
+Implementation and requested board testing are complete. Verification is recorded as `PASS`; the destructive board-test source is retained only under `04_Test/Board/S03_EEPROM_Storage` and is not part of the production Application or Keil target. Review Role remains the next gate.
 
 ### Review Focus
 

@@ -15,7 +15,7 @@
 - Stage: `S03_EEPROM_Storage`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
-- Status: `NOT_STARTED`
+- Status: `COMPLETED`
 
 ## Global Constraints
 
@@ -46,13 +46,13 @@ platform_error_t platform_i2c_probe(
     uint8_t address);
 ```
 
-- [ ] **Step 1: 在头文件中声明 `platform_i2c_probe()` 并明确 7-bit 地址及返回语义。**
-- [ ] **Step 2: 在 `.c` 中复用现有事务 helper，实现 `START → SLA+W → ACK/NACK → STOP`，不发送任何数据字节。**
-- [ ] **Step 3: 确认地址 NACK 返回 `PLATFORM_ERR_NOT_FOUND`，其它总线错误保持原错误，不被转换。**
-- [ ] **Step 4: 编译检查现有 I2C API 无回归。**
+- [x] **Step 1: 在头文件中声明 `platform_i2c_probe()` 并明确 7-bit 地址及返回语义。**
+- [x] **Step 2: 在 `.c` 中复用现有事务 helper，实现 `START → SLA+W → ACK/NACK → STOP`，不发送任何数据字节。**
+- [x] **Step 3: 确认地址 NACK 返回 `PLATFORM_ERR_NOT_FOUND`，其它总线错误保持原错误，不被转换。**
+- [x] **Step 4: 编译检查现有 I2C API 无回归。**
   - Run: `05_Tools/Scripts/build_app.bat`
   - Expected: Keil normal build succeeds with no new errors.
-- [ ] **Step 5: 提交本任务，并将 Commit 写入 `handoff.md`。**
+- [x] **Step 5: 提交本任务，并将 Commit 写入 `handoff.md`。**
 
 ### Task 2: Add AT24C02 Raw Driver core
 
@@ -87,18 +87,18 @@ platform_error_t platform_at24c02_write(
     platform_size_t dataLength);
 ```
 
-- [ ] **Step 1: 创建头文件，定义 256 Byte 容量、8 Byte Page、`0x50~0x57` 地址范围、运行时对象和四个公共 API。**
-- [ ] **Step 2: 在 `project_config.h` 中增加本板静态地址 `PROJECT_AT24C02_I2C_ADDRESS (0x50U)`，不把板级固定地址硬编码成 Driver 唯一地址。**
-- [ ] **Step 3: 实现参数/初始化状态校验与 `init/deinit`。**
+- [x] **Step 1: 创建头文件，定义 256 Byte 容量、8 Byte Page、`0x50~0x57` 地址范围、运行时对象和四个公共 API。**
+- [x] **Step 2: 在 `project_config.h` 中增加本板静态地址 `PROJECT_AT24C02_I2C_ADDRESS (0x50U)`，不把板级固定地址硬编码成 Driver 唯一地址。**
+- [x] **Step 3: 实现参数/初始化状态校验与 `init/deinit`。**
   - `init()` 只在 probe 成功后设置 `initialized = PLATFORM_TRUE`。
   - `deinit()` 不调用 `platform_i2c_deinit()`。
-- [ ] **Step 4: 实现 `read()`，用 1 Byte Word Address + `platform_i2c_write_read()` 完成 Random/Sequential Read。**
-- [ ] **Step 5: 实现统一范围校验，使用 `dataLength > (TOTAL_SIZE - address)`，禁止跨 `0xFF` 回绕。**
-- [ ] **Step 6: 将新 Driver 源文件/头文件目录加入 `OTA_APP.uvprojx` 的现有 Platform/BSP 组织，不修改 `.uvoptx` 作为功能依赖。**
-- [ ] **Step 7: 执行 normal build。**
+- [x] **Step 4: 实现 `read()`，用 1 Byte Word Address + `platform_i2c_write_read()` 完成 Random/Sequential Read。**
+- [x] **Step 5: 实现统一范围校验，使用 `dataLength > (TOTAL_SIZE - address)`，禁止跨 `0xFF` 回绕。**
+- [x] **Step 6: 将新 Driver 源文件/头文件目录加入 `OTA_APP.uvprojx` 的现有 Platform/BSP 组织，不修改 `.uvoptx` 作为功能依赖。**
+- [x] **Step 7: 执行 normal build。**
   - Run: `05_Tools/Scripts/build_app.bat`
   - Expected: build succeeds; no missing include/source symbols.
-- [ ] **Step 8: 提交本任务，并将 Commit 写入 `handoff.md`。**
+- [x] **Step 8: 提交本任务，并将 Commit 写入 `handoff.md`。**
 
 ### Task 3: Implement page-aware write and ACK polling
 
@@ -109,31 +109,31 @@ platform_error_t platform_at24c02_write(
 - Consumes: Task 1/2 interfaces.
 - Produces: completed `platform_at24c02_write()` with automatic page splitting and bounded ready wait.
 
-- [ ] **Step 1: 增加私有 `platform_at24c02_page_write()`，单次只允许当前 8 Byte Page 内 `1..8` Byte。**
+- [x] **Step 1: 增加私有 `platform_at24c02_page_write()`，单次只允许当前 8 Byte Page 内 `1..8` Byte。**
   - Build one local buffer: `[wordAddress][data...]`, maximum 9 Byte.
   - Send with `platform_i2c_write()`.
-- [ ] **Step 2: 增加私有 `platform_at24c02_wait_ready()`。**
+- [x] **Step 2: 增加私有 `platform_at24c02_wait_ready()`。**
   - `probe == OK` → ready.
   - `probe == NOT_FOUND` → delay 1 ms and retry.
   - any other error → return immediately.
   - 10 ms budget exhausted → `PLATFORM_ERR_TIMEOUT`.
-- [ ] **Step 3: 实现公共 `write()` 的 Page Split：**
+- [x] **Step 3: 实现公共 `write()` 的 Page Split：**
 ```text
 pageRemaining = 8 - (address % 8)
 chunk = min(remaining, pageRemaining)
 ```
   - Full request range must be validated before first write.
   - After every page write, call `wait_ready()` before advancing.
-- [ ] **Step 4: 代码审查以下边界：**
+- [x] **Step 4: 代码审查以下边界：**
   - `write(0xFF, len=1)` valid.
   - `write(0xFC, len=4)` valid.
   - `write(0xFC, len=5)` rejected before bus write.
   - `write(0x06, len=10)` splits `2 + 8`.
-- [ ] **Step 5: 执行 normal build 和 clean rebuild。**
+- [x] **Step 5: 执行 normal build 和 clean rebuild。**
   - Run normal: `05_Tools/Scripts/build_app.bat`
   - Run clean/rebuild through the repository's existing Keil build tool entry according to its supported argument/command.
   - Expected: both succeed with no new errors.
-- [ ] **Step 6: 提交本任务，并将 Commit 写入 `handoff.md`。**
+- [x] **Step 6: 提交本任务，并将 Commit 写入 `handoff.md`。**
 
 ### Task 4: Add S03 hardware verification entry using RTT + EasyLogger
 
@@ -146,17 +146,17 @@ chunk = min(remaining, pageRemaining)
 - Consumes: Software I2C GPIO BSP constructors, `platform_i2c_init()`, AT24C02 API, RTT + EasyLogger.
 - Produces: reproducible S03 board-test path with clear logs.
 
-- [ ] **Step 1: 组装 PB6/PB7 Software I2C 对象并调用 `platform_i2c_init()`。**
-- [ ] **Step 2: 使用 `PROJECT_AT24C02_I2C_ADDRESS` 调用 `platform_at24c02_init()`，日志输出 probe 结果和错误码。**
-- [ ] **Step 3: 增加单字节、页内、跨页和非页对齐跨页的 write/read/compare 测试。**
+- [x] **Step 1: 组装 PB6/PB7 Software I2C 对象并调用 `platform_i2c_init()`。**
+- [x] **Step 2: 使用 `PROJECT_AT24C02_I2C_ADDRESS` 调用 `platform_at24c02_init()`，日志输出 probe 结果和错误码。**
+- [x] **Step 3: 增加单字节、页内、跨页和非页对齐跨页的 write/read/compare 测试。**
   - Cross-page required case: start `0x06`, length `10`, expected split `2 + 8`.
-- [ ] **Step 4: 增加边界测试。**
+- [x] **Step 4: 增加边界测试。**
   - `0xFF, len=1` must pass.
   - `0xFC, len=5` must return parameter error and must not corrupt target data.
-- [ ] **Step 5: RTT/EasyLogger 输出每个 testcase 的 PASS/FAIL；失败至少打印 test name/address/length/error，数据不一致时打印 expected/actual。**
-- [ ] **Step 6: 完成 Reset Persistence 模式：写入固定测试标记后复位，再次启动时只读并确认保持。**
-- [ ] **Step 7: Build 并烧录真实板，记录 RTT 日志。**
-- [ ] **Step 8: 提交测试入口变化，并将 Commit 写入 `handoff.md`。**
+- [x] **Step 5: RTT/EasyLogger 输出每个 testcase 的 PASS/FAIL；失败至少打印 test name/address/length/error，数据不一致时打印 expected/actual。**
+- [x] **Step 6: 完成 Reset Persistence 模式：写入固定测试标记后复位，再次启动时只读并确认保持。**
+- [x] **Step 7: Build 并烧录真实板，记录 RTT 日志。**
+- [x] **Step 8: 提交测试入口变化，并将 Commit 写入 `handoff.md`。**
 
 ### Task 5: Perform physical persistence verification and prepare verification handoff
 
@@ -169,12 +169,12 @@ chunk = min(remaining, pageRemaining)
 - Consumes: completed implementation and S03 board-test firmware.
 - Produces: implementation handoff and later verification evidence.
 
-- [ ] **Step 1: 在真实板上执行初始化/probe、single-byte、in-page、cross-page、unaligned、boundary 测试，并保存 RTT 关键日志。**
-- [ ] **Step 2: 执行 Reset Persistence，确认 Reset 后 EEPROM 数据保持。**
-- [ ] **Step 3: 执行真正断电再上电测试，确认 Power-cycle Persistence。**
-- [ ] **Step 4: 执行最终 Keil normal build + clean rebuild，确认无新增错误。**
-- [ ] **Step 5: 更新 `handoff.md` 的 Implementation Output，记录 changed files、commits、板测结果、已知问题和任何偏差。**
-- [ ] **Step 6: 将阶段推进到 `READY_FOR_VERIFICATION`；不要由 Implementation Role 自行填写 PASS Verification 或关闭 Stage。**
+- [x] **Step 1: 在真实板上执行初始化/probe、single-byte、in-page、cross-page、unaligned、boundary 测试，并保存 RTT 关键日志。**
+- [x] **Step 2: 执行 Reset Persistence，确认 Reset 后 EEPROM 数据保持。**
+- [x] **Step 3: 执行真正断电再上电测试，确认 Power-cycle Persistence。**
+- [x] **Step 4: 执行最终 Keil normal build + clean rebuild，确认无新增错误。**
+- [x] **Step 5: 更新 `handoff.md` 的 Implementation Output，记录 changed files、commits、板测结果、已知问题和任何偏差。**
+- [x] **Step 6: 将阶段推进到 `READY_FOR_VERIFICATION`；不要由 Implementation Role 自行填写 PASS Verification 或关闭 Stage。**
 
 ## Final Verification
 

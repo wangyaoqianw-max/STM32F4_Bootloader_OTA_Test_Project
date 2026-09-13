@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S03_EEPROM_Storage`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `codex/s03-eeprom-storage`
 - Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
@@ -13,14 +13,14 @@
 - Implementation Commit: `93c93b6` (latest implementation cleanup; see handoff for all implementation commits)
 - Verification Commit: `Not created yet`
 - Final Review Commit: `Not created yet`
-- Current Role: `Implementation Role complete / Verification evidence recorded; formal Verification Role pending`
+- Current Role: `Verification Role complete / Review Role pending`
 - Updated At: `2026-09-13`
 
 ## Current Goal
 
 `S03_EEPROM_Storage` 的设计已经由 Project Owner 批准，实施计划和施工交接已建立。
 
-当前目标是在不扩张架构范围的前提下，实现 AT24C02 Raw Driver 和 Software I2C 地址探测能力，并通过 RTT + EasyLogger 完成真实硬件读写、边界和掉电保持验证。
+当前目标是在不扩张架构范围的前提下，完成 AT24C02 Raw Driver、Software I2C 地址探测、真实硬件验证和最终 Review。
 
 ## Frozen S03 Scope
 
@@ -103,9 +103,9 @@ Keil Clean/Rebuild
 
 ## Next Action
 
-实现任务和用户请求的真实板测已完成。临时板测源保留在 `04_Test/Board/S03_EEPROM_Storage`，生产 Application 与 Keil `OTA_APP` 目标已移除测试入口。
+实现任务、用户请求的真实板测和 Verification Report 已完成并通过。临时板测源保留在 `04_Test/Board/S03_EEPROM_Storage`，生产 Application 与 Keil `OTA_APP` 目标已移除测试入口。
 
-下一步（如继续推进阶段正式关闭）：由 Verification Role 根据交接中的 RTT 证据创建 `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`，再交由 Review Role 审核；当前不再启用任何 S03 临时测试开关。
+下一步：由 Review Role 对照 `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`、冻结设计、实施计划、交接文档和代码差异完成最终审核；当前不再启用任何 S03 临时测试开关。
 
 ## Blockers
 
