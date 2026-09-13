@@ -3,8 +3,8 @@
 ## Context Metadata
 
 - Active Stage: `S03_EEPROM_Storage`
-- Status: `READY_FOR_IMPLEMENTATION`
-- Branch: `main`
+- Status: `IN_PROGRESS`
+- Branch: `codex/s03-eeprom-storage`
 - Baseline Code Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
@@ -103,7 +103,7 @@ Keil Clean/Rebuild
 
 ## Next Action
 
-按 `implementation_plan.md` 从 Task 1 开始：
+正在按 `implementation_plan.md` 执行 Task 1：
 
 1. 增加 `platform_i2c_probe()`；
 2. 建立 AT24C02 Raw Driver；
