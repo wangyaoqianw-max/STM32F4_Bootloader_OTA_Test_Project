@@ -8,7 +8,7 @@
 - Baseline Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
-- Implementation Commits: `13b1147` (Task 1), `82feca9` (Task 2), `8c45967` (Task 3), `48618ae` (Task 4)
+- Implementation Commits: `13b1147` (Task 1), `82feca9` (Task 2), `8c45967` (Task 3), `48618ae` (Task 4), `93c93b6` (board-test cleanup)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 
@@ -139,11 +139,12 @@ Power-cycle Persistence
 - Task 3 completed: added 8 Byte Page Write splitting and bounded ACK Polling.
 - Full request ranges are validated before the first physical write; each page write uses a maximum 9 Byte buffer.
 - ACK Polling retries only `PLATFORM_ERR_NOT_FOUND` at 1 ms intervals and returns `PLATFORM_ERR_TIMEOUT` after 10 ms.
-- Task 4 completed: added an isolated S03 RTT + EasyLogger board-test entry under `06_Test/S03_EEPROM_Storage`.
-- The board-test call is disabled by default with `PROJECT_S03_EEPROM_BOARD_TEST_ENABLE (0U)` and does not run in normal Application startup.
-- The test entry covers single-byte, in-page, `0x06 + 10 Byte` cross-page, unaligned cross-page, `0xFF`, out-of-range preservation and persistence-marker checks.
-- Persistence flow is Arm on first boot, verify Reset Persistence after reset, then Arm and verify Power-cycle Persistence after a real power cycle.
-- Implementation handoff is ready for independent Verification Role; no hardware result is claimed here.
+- Task 4 completed: added an isolated S03 RTT + EasyLogger board-test entry for hardware verification.
+- After board testing, the temporary test source was moved to `04_Test/Board/S03_EEPROM_Storage` and removed from the production Application startup and Keil `OTA_APP` target.
+- The retained board-test source covers single-byte, in-page, `0x06 + 10 Byte` cross-page, unaligned cross-page, `0xFF`, out-of-range preservation and persistence-marker checks.
+- User-provided RTT evidence shows successful init/probe, all read/write and boundary tests, `power-cycle-persistence: PASS`, `automated suite: PASS error=0`, and board-test result `0`.
+- The direct `reset-persistence: PASS` line was not retained because RTT was reconnected after power-up; the user confirmed the Reset and real power-cycle sequence.
+- The production Application no longer contains or invokes the destructive EEPROM board test.
 
 ### Changed Files
 
@@ -152,29 +153,28 @@ Power-cycle Persistence
 - `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.h`
 - `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.c`
 - `03_Firmware/Application/OTA_APP/00_Config/project_config.h`
-- `03_Firmware/Application/OTA_APP/01_APP/app_main.c`
 - `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
-- `03_Firmware/Application/OTA_APP/06_Test/S03_EEPROM_Storage/app_s03_eeprom_test.h`
-- `03_Firmware/Application/OTA_APP/06_Test/S03_EEPROM_Storage/app_s03_eeprom_test.c`
+- `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.h`
+- `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.c`
 - Stage context files updated for branch `codex/s03-eeprom-storage` and status `READY_FOR_VERIFICATION`.
 
 ### Deviations From Plan
 
-None recorded.
+- 初始板测入口暂放在 `03_Firmware/Application/OTA_APP/06_Test` 并临时接入 Keil 工程；板测完成后按仓库统一约定迁移至 `04_Test/Board/S03_EEPROM_Storage`，并从生产工程移除。
 
 ### Verification Results
 
-- `git diff --check`: PASS.
-- Keil normal build via `05_Tools/Scripts/build_app.bat`: PASS with final default configuration, 0 errors, 0 warnings.
-- Keil clean/rebuild via `UV4.exe -r`: PASS, 0 errors; 8 warnings are pre-existing in GPIO, W25Q64, FreeRTOS Adapter and Vendor EasyLogger sources.
-- Keil build with `PROJECT_S03_EEPROM_BOARD_TEST_ENABLE (1U)`: PASS, 0 errors, 0 warnings; final configuration restored to `0U`.
-- New S03 source warnings: none observed.
+- `git diff --check`: PASS before cleanup commit.
+- Keil build with temporary board-test enable: PASS, 0 errors, 0 warnings; this temporary configuration was used only for board testing.
+- User-provided RTT board evidence: init/probe, read/write, cross-page, unaligned, last-byte, out-of-range and persistence checks completed with PASS; `power-cycle-persistence` and the automated suite are PASS.
+- Final production build after removing the test entry: 0 errors; 8 warnings are pre-existing in GPIO, W25Q64, FreeRTOS Adapter and Vendor EasyLogger sources; no S03 test source was compiled.
+- XML/project audit after cleanup: PASS; formal AT24C02 and Software I2C sources remain in the Keil target, while the board-test source is absent.
 - Code verification: PASS for build and static implementation checks.
-- Hardware verification: PENDING.
+- Hardware verification: PASS based on user-provided real-board RTT evidence, with the missing direct Reset Persistence line documented above.
 
 ### Known Issues
 
-Implementation is complete. Real-board RTT, Reset Persistence and Power-cycle Persistence evidence remain pending for Verification Role.
+Implementation and requested board testing are complete. The destructive board-test source is retained only under `04_Test/Board/S03_EEPROM_Storage`; it is not part of the production Application or Keil target.
 
 ### Review Focus
 
@@ -186,5 +186,5 @@ Implementation is complete. Real-board RTT, Reset Persistence and Power-cycle Pe
 - Page Split 是否处理非对齐首尾页；
 - ACK Polling 是否有界；
 - Driver 是否错误拥有/释放共享 I2C Bus；
-- destructive test 是否留在正常生产启动路径；
-- RTT 板测是否包含 Reset 和实际断电保持证据。
+- destructive test 是否已退出正常生产启动路径；
+- RTT 板测记录中的 Reset Persistence 直接日志是否需要补充归档。
