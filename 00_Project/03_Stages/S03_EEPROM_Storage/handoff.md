@@ -8,7 +8,7 @@
 - Baseline Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
-- Implementation Commits: `13b1147` (Task 1), `82feca9` (Task 2)
+- Implementation Commits: `13b1147` (Task 1), `82feca9` (Task 2), `8c45967` (Task 3)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 
@@ -136,6 +136,9 @@ Power-cycle Persistence
 - Task 2 completed: added the AT24C02 Raw Driver lifecycle and Random/Sequential Read path.
 - Added the board address configuration `PROJECT_AT24C02_I2C_ADDRESS (0x50U)`.
 - Added the missing Keil project entries for Software I2C, its microsecond delay implementation and the AT24C02 driver.
+- Task 3 completed: added 8 Byte Page Write splitting and bounded ACK Polling.
+- Full request ranges are validated before the first physical write; each page write uses a maximum 9 Byte buffer.
+- ACK Polling retries only `PLATFORM_ERR_NOT_FOUND` at 1 ms intervals and returns `PLATFORM_ERR_TIMEOUT` after 10 ms.
 
 ### Changed Files
 
@@ -154,12 +157,12 @@ None recorded.
 ### Verification Results
 
 - `git diff --check`: PASS.
-- Keil normal build via `05_Tools/Scripts/build_app.bat`: PASS after Task 2 integration, 0 errors, 0 warnings.
+- Keil normal build via `05_Tools/Scripts/build_app.bat`: PASS after Task 3, 0 errors, 0 warnings.
 - Hardware verification: PENDING.
 
 ### Known Issues
 
-No blocking issue identified for Tasks 1-2; Page Write and ACK Polling remain.
+No blocking issue identified for Tasks 1-3; the RTT board-test entry remains.
 
 ### Review Focus
 
