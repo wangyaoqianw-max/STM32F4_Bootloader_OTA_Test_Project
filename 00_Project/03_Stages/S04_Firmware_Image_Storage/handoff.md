@@ -314,9 +314,10 @@ Review                 NOT_STARTED
 - Task 2 — Firmware Version / Header V1：已新增固定 Slot 合同、Version 比较与校验、64 Byte Header 固定偏移编码/解码和 Header 校验；Host Test 已覆盖 fixed-offset、little-endian、erased、reserved、size 与 CRC 路径。提交记录见当前阶段分支历史。
 - Task 3 — Metadata V1：已新增 128 Byte 双副本 fixed-offset 编解码、CRC32、commit marker、字段范围校验与 wrap-around-safe sequence 选择；Host Test 已覆盖 A/B 有效副本选择、序列回绕、保留区篡改、CRC 与未提交 marker 恢复。提交记录见当前阶段分支历史。
 - Task 4 — Firmware Storage Service：已新增 W25Q64/AT24C02 存储编排、整镜像流式 CRC 验证、I/O 与镜像无效区分、Metadata 双副本原子提交；Host Stub 已覆盖提交中断后的旧副本恢复与 sequence 递增。提交记录见当前阶段分支历史。
+- Task 5 — PC Firmware Pack Tool：已新增固定偏移 little-endian 打包工具与 Python 单元测试；Python 生成 `.img` 已由 C Host Test 验证 Header、Version、长度及 Payload CRC 合同一致。提交记录见当前阶段分支历史。
 
 ## Next Action
 
-Implementation Role 按 `implementation_plan.md` 继续 Task 5，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
+Implementation Role 按 `implementation_plan.md` 继续 Task 6，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
 
 Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。

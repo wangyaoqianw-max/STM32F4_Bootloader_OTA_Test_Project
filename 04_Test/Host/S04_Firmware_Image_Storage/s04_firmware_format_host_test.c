@@ -249,7 +249,58 @@ static int test_metadata_wrap_and_invalid_copy(void)
     return 0;
 }
 
-int main(void)
+/**
+ * @brief 验证 PC 工具生成的 Image 与 C 端 Binary Contract 一致
+ * @param[in] imagePath : 待验证 `.img` 路径
+ * @return 0 表示 Header、Version、长度和 Payload CRC 均符合合同；其他值表示失败。
+ */
+static int test_generated_image(const char *imagePath)
+{
+    FILE *imageFile;
+    firmware_image_header_t header = {0};
+    crc32_iso_hdlc_context_t crcContext;
+    uint8_t rawHeader[FIRMWARE_IMAGE_HEADER_SIZE];
+    uint8_t payloadBuffer[256];
+    uint32_t remaining;
+    size_t readLength;
+
+    imageFile = fopen(imagePath, "rb");
+    if (imageFile == NULL) {
+        return 1;
+    }
+
+    if (fread(rawHeader, 1U, sizeof(rawHeader), imageFile) != sizeof(rawHeader)) {
+        (void)fclose(imageFile);
+        return 1;
+    }
+
+    if ((firmware_image_validate_header(rawHeader, &header) != FIRMWARE_IMAGE_VALIDATION_VALID) ||
+        (header.version.major != 1U) || (header.version.minor != 1U) || (header.version.patch != 0U)) {
+        (void)fclose(imageFile);
+        return 1;
+    }
+
+    remaining = header.imageSize;
+    crc32_iso_hdlc_init(&crcContext);
+    while (remaining != 0U) {
+        readLength = (remaining > sizeof(payloadBuffer)) ? sizeof(payloadBuffer) : remaining;
+        if (fread(payloadBuffer, 1U, readLength, imageFile) != readLength) {
+            (void)fclose(imageFile);
+            return 1;
+        }
+        crc32_iso_hdlc_update(&crcContext, payloadBuffer, (uint32_t)readLength);
+        remaining -= (uint32_t)readLength;
+    }
+
+    if ((fgetc(imageFile) != EOF) || (crc32_iso_hdlc_finalize(&crcContext) != header.payloadCrc32)) {
+        (void)fclose(imageFile);
+        return 1;
+    }
+
+    return fclose(imageFile);
+}
+
+int main(int argc, char *argv[])
 {
     if (test_firmware_version() != 0) {
         (void)printf("Firmware Version test failed.\n");
@@ -273,6 +324,16 @@ int main(void)
 
     if (test_metadata_wrap_and_invalid_copy() != 0) {
         (void)printf("Firmware Metadata wrap or invalid-copy test failed.\n");
+        return 1;
+    }
+
+    if ((argc == 2) && (test_generated_image(argv[1]) != 0)) {
+        (void)printf("Python-generated Firmware Image compatibility test failed.\n");
+        return 1;
+    }
+
+    if (argc > 2) {
+        (void)printf("Usage: s04_firmware_format_host_test.exe [firmware.img]\n");
         return 1;
     }
 
