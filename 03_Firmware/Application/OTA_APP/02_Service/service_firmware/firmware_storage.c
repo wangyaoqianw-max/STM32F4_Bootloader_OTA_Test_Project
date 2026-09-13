@@ -14,10 +14,16 @@
 #include <stddef.h>
 #include <string.h>
 
+//******************************** Includes *********************************//
 #include "crc.h"
 #include "firmware_storage.h"
+//******************************** Includes *********************************//
 
+//******************************** Defines **********************************//
 #define FIRMWARE_STORAGE_CRC_BUFFER_SIZE       (256U)
+//******************************** Defines **********************************//
+
+//******************************** Private Functions ************************//
 
 /**
  * @brief 解析固定 Slot 基地址
@@ -59,6 +65,7 @@ static platform_error_t firmware_storage_check_ready(const firmware_storage_t *s
     return PLATFORM_ERR_OK;
 }
 
+//******************************** Public Functions *************************//
 platform_error_t firmware_storage_init(
     firmware_storage_t *storage,
     platform_w25q64_t *flash,
