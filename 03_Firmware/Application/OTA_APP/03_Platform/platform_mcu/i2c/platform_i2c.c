@@ -599,6 +599,34 @@ platform_error_t platform_i2c_init(
     return PLATFORM_ERR_OK;
 }
 
+platform_error_t platform_i2c_probe(
+    platform_i2c_t *i2c,
+    uint8_t address)
+{
+    platform_error_t result = platform_i2c_validate_initialized(i2c);
+
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_i2c_validate_address(address);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_i2c_begin_transaction(i2c);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = platform_i2c_send_address(i2c, address, PLATFORM_FALSE);
+    if (result != PLATFORM_ERR_OK) {
+        return platform_i2c_fail_transaction(i2c, result);
+    }
+
+    return platform_i2c_end_transaction(i2c);
+}
+
 platform_error_t platform_i2c_write(
     platform_i2c_t *i2c,
     uint8_t address,

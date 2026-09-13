@@ -49,6 +49,19 @@ platform_error_t platform_i2c_init(
     platform_gpio_t *sda);
 
 /**
+ * @brief 探测 7-bit 地址从设备是否响应
+ * @param[in,out] i2c : 已初始化 I2C 对象
+ * @param[in] address : 7-bit 从设备地址
+ * @return PLATFORM_ERR_OK : 地址阶段收到 ACK
+ * @return PLATFORM_ERR_NOT_FOUND : 地址阶段收到 NACK
+ * @return 其他值 : 总线或事务错误
+ * @note 本函数只执行一次 START、SLA+W、ACK/NACK 和 STOP，不发送数据字节。
+ */
+platform_error_t platform_i2c_probe(
+    platform_i2c_t *i2c,
+    uint8_t address);
+
+/**
  * @brief 向 7-bit 地址从设备写入数据
  * @param[in,out] i2c : 已初始化 I2C 对象
  * @param[in] address : 7-bit 从设备地址

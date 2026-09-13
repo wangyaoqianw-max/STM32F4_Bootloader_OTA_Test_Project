@@ -3,14 +3,14 @@
 ## Metadata
 
 - Stage: `S03_EEPROM_Storage`
-- Status: `READY_FOR_IMPLEMENTATION`
-- Branch: `main`
+- Status: `CLOSED`
+- Branch: `codex/s03-eeprom-storage`
 - Baseline Commit: `b590b3cad3c04292c41130b78cfb737d3898dd30`
 - Design Commit: `a2a77a6a01d3219f8a1a095ce922b5a81cb6d771`
 - Plan Commit: `b67a7b7c1375522b1c74fcc5290ffb10ce5a7bb8`
-- Implementation Commit: `Not created yet`
-- Verification Commit: `Not created yet`
-- Review Commit: `Not created yet`
+- Implementation Commits: `13b1147` (Task 1), `82feca9` (Task 2), `8c45967` (Task 3), `48618ae` (Task 4), `93c93b6` (board-test cleanup)
+- Verification Commit: `eb511a4ea0e1d443a422518bc2a0588df9cde0e5`
+- Review Commit: `3c827293332e10dd660361470555bc453450430c`
 
 ## Implementation Input
 
@@ -126,27 +126,57 @@ Power-cycle Persistence
 
 ## Implementation Output
 
-- Status: `NOT_COMPLETED`
+- Status: `CLOSED`
 
 ### Completed Work
 
-Not implemented yet.
+- Task 1 completed: added the generic single-attempt Software I2C address probe.
+- The probe reuses the existing transaction start, address-send, cleanup and STOP helpers.
+- Address NACK returns `PLATFORM_ERR_NOT_FOUND`; no data byte is transmitted.
+- Task 2 completed: added the AT24C02 Raw Driver lifecycle and Random/Sequential Read path.
+- Added the board address configuration `PROJECT_AT24C02_I2C_ADDRESS (0x50U)`.
+- Added the missing Keil project entries for Software I2C, its microsecond delay implementation and the AT24C02 driver.
+- Task 3 completed: added 8 Byte Page Write splitting and bounded ACK Polling.
+- Full request ranges are validated before the first physical write; each page write uses a maximum 9 Byte buffer.
+- ACK Polling retries only `PLATFORM_ERR_NOT_FOUND` at 1 ms intervals and returns `PLATFORM_ERR_TIMEOUT` after 10 ms.
+- Task 4 completed: added an isolated S03 RTT + EasyLogger board-test entry for hardware verification.
+- After board testing, the temporary test source was moved to `04_Test/Board/S03_EEPROM_Storage` and removed from the production Application startup and Keil `OTA_APP` target.
+- The retained board-test source covers single-byte, in-page, `0x06 + 10 Byte` cross-page, unaligned cross-page, `0xFF`, out-of-range preservation and persistence-marker checks.
+- User-provided RTT evidence shows successful init/probe, all read/write and boundary tests, `power-cycle-persistence: PASS`, `automated suite: PASS error=0`, and board-test result `0`.
+- The direct `reset-persistence: PASS` line was not retained because RTT was reconnected after power-up; the user confirmed the Reset and real power-cycle sequence.
+- The production Application no longer contains or invokes the destructive EEPROM board test.
 
 ### Changed Files
 
-Not implemented yet.
+- `03_Firmware/Application/OTA_APP/03_Platform/platform_mcu/i2c/platform_i2c.h`
+- `03_Firmware/Application/OTA_APP/03_Platform/platform_mcu/i2c/platform_i2c.c`
+- `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.h`
+- `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.c`
+- `03_Firmware/Application/OTA_APP/00_Config/project_config.h`
+- `03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx`
+- `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.h`
+- `04_Test/Board/S03_EEPROM_Storage/app_s03_eeprom_test.c`
+- `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`
+- Stage context files updated for branch `codex/s03-eeprom-storage` and status `CLOSED`.
 
 ### Deviations From Plan
 
-None recorded.
+- 初始板测入口暂放在 `03_Firmware/Application/OTA_APP/06_Test` 并临时接入 Keil 工程；板测完成后按仓库统一约定迁移至 `04_Test/Board/S03_EEPROM_Storage`，并从生产工程移除。
 
 ### Verification Results
 
-No implementation verification recorded yet.
+- `git diff --check`: PASS before cleanup commit.
+- Keil build with temporary board-test enable: PASS, 0 errors, 0 warnings; this temporary configuration was used only for board testing.
+- User-provided RTT board evidence: init/probe, read/write, cross-page, unaligned, last-byte, out-of-range and persistence checks completed with PASS; `power-cycle-persistence` and the automated suite are PASS.
+- Final production build after removing the test entry: 0 errors; 8 warnings are pre-existing in GPIO, W25Q64, FreeRTOS Adapter and Vendor EasyLogger sources; no S03 test source was compiled.
+- XML/project audit after cleanup: PASS; formal AT24C02 and Software I2C sources remain in the Keil target, while the board-test source is absent.
+- Code verification: PASS for build and static implementation checks.
+- Hardware verification: PASS based on user-provided real-board RTT evidence, with the missing direct Reset Persistence line documented above.
+- Verification Role report: `04_Test/Reports/Stages/S03_EEPROM_Storage/verification.md`, status `PASS`.
 
 ### Known Issues
 
-None blocking implementation at design handoff.
+Implementation and requested board testing are complete. Verification is recorded as `PASS`; the destructive board-test source is retained only under `04_Test/Board/S03_EEPROM_Storage` and is not part of the production Application or Keil target. Review Role remains the next gate.
 
 ### Review Focus
 
@@ -158,5 +188,5 @@ None blocking implementation at design handoff.
 - Page Split 是否处理非对齐首尾页；
 - ACK Polling 是否有界；
 - Driver 是否错误拥有/释放共享 I2C Bus；
-- destructive test 是否留在正常生产启动路径；
-- RTT 板测是否包含 Reset 和实际断电保持证据。
+- destructive test 是否已退出正常生产启动路径；
+- RTT 板测记录中的 Reset Persistence 直接日志是否需要补充归档。
