@@ -7,7 +7,8 @@
 - Branch: `codex/s04-firmware-image-storage`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
-- Implementation Plan Commit: `Not created yet`
+- Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
+- Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
@@ -15,13 +16,13 @@
 
 ## Current Objective
 
-S04 已完成设计讨论并获 Project Owner 批准。当前目标是基于冻结设计生成 `implementation_plan.md`，再进入生产代码实施。
+S04 设计已经由 Project Owner 批准，`implementation_plan.md` 已生成并完成自检。
 
-在 implementation plan 创建和批准前，不得开始 S04 生产代码施工。
+当前仍处于 `DESIGN_APPROVED`，等待 Project Owner 对实施计划本身的接受；在明确接受前不进入生产代码施工。计划接受后将状态推进至 `READY_FOR_IMPLEMENTATION`。
 
 ## Required Reading
 
-按顺序读取：
+实施前按顺序读取：
 
 1. `AGENTS.md`
 2. `README.md`
@@ -30,13 +31,15 @@ S04 已完成设计讨论并获 Project Owner 批准。当前目标是基于冻�
 5. `00_Project/01_Requirements/项目需求V1.md`
 6. `00_Project/02_Roadmap/development_roadmap.md`
 7. `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
-8. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-9. `03_Firmware/AGENTS.md`
-10. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-11. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
-12. `03_Firmware/Application/OTA_APP/02_Service/service_uart/service_uart.h/.c`
-13. `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/w25q64/platform_w25q64.h/.c`
-14. `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.h/.c`
+8. `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
+9. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
+10. `03_Firmware/AGENTS.md`
+11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+12. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
+13. `03_Firmware/Application/OTA_APP/02_Service/service_uart/service_uart.h/.c`
+14. `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/w25q64/platform_w25q64.h/.c`
+15. `03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/at24c02/platform_at24c02.h/.c`
+16. `04_Test/Board/S02_External_Flash_Driver/` 与 `04_Test/Board/S03_EEPROM_Storage/` 现有板测模式。
 
 ## Frozen Design Summary
 
@@ -73,13 +76,13 @@ Payload Capacity = `508 KiB`。
 
 ### CRC Common
 
-S04 新增通用 CRC 能力：
+S04 新增：
 
 - CRC-8/SMBUS；
 - CRC-16/XMODEM；
 - CRC-32/ISO-HDLC；
 - one-shot + streaming；
-- V1 使用纯软件 bitwise implementation；
+- V1 软件 bitwise implementation；
 - 不依赖 HAL / RTOS / STM32 CRC Peripheral。
 
 ### AT24C02 Metadata
@@ -89,33 +92,22 @@ S04 新增通用 CRC 能力：
 0x80 ~ 0xFF : Copy B
 ```
 
-每份 128 Byte：
+每份 128 Byte，采用：
 
-- Magic = `FWMD`；
-- Format Version = 1；
-- Metadata Size = 128；
-- sequence；
+```text
+Double Copy
++ uint32_t sequence
++ CRC-32/ISO-HDLC
++ commit marker
+```
+
+S04 基础字段：
+
 - active_slot；
 - confirmed_slot；
 - slot_a_state；
 - slot_b_state；
-- confirmed_version；
-- reserved；
-- metadata_crc32；
-- commit_marker = `CMIT`。
-
-采用：
-
-```text
-Double Copy
-+ sequence
-+ CRC32
-+ commit marker
-```
-
-提交时必须先让目标副本失效，写入并 read-back 验证后，最后提交 commit marker。
-
-### State Boundary
+- confirmed_version。
 
 S04 Slot State 只定义：
 
@@ -125,37 +117,28 @@ VALID
 INVALID
 ```
 
-不提前引入：
-
-```text
-PENDING
-INSTALLING
-TRIAL
-CONFIRMED
-ROLLBACK
-```
+不提前引入 `PENDING / INSTALLING / TRIAL / CONFIRMED / ROLLBACK`。
 
 ### Authority Boundary
 
 ```text
 W25Q64 Image Header
-→ Firmware 真实 Version / Size / CRC 的权威来源
+→ Firmware 实际 Version / Size / CRC
 
 AT24C02 Metadata
-→ 系统当前 active / confirmed / slot state / confirmed_version 的权威来源
+→ active / confirmed / slot state / confirmed_version
 ```
 
-EEPROM 不重复保存每个 Slot 的 image_size / payload_crc32。
+EEPROM 不重复保存每个 Slot 的 image size / payload CRC。
 
 ### Application Module Boundary
 
-当前建议：
+计划新增：
 
 ```text
 02_Service/
 ├─ service_common/
 │  └─ crc/
-│
 └─ service_firmware/
    ├─ firmware_def
    ├─ firmware_version
@@ -164,13 +147,11 @@ EEPROM 不重复保存每个 Slot 的 image_size / payload_crc32。
    └─ firmware_storage
 ```
 
-当前只有 Application 一个真实消费者，因此不提前把代码放入 `03_Firmware/Shared`。
-
-S08 Bootloader 成为第二个消费者后，再评估将稳定的纯格式/算法代码抽入 `03_Firmware/Shared/Firmware`。
+当前只有 Application 一个真实消费者，因此不提前把代码放入 `03_Firmware/Shared`。S08 Bootloader 成为第二个消费者后，再评估将稳定纯格式/算法代码抽入 `03_Firmware/Shared/Firmware`。
 
 ### Validation Boundary
 
-Image Validation 必须区分：
+必须区分：
 
 ```text
 Image INVALID
@@ -182,90 +163,86 @@ W25Q64 / SPI 访问失败时返回底层错误，Validation Result 保持 UNKNOW
 
 `firmware_storage_validate_image()` 为只读验证操作，不自动提交 Metadata。
 
+## Implementation Plan Task Map
+
+正式计划：`00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
+
+任务顺序：
+
+```text
+Task 1  CRC Common + standard host vectors
+Task 2  Firmware Version + Header V1 format
+Task 3  Metadata V1 codec + double-copy selection
+Task 4  Firmware Storage service + storage host stubs
+Task 5  PC pack_firmware.py + cross-language contract test
+Task 6  Keil production integration
+Task 7  UART → fixed Slot B isolated board test
+Task 8  Remove destructive test from production path + verification handoff
+```
+
+实现原则：Host Test 能覆盖的格式、CRC、Metadata 与 Storage 编排先在 PC 上验证；真实 Flash / EEPROM / UART / persistence 再由板测确认。
+
 ## S04 Board Test Contract
 
 ### Test Input
 
-PC 侧新增 Firmware pack tool，输入 APP `.bin` 与 version，输出：
+PC 工具：
+
+```text
+05_Tools/Firmware/pack_firmware.py
+```
+
+输入 APP `.bin` + version，输出：
 
 ```text
 [64 Byte Header][Payload]
 ```
 
-测试文件通过串口助手 raw binary send。
+通过串口助手 raw binary send。
 
 ### Fixed Target
 
-S04 板测固定目标：`Slot B`。
-
 ```text
-Slot B Base    = 0x080000
-Payload Address= 0x081000
+Slot B Base     = 0x080000
+Payload Address = 0x081000
 ```
 
 不增加 Slot 选择 UART 命令协议。
 
 ### Existing UART Reuse
 
-复用已经存在的 `service_uart`：
+复用现有 `service_uart`：DMA RX、RingBuffer、wait event、read、data loss detection、UART error handling。
 
-- DMA RX；
-- RingBuffer；
-- wait event；
-- read；
-- data loss detection；
-- UART error handling。
-
-S04 不实现 Ymodem。
+Board Test 在当前 `appSystem` Task 中执行时，通过 `platform_thread_get_current()` 获取 owner thread，不新增为了测试暴露的系统线程接口。
 
 ### Image Commit Rule
 
-写入顺序固定：
-
 ```text
-Header 在 RAM 中先接收/验证
+Receive/validate Header in RAM
 → erase Slot B required sectors
-→ Payload first
-→ Payload CRC success
-→ Header last
+→ write Payload first
+→ streaming Payload CRC PASS
+→ write Header last
+→ full re-read validate
 ```
 
 只有 Header 最后写入后，Image 才被视为已提交。
 
-传输中断、UART Data Loss、CRC mismatch 时不得写 Header；Header 保持擦除态，Slot 识别为 EMPTY。
+传输中断、UART Data Loss、UART Error、CRC mismatch 时不得写 Header；Header 保持擦除态，Slot 识别为 EMPTY。
 
 ### Diagnostics
 
-统一使用：
+统一：`SEGGER RTT + EasyLogger`。
 
-```text
-SEGGER RTT + EasyLogger
-```
-
-至少输出：
-
-- erase start/result；
-- Header fields；
-- Firmware version；
-- image size；
-- expected/calculated CRC32；
-- receive progress；
-- Header commit result；
-- image validation result；
-- Metadata Copy A/B validity；
-- selected sequence；
-- metadata commit result；
-- final board test result。
+至少输出：erase、Header fields、Version、Size、Expected/Calculated CRC32、receive progress、Header commit、full image validation、Metadata Copy A/B、selected sequence、metadata commit、final result。
 
 ### Retained Test Location
-
-板测源码最终保留：
 
 ```text
 04_Test/Board/S04_Firmware_Image_Storage/
 ```
 
-验收后必须从生产 Application 启动路径和正式 Keil target 中移除。
+验收后必须从 production `app_main()` 和正式 Keil target 移除；测试源码继续留在 `04_Test/Board`。
 
 ## Required Verification Cases
 
@@ -281,23 +258,25 @@ SEGGER RTT + EasyLogger
 8. Metadata A valid / B invalid；
 9. Metadata A invalid / B valid；
 10. Metadata A/B valid sequence selection；
-11. target Metadata copy incomplete commit → previous copy recovery；
-12. Reset Persistence；
-13. Power-cycle Persistence；
-14. Keil build / clean rebuild；
-15. RTT real-board evidence。
+11. sequence wrap-around；
+12. target Metadata copy incomplete commit → previous copy recovery；
+13. Reset Persistence；
+14. Power-cycle Persistence；
+15. PC pack tool ↔ C decoder compatibility；
+16. Keil normal build / clean rebuild；
+17. RTT real-board evidence；
+18. destructive board-test cleanup。
 
-## Allowed Changes For Implementation Plan
-
-实施计划可以规划以下范围：
+## Allowed Changes
 
 - `02_Service/service_common/crc/`；
-- 新增 `02_Service/service_firmware/`；
-- 必要的 `project_config.h` 固定配置；
-- Keil project source/include entries；
-- `05_Tools/Firmware/pack_firmware.py`；
+- `02_Service/service_firmware/`；
+- 必要的 `project_config.h` test gate；
+- `MDK-ARM/OTA_APP.uvprojx`；
+- `05_Tools/Firmware/`；
+- `04_Test/Host/S04_Firmware_Image_Storage/`；
 - `04_Test/Board/S04_Firmware_Image_Storage/`；
-- 必要的临时 Board Test 启动接入；
+- 必要的临时 `app_main.c` board-test 接入；
 - S04 文档 / 状态文件；
 - 后续 Verification Report。
 
@@ -312,20 +291,28 @@ SEGGER RTT + EasyLogger
 - 不引入大型通用 Storage / Device Manager；
 - 不提前把单一消费者代码移入 Shared；
 - 不因一次 I/O Error 将 Slot 永久标记为 INVALID；
-- 不将临时破坏性板测长期留在生产启动路径。
+- 不将临时破坏性板测长期留在 production startup / Keil target。
 
 ## Current Status
 
 ```text
-Design Discussion  PASS
-Design Approval    PASS
-Design Document    CREATED
-Implementation Plan NOT_CREATED
-Production Code    NOT_STARTED
-Verification       NOT_STARTED
-Review             NOT_STARTED
+Design Discussion      PASS
+Design Approval        PASS
+Design Document        CREATED
+Implementation Plan    CREATED
+Plan Owner Acceptance  PENDING
+Production Code        NOT_STARTED
+Verification           NOT_STARTED
+Review                 NOT_STARTED
 ```
 
 ## Next Action
 
-读取 `design.md` 与本 handoff，生成 S04 `implementation_plan.md`。计划完成并由 Project Owner 接受后，再将 Stage 推进至 `READY_FOR_IMPLEMENTATION`。
+Project Owner 审阅并接受 `implementation_plan.md`。接受后：
+
+```text
+DESIGN_APPROVED
+→ READY_FOR_IMPLEMENTATION
+```
+
+然后 Implementation Role 才按 Task 1 → Task 8 顺序施工。
