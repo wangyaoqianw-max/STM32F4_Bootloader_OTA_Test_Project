@@ -312,9 +312,10 @@ Review                 NOT_STARTED
 
 - Task 1 — CRC Common：已新增 CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC 的软件 bitwise 实现和 Host Test；标准向量与流式分块计算已验证。提交记录见当前阶段分支历史。
 - Task 2 — Firmware Version / Header V1：已新增固定 Slot 合同、Version 比较与校验、64 Byte Header 固定偏移编码/解码和 Header 校验；Host Test 已覆盖 fixed-offset、little-endian、erased、reserved、size 与 CRC 路径。提交记录见当前阶段分支历史。
+- Task 3 — Metadata V1：已新增 128 Byte 双副本 fixed-offset 编解码、CRC32、commit marker、字段范围校验与 wrap-around-safe sequence 选择；Host Test 已覆盖 A/B 有效副本选择、序列回绕、保留区篡改、CRC 与未提交 marker 恢复。提交记录见当前阶段分支历史。
 
 ## Next Action
 
-Implementation Role 按 `implementation_plan.md` 继续 Task 3，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
+Implementation Role 按 `implementation_plan.md` 继续 Task 4，并在每个 Task 结束后执行对应 Host Test / Build / `git diff --check` / Commit。
 
 Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。

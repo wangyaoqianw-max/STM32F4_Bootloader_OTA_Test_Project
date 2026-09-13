@@ -17,6 +17,7 @@
 
 #include "crc.h"
 #include "firmware_image.h"
+#include "firmware_metadata.h"
 #include "firmware_version.h"
 
 #define TEST_PAYLOAD_CRC32                (0x89ABCDEFUL)
@@ -142,6 +143,112 @@ static int test_empty_and_invalid_size(void)
     return (validation == FIRMWARE_IMAGE_VALIDATION_INVALID_SIZE) ? 0 : 1;
 }
 
+static void test_write_committed_marker(uint8_t raw[FIRMWARE_METADATA_COPY_SIZE])
+{
+    test_write_u32_le(&raw[0x7CU], FIRMWARE_METADATA_COMMIT_MARKER);
+}
+
+static int test_metadata_copy_selection(void)
+{
+    firmware_metadata_t metadata = {0};
+    firmware_metadata_t decodedMetadata = {0};
+    firmware_metadata_copy_id_t selectedCopy;
+    uint8_t copyA[FIRMWARE_METADATA_COPY_SIZE];
+    uint8_t copyB[FIRMWARE_METADATA_COPY_SIZE];
+
+    metadata.sequence = 10UL;
+    metadata.activeSlot = FIRMWARE_SLOT_B;
+    metadata.confirmedSlot = FIRMWARE_SLOT_A;
+    metadata.slotAState = FIRMWARE_SLOT_STATE_VALID;
+    metadata.slotBState = FIRMWARE_SLOT_STATE_VALID;
+    metadata.confirmedVersion.major = 1U;
+    metadata.confirmedVersion.minor = 2U;
+    metadata.confirmedVersion.patch = 3U;
+
+    if (firmware_metadata_encode_uncommitted(&metadata, copyA) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    if ((copyA[0x00U] != 0x46U) || (copyA[0x01U] != 0x57U) ||
+        (copyA[0x02U] != 0x4DU) || (copyA[0x03U] != 0x44U) ||
+        (copyA[0x0CU] != FIRMWARE_SLOT_B) || (copyA[0x0DU] != FIRMWARE_SLOT_A) ||
+        (copyA[0x7CU] != 0xFFU)) {
+        return 1;
+    }
+
+    test_write_committed_marker(copyA);
+    (void)memset(copyB, 0xFF, sizeof(copyB));
+    if (firmware_metadata_select_latest(copyA, copyB, &decodedMetadata, &selectedCopy) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    if ((selectedCopy != FIRMWARE_METADATA_COPY_A) || (decodedMetadata.sequence != 10UL)) {
+        return 1;
+    }
+
+    metadata.sequence = 11UL;
+    if (firmware_metadata_encode_uncommitted(&metadata, copyB) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    test_write_committed_marker(copyB);
+    if (firmware_metadata_select_latest(copyA, copyB, &decodedMetadata, &selectedCopy) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    if ((selectedCopy != FIRMWARE_METADATA_COPY_B) || (decodedMetadata.sequence != 11UL)) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int test_metadata_wrap_and_invalid_copy(void)
+{
+    firmware_metadata_t metadata = {0};
+    firmware_metadata_t decodedMetadata = {0};
+    firmware_metadata_copy_id_t selectedCopy;
+    uint8_t copyA[FIRMWARE_METADATA_COPY_SIZE];
+    uint8_t copyB[FIRMWARE_METADATA_COPY_SIZE];
+
+    metadata.activeSlot = FIRMWARE_SLOT_NONE;
+    metadata.confirmedSlot = FIRMWARE_SLOT_NONE;
+    metadata.slotAState = FIRMWARE_SLOT_STATE_EMPTY;
+    metadata.slotBState = FIRMWARE_SLOT_STATE_EMPTY;
+
+    metadata.sequence = 0xFFFFFFFFUL;
+    if (firmware_metadata_encode_uncommitted(&metadata, copyA) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    test_write_committed_marker(copyA);
+    metadata.sequence = 0UL;
+    if (firmware_metadata_encode_uncommitted(&metadata, copyB) != PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    test_write_committed_marker(copyB);
+    if ((firmware_metadata_sequence_is_newer(0UL, 0xFFFFFFFFUL) == 0U) ||
+        (firmware_metadata_select_latest(copyA, copyB, &decodedMetadata, &selectedCopy) != PLATFORM_ERR_OK) ||
+        (selectedCopy != FIRMWARE_METADATA_COPY_B)) {
+        return 1;
+    }
+
+    copyB[0x18U] = 1U;
+    test_write_u32_le(&copyB[0x78U], crc32_iso_hdlc_calculate(copyB, 0x78U));
+    if (firmware_metadata_decode_committed(copyB, &decodedMetadata) == PLATFORM_ERR_OK) {
+        return 1;
+    }
+
+    copyA[0x78U] ^= 1U;
+    copyB[0x7CU] = 0U;
+    if (firmware_metadata_select_latest(copyA, copyB, &decodedMetadata, &selectedCopy) != PLATFORM_ERR_NOT_FOUND) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int main(void)
 {
     if (test_firmware_version() != 0) {
@@ -156,6 +263,16 @@ int main(void)
 
     if (test_empty_and_invalid_size() != 0) {
         (void)printf("Firmware Header empty or invalid-size test failed.\n");
+        return 1;
+    }
+
+    if (test_metadata_copy_selection() != 0) {
+        (void)printf("Firmware Metadata copy selection test failed.\n");
+        return 1;
+    }
+
+    if (test_metadata_wrap_and_invalid_copy() != 0) {
+        (void)printf("Firmware Metadata wrap or invalid-copy test failed.\n");
         return 1;
     }
 
