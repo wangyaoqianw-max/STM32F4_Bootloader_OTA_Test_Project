@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine />
-              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../06_Test/S03_EEPROM_Storage;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -720,6 +720,16 @@
         </Group>
         <Group>
           <GroupName>Application/06_Test/S02 External Flash Driver</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Application/06_Test/S03 EEPROM Storage</GroupName>
+          <Files>
+            <File>
+              <FileName>app_s03_eeprom_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../06_Test/S03_EEPROM_Storage/app_s03_eeprom_test.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>Application/05_Vendors/EasyLogger</GroupName>
