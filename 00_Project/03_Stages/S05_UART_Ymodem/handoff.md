@@ -3,11 +3,12 @@
 ## Metadata
 
 - Stage: `S05_UART_Ymodem`
-- Status: `DRAFT`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
+- Project Owner Approval: `PASS / 2026-09-14`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
@@ -15,9 +16,17 @@
 
 ## Current Role
 
-Design Role。
+Implementation Role。
 
-Design 和 Implementation Plan 已落盘，但尚未经过 Project Owner 正式批准，因此不得开始生产代码施工。
+Project Owner 已确认 `design.md` 与 `implementation_plan.md`，阶段已通过正常设计门禁：
+
+```text
+DRAFT
+→ DESIGN_APPROVED
+→ READY_FOR_IMPLEMENTATION
+```
+
+允许严格按照已批准计划开始施工；需要偏离冻结边界时，先记录冲突并重新确认，不得静默改变设计。
 
 ## Stage Goal
 
@@ -216,12 +225,15 @@ Power-cycle Persistence PENDING / DEFERRED
 
 Not an S05 blocker; must be closed before S07 closure.
 
-## Next Action
+## Implementation Entry
 
-Project Owner reviews:
+Implementation Role starts with the approved `implementation_plan.md` and executes tasks in order.
 
-1. `design.md`；
-2. `implementation_plan.md`；
-3. this handoff。
+First task:
 
-If approved, synchronize status to `READY_FOR_IMPLEMENTATION` and begin Task 1. Until then remain `DRAFT`.
+```text
+Task 1
+Tera Term Ymodem sender automation entry
+```
+
+Before modifying `03_Firmware`, the implementer must read the repository and firmware-specific AGENTS rules plus the embedded C and Keil build standards required by the plan.
