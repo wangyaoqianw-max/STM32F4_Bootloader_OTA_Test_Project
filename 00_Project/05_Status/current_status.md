@@ -12,22 +12,23 @@
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - Implementation Commit: `647f32f`
 - Toolchain Commit: `1f756f0`
-- Verification Commit: `Not created yet`
+- Verification Commit: `72a7403`
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Verification Role / Ready to Verify`
+- Current Role: `Review Role / Scoped Review Complete`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
 `S04_Firmware_Image_Storage` 的设计和 `implementation_plan.md` 已由 Project Owner 批准。
 
-阶段已完成实现、Host 验证、Keil 构建和 S04 主流程真实板测，当前进入验证交接：
+阶段已完成实现、Host 验证、Keil 构建和 S04 主流程真实板测，本轮范围化 Review 已完成，当前保留验证交接状态：
 
 ```text
 READY_FOR_IMPLEMENTATION
 → READY_FOR_VERIFICATION
+→ SCOPED REVIEW (not stage closure)
 ```
 
 Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项仍记录为 `PENDING`，不得在缺少真实板测证据时关闭阶段。
@@ -172,7 +173,7 @@ Verification Role 按以下入口执行：
 00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md
 ```
 
-读取验证报告和当前提交；当前工具链冒烟验证已完成。若后续需要关闭 S04，仍需补充 Reset Persistence / Power-cycle Persistence 后推进至 `READY_FOR_REVIEW`。
+范围化 Review 已完成：读取验证报告和当前提交，代码/接口/架构/文档审查及已执行验证均通过。若后续需要关闭 S04，仍需补充 Reset Persistence / Power-cycle Persistence 后推进至 `READY_FOR_REVIEW`。
 
 ## Blockers
 

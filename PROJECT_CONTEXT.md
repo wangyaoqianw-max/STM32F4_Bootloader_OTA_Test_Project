@@ -16,14 +16,14 @@
 - S04 Toolchain Commit: `1f756f0`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Verification Role / Ready to Verify`
+- Current Role: `Review Role / Scoped Review Complete`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
-S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，Application 工具链也已完成本机冒烟验证，阶段仍为 `READY_FOR_VERIFICATION`。
+S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，Application 工具链也已完成本机冒烟验证；本轮已完成范围化 Review，但阶段仍为 `READY_FOR_VERIFICATION`。
 
-当前目标是严格按照 Task 1 → Task 8 完成 CRC Common、Firmware Image/Header、Metadata 双副本、Firmware Storage、PC pack tool、Keil 集成与 Slot B UART 板测。实现不得自行改变已冻结 Binary Contract 或扩展到 Ymodem / OTA Service / Bootloader 安装。
+当前目标是保持 Task 1 → Task 8 的实现与验证证据一致，并在不执行本轮两项持久性板测的前提下维护清晰交接。实现不得自行改变已冻结 Binary Contract 或扩展到 Ymodem / OTA Service / Bootloader 安装。
 
 ## Stable Storage Baseline
 
@@ -238,13 +238,13 @@ Board test 最终保留：
 
 ## Next Action
 
-Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项不据此标记为 PASS，阶段仍保留 `READY_FOR_VERIFICATION`，后续如需关闭 S04 需补充真实板测证据后再进入 Review：
+Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项不据此标记为 PASS。范围化 Review 已完成，但阶段仍保留 `READY_FOR_VERIFICATION`，后续如需关闭 S04 需补充真实板测证据：
 
 ```text
-复核 Host Test、Keil Clean/Rebuild、RTT 实板主流程；Reset / Power-cycle 持久性证据仍缺失
+实现/接口/架构/文档审查 PASS；Host Test、Keil Clean/Rebuild、RTT 实板主流程 PASS；Reset / Power-cycle 持久性证据仍缺失
 ```
 
-当前阶段已进入 `READY_FOR_VERIFICATION`；在 Verification Role 完成之前不得标记 S04 为 PASS/CLOSED。
+当前阶段保持 `READY_FOR_VERIFICATION`；范围化 Review 的 PASS 不代表 S04 阶段已关闭，仍不得标记为 `CLOSED`。
 
 ## Prohibited Actions
 

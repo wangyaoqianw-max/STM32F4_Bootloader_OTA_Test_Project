@@ -265,13 +265,15 @@ firmware_image_validation_t firmware_image_validate_header(
 ```powershell
 gcc -std=c99 -Wall -Wextra -Werror `
   -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
   -I03_Firmware/Application/OTA_APP/02_Service/service_common/crc `
   -I03_Firmware/Application/OTA_APP/02_Service/service_firmware `
   -o "$env:TEMP\s04_firmware_format_host_test.exe" `
   04_Test/Host/S04_Firmware_Image_Storage/s04_firmware_format_host_test.c `
   03_Firmware/Application/OTA_APP/02_Service/service_common/crc/crc.c `
   03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_version.c `
-  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_image.c
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_image.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_metadata.c
 
 & "$env:TEMP\s04_firmware_format_host_test.exe"
 ```

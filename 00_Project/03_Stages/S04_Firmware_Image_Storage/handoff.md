@@ -12,15 +12,15 @@
 - Plan Owner Acceptance: `PASS`
 - Implementation Commit: `647f32f`
 - Toolchain Commit: `1f756f0`
-- Verification Commit: `Not created yet`
+- Verification Commit: `72a7403`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-14`
 
 ## Current Objective
 
-S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准；Task 1-8 实现、Host 验证、Keil 构建和主流程实板验证已完成，Application 工具链冒烟验证也已完成，阶段仍为 `READY_FOR_VERIFICATION`。
+S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准；Task 1-8 实现、Host 验证、Keil 构建和主流程实板验证已完成，Application 工具链冒烟验证和本轮范围化 Review 也已完成，阶段仍为 `READY_FOR_VERIFICATION`。
 
-Implementation Role 可以开始施工，但必须严格遵循冻结设计、计划任务顺序与范围边界。若实现发现设计冲突，不得自行改协议或扩展 OTA 范围，应先记录并回到设计/阻塞处理。
+后续如继续施工或补充验证，必须严格遵循冻结设计、计划任务顺序与范围边界。若发现设计冲突，不得自行改协议或扩展 OTA 范围，应先记录并回到设计/阻塞处理。
 
 ## Required Reading
 
@@ -306,7 +306,7 @@ Plan Owner Acceptance  PASS
 Stage Status           READY_FOR_VERIFICATION
 Production Code        COMPLETE (S04 destructive board test removed from production startup and Keil target)
 Verification           IN_PROGRESS (report created; Reset/Power-cycle persistence pending)
-Review                 NOT_STARTED
+Review                 SCOPED PASS (persistence deferred; stage not closed)
 ```
 
 ## Implementation Progress
@@ -358,6 +358,9 @@ Review                 NOT_STARTED
 
 ## Next Action
 
-Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项仍保持 `PENDING`，后续如需关闭 S04，Verification Role 必须补充真实板测证据后再执行正式 Review；当前不得将阶段标记为 `CLOSED`。
+Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项仍保持 `PENDING`。
+本轮已完成范围化 Review：实现、接口、架构、文档和已完成验证证据为 PASS；后续如需关闭
+S04，Verification Role 必须补充真实板测证据后再执行最终阶段关闭审查，当前不得将阶段标记为 `CLOSED`。
 
-Task 1 → Task 8 已完成；Implementation Role 不填写最终 Verification PASS，也不关闭 Stage。后续由 Verification/Review Role 根据报告和剩余持久性场景决定阶段结论。
+Task 1 → Task 8 已完成；本轮 Review 不改变 `READY_FOR_VERIFICATION` 状态。后续由
+Verification/Review Role 根据补充的持久性证据决定最终阶段结论。

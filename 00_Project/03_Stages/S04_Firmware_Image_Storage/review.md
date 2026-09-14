@@ -3,19 +3,21 @@
 ## Metadata
 
 - Stage: `S04_Firmware_Image_Storage`
-- Status: `NOT_STARTED`
+- Status: `SCOPED_REVIEW_COMPLETE`
 - Branch: `main`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
-- Implementation Commit: `Not created yet`
-- Verification Commit: `Not created yet`
+- Implementation Commit: `647f32f`
+- Verification Commit: `72a7403`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-13`
+- Updated At: `2026-09-14`
 
 ## Review Entry Condition
 
-只有 Stage 状态进入 `READY_FOR_REVIEW` 后才执行正式 Review。
+本次按 Project Owner 要求执行范围化 Review。由于 Reset Persistence 与
+Power-cycle Persistence 明确暂缓，Stage 状态仍保持 `READY_FOR_VERIFICATION`；
+本文件的结论只覆盖实现、代码、接口、架构、文档和已完成验证证据，不构成阶段关闭。
 
 Review 前必须读取：
 
@@ -48,9 +50,44 @@ Review 前必须读取：
 - Keil normal build / clean rebuild、Host Test、Reset / Power-cycle 和真实 RTT 证据是否完整；
 - 是否出现范围外 Device Manager / 通用 NVM / Security / Bootloader 安装等扩张。
 
+## Review Evidence
+
+### Implementation and Architecture
+
+- Slot A/B 地址、Header Sector、Payload Offset 和 Payload Capacity 与冻结设计一致。
+- Header、Metadata 均使用 fixed-offset little-endian 编解码，没有直接持久化 C struct layout。
+- CRC 三种变体的参数、one-shot/streaming 接口和标准向量一致；Header CRC 与 Payload CRC
+  覆盖范围明确。
+- Metadata 双副本、sequence 回绕比较、commit marker 和旧副本恢复边界清晰；Storage
+  Service 负责 I/O 编排，Image/Metadata codec 保持纯格式职责。
+- `firmware_storage_validate_image()` 只读，I/O 失败返回底层错误并保持 validation
+  为 `UNKNOWN`，不会隐式修改 Metadata。
+- S04 UART 代码只保留在 `04_Test/Board`；正式 Application/Keil target 未包含破坏性板测。
+
+### Verification Evidence
+
+| 项目 | 结果 |
+| --- | --- |
+| CRC Host Test | PASS |
+| Firmware Format Host Test | PASS（补充 `impl_board` include path 与 `firmware_metadata.c`） |
+| Firmware Storage Host Test | PASS |
+| Python pack tool unittest | 2 tests PASS |
+| Python 生成镜像与 C decoder 兼容性 | PASS |
+| Keil normal/clean rebuild | PASS，0 errors；既有 warning 已记录 |
+| J-Link/RTT/Application tool smoke | PASS，详见 verification.md |
+| Reset Persistence | PENDING，按用户要求本轮跳过 |
+| Power-cycle Persistence | PENDING，按用户要求本轮跳过 |
+
+审查中发现阶段计划中的 Format Host Test 示例缺少 `04_Impl/impl_board` include path
+和 `firmware_metadata.c`；已同步修正 `implementation_plan.md` 和 Host README，并使用修正
+后的命令重新验证通过。
+
 ## Review Decision
 
-当前：`NOT_STARTED`
+当前：`PASS`（仅限实现/代码/文档审查范围）
+
+阶段关闭：`DEFERRED`。由于两项持久性场景尚未执行，Stage 仍为
+`READY_FOR_VERIFICATION`，不得转换为 `CLOSED`。
 
 允许的最终结论：
 
@@ -60,4 +97,5 @@ CHANGES_REQUESTED
 BLOCKED
 ```
 
-缺少独立 Verification 证据时不得填写 `PASS`，不得关闭 S04。
+本次存在独立 Verification 报告和主流程证据；`PASS` 不覆盖上述两项 PENDING
+板测，也不替代后续正式阶段关闭审查。

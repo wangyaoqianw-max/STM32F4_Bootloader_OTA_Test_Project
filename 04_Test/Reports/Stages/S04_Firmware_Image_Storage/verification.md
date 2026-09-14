@@ -67,6 +67,13 @@ Host 测试使用临时目录 `s04_host_verification` 编译，不产生仓库�
 
 当前报告证明 S04 固件镜像写入、CRC、Header-last 提交、回读、Metadata 恢复链路和本机工具链动作通过；上述两项持久性场景本轮不执行，因此仍不能作为已验证证据。
 
+## 2026-09-14 Review 复核补充
+
+按 Review 复核时，重新执行了 CRC、Firmware Format、Firmware Storage 和 Python pack
+tool Host 测试。Format Host Test 命令补充了 `04_Impl/impl_board` include path，并加入
+`firmware_metadata.c`；修正后的命令全部通过。原实现计划中的示例命令已同步修正，避免
+文档命令与实际依赖不一致。
+
 ## 结论
 
 代码验证：`PASS`
