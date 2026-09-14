@@ -89,7 +89,7 @@ SHA-256：0E21EC936DE1D2A5342B82A616497EA978C4C3014BE081F31274555C48B7D528
 [S05] flash payload=0 header_commit=0 error=0
 ```
 
-当前证据表明板端未收到任何 YMODEM 字节，因此没有 Block 0、Payload 写入、Header 提交或 Slot B 镜像验证证据。`COM3` 的系统设备标识为 `JLink CDC UART Port`；本轮尚未确认它与目标板 USART1 `PA9/PA10` 的 TX/RX/GND 物理连接。该结果不能归因于协议互操作问题，也不能标为硬件失败。
+当前证据表明板端未收到 Tera Term 经 J-Link CDC `COM3` 发送的任何 YMODEM 字节，因此没有 Block 0、Payload 写入、Header 提交或 Slot B 镜像验证证据。新增 UART 边界统计为 `rx_events=0 rx_bytes=0 buffered=0 read=0 dropped=0 errors=0 tx_bytes=11`，说明板端已经发送 11 次 `'C'`，但本轮 Tera Term 发送路径没有进入板端 UART。补充验证显示：相同 Tera Term 宏在 COM1↔COM2 回环中可以发出 `0x01`；串口助手/.NET 路径已成功触发板端接收并解析 Block 0。因此物理连接不再是未确认项，当前问题限定为 Tera Term 与 J-Link CDC 的发送路径兼容性或端口占用，不能标为硬件失败。
 
 ## 验收状态
 
@@ -105,4 +105,4 @@ SHA-256：0E21EC936DE1D2A5342B82A616497EA978C4C3014BE081F31274555C48B7D528
 - `firmware_storage_validate_image(Slot B) == VALID`；
 - 硬件中断/取消后再次传输恢复。
 
-下一步是确认 USART1 的 PC 端物理串口连接后，重新执行 Build/Flash、RTT 捕获和 Sender，并以 `YMODEM session complete final result=PASS` 与 Slot B `VALID` 作为硬件通过条件。
+当前测试暂停。下一步使用独立 3.3V USB-TTL 串口模块连接 USART1 `PA9/PA10`，重新执行 Build/Flash、RTT 捕获和 Sender，并以 `YMODEM session complete final result=PASS` 与 Slot B `VALID` 作为硬件通过条件。

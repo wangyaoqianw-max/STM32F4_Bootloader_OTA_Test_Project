@@ -234,9 +234,9 @@ d9afae4 feat: add ymodem receiver state machine
 
 当前已通过 Parser、Receiver、Firmware Storage Write、Flash Sink Host Test，S04 相关回归，Keil 正常/清理构建，以及 `build_app.bat`、`flash_app.bat`、`rtt_capture.bat` 工具链 Smoke Test。
 
-板端已确认 S05 专用入口初始化 Storage/UART 并输出 `[S05] YMODEM_READY`。使用由 `OTA_APP_s04_test.bin`（55820 Byte，版本 `1.1.0`）生成的 `OTA_APP_s04_v1.1.0.img`（55884 Byte）尝试发送时，当前 `COM3` 为 J-Link CDC UART，板端记录 `received=0` 后按超时策略退出；尚未取得 Block 0、Header-last 和 Slot B `VALID` 证据。因此阶段保持 `IN_PROGRESS`，硬件传输和后续恢复测试保持 `PENDING`。
+板端已确认 S05 专用入口初始化 Storage/UART 并输出 `[S05] YMODEM_READY`。物理连接已由 Project Owner 确认正常。使用由 `OTA_APP_s04_test.bin`（55820 Byte，版本 `1.1.0`）生成的 `OTA_APP_s04_v1.1.0.img`（55884 Byte）尝试发送时，当前 `COM3` 为 J-Link CDC UART；Tera Term 宏在显式 115200/8N1/无流控并关闭 DTR/RTS 后，板端仍记录 `rx_events=0`、`rx_bytes=0`，随后按超时策略退出。相同宏在 COM1↔COM2 回环中可发出原始字节；串口助手/.NET 路径已成功触发板端 Block 0 接收。因此尚未取得 Tera Term 经 J-Link CDC 的 Block 0、Header-last 和 Slot B `VALID` 证据，阶段保持 `IN_PROGRESS`，硬件传输和后续恢复测试保持 `PENDING`。
 
-下一步：确认 USART1 PA9/PA10 与 PC 串口的 TX/RX/GND 物理连接，重新执行真实传输；成功后补写 Verification Commit 和 Review 输入。
+下一步：当前测试暂停。恢复后使用独立 3.3V USB-TTL 串口模块连接 USART1 PA9/PA10，复用现有 Sender 入口重新执行真实传输；成功后补写 Verification Commit 和 Review 输入。
 
 ## Deferred Cross-stage Regression
 

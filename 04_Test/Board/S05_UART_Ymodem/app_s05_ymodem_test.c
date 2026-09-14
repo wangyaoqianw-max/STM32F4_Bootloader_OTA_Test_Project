@@ -299,6 +299,8 @@ static void s05_ymodem_test_log_result(
     const ymodem_receiver_status_t *status,
     const ymodem_receiver_statistics_t *statistics)
 {
+    service_uart_statistics_t uartStatistics = {0};
+
     SERVICE_LOG_I(
         "[S05] session state=%d error=%d filename=%s file_size=%lu received=%lu",
         (int)status->state,
@@ -320,6 +322,19 @@ static void s05_ymodem_test_log_result(
         (unsigned long)statistics->timeoutCount,
         (unsigned long)statistics->retryCount,
         (unsigned long)statistics->cancelCount);
+
+    if (service_uart_get_statistics(&g_s05UartService,
+                                    &uartStatistics) == PLATFORM_ERR_OK) {
+        SERVICE_LOG_I(
+            "[S05] uart rx_events=%lu rx_bytes=%lu buffered=%lu read=%lu dropped=%lu errors=%lu tx_bytes=%lu",
+            (unsigned long)uartStatistics.rxEventCount,
+            (unsigned long)uartStatistics.rxBytesReceived,
+            (unsigned long)uartStatistics.rxBytesBuffered,
+            (unsigned long)uartStatistics.rxBytesRead,
+            (unsigned long)uartStatistics.rxBytesDropped,
+            (unsigned long)uartStatistics.uartErrorCount,
+            (unsigned long)uartStatistics.txBytesCompleted);
+    }
 }
 //******************************** Private Functions ************************//
 
