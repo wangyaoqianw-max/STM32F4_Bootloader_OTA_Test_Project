@@ -5,38 +5,54 @@
 ## Context Metadata
 
 - Active Stage: `S04_Firmware_Image_Storage`
-- Active Stage Status: `READY_FOR_VERIFICATION`
+- Active Stage Status: `CLOSED`
 - Branch: `main`
 - S04 Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - S04 Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - S04 Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
-- S04 Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
-- S04 Plan Owner Acceptance: `PASS`
 - S04 Implementation Commit: `647f32f`
 - S04 Toolchain Commit: `1f756f0`
-- S04 Review Commit: `f2b6ed9`
-- Last Closed Stage: `S03_EEPROM_Storage`
-- Last Closed Stage Status: `CLOSED`
-- Current Role: `Review Role / Scoped Review Complete`
+- S04 Verification Commit: `72a7403`
+- S04 Scoped Review Commit: `f2b6ed9`
+- S04 Final Result: `CLOSED / PASS`
+- Last Closed Stage: `S04_Firmware_Image_Storage`
+- Next Planned Stage: `S05_UART_Ymodem`
+- Current Role: `Ready for S05 Design`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
-S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，Application 工具链也已完成本机冒烟验证；本轮已完成范围化 Review，但阶段仍为 `READY_FOR_VERIFICATION`。
+S04 已正式关闭。下一轮工作从 `S05_UART_Ymodem` Design Stage 开始。
 
-当前目标是保持 Task 1 → Task 8 的实现与验证证据一致，并在不执行本轮两项持久性板测的前提下维护清晰交接。实现不得自行改变已冻结 Binary Contract 或扩展到 Ymodem / OTA Service / Bootloader 安装。
+S05 尚未创建正式 Stage 文档，因此当前不要直接施工 Ymodem 代码；应先读取现有 UART、S04 Firmware Contract、Roadmap 和协议参考，再进行设计讨论。
 
 ## Stable Storage Baseline
 
 ### W25Q64
 
-已关闭并验证：8 MiB address space、JEDEC/SR1/Read、Page Program/Cross-page Write、4 KiB Sector Erase、WREN/WEL/BUSY、边界保护、Reset Persistence、Real-board verification。
+已关闭并验证：
+
+- 8 MiB address space；
+- JEDEC / SR1 / Read；
+- Page Program / Cross-page Write；
+- 4 KiB Sector Erase；
+- WREN / WEL / BUSY；
+- boundary protection；
+- real-board verification。
 
 ### AT24C02
 
-已关闭并验证：256 Byte、7-bit address `0x50`、read/write、8 Byte Page Split、bounded ACK Polling、边界保护、Reset Persistence、Power-cycle Persistence。
+已关闭并验证：
 
-## Frozen S04 Contracts
+- 256 Byte；
+- 7-bit address `0x50`；
+- read / write；
+- 8 Byte Page Split；
+- bounded ACK Polling；
+- boundary protection；
+- Raw Driver reset / power-cycle persistence 已在 S03 验证。
+
+## Stable S04 Firmware Contract
 
 ### External Flash A/B
 
@@ -51,42 +67,43 @@ Per Slot：
 ```text
 +0x0000 ~ +0x0FFF : Header Sector
 +0x1000 ~          : Firmware Payload
+Payload capacity  : 508 KiB
 ```
-
-Payload capacity = 508 KiB。
 
 ### Firmware Header V1
 
 - 64 Byte；
 - little-endian；
 - Magic = `FWIM`；
-- Header Format Version = 1；
+- Format Version = 1；
 - Firmware Version = major/minor/patch/reserved；
 - Image Size；
 - Payload CRC32；
 - Header CRC32；
 - Header CRC covers `0x00~0x3B`；
-- Payload CRC only covers Firmware Payload；
-- V1 Reserved all zero；
-- C struct layout 不是持久化协议。
+- Payload CRC only covers actual Firmware Payload；
+- V1 reserved all zero；
+- persistent binary format uses fixed offsets, not raw C struct layout。
 
 ### CRC Common
 
-- CRC-8/SMBUS；
-- CRC-16/XMODEM；
-- CRC-32/ISO-HDLC；
-- one-shot + streaming；
-- software bitwise V1 implementation；
-- CRC 不绑定 Firmware、HAL、RTOS 或 STM32 CRC Peripheral。
+```text
+CRC-8/SMBUS
+CRC-16/XMODEM
+CRC-32/ISO-HDLC
+```
+
+支持 one-shot + streaming；V1 software bitwise implementation。
 
 ### Metadata V1
 
 ```text
+AT24C02
 0x00 ~ 0x7F : Copy A
 0x80 ~ 0xFF : Copy B
 ```
 
-采用：
+机制：
 
 ```text
 Double Copy
@@ -95,36 +112,31 @@ Double Copy
 + commit marker
 ```
 
-基础字段：active_slot、confirmed_slot、slot_a_state、slot_b_state、confirmed_version。
+S04 Slot State：
 
-Slot State V1：`EMPTY / VALID / INVALID`。
+```text
+EMPTY
+VALID
+INVALID
+```
 
-### Authority Boundary
+Authority：
 
 ```text
 Image Header
-→ Firmware 实际 Version / Size / CRC
+→ actual Firmware Version / Size / CRC
 
 EEPROM Metadata
 → active / confirmed / slot state / confirmed_version
 ```
 
-EEPROM 不重复保存每个 Slot 的 image size / payload CRC。
+`firmware_storage_validate_image()` 为只读验证；I/O failure 不等于 image invalid。
 
-### Validation Boundary
-
-```text
-Image Invalid
-≠
-Validation I/O Failure
-```
-
-I/O / SPI / Flash read failure 时 Validation Result 为 UNKNOWN，返回底层错误，不自动修改 EEPROM Slot State。Image Validation 为只读操作，不自动 commit Metadata。
-
-## Application Module Direction
+## Application Modules Available To S05
 
 ```text
 03_Firmware/Application/OTA_APP/02_Service/
+├─ service_uart/
 ├─ service_common/
 │  └─ crc/
 └─ service_firmware/
@@ -135,83 +147,75 @@ I/O / SPI / Flash read failure 时 Validation Result 为 UNKNOWN，返回底层�
    └─ firmware_storage
 ```
 
-当前只有 Application 一个真实消费者，因此不提前把代码放入 `03_Firmware/Shared`。S08 Bootloader 成为第二个消费者后，再评估抽取稳定纯格式/算法代码。
-
-## Implementation Plan
-
-正式计划：
-
-`00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
-
-Task Map：
-
-```text
-Task 1  CRC Common + standard host vectors
-Task 2  Firmware Version + Header V1 format
-Task 3  Metadata V1 codec + double-copy selection
-Task 4  Firmware Storage service + storage host stubs
-Task 5  PC pack_firmware.py + cross-language contract test
-Task 6  Keil production integration
-Task 7  UART → fixed Slot B isolated board test
-Task 8  Board-test cleanup + verification handoff
-```
-
-计划要求先用 Host Test 验证 CRC / Binary Contract / Metadata / Storage 编排，再进入 Keil Build 和真实硬件验证。
-
-## S04 Board Test Contract
-
-S04 使用现有 `service_uart` 做 test-only Firmware Injection，但不实现正式 Ymodem。
-
-固定目标：`Slot B`。
-
-```text
-PC pack_firmware.py
-→ [64 Byte Header][Payload]
-→ Serial Assistant raw binary send
-→ existing service_uart
-→ Payload first
-→ streaming CRC PASS
-→ Header commit last
-→ full re-read image validation
-→ Metadata double-copy checks
-→ RTT + EasyLogger evidence
-```
-
-传输中断、UART Data Loss、UART Error 或 CRC mismatch 时不写 Header，因此未完成镜像保持 EMPTY。
-
-Board Test 在当前 appSystem Task 中可通过 `platform_thread_get_current()` 获取 `service_uart` 所需 owner thread，不为了测试暴露 `app_system.c` static object。
-
-Board test 最终保留：
-
-```text
-04_Test/Board/S04_Firmware_Image_Storage/
-```
-
-验收后退出 production startup 和正式 Keil target。
+S04 没有把单一 Application 消费者提前移动到 `03_Firmware/Shared`。等 S08 Bootloader 成为第二个真实消费者后，再评估抽取稳定纯格式/算法代码。
 
 ## Application Toolchain
 
-本机统一入口位于 `05_Tools`：
+统一入口：
 
 ```text
-05_Tools/Scripts/build_app.bat       Keil OTA_APP 编译
-05_Tools/Scripts/flash_app.bat      J-Link SWD 烧录并运行
-05_Tools/Scripts/rtt_capture.bat    RTT Up Channel 0 采集
-05_Tools/Scripts/run_app_cycle.bat  编译 → 烧录 → RTT 闭环
-05_Tools/Firmware/pack_firmware.py  Firmware Image V1 打包
+05_Tools/Scripts/build_app.bat
+05_Tools/Scripts/flash_app.bat
+05_Tools/Scripts/rtt_capture.bat
+05_Tools/Scripts/run_app_cycle.bat
+05_Tools/Firmware/pack_firmware.py
 ```
 
-工具链配置使用被 Git 忽略的 `05_Tools/Config/toolchain.local.bat`；真实机器路径不写入生产代码或提交内容。2026-09-14 已验证 Keil 编译、J-Link 烧录、RTT Logger 连接和闭环执行，证据详见 S04 验证报告与 handoff。
+机器相关路径由被 Git 忽略的 `05_Tools/Config/toolchain.local.bat` 管理。
 
-## Formal S04 Documents
+## S04 Verification / Review Result
+
+已完成并通过：
+
+- CRC Host Test；
+- Firmware Format Host Test；
+- Firmware Storage Host Test；
+- Python pack tool test；
+- Python ↔ C binary contract；
+- Keil normal / clean rebuild；
+- Slot B Firmware 主流程真实板测；
+- Payload streaming CRC；
+- Header-last commit；
+- full image re-read validation；
+- Metadata double-copy commit and recovery；
+- J-Link flash / RTT tool smoke；
+- Review。
+
+正式文件：
 
 - Design: `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
 - Implementation Plan: `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-- Review Skeleton: `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
+- Review: `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
 - Verification: `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
 
-## Required Reading For Implementation
+## Deferred Regression
+
+以下两项仍未执行，必须保持真实状态：
+
+```text
+Reset Persistence       PENDING / DEFERRED
+Power-cycle Persistence PENDING / DEFERRED
+```
+
+Project Owner 已批准将其从 S04 关闭阻塞项调整为跨阶段延期回归项。
+
+硬门禁：
+
+```text
+Must be completed before:
+S07_OTA_Service_V1 stage closure
+```
+
+S05 / S06 可正常推进。
+
+## S05 Design Entry
+
+下一阶段：
+
+`S05_UART_Ymodem`
+
+第一轮 Design Discussion 优先读取：
 
 1. `AGENTS.md`
 2. `README.md`
@@ -219,39 +223,38 @@ Board test 最终保留：
 4. `00_Project/WORKFLOW.md`
 5. `00_Project/01_Requirements/项目需求V1.md`
 6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
-8. `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
-9. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-10. `03_Firmware/AGENTS.md`
-11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-12. `03_Firmware/00_Doc/Standards/Keil工程与构建输出规范.md`
-13. current `service_uart`, W25Q64 Raw Driver, AT24C02 Raw Driver。
+7. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
+8. `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
+9. `03_Firmware/AGENTS.md`
+10. current `service_uart`；
+11. current `service_common/crc`；
+12. current `service_firmware`；
+13. Ymodem 原始协议或高可信参考资料。
 
-## Explicitly Deferred
+S05 需要正式讨论：
 
-- UART / Ymodem 正式 Firmware Transport；
+- Ymodem protocol boundary；
+- module layer / ownership；
+- Block 0 / SOH / STX / EOT / ACK / NAK / CAN；
+- CRC-16/XMODEM reuse；
+- timeout / retry / cancel；
+- 128 Byte / 1 KiB packet；
+- raw `.bin` vs S04 `.img`；
+- Ymodem 与 `firmware_storage` 的边界；
+- PC test tool；
+- board verification cases。
+
+## Explicitly Deferred Beyond S05
+
 - Application OTA Service；
 - Bootloader Internal Flash installation；
-- `PENDING / TRIAL / CONFIRMED / ROLLBACK`；
+- `PENDING / TRIAL / CONFIRMED / ROLLBACK` OTA workflow；
 - IWDG / failure counter；
 - AES / SHA / HMAC / Digital Signature；
 - Device Manager / generic Storage / NVM Manager。
 
 ## Next Action
 
-Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项不据此标记为 PASS。范围化 Review 已完成，但阶段仍保留 `READY_FOR_VERIFICATION`，后续如需关闭 S04 需补充真实板测证据：
+开启新对话，进入 `S05_UART_Ymodem` Design Stage。
 
-```text
-实现/接口/架构/文档审查 PASS；Host Test、Keil Clean/Rebuild、RTT 实板主流程 PASS；Reset / Power-cycle 持久性证据仍缺失
-```
-
-当前阶段保持 `READY_FOR_VERIFICATION`；范围化 Review 的 PASS 不代表 S04 阶段已关闭，仍不得标记为 `CLOSED`。
-
-## Prohibited Actions
-
-- 不修改已关闭 S02 / S03 的功能结论；
-- 不把 Firmware / Metadata 语义写进 Raw Driver；
-- 不偏离获批 `implementation_plan.md` 自行扩展功能；
-- 不提前实现 Ymodem / OTA Service / Bootloader Installation / Trial-Rollback；
-- 不提前把单一消费者代码移入 Shared；
-- 不借 S04 引入 Device Manager / 通用 Storage / NVM 架构。
+不要直接施工代码；先按仓库当前状态和 Ymodem 参考资料完成设计讨论。
