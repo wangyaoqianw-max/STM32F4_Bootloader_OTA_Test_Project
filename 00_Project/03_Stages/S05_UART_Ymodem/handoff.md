@@ -234,7 +234,7 @@ d9afae4 feat: add ymodem receiver state machine
 
 当前已通过 Parser、Receiver、Firmware Storage Write、Flash Sink Host Test，S04 相关回归，Keil 正常/清理构建，以及 `build_app.bat`、`flash_app.bat`、`rtt_capture.bat` 工具链 Smoke Test。
 
-板端已确认 S05 专用入口初始化 Storage/UART 并输出 `[S05] YMODEM_READY`。J-Link 已恢复并可完成烧录，独立 TTL 模块枚举为 `COM9`。使用 `OTA_APP_s04_v1.1.0.img` 尝试发送时，Tera Term 返回失败，板端仍记录 `rx_events=0`、`rx_bytes=0`；串口 API 探针也未读到板端初始 `'C'`。因此尚未取得经独立 TTL 的 Block 0、Header-last 和 Slot B `VALID` 证据，当前需先核对 TTL 与 USART1 `PA9/PA10` 的 TX/RX/GND 接线和 3.3V 电平，阶段保持 `IN_PROGRESS`，硬件传输和后续恢复测试保持 `PENDING`。
+板端已确认 S05 专用入口初始化 Storage/UART 并输出 `[S05] YMODEM_READY`。J-Link 已恢复并可完成烧录，独立 TTL 模块枚举为 `COM9`。使用 `OTA_APP_s04_v1.1.0.img`、串口 API 以及单字节 `0x01` 探针尝试发送时，板端均记录 `rx_events=0`、`rx_bytes=0`，串口 API 也未读到板端初始 `'C'`。因此尚未取得经独立 TTL 的 Block 0、Header-last 和 Slot B `VALID` 证据，当前需先核对 TTL TX 到 USART1 `PA10` 的信号路径、共地和 3.3V 电平，阶段保持 `IN_PROGRESS`，硬件传输和后续恢复测试保持 `PENDING`。
 
 下一步：当前测试暂停。恢复后先核对独立 3.3V USB-TTL 与 USART1 `PA9/PA10` 的交叉 TX/RX 和共地，再复用现有 Sender 入口重新执行真实传输；成功后补写 Verification Commit 和 Review 输入。
 

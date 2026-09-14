@@ -122,4 +122,4 @@ Not an S05 blocker; must be completed before S07 closure.
 
 ## Blockers
 
-独立 TTL 模块为 `COM9`。J-Link 已完成重新烧录，但 Tera Term 发送后板端仍为 `rx_events=0`、`rx_bytes=0`，串口 API 探针也未读到初始 `'C'`。当前阻塞限定为 TTL 模块与 USART1 `PA9/PA10` 的 TX/RX/GND 接线或电平连接；代码验证已完成，硬件传输保持 `PENDING`。
+独立 TTL 模块为 `COM9`。J-Link 已完成重新烧录，但 Tera Term、串口 API 以及单字节 `0x01` 探针发送后板端均为 `rx_events=0`、`rx_bytes=0`。当前阻塞限定为 TTL 模块 TX 到 USART1 `PA10` 的信号路径、共地或电平连接；代码验证已完成，硬件传输保持 `PENDING`。

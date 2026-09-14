@@ -229,4 +229,4 @@ Implementation Role 已完成计划内代码、Host Test、Keil 集成和工具�
 
 ## Blockers
 
-当前 TTL 模块为 `COM9`。J-Link 已能正常识别 STM32F411CE 并完成烧录；但 Tera Term 与 COM9 的发送尝试后，板端仍记录 `rx_events=0`、`rx_bytes=0`，独立串口 API 探针也未读到板端初始 `'C'`。当前阻塞点是 TTL 模块到 USART1 `PA9/PA10` 的 TX/RX/GND 接线或电平连接尚未验证，阶段保持 `IN_PROGRESS`，硬件传输仍为 `PENDING`。
+当前 TTL 模块为 `COM9`。J-Link 已能正常识别 STM32F411CE 并完成烧录；Tera Term 和独立串口 API 发送后，板端均记录 `rx_events=0`、`rx_bytes=0`，最新单字节 `0x01` 探针也未进入 UART。当前阻塞点是 TTL 模块 TX 到 USART1 `PA10` 的信号路径、共地或电平连接，阶段保持 `IN_PROGRESS`，硬件传输仍为 `PENDING`。
