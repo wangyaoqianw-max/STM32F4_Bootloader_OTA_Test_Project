@@ -106,22 +106,37 @@ Agent 无法操作真实硬件时，不得把编译或模拟结果描述为硬�
 
 本仓库通过 `05_Tools` 对本机开发工具提供稳定入口，避免不同 Agent 重复探测本机安装路径。
 
-Application 固件默认编译命令：
+Application 固件默认工具入口：
 
 ```text
-05_Tools\Scripts\build_app.bat
+编译：05_Tools\Scripts\build_app.bat
+烧录：05_Tools\Scripts\flash_app.bat
+RTT： 05_Tools\Scripts\rtt_capture.bat
+闭环：05_Tools\Scripts\run_app_cycle.bat
+```
+
+`run_app_cycle.bat` 的固定顺序为：
+
+```text
+Keil Build
+→ J-Link Flash
+→ Reset / Run
+→ RTT Capture
 ```
 
 规则：
 
-1. 修改 Application 固件后，优先执行上述脚本，不自行搜索 `UV4.exe`、ARMCC 或 `.uvprojx`；
+1. 修改 Application 固件后，优先使用上述脚本，不自行搜索 `UV4.exe`、`JLink.exe`、`JLinkRTTLogger.exe`、ARMCC 或 `.uvprojx`；
 2. 本机工具路径只写入 `05_Tools\Config\toolchain.local.bat`，该文件不得提交；
 3. 新环境从 `toolchain.local.example.bat` 复制本地配置后再调整路径；
 4. 脚本报告本地配置缺失或无效时，才允许调查本机工具安装位置；
-5. 编译失败时读取脚本输出和 `06_Output/Logs/OTA_APP_build.log`，修复后重新执行；
-6. 编译成功不等于硬件验证通过，板级验证仍按当前 Stage 的 Verification 要求执行。
+5. 编译日志、烧录日志和 RTT 日志统一输出到 `06_Output/Logs`；
+6. J-Link 同一时刻只应由一个工具占用；自动烧录或采集前关闭可能占用 Probe 的 Keil Debug、RTT Viewer 等程序；
+7. `run_app_cycle.bat` 成功只表示 Build / Flash / RTT Capture 工具链动作成功，不等价于阶段级硬件验证 PASS；
+8. 板级功能结论仍必须依据当前 Stage 的验收条件、真实数据检查和验证报告；
+9. 云端、容器或无 USB 透传的 Agent 环境不得把脚本存在视为具备真实 J-Link/串口访问能力。
 
-后续增加 J-Link、RTT、打包等自动化时，继续通过 `05_Tools` 提供统一入口，不把机器相关路径写入生产代码或阶段设计。
+后续增加串口、Host Test、打包、崩溃分析等自动化时，继续通过 `05_Tools` 提供统一入口，不把机器相关路径写入生产代码或阶段设计。
 
 ## 9. Git 规则
 
