@@ -77,7 +77,7 @@ S12  增加 OTA 安全机制实验
 | `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | 建立 App / Service / Platform / Impl / Vendor / Config 基础结构；选择性复用已有项目架构；接入 RTT + EasyLogger；建立基础初始化与错误处理；实现 Firmware V1.0 的 LED Blink 验证功能 | S00；STM32F411 基础工程与已确认板级资料 | `CLOSED` | Clean Rebuild 通过；板端 LED Blink 正常；RTT/EasyLogger 输出正常；架构依赖方向与基础初始化流程检查通过；连续 Reset 4 次稳定复现 |
 | `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 Raw Driver；Read / Program / Erase / JEDEC ID / BUSY/WEL / 跨页和边界检查；RTT 板测；Raw Driver 稳定后评估 SFUD 接入 | S01；W25Q64 与 SPI2 硬件资料 | `CLOSED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；Reset 后数据保持；错误返回可诊断；SPI 大长度语义返工通过 Host/Build/Hardware Regression；形成 SFUD 适配基线 |
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C `probe()`；AT24C02 Raw Driver；Random/Sequential Read；8 Byte Page 自动拆分写；ACK Polling；地址边界；RTT 板测 | S01；AT24C02 与 PB6/PB7 硬件资料 | `CLOSED` | 单字节/页内/跨页读写正确；`0xFF` 与越界保护正确；Reset/实际掉电后数据保持；错误返回与 RTT 日志可诊断 |
-| `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | 设计 External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；基础 Metadata Contract；镜像整体 CRC 校验；明确 Application/Bootloader 共用数据契约 | S02；S03 | `PLANNED` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏镜像能够被正确区分 |
+| `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；Metadata 双副本 Contract；镜像整体 CRC 校验；PC pack tool；UART test-only Slot B 注入；明确 Application/Bootloader 共用数据契约 | S02；S03 | `ACTIVE` | 可人工写入一个 Firmware Image；系统能识别 Header、Version、Size、Slot 和 CRC；有效/损坏/空镜像能够正确区分；Metadata 单副本损坏可恢复；真实板测和 RTT 证据通过 |
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | OTA 专用 UART；接收缓冲；Ymodem 协议状态机；文件名/大小处理；Packet CRC；Timeout / Cancel / Retry；数据流式写入指定 External Flash 区域 | S02；S04；UART 硬件资料；补充 Ymodem 参考资料 | `PLANNED` | PC 通过 Ymodem 发送 `.bin`；MCU 完整接收并写入 Flash；接收 Size 与 CRC 和源文件一致；中断/取消场景可恢复 |
 | `S06_RTOS_Runtime` | 建立 Application 后台 OTA 所需的并发运行环境 | 集成 FreeRTOS；确定 Task 划分；建立 Task Notification / Queue / Mutex 等必要 IPC；明确 UART 接收、Flash 写入、普通业务和日志之间的并发边界 | S01；S05 的通信模型已明确 | `PLANNED` | 正常业务与 Firmware 接收可以并发；无工作任务能够阻塞；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁或资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | 实现 OTA Service；选择 Inactive Slot；启动/控制 Ymodem；接收 Firmware Metadata；写入 Firmware；整包 CRC；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | 完整执行 `PC → UART/Ymodem → External Flash → Firmware Validation → Metadata PENDING → Reset`；失败下载不破坏当前 Application 和 Confirmed Image |
@@ -103,7 +103,7 @@ Application
 └─ 识别 Firmware Image / Slot / Metadata
 ```
 
-此时不要求设备能够 OTA 下载或安装 Firmware。
+此时不要求设备能够执行正式 OTA 下载或安装 Firmware。S04 允许使用现有 UART 进行 test-only raw image injection，仅用于验证 Firmware Storage Contract，不替代 S05 Ymodem。
 
 ### S05 - S07: OTA Download Path
 
@@ -159,7 +159,7 @@ TRIAL
 
 ## 5. Deferred / On-demand Inputs
 
-以下资料目前不阻塞 S03：
+以下资料按阶段按需补充：
 
 - CK02AT Datasheet / API：延后至 S12；
 - LCD / CTP 详细资料：最晚 S11 前补充；
@@ -167,7 +167,7 @@ TRIAL
 - HC-05 参数：只有后续决定增加 Bluetooth OTA Transport 时再进入正式 Stage；
 - SHA / AES / HMAC / Digital Signature 的具体算法和库选择：S12 再冻结。
 
-S03 已明确延期的架构工作：
+继续延期的架构工作：
 
 - Device Manager；
 - `platform_storage_device_t`；
@@ -178,39 +178,40 @@ S03 已明确延期的架构工作：
 
 ## 6. Current Execution Checkpoint
 
-最近关闭阶段：
+当前活动阶段：
 
 ```text
-S03_EEPROM_Storage
-Status: CLOSED
-Final Review: PASS
+S04_Firmware_Image_Storage
+Roadmap State: ACTIVE
+Workflow Status: DESIGN_APPROVED
+Branch: codex/s04-firmware-image-storage
 ```
 
-上一个已关闭阶段：
+S04 已完成：
+
+1. A/B Slot 与 4 KiB Header Sector 布局冻结；
+2. Firmware Header V1 64 Byte fixed binary contract 冻结；
+3. Version / Size / Header CRC / Payload CRC 语义冻结；
+4. CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC 公共能力方案冻结；
+5. AT24C02 Metadata 2 × 128 Byte、sequence、CRC、commit marker 方案冻结；
+6. Image Header 与 EEPROM Metadata authority boundary 冻结；
+7. `service_firmware` 与 `service_common/crc` 模块边界冻结；
+8. Slot B UART test-only injection + RTT/EasyLogger 板测合同冻结；
+9. `design.md`、`implementation_plan.md`、`handoff.md` 和 `review.md` skeleton 已创建。
+
+当前门禁：
 
 ```text
-S02_External_Flash_Driver
-Status: CLOSED
-Final Review: PASS
+Implementation Plan Owner Acceptance: PENDING
+Production Code: NOT_STARTED
 ```
 
-S03 已完成：
+下一步：Project Owner 审阅并接受 `implementation_plan.md`。接受后状态推进至 `READY_FOR_IMPLEMENTATION`，再由 Implementation Role 按 Task 1~8 施工。
 
-1. AT24C02 Datasheet / 原理图 / Software I2C 基线核对；
-2. PB6/PB7 Open Drain + `GPIO_NOPULL` 配置核对；
-3. SCL/SDA 外部 4.7 kΩ 上拉确认；
-4. AT24C02 `0x50`、256 Byte、8 Byte Page、5 ms `tWR` 等关键事实确认；
-5. `platform_i2c_probe()`、AT24C02 Raw Driver、Page Split、ACK Polling 设计冻结；
-6. 决定 S03 不引入通用 NVM / Device Manager / Storage Device；
-7. 板测统一采用 RTT + EasyLogger；
-8. `design.md`、`implementation_plan.md`、`handoff.md`、`verification.md` 和 `review.md` 已完成。
-9. 真实板测、代码验证和 Review 均通过，临时测试源码已移至根目录 `04_Test/Board` 并退出生产工程。
+S04 正式入口：
 
-下一步：如继续推进，由 Project Owner 决定是否创建 `S04_Firmware_Image_Storage` Design Stage；不自动扩大 S03 范围。
-
-S03 正式入口：
-
-- `00_Project/03_Stages/S03_EEPROM_Storage/design.md`
-- `00_Project/03_Stages/S03_EEPROM_Storage/implementation_plan.md`
-- `00_Project/03_Stages/S03_EEPROM_Storage/handoff.md`
+- `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
+- `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
+- `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
+- `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
 - `00_Project/05_Status/current_status.md`

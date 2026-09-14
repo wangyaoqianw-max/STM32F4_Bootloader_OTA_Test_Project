@@ -16,12 +16,12 @@
 
 #define LOG_TAG "app_main"
 
-#include "platform_bsp_led.h"
-#include "platform_bsp_spi.h"
-#include "platform_spi.h"
 #include "platform_time.h"
 #include "project_config.h"
 #include "service_log.h"
+#include "platform_bsp_led.h"
+#include "platform_bsp_spi.h"
+#include "platform_spi.h"
 //******************************** Includes *********************************//
 
 //******************************** Variables ********************************//

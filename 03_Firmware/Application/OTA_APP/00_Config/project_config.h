@@ -31,6 +31,7 @@
 
 /* W25Q64 Platform 校验上限。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
+
 //******************************** Defines *********************************//
 
 #endif
