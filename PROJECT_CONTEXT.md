@@ -5,20 +5,20 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Active Stage Status: `DRAFT`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `codex/s05-uart-ymodem`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
-- S05 Handoff Commit: `68208b6355e2efb5f2020da9a2709c521cf6c110`
+- S05 Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - S04 Final Result: `CLOSED / PASS`
-- Current Role: `Design Role / Awaiting Project Owner Approval`
+- Current Role: `Implementation Role / Ready to execute Task 1`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
-完成 `S05_UART_Ymodem` 设计批准，然后按实施计划构建：
+按照 Project Owner 已批准的 S05 Design + Implementation Plan 构建：
 
 ```text
 Tera Term Ymodem Sender
@@ -40,9 +40,17 @@ W25Q64 Slot B
 
 S05 建立可靠文件传输能力，不实现正式 OTA Service。
 
+设计门禁已经通过：
+
+```text
+DRAFT
+→ DESIGN_APPROVED
+→ READY_FOR_IMPLEMENTATION
+```
+
 ## Required Reading
 
-进入 S05 Implementation Role 前按顺序读取：
+进入 S05 Implementation Role 后按顺序读取：
 
 1. `AGENTS.md`
 2. `README.md`
@@ -96,7 +104,7 @@ Slot Payload @ +0x1000
 
 Do not write compact `.img` linearly from Slot Base.
 
-## S05 Design Summary
+## S05 Approved Design Summary
 
 ### Protocol Scope
 
@@ -125,7 +133,7 @@ Excluded：
 
 ### Firmware Storage Extension
 
-Planned APIs：
+Approved APIs：
 
 ```c
 firmware_storage_write_payload(...)
@@ -216,14 +224,10 @@ They do not block S05/S06 and must be completed before S07 closure.
 
 ## Next Action
 
-Project Owner reviews Design + Implementation Plan.
-
-If approved:
+Implementation Role begins with:
 
 ```text
-DRAFT
-→ DESIGN_APPROVED
-→ READY_FOR_IMPLEMENTATION
+Task 1: Tera Term Ymodem sender automation entry
 ```
 
-Implementation starts with Task 1: Tera Term Ymodem sender automation entry.
+Task 1 verifies local macro invocation and parameters first; a transfer timeout before MCU Receiver implementation is an expected intermediate result, not a hardware PASS.
