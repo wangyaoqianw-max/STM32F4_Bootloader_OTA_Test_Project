@@ -62,3 +62,25 @@ gcc -std=c99 -Wall -Wextra -Werror `
 
 & "$env:TEMP\s05_ymodem_receiver_host_test.exe"
 ```
+
+## YMODEM Flash Sink Test
+
+```powershell
+gcc -std=c99 -Wall -Wextra -Werror `
+  -I04_Test/Host/S05_UART_Ymodem/stubs `
+  -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_common/crc `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_firmware `
+  -I03_Firmware/Application/OTA_APP/00_Config `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_ymodem `
+  -I04_Test/Board/S05_UART_Ymodem `
+  -o "$env:TEMP\s05_ymodem_flash_sink_host_test.exe" `
+  04_Test/Host/S05_UART_Ymodem/s05_ymodem_flash_sink_host_test.c `
+  04_Test/Board/S05_UART_Ymodem/s05_ymodem_flash_sink.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_common/crc/crc.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_version.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_image.c
+
+& "$env:TEMP\s05_ymodem_flash_sink_host_test.exe"
+```
