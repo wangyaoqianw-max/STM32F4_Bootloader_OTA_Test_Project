@@ -32,6 +32,11 @@
 /* W25Q64 Platform 校验上限。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
 
+/* S05 专用板测开关；正式 Application 默认不启动破坏性传输测试。 */
+#ifndef PROJECT_ENABLE_S05_YMODEM_BOARD_TEST
+#define PROJECT_ENABLE_S05_YMODEM_BOARD_TEST  (0U)
+#endif
+
 //******************************** Defines *********************************//
 
 #endif

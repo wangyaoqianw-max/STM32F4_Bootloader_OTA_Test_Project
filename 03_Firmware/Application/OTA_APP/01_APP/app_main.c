@@ -19,17 +19,23 @@
 #include "platform_time.h"
 #include "project_config.h"
 #include "service_log.h"
+#if (PROJECT_ENABLE_S05_YMODEM_BOARD_TEST != 0U)
+#include "app_s05_ymodem_test.h"
+#endif
 #include "platform_bsp_led.h"
 #include "platform_bsp_spi.h"
 #include "platform_spi.h"
 //******************************** Includes *********************************//
 
 //******************************** Variables ********************************//
+#if (PROJECT_ENABLE_S05_YMODEM_BOARD_TEST == 0U)
 static platform_led_t g_statusLed = PLATFORM_LED_INITIALIZER;
 static platform_spi_bus_t g_storageSpiBus = PLATFORM_SPI_BUS_INITIALIZER;
+#endif
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+#if (PROJECT_ENABLE_S05_YMODEM_BOARD_TEST == 0U)
 /* 构造并启动 Application 基础资源与共享 Storage SPI Bus。 */
 static platform_error_t app_main_init(void)
 {
@@ -61,11 +67,21 @@ static platform_error_t app_main_init(void)
     SERVICE_LOG_I("Storage SPI start result: %d", result);
     return result;
 }
+#endif
 //******************************** Private Functions *************************//
 
 //******************************** Functions *********************************//
 void app_main(void)
 {
+#if (PROJECT_ENABLE_S05_YMODEM_BOARD_TEST != 0U)
+    platform_error_t testResult;
+
+    testResult = app_s05_ymodem_test_run();
+    SERVICE_LOG_I("[S05] board test return=%d", (int)testResult);
+    for (;;) {
+        (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
+    }
+#else
     platform_error_t appResult;
 
     SERVICE_LOG_I("Application Foundation start");
@@ -87,5 +103,6 @@ void app_main(void)
         (void)platform_led_off(&g_statusLed);
         (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
     }
+#endif
 }
 //******************************** Functions *********************************//

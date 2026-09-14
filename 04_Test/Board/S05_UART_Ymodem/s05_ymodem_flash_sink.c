@@ -234,6 +234,7 @@ static platform_error_t s05_ymodem_flash_sink_end(void *context)
         return s05_ymodem_flash_sink_fail(sink, result);
     }
 
+    sink->headerCommitted = PLATFORM_TRUE;
     sink->started = PLATFORM_FALSE;
     return PLATFORM_ERR_OK;
 }

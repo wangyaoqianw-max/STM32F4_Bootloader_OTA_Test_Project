@@ -37,6 +37,7 @@ typedef struct
     firmware_image_header_t header; /**< 已验证的 Header 解码结果。 */
     uint32_t payloadWritten; /**< 已写入 Slot Payload 区域的有效字节数。 */
     platform_bool_t headerValidated; /**< Header 已验证且 Slot 已完成擦除。 */
+    platform_bool_t headerCommitted; /**< Header 已在 Payload 完成后成功写入。 */
     platform_bool_t started; /**< begin 已成功且尚未 end/abort。 */
     platform_bool_t failed; /**< 当前传输已发生不可恢复错误。 */
     platform_error_t lastError; /**< 最近一次 Sink 错误。 */
