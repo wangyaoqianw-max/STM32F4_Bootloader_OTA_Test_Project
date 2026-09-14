@@ -118,8 +118,8 @@ Not an S05 blocker; must be completed before S07 closure.
 
 ## Next Action
 
-当前测试已暂停。物理连接已确认正常；恢复后使用独立 3.3V USB-TTL 串口模块隔离 J-Link CDC，再执行真实 Tera Term YMODEM 传输，检查 Block 0、Payload、Header-last 和 Slot B `VALID` 证据。
+当前测试已暂停。J-Link 已恢复并可正常烧录；独立 TTL 模块已枚举为 `COM9`，但板端未收到数据。恢复后先核对 TTL 与 USART1 `PA9/PA10` 的 TX/RX/GND 接线，再执行真实 Tera Term YMODEM 传输，检查 Block 0、Payload、Header-last 和 Slot B `VALID` 证据。
 
 ## Blockers
 
-当前 `COM3` 为 J-Link CDC UART。显式配置 115200/8N1/无流控并关闭 DTR/RTS 后，Tera Term 宏在 COM3 上仍未使板端产生 RX 事件；但相同宏在虚拟串口回环可发送原始字节，且串口助手/.NET 路径已成功触发 Block 0 接收。物理连接不再是未确认项，当前阻塞限定为 Tera Term 与 J-Link CDC 发送路径的兼容性或端口占用；代码验证已完成，硬件传输保持 `PENDING`。
+独立 TTL 模块为 `COM9`。J-Link 已完成重新烧录，但 Tera Term 发送后板端仍为 `rx_events=0`、`rx_bytes=0`，串口 API 探针也未读到初始 `'C'`。当前阻塞限定为 TTL 模块与 USART1 `PA9/PA10` 的 TX/RX/GND 接线或电平连接；代码验证已完成，硬件传输保持 `PENDING`。

@@ -105,4 +105,4 @@ SHA-256：0E21EC936DE1D2A5342B82A616497EA978C4C3014BE081F31274555C48B7D528
 - `firmware_storage_validate_image(Slot B) == VALID`；
 - 硬件中断/取消后再次传输恢复。
 
-当前测试暂停。下一步使用独立 3.3V USB-TTL 串口模块连接 USART1 `PA9/PA10`，重新执行 Build/Flash、RTT 捕获和 Sender，并以 `YMODEM session complete final result=PASS` 与 Slot B `VALID` 作为硬件通过条件。
+当前测试暂停。独立 TTL 模块已枚举为 `COM9`，但本轮 Tera Term 发送后板端仍为 `rx_events=0 rx_bytes=0`，串口 API 探针也未读到板端初始 `'C'`；J-Link 已重新连接并完成烧录。下一步先核对 TTL 与 USART1 `PA9/PA10` 的交叉 TX/RX、共地和 3.3V 电平，再重新执行 RTT 捕获和 Sender，并以 `YMODEM session complete final result=PASS` 与 Slot B `VALID` 作为硬件通过条件。

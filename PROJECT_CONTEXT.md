@@ -225,8 +225,8 @@ They do not block S05/S06 and must be completed before S07 closure.
 
 ## Next Action
 
-Implementation Role 已完成计划内代码、Host Test、Keil 集成和工具链 Smoke Test。物理连接已由 Project Owner 确认正常；下一步暂停当前测试，待恢复后使用独立 3.3V USB-TTL 串口模块隔离 J-Link CDC，再执行真实 Tera Term YMODEM 传输并回读 Slot B 验证证据。
+Implementation Role 已完成计划内代码、Host Test、Keil 集成和工具链 Smoke Test。J-Link 已恢复并可正常烧录；独立 TTL 模块已枚举为 `COM9`，但本轮板端未收到数据，下一步需先核对 TTL 与 USART1 `PA9/PA10` 的 TX/RX/GND 接线，再执行真实 Tera Term YMODEM 传输并回读 Slot B 验证证据。
 
 ## Blockers
 
-当前 `COM3` 为 J-Link CDC UART。板端能正常输出 `YMODEM_READY` 和 11 次 `'C'`，但 Tera Term 宏经显式 115200/8N1/无流控及 DTR/RTS 关闭配置后，板端仍记录 `rx_events=0`、`rx_bytes=0`；同一宏在 COM1↔COM2 回环中可以发出原始字节，且串口助手/.NET 路径已成功触发 Block 0 接收。因此当前阻塞点限定为 Tera Term → J-Link CDC 的发送路径兼容性或端口占用，不再判断为物理连接故障。阶段保持 `IN_PROGRESS`，硬件传输仍为 `PENDING`。
+当前 TTL 模块为 `COM9`。J-Link 已能正常识别 STM32F411CE 并完成烧录；但 Tera Term 与 COM9 的发送尝试后，板端仍记录 `rx_events=0`、`rx_bytes=0`，独立串口 API 探针也未读到板端初始 `'C'`。当前阻塞点是 TTL 模块到 USART1 `PA9/PA10` 的 TX/RX/GND 接线或电平连接尚未验证，阶段保持 `IN_PROGRESS`，硬件传输仍为 `PENDING`。
