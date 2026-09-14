@@ -3,24 +3,33 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Status: `DRAFT`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
+- Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Design Role / Awaiting Project Owner Approval`
+- Current Role: `Implementation Role / Ready to execute Task 1`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
-完成 `S05_UART_Ymodem` 的冻结设计与实施计划，建立 Application 侧可复用的 Ymodem Receiver 文件传输能力，并通过 Tera Term 5、现有 UART Service、Firmware Storage 和 Build/Flash/RTT 工具链形成真实板测路径。
+按照已获 Project Owner 批准的 `S05_UART_Ymodem` 设计和实施计划，建立 Application 侧可复用的 Ymodem Receiver 文件传输能力，并通过 Tera Term 5、现有 UART Service、Firmware Storage 和 Build/Flash/RTT 工具链形成真实板测闭环。
 
-当前只完成 Design Role 文档，不得直接开始生产代码施工。
+阶段已经通过设计门禁：
+
+```text
+DRAFT
+→ DESIGN_APPROVED
+→ READY_FOR_IMPLEMENTATION
+```
+
+允许开始计划内生产代码、Host Test、工具脚本和板测资产施工；设计冲突或范围扩张时必须停止并回到确认流程。
 
 ## Formal S05 Documents
 
@@ -28,7 +37,7 @@
 - Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
 
-## Frozen Direction Pending Approval
+## Approved Frozen Direction
 
 ```text
 Tera Term Ymodem Sender
@@ -109,18 +118,14 @@ Not an S05 blocker; must be completed before S07 closure.
 
 ## Next Action
 
-Project Owner reviews and approves the S05 Design + Implementation Plan.
-
-If approved:
+Implementation Role reads the approved design / plan / handoff and begins:
 
 ```text
-DRAFT
-→ DESIGN_APPROVED
-→ READY_FOR_IMPLEMENTATION
+Task 1: Tera Term Ymodem sender automation entry
 ```
 
-Then Implementation Role begins Task 1: Tera Term Ymodem sender automation entry.
+Task 1 first verifies local Tera Term macro invocation and parameter handling. A Ymodem transfer timeout before the MCU Receiver exists is expected and must not be reported as transfer PASS.
 
 ## Blockers
 
-No known technical blocker. Implementation is blocked only by the normal design approval gate.
+No known technical blocker.
