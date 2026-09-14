@@ -3,21 +3,21 @@
 ## Metadata
 
 - Stage: `S04_Firmware_Image_Storage`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `codex/s04-firmware-image-storage`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - Plan Owner Acceptance: `PASS`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `Pending local commit`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-13`
+- Updated At: `2026-09-14`
 
 ## Current Objective
 
-S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准，阶段正式进入 `READY_FOR_IMPLEMENTATION`。
+S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准；Task 1-8 实现、Host 验证、Keil 构建和主流程实板验证已完成，阶段进入 `READY_FOR_VERIFICATION`。
 
 Implementation Role 可以开始施工，但必须严格遵循冻结设计、计划任务顺序与范围边界。若实现发现设计冲突，不得自行改协议或扩展 OTA 范围，应先记录并回到设计/阻塞处理。
 
@@ -302,9 +302,9 @@ Design Approval        PASS
 Design Document        CREATED
 Implementation Plan    CREATED
 Plan Owner Acceptance  PASS
-Stage Status           READY_FOR_IMPLEMENTATION
-Production Code        IN_PROGRESS (Task 1-7 implementation complete; hardware execution pending)
-Verification           NOT_STARTED
+Stage Status           READY_FOR_VERIFICATION
+Production Code        COMPLETE (S04 destructive board test removed from production startup and Keil target)
+Verification           IN_PROGRESS (report created; Reset/Power-cycle persistence pending)
 Review                 NOT_STARTED
 ```
 
@@ -315,8 +315,9 @@ Review                 NOT_STARTED
 - Task 3 — Metadata V1：已新增 128 Byte 双副本 fixed-offset 编解码、CRC32、commit marker、字段范围校验与 wrap-around-safe sequence 选择；Host Test 已覆盖 A/B 有效副本选择、序列回绕、保留区篡改、CRC 与未提交 marker 恢复。提交记录见当前阶段分支历史。
 - Task 4 — Firmware Storage Service：已新增 W25Q64/AT24C02 存储编排、整镜像流式 CRC 验证、I/O 与镜像无效区分、Metadata 双副本原子提交；Host Stub 已覆盖提交中断后的旧副本恢复与 sequence 递增。提交记录见当前阶段分支历史。
 - Task 5 — PC Firmware Pack Tool：已新增固定偏移 little-endian 打包工具与 Python 单元测试；Python 生成 `.img` 已由 C Host Test 验证 Header、Version、长度及 Payload CRC 合同一致。提交记录见当前阶段分支历史。
-- Task 6 — Keil Production Integration：已将 CRC 与 4 个 Firmware production source 加入独立 Keil Group，并追加对应 include path；normal build 与 Clean/Rebuild 均为 0 errors、8 个既有 warning，S04 source 无新增 warning。提交记录见当前阶段分支历史。
-- Task 7 — S04 UART → Slot B Board Test：已新增独立板测入口，完成 Storage/UART Service 初始化、64 Byte Header 分片接收与擦除前校验、固定 Slot B 擦除、Payload 流式写入与 CRC、Header 最后提交、整镜像回读验证，以及 Metadata 双提交和单副本破坏恢复。临时测试开关为 `PROJECT_ENABLE_S04_BOARD_TEST=1`，正式 Target 已接入所需 UART/Service/Impl 与板测源码。Clean 成功；Rebuild 为 0 errors、14 warnings，其中 8 个与 Task 6 相同，新增 6 个均来自既有 `platform_uart.c`，S04 板测源码无 warning。真实板测尚待人工执行。
+- Task 6 — Keil Production Integration：已将 CRC 与 4 个 Firmware production source 加入独立 Keil Group，并追加对应 include path；最终 normal build 与清理输出后的完整重建均为 0 errors、14 个既有 platform/vendor warnings，S04 源码无新增 warning。
+- Task 7 — S04 UART → Slot B Board Test：已完成 UART Service 生命周期修正、USART1 IDLE 中断接入、64 Byte Header 分片接收、固定 Slot B 擦除、Payload 流式写入与 CRC、Header 最后提交、整镜像回读，以及 Metadata 双提交和单副本破坏恢复。干净复位/重新烧录后的 RTT 实板主流程 PASS，证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md` 和 `06_Output/Logs/S04_board_test_rtt_clean.log`。
+- Task 8 — Board-test cleanup：已移除 `PROJECT_ENABLE_S04_BOARD_TEST`、Application 启动路径中的板测分支、正式 Keil Target 中的板测源文件及其 include path；板测源码保留在 `04_Test/Board/S04_Firmware_Image_Storage/`。
 
 ## Task 7 Hardware Execution Gate
 
@@ -330,10 +331,10 @@ Review                 NOT_STARTED
 
 如果擦除期间连续发送整个文件导致 RingBuffer Data Loss，板测会按设计 abort 且不提交 Header；这属于安全失败路径，不得视为正常传输方式。
 
-2026-09-13 本机硬件探测结果：J-Link V9（S/N `602713300`）可识别且 `VTref=3.285V`，但在 `4000 kHz` 与 `100 kHz` 下均报告 `Failed to initialized DAP`，普通连接和 connect-under-reset 都无法连接 STM32F411CE；系统同时未枚举通信串口。因此固件未烧录，UART/RTT、Reset 与 Power-cycle 证据保持 `PENDING`。恢复前应检查 SWDIO、SWCLK、GND、NRST、目标板供电与其他调试会话占用，并接入 USART1 对应 USB-UART。
+2026-09-14 J-Link V9（S/N `602713300`，`VTref≈3.28V`）已稳定连接 STM32F411CE；COM3 为 USART1 对应 J-Link CDC UART。干净复位/重新烧录后完成 Header、Payload CRC、Header commit、整镜像回读和 Metadata 恢复验证，最终 RTT 结果为 `PASS`。第一次未复位重跑的 CRC 错误由前一次残留 64 Byte Header 造成，已通过干净重跑排除。
 
 ## Next Action
 
-Implementation Role 等待 Task 7 真实 UART/RTT、Reset 和 Power-cycle 板测证据。获得证据后先回填结果，再执行 Task 8：移除 production 启动路径和正式 Keil Target 中的破坏性板测，运行全量 Host Test、normal build、Clean/Rebuild 与 Coding Standard Review。
+Verification Role 读取本交接、实现提交和验证报告，补充 Reset Persistence / Power-cycle Persistence 后执行正式 Review；当前不得将阶段标记为 `CLOSED`。
 
-Task 1 → Task 8 完成后更新 Implementation Output，并将阶段推进至 `READY_FOR_VERIFICATION`。Implementation Role 不得自行填写最终 Verification PASS 或关闭 Stage。
+Task 1 → Task 8 已完成；Implementation Role 不填写最终 Verification PASS，也不关闭 Stage。后续由 Verification/Review Role 根据报告和剩余持久性场景决定阶段结论。

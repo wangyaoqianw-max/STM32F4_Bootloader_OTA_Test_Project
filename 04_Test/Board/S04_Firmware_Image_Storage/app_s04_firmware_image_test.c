@@ -162,12 +162,6 @@ static platform_error_t s04_firmware_image_init_uart(void)
         return result;
     }
 
-    result = g_s04CommunicationUart.device.lifecycle->start(
-        &g_s04CommunicationUart);
-    if (result != PLATFORM_ERR_OK) {
-        return result;
-    }
-
     serviceConfig.uart = &g_s04CommunicationUart;
     serviceConfig.dmaRxBuffer = g_s04UartDmaRxBuffer;
     serviceConfig.dmaRxBufferSize = sizeof(g_s04UartDmaRxBuffer);
@@ -176,6 +170,13 @@ static platform_error_t s04_firmware_image_init_uart(void)
     serviceConfig.ownerThread = &g_s04OwnerThread;
 
     result = service_uart_init(&g_s04UartService, &serviceConfig);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    /* Service 必须在 UART STARTED 前绑定回调，硬件接收则在回调绑定完成后启动。 */
+    result = g_s04CommunicationUart.device.lifecycle->start(
+        &g_s04CommunicationUart);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -231,6 +232,7 @@ static platform_error_t s04_firmware_image_receive_exact(
     platform_size_t dataLength)
 {
     platform_size_t receivedLength = 0U;
+    platform_size_t readableSize = 0U;
     platform_size_t readLength = 0U;
     uint32_t events = 0U;
     platform_error_t result = PLATFORM_ERR_OK;
@@ -245,16 +247,13 @@ static platform_error_t s04_firmware_image_receive_exact(
             return result;
         }
 
-        result = service_uart_read(&g_s04UartService,
-                                   &buffer[receivedLength],
-                                   dataLength - receivedLength,
-                                   &readLength);
+        result = service_uart_get_readable_size(&g_s04UartService,
+                                                &readableSize);
         if (result != PLATFORM_ERR_OK) {
             return result;
         }
 
-        receivedLength += readLength;
-        if (receivedLength < dataLength) {
+        if (readableSize == 0U) {
             result = service_uart_wait_event(&g_s04UartService,
                                              S04_UART_WAIT_TIMEOUT_MS,
                                              &events);
@@ -262,7 +261,17 @@ static platform_error_t s04_firmware_image_receive_exact(
                 (result != PLATFORM_ERR_TIMEOUT)) {
                 return result;
             }
+            continue;
         }
+
+        result = service_uart_read(&g_s04UartService,
+                                   &buffer[receivedLength],
+                                   dataLength - receivedLength,
+                                   &readLength);
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+        receivedLength += readLength;
     }
 
     return PLATFORM_ERR_OK;

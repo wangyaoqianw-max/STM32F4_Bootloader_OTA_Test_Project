@@ -3,33 +3,33 @@
 ## Context Metadata
 
 - Active Stage: `S04_Firmware_Image_Storage`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `codex/s04-firmware-image-storage`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - Handoff Sync Commit: `b02f6b39e043ee6fef743e9b900e349712aae5df`
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `Pending local commit`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Implementation Role / Ready to Execute`
-- Updated At: `2026-09-13`
+- Current Role: `Verification Role / Ready to Verify`
+- Updated At: `2026-09-14`
 
 ## Current Goal
 
 `S04_Firmware_Image_Storage` 的设计和 `implementation_plan.md` 已由 Project Owner 批准。
 
-阶段已正式通过实现门禁：
+阶段已完成实现、Host 验证、Keil 构建和 S04 主流程真实板测，当前进入验证交接：
 
 ```text
-DESIGN_APPROVED
-→ READY_FOR_IMPLEMENTATION
+READY_FOR_IMPLEMENTATION
+→ READY_FOR_VERIFICATION
 ```
 
-后续应严格按照 Implementation Plan 的 Task 1 → Task 8 施工；若实现过程中发现冻结设计存在冲突或缺失信息，应停止扩大范围并回到设计/阻塞处理，而不是自行改变数据契约。
+后续由 Verification Role 补充 Reset Persistence / Power-cycle Persistence，并据验证报告执行正式 Review；不得在缺少这两项证据时关闭阶段。
 
 ## Frozen S04 Design Summary
 
@@ -151,7 +151,7 @@ RTT + EasyLogger
 - Implementation Plan: `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
 - Review Skeleton: `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
-- Verification: `Not created yet`
+- Verification: `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
 
 ## Explicitly Deferred
 
@@ -165,14 +165,14 @@ RTT + EasyLogger
 
 ## Next Action
 
-Implementation Role 按以下入口执行：
+Verification Role 按以下入口执行：
 
 ```text
 00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md
 ```
 
-从 Task 1 开始，逐任务完成 Host Test / Build / Commit / Handoff 更新。全部实现完成后推进至 `READY_FOR_VERIFICATION`，不得由 Implementation Role 自行关闭阶段。
+读取验证报告和当前提交，补充 Reset Persistence / Power-cycle Persistence 后推进至 `READY_FOR_REVIEW`。
 
 ## Blockers
 
-当前无已知技术阻塞或流程门禁。
+当前无代码或构建阻塞；Reset Persistence / Power-cycle Persistence 尚未补测。

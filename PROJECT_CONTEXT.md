@@ -5,22 +5,22 @@
 ## Context Metadata
 
 - Active Stage: `S04_Firmware_Image_Storage`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `codex/s04-firmware-image-storage`
 - S04 Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - S04 Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - S04 Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - S04 Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - S04 Plan Owner Acceptance: `PASS`
-- S04 Implementation Commit: `Not created yet`
+- S04 Implementation Commit: `Pending local commit`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Implementation Role / Ready to Execute`
-- Updated At: `2026-09-13`
+- Current Role: `Verification Role / Ready to Verify`
+- Updated At: `2026-09-14`
 
 ## Current Goal
 
-S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准，阶段已通过实现门禁并进入 `READY_FOR_IMPLEMENTATION`。
+S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，阶段进入 `READY_FOR_VERIFICATION`。
 
 当前目标是严格按照 Task 1 → Task 8 完成 CRC Common、Firmware Image/Header、Metadata 双副本、Firmware Storage、PC pack tool、Keil 集成与 Slot B UART 板测。实现不得自行改变已冻结 Binary Contract 或扩展到 Ymodem / OTA Service / Bootloader 安装。
 
@@ -193,7 +193,7 @@ Board test 最终保留：
 - Implementation Plan: `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
 - Review Skeleton: `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
-- Verification: `Not created yet`
+- Verification: `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
 
 ## Required Reading For Implementation
 
@@ -223,20 +223,13 @@ Board test 最终保留：
 
 ## Next Action
 
-Implementation Role 读取正式 Implementation Plan，从 Task 1 开始执行：
+Verification Role 读取正式 Implementation Plan、handoff 和验证报告，补充 Reset Persistence / Power-cycle Persistence 后进入 Review：
 
 ```text
-CRC Common
-→ Firmware Format
-→ Metadata
-→ Storage
-→ PC pack tool
-→ Keil integration
-→ Slot B UART board test
-→ cleanup / verification handoff
+复核 Host Test、Keil Clean/Rebuild、RTT 实板主流程和持久性场景
 ```
 
-全部实现任务完成后将阶段推进到 `READY_FOR_VERIFICATION`；在 Verification Role 完成之前不得标记 S04 为 PASS/CLOSED。
+当前阶段已进入 `READY_FOR_VERIFICATION`；在 Verification Role 完成之前不得标记 S04 为 PASS/CLOSED。
 
 ## Prohibited Actions
 
