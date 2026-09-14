@@ -25,3 +25,40 @@ gcc -std=c99 -Wall -Wextra -Werror `
 ```
 
 S04 的完整 Firmware Storage 回归测试仍按 `04_Test/Host/S04_Firmware_Image_Storage/README.md` 执行。
+
+## YMODEM Parser Test
+
+```powershell
+gcc -std=c99 -Wall -Wextra -Werror `
+  -I04_Test/Host/S05_UART_Ymodem/stubs `
+  -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_common/crc `
+  -I03_Firmware/Application/OTA_APP/00_Config `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_ymodem `
+  -o "$env:TEMP\s05_ymodem_parser_host_test.exe" `
+  04_Test/Host/S05_UART_Ymodem/s05_ymodem_parser_host_test.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_common/crc/crc.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_ymodem/ymodem_parser.c
+
+& "$env:TEMP\s05_ymodem_parser_host_test.exe"
+```
+
+## YMODEM Receiver Test
+
+```powershell
+gcc -std=c99 -Wall -Wextra -Werror `
+  -I04_Test/Host/S05_UART_Ymodem/stubs `
+  -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_common/crc `
+  -I03_Firmware/Application/OTA_APP/00_Config `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_ymodem `
+  -o "$env:TEMP\s05_ymodem_receiver_host_test.exe" `
+  04_Test/Host/S05_UART_Ymodem/s05_ymodem_receiver_host_test.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_common/crc/crc.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_ymodem/ymodem_parser.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_ymodem/ymodem_receiver.c
+
+& "$env:TEMP\s05_ymodem_receiver_host_test.exe"
+```
