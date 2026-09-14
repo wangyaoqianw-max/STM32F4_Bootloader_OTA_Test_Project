@@ -78,7 +78,7 @@ S12  增加 OTA 安全机制实验
 | `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 Raw Driver；Read / Program / Erase / JEDEC ID / BUSY/WEL / 跨页和边界检查；RTT 板测；Raw Driver 稳定后评估 SFUD 接入 | S01；W25Q64 与 SPI2 硬件资料 | `CLOSED` | JEDEC ID 正确；Sector Erase、Page Program、Read Back、跨页和边界测试通过；Reset 后数据保持；错误返回可诊断；SPI 大长度语义返工通过 Host/Build/Hardware Regression；形成 SFUD 适配基线 |
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C `probe()`；AT24C02 Raw Driver；Random/Sequential Read；8 Byte Page 自动拆分写；ACK Polling；地址边界；RTT 板测 | S01；AT24C02 与 PB6/PB7 硬件资料 | `CLOSED` | 单字节/页内/跨页读写正确；`0xFF` 与越界保护正确；Reset/实际掉电后数据保持；错误返回与 RTT 日志可诊断 |
 | `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 的基础存储模型 | External Flash Slot A/B 分区；Firmware Image Header；Version / Size / CRC；Slot 状态；Metadata 双副本 Contract；镜像整体 CRC 校验；PC pack tool；UART test-only Slot B 注入；明确 Application/Bootloader 共用数据契约 | S02；S03 | `CLOSED` | Firmware Image / Slot / Header / CRC / Metadata 主链路、Host Test、Keil Build、真实板测和 Review 均通过；Reset / Power-cycle Persistence 保留为跨阶段延期回归项，必须在 S07 关闭前补测 |
-| `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | OTA 专用 UART；接收缓冲；Ymodem 协议状态机；文件名/大小处理；Packet CRC；Timeout / Cancel / Retry；数据流式写入指定 External Flash 区域 | S02；S04；UART 硬件资料；补充 Ymodem 参考资料 | `PLANNED` | PC 通过 Ymodem 发送 Firmware 文件；MCU 完整接收并写入 Flash；接收 Size 与 CRC 和源文件一致；中断/取消场景可恢复 |
+| `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | Tera Term Reference Sender；现有 UART DMA/RingBuffer；Ymodem Parser / Receiver / Sink；Block 0；SOH/STX；CRC-16；Timeout / Cancel / Retry；Firmware Storage Header/Payload 写入；RTT 板测 | S02；S04；现有通信 UART；Ymodem 高可信参考 | `ACTIVE` | Tera Term 通过 Ymodem 发送 S04 `.img`；MCU 完整接收并按 Slot 合同写入 Flash；`firmware_storage_validate_image()` 通过；中断/取消后可恢复并再次成功传输 |
 | `S06_RTOS_Runtime` | 建立 Application 后台 OTA 所需的并发运行环境 | 集成 FreeRTOS；确定 Task 划分；建立 Task Notification / Queue / Mutex 等必要 IPC；明确 UART 接收、Flash 写入、普通业务和日志之间的并发边界 | S01；S05 的通信模型已明确 | `PLANNED` | 正常业务与 Firmware 接收可以并发；无工作任务能够阻塞；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁或资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | 实现 OTA Service；选择 Inactive Slot；启动/控制 Ymodem；接收 Firmware Metadata；写入 Firmware；整包 CRC；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06；补齐 S04 deferred persistence regression | `PLANNED` | 完整执行 `PC → UART/Ymodem → External Flash → Firmware Validation → Metadata PENDING → Reset`；失败下载不破坏当前 Application 和 Confirmed Image；S04 Reset/Power-cycle Persistence 补测通过 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立 Bootloader 工程；Internal Flash Layout；Vector Table 合法性检查；MSP / Reset_Handler / VTOR；中断与外设清理；APP Jump；Boot Reason 日志 | S01；S04 的共用契约；Internal Flash Layout 设计 | `PLANNED` | Reset 后进入 Bootloader；无升级请求时能验证并稳定跳转到 Firmware V1.0；非法 APP 能被拒绝；跳转后 APP 中断工作正常 |
@@ -163,7 +163,7 @@ TRIAL
 
 - CK02AT Datasheet / API：延后至 S12；
 - LCD / CTP 详细资料：最晚 S11 前补充；
-- Ymodem 原始协议或高可信参考资料：最晚 S05 前补充；
+- Ymodem 原始协议或高可信参考资料：S05 设计期补充并用于实现核对；
 - HC-05 参数：只有后续决定增加 Bluetooth OTA Transport 时再进入正式 Stage；
 - SHA / AES / HMAC / Digital Signature 的具体算法和库选择：S12 再冻结。
 
@@ -185,52 +185,36 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## 6. Current Execution Checkpoint
 
-最近关闭阶段：
-
-```text
-S04_Firmware_Image_Storage
-Roadmap State: CLOSED
-Workflow Status: CLOSED
-Branch: main
-Review: PASS
-```
-
-S04 已交付：
-
-1. A/B Slot + Header Sector；
-2. Firmware Header V1 fixed binary contract；
-3. Version / Size / Header CRC / Payload CRC；
-4. CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC；
-5. AT24C02 Metadata 双副本、sequence、CRC、commit marker；
-6. Image Header / Metadata authority boundary；
-7. `service_firmware` / `service_common/crc`；
-8. PC `pack_firmware.py`；
-9. UART test-only Slot B injection；
-10. Host Test / Keil Build / RTT Board Test；
-11. Build / Flash / RTT automation；
-12. Final Review PASS。
-
-延期回归：
-
-```text
-Reset Persistence       PENDING
-Power-cycle Persistence PENDING
-Required before S07 closure
-```
-
-下一阶段：
+当前活动阶段：
 
 ```text
 S05_UART_Ymodem
-Roadmap State: PLANNED
-Next action: create Design Stage in a new discussion
+Roadmap State: ACTIVE
+Workflow Status: DRAFT
+Branch: codex/s05-uart-ymodem
+Role: Design Role / Awaiting Project Owner Approval
 ```
 
-S04 正式入口：
+S05 已形成：
 
-- `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
-- `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
-- `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-- `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
-- `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
+1. Ymodem Receiver-only / Single-file scope；
+2. Parser / Receiver / Sink 分层；
+3. CRC-16/XMODEM 复用；
+4. Block 0 / SOH / STX / ACK / NAK / CAN / EOT 处理方向；
+5. Timeout / Retry / Cancel 规则；
+6. `ymodem_config.h` 静态配置边界；
+7. Firmware Storage `write_payload()` / `write_header()` 扩展方向；
+8. compact `.img` → Header Sector + Payload Offset 的映射；
+9. Tera Term 5 Reference Sender + TTL/BAT 自动化方向；
+10. 现有 Build / Flash / RTT 工具链复用；
+11. Host Test + real board verification matrix；
+12. Design + Implementation Plan + Handoff 已创建。
+
+S05 正式入口：
+
+- `00_Project/03_Stages/S05_UART_Ymodem/design.md`
+- `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
+- `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
 - `00_Project/05_Status/current_status.md`
+
+下一步：Project Owner 审阅并批准 Design + Implementation Plan；批准后进入 `READY_FOR_IMPLEMENTATION`，从 Tera Term Ymodem Sender 自动化工具开始执行。
