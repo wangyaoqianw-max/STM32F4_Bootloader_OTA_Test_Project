@@ -3,18 +3,18 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `00cbd3a`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Implementation Role / Ready to execute Task 1`
+- Current Role: `Implementation Role / implementation complete, hardware verification pending`
 - Updated At: `2026-09-14`
 
 ## Current Goal
@@ -89,7 +89,7 @@ E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe
 05_Tools/Scripts/run_app_cycle.bat
 ```
 
-计划新增：
+已新增：
 
 ```text
 05_Tools/TeraTerm/send_ymodem.ttl
@@ -118,14 +118,8 @@ Not an S05 blocker; must be completed before S07 closure.
 
 ## Next Action
 
-Implementation Role reads the approved design / plan / handoff and begins:
-
-```text
-Task 1: Tera Term Ymodem sender automation entry
-```
-
-Task 1 first verifies local Tera Term macro invocation and parameter handling. A Ymodem transfer timeout before the MCU Receiver exists is expected and must not be reported as transfer PASS.
+确认 USART1 PA9/PA10 的 PC 串口物理连接后，重新执行真实 Tera Term YMODEM 传输，检查 Block 0、Payload、Header-last 和 Slot B `VALID` 证据。
 
 ## Blockers
 
-No known technical blocker.
+当前仅发现 `COM3` 为 J-Link CDC UART；发送尝试后板端 `received=0` 并按策略超时，尚未确认该端口与 USART1 PA9/PA10 的物理连接。代码验证已完成，硬件传输保持 `PENDING`。
