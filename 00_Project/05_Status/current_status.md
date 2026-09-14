@@ -13,7 +13,7 @@
 - Implementation Commit: `647f32f`
 - Toolchain Commit: `1f756f0`
 - Verification Commit: `72a7403`
-- Review Commit: `Not created yet`
+- Review Commit: `f2b6ed9`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
 - Current Role: `Review Role / Scoped Review Complete`
