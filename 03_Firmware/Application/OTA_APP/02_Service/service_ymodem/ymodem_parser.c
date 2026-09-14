@@ -23,6 +23,7 @@ static uint16_t ymodem_parser_get_data_size(uint8_t control)
            YMODEM_PACKET_DATA_SIZE_128 : YMODEM_PACKET_DATA_SIZE_1K;
 }
 
+/** @brief 将当前完整但校验失败的候选帧转换为 Parser 错误事件。 */
 static void ymodem_parser_emit_packet_error(
     ymodem_parser_t *parser,
     ymodem_parser_event_t *event,
@@ -35,6 +36,7 @@ static void ymodem_parser_emit_packet_error(
     ymodem_parser_reset(parser);
 }
 
+/** @brief 校验完整 Packet 并生成 Parser 输出事件。 */
 static void ymodem_parser_complete_packet(
     ymodem_parser_t *parser,
     ymodem_parser_event_t *event,

@@ -19,18 +19,20 @@
 //******************************** Includes *********************************//
 
 //******************************** Types ***********************************//
+/** @brief YMODEM Parser 的增量解析状态。 */
 typedef enum
 {
-    YMODEM_PARSER_STATE_WAIT_START = 0,
-    YMODEM_PARSER_STATE_COLLECT_PACKET
+    YMODEM_PARSER_STATE_WAIT_START = 0, /**< 等待 SOH、STX、EOT 或 CAN。 */
+    YMODEM_PARSER_STATE_COLLECT_PACKET /**< 正在收集当前 Packet 的剩余字节。 */
 } ymodem_parser_state_t;
 
+/** @brief YMODEM Parser 跨 UART read 调用保存的运行上下文。 */
 typedef struct
 {
-    ymodem_parser_state_t state;
-    uint16_t expectedLength;
-    uint16_t receivedLength;
-    uint8_t packetBuffer[YMODEM_PACKET_MAX_SIZE];
+    ymodem_parser_state_t state; /**< 当前增量解析状态。 */
+    uint16_t expectedLength;      /**< 当前 Packet 完整帧长度。 */
+    uint16_t receivedLength;      /**< 当前 Packet 已缓存长度。 */
+    uint8_t packetBuffer[YMODEM_PACKET_MAX_SIZE]; /**< 当前 Packet 原始帧 Buffer。 */
 } ymodem_parser_t;
 //******************************** Types ***********************************//
 
