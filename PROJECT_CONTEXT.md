@@ -4,154 +4,170 @@
 
 ## Context Metadata
 
-- Active Stage: `S04_Firmware_Image_Storage`
-- Active Stage Status: `CLOSED`
-- Branch: `main`
-- S04 Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
-- S04 Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
-- S04 Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
-- S04 Implementation Commit: `647f32f`
-- S04 Toolchain Commit: `1f756f0`
-- S04 Verification Commit: `72a7403`
-- S04 Scoped Review Commit: `f2b6ed9`
-- S04 Final Result: `CLOSED / PASS`
+- Active Stage: `S05_UART_Ymodem`
+- Active Stage Status: `DRAFT`
+- Branch: `codex/s05-uart-ymodem`
+- S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
+- S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
+- S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
+- S05 Handoff Commit: `68208b6355e2efb5f2020da9a2709c521cf6c110`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
-- Next Planned Stage: `S05_UART_Ymodem`
-- Current Role: `Ready for S05 Design`
+- S04 Final Result: `CLOSED / PASS`
+- Current Role: `Design Role / Awaiting Project Owner Approval`
 - Updated At: `2026-09-14`
 
 ## Current Goal
 
-S04 已正式关闭。下一轮工作从 `S05_UART_Ymodem` Design Stage 开始。
-
-S05 尚未创建正式 Stage 文档，因此当前不要直接施工 Ymodem 代码；应先读取现有 UART、S04 Firmware Contract、Roadmap 和协议参考，再进行设计讨论。
-
-## Stable Storage Baseline
-
-### W25Q64
-
-已关闭并验证：
-
-- 8 MiB address space；
-- JEDEC / SR1 / Read；
-- Page Program / Cross-page Write；
-- 4 KiB Sector Erase；
-- WREN / WEL / BUSY；
-- boundary protection；
-- real-board verification。
-
-### AT24C02
-
-已关闭并验证：
-
-- 256 Byte；
-- 7-bit address `0x50`；
-- read / write；
-- 8 Byte Page Split；
-- bounded ACK Polling；
-- boundary protection；
-- Raw Driver reset / power-cycle persistence 已在 S03 验证。
-
-## Stable S04 Firmware Contract
-
-### External Flash A/B
+完成 `S05_UART_Ymodem` 设计批准，然后按实施计划构建：
 
 ```text
-Slot A: 0x000000 ~ 0x07FFFF  (512 KiB)
-Slot B: 0x080000 ~ 0x0FFFFF  (512 KiB)
-Reserved: 0x100000 ~ 0x7FFFFF
+Tera Term Ymodem Sender
+        ↓
+service_uart
+        ↓
+ymodem_parser
+        ↓
+ymodem_receiver
+        ↓
+ymodem_sink
+        ↓
+S05 Flash Sink
+        ↓
+firmware_storage
+        ↓
+W25Q64 Slot B
 ```
 
-Per Slot：
+S05 建立可靠文件传输能力，不实现正式 OTA Service。
+
+## Required Reading
+
+进入 S05 Implementation Role 前按顺序读取：
+
+1. `AGENTS.md`
+2. `README.md`
+3. `PROJECT_CONTEXT.md`
+4. `00_Project/WORKFLOW.md`
+5. `00_Project/01_Requirements/项目需求V1.md`
+6. `00_Project/02_Roadmap/development_roadmap.md`
+7. `00_Project/03_Stages/S05_UART_Ymodem/design.md`
+8. `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
+9. `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+10. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
+11. `03_Firmware/AGENTS.md`
+12. current `service_uart`
+13. current `service_common/crc`
+14. current `service_firmware`
+
+## Stable S04 Inputs
+
+### External Flash
 
 ```text
+Slot A: 0x000000 ~ 0x07FFFF
+Slot B: 0x080000 ~ 0x0FFFFF
+
+Per Slot:
 +0x0000 ~ +0x0FFF : Header Sector
 +0x1000 ~          : Firmware Payload
 Payload capacity  : 508 KiB
 ```
 
-### Firmware Header V1
+### Firmware Image V1
 
-- 64 Byte；
-- little-endian；
-- Magic = `FWIM`；
-- Format Version = 1；
-- Firmware Version = major/minor/patch/reserved；
-- Image Size；
-- Payload CRC32；
-- Header CRC32；
-- Header CRC covers `0x00~0x3B`；
-- Payload CRC only covers actual Firmware Payload；
-- V1 reserved all zero；
-- persistent binary format uses fixed offsets, not raw C struct layout。
+- Header fixed 64 Byte；
+- Header / Payload CRC32；
+- Image Header is Version / Size / CRC authority；
+- `firmware_storage_validate_image()` is read-only validation；
+- CRC-16/XMODEM already exists in `service_common/crc`；
+- `pack_firmware.py` output is compact `[64 Byte Header][Payload]`。
 
-### CRC Common
+Important S05 mapping rule：
 
 ```text
-CRC-8/SMBUS
-CRC-16/XMODEM
-CRC-32/ISO-HDLC
+compact .img
+Header[64] + Payload
+
+must become
+
+Slot Header @ +0x0000
+Slot Payload @ +0x1000
 ```
 
-支持 one-shot + streaming；V1 software bitwise implementation。
+Do not write compact `.img` linearly from Slot Base.
 
-### Metadata V1
+## S05 Design Summary
+
+### Protocol Scope
+
+Supported：
+
+- Receiver only；
+- Single File；
+- SOH 128 Byte / STX 1024 Byte；
+- Block 0 filename/filesize；
+- CRC-16/XMODEM；
+- ACK / NAK；
+- duplicate / sequence handling；
+- timeout / retry；
+- CAN cancel；
+- EOT + Empty Block 0 end；
+- Parser / Receiver / Sink separation。
+
+Excluded：
+
+- STM32 Ymodem Sender；
+- Batch multi-file business；
+- OTA PENDING / inactive slot / reset；
+- FreeRTOS background OTA；
+- Bootloader installation；
+- Trial/Confirm/Rollback。
+
+### Firmware Storage Extension
+
+Planned APIs：
+
+```c
+firmware_storage_write_payload(...)
+firmware_storage_write_header(...)
+```
+
+S05 Flash Sink caches/validates Header, writes Payload first, commits Header last.
+
+### Config
+
+Ymodem timeout/retry/filename limits go to:
 
 ```text
-AT24C02
-0x00 ~ 0x7F : Copy A
-0x80 ~ 0xFF : Copy B
+03_Firmware/Application/OTA_APP/00_Config/ymodem_config.h
 ```
 
-机制：
+Protocol byte constants remain in `ymodem_def.h`.
+
+## PC / Local Tooling
+
+Reference Sender：Tera Term 5 YMODEM。
+
+Current machine executable confirmed by Project Owner：
 
 ```text
-Double Copy
-+ uint32_t sequence
-+ CRC-32/ISO-HDLC
-+ commit marker
+E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe
 ```
 
-S04 Slot State：
+This path must only be configured in ignored:
 
 ```text
-EMPTY
-VALID
-INVALID
+05_Tools/Config/toolchain.local.bat
 ```
 
-Authority：
+Planned committed tools：
 
 ```text
-Image Header
-→ actual Firmware Version / Size / CRC
-
-EEPROM Metadata
-→ active / confirmed / slot state / confirmed_version
+05_Tools/TeraTerm/send_ymodem.ttl
+05_Tools/Scripts/send_ymodem.bat
 ```
 
-`firmware_storage_validate_image()` 为只读验证；I/O failure 不等于 image invalid。
-
-## Application Modules Available To S05
-
-```text
-03_Firmware/Application/OTA_APP/02_Service/
-├─ service_uart/
-├─ service_common/
-│  └─ crc/
-└─ service_firmware/
-   ├─ firmware_def
-   ├─ firmware_version
-   ├─ firmware_image
-   ├─ firmware_metadata
-   └─ firmware_storage
-```
-
-S04 没有把单一 Application 消费者提前移动到 `03_Firmware/Shared`。等 S08 Bootloader 成为第二个真实消费者后，再评估抽取稳定纯格式/算法代码。
-
-## Application Toolchain
-
-统一入口：
+Existing stable toolchain remains the board-test base：
 
 ```text
 05_Tools/Scripts/build_app.bat
@@ -161,100 +177,53 @@ S04 没有把单一 Application 消费者提前移动到 `03_Firmware/Shared`。
 05_Tools/Firmware/pack_firmware.py
 ```
 
-机器相关路径由被 Git 忽略的 `05_Tools/Config/toolchain.local.bat` 管理。
+S05 board flow：
 
-## S04 Verification / Review Result
+```text
+Build
+→ Flash
+→ Reset / Run
+→ RTT Capture
+→ Tera Term Ymodem Send
+→ RTT protocol/storage evidence
+→ firmware_storage_validate_image(Slot B)
+```
 
-已完成并通过：
+## Verification Direction
 
-- CRC Host Test；
-- Firmware Format Host Test；
-- Firmware Storage Host Test；
-- Python pack tool test；
-- Python ↔ C binary contract；
-- Keil normal / clean rebuild；
-- Slot B Firmware 主流程真实板测；
-- Payload streaming CRC；
-- Header-last commit；
-- full image re-read validation；
-- Metadata double-copy commit and recovery；
-- J-Link flash / RTT tool smoke；
-- Review。
+Host Test：Parser framing/fragmentation/CRC, Block 0 parsing, Receiver state machine, duplicate/sequence/retry/cancel, Firmware Storage write boundary mapping.
 
-正式文件：
+Board Test：real Tera Term transfer, Slot B validation, interruption/cancel recovery, second transfer after failure.
 
-- Design: `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
-- Implementation Plan: `00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md`
-- Handoff: `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-- Review: `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
-- Verification: `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
+RTT must provide deterministic evidence for filename/filesize, progress, retry/error summary, EOT/session completion, Header/Payload commit and final Firmware validation.
 
 ## Deferred Regression
 
-以下两项仍未执行，必须保持真实状态：
+S04 cross-stage items remain:
 
 ```text
 Reset Persistence       PENDING / DEFERRED
 Power-cycle Persistence PENDING / DEFERRED
 ```
 
-Project Owner 已批准将其从 S04 关闭阻塞项调整为跨阶段延期回归项。
+They do not block S05/S06 and must be completed before S07 closure.
 
-硬门禁：
+## Formal S05 Documents
 
-```text
-Must be completed before:
-S07_OTA_Service_V1 stage closure
-```
-
-S05 / S06 可正常推进。
-
-## S05 Design Entry
-
-下一阶段：
-
-`S05_UART_Ymodem`
-
-第一轮 Design Discussion 优先读取：
-
-1. `AGENTS.md`
-2. `README.md`
-3. `PROJECT_CONTEXT.md`
-4. `00_Project/WORKFLOW.md`
-5. `00_Project/01_Requirements/项目需求V1.md`
-6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-8. `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`
-9. `03_Firmware/AGENTS.md`
-10. current `service_uart`；
-11. current `service_common/crc`；
-12. current `service_firmware`；
-13. Ymodem 原始协议或高可信参考资料。
-
-S05 需要正式讨论：
-
-- Ymodem protocol boundary；
-- module layer / ownership；
-- Block 0 / SOH / STX / EOT / ACK / NAK / CAN；
-- CRC-16/XMODEM reuse；
-- timeout / retry / cancel；
-- 128 Byte / 1 KiB packet；
-- raw `.bin` vs S04 `.img`；
-- Ymodem 与 `firmware_storage` 的边界；
-- PC test tool；
-- board verification cases。
-
-## Explicitly Deferred Beyond S05
-
-- Application OTA Service；
-- Bootloader Internal Flash installation；
-- `PENDING / TRIAL / CONFIRMED / ROLLBACK` OTA workflow；
-- IWDG / failure counter；
-- AES / SHA / HMAC / Digital Signature；
-- Device Manager / generic Storage / NVM Manager。
+- Design: `00_Project/03_Stages/S05_UART_Ymodem/design.md`
+- Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
+- Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
 
 ## Next Action
 
-开启新对话，进入 `S05_UART_Ymodem` Design Stage。
+Project Owner reviews Design + Implementation Plan.
 
-不要直接施工代码；先按仓库当前状态和 Ymodem 参考资料完成设计讨论。
+If approved:
+
+```text
+DRAFT
+→ DESIGN_APPROVED
+→ READY_FOR_IMPLEMENTATION
+```
+
+Implementation starts with Task 1: Tera Term Ymodem sender automation entry.
