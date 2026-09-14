@@ -302,3 +302,72 @@ platform_error_t firmware_storage_erase_slot(
 
     return PLATFORM_ERR_OK;
 }
+
+platform_error_t firmware_storage_write_payload(
+    firmware_storage_t *storage,
+    firmware_slot_t slot,
+    uint32_t payloadOffset,
+    const uint8_t *data,
+    uint32_t length)
+{
+    uint32_t slotBase;
+    platform_error_t result;
+
+    if (data == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (length == 0U) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    result = firmware_storage_check_ready(storage);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = firmware_storage_get_slot_base(slot, &slotBase);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if ((payloadOffset > FIRMWARE_SLOT_PAYLOAD_CAPACITY) ||
+        (length > (FIRMWARE_SLOT_PAYLOAD_CAPACITY - payloadOffset))) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    return platform_w25q64_write(
+        storage->flash,
+        slotBase + FIRMWARE_PAYLOAD_OFFSET + payloadOffset,
+        data,
+        length);
+}
+
+platform_error_t firmware_storage_write_header(
+    firmware_storage_t *storage,
+    firmware_slot_t slot,
+    const uint8_t rawHeader[FIRMWARE_IMAGE_HEADER_SIZE])
+{
+    uint32_t slotBase;
+    platform_error_t result;
+
+    if (rawHeader == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    result = firmware_storage_check_ready(storage);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = firmware_storage_get_slot_base(slot, &slotBase);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return platform_w25q64_write(
+        storage->flash,
+        slotBase,
+        rawHeader,
+        FIRMWARE_IMAGE_HEADER_SIZE);
+}

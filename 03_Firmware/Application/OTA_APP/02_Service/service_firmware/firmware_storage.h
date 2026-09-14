@@ -113,6 +113,34 @@ platform_error_t firmware_storage_erase_slot(
     firmware_storage_t *storage,
     firmware_slot_t slot,
     uint32_t payloadSize);
+/**
+ * @brief 向指定 Slot 的 Payload 区域写入连续数据
+ * @param[in,out] storage : 已初始化的 Storage Service
+ * @param[in] slot : 目标 Slot，只允许 Slot A 或 Slot B
+ * @param[in] payloadOffset : 相对 Payload 起点的偏移，不是 Slot 基址偏移
+ * @param[in] data : 待写入数据；不得为空
+ * @param[in] length : 写入长度，必须位于 Payload 容量内
+ * @return PLATFORM_ERR_OK 成功；其他值表示参数、状态或底层写入错误。
+ * @note 本接口不执行擦除、不修改 Metadata，也不执行 Image Validation。
+ */
+platform_error_t firmware_storage_write_payload(
+    firmware_storage_t *storage,
+    firmware_slot_t slot,
+    uint32_t payloadOffset,
+    const uint8_t *data,
+    uint32_t length);
+/**
+ * @brief 向指定 Slot 的 Header Sector 写入固定长度 Header
+ * @param[in,out] storage : 已初始化的 Storage Service
+ * @param[in] slot : 目标 Slot，只允许 Slot A 或 Slot B
+ * @param[in] rawHeader : 固定 64 Byte Header；不得为空
+ * @return PLATFORM_ERR_OK 成功；其他值表示参数、状态或底层写入错误。
+ * @note 本接口不执行擦除、不修改 Metadata，也不验证 Header；Header-last 由上层编排保证。
+ */
+platform_error_t firmware_storage_write_header(
+    firmware_storage_t *storage,
+    firmware_slot_t slot,
+    const uint8_t rawHeader[FIRMWARE_IMAGE_HEADER_SIZE]);
 
 //******************************** Declaring *******************************//
 
