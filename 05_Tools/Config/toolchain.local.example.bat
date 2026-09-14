@@ -28,3 +28,6 @@ set "RTT_CAPTURE_SECONDS=10"
 
 REM Reserved for later host-side tools.
 REM set "PYTHON_EXE=python"
+
+REM Tera Term 5
+set "TERA_TERM_EXE="

@@ -1,0 +1,43 @@
+; S05 Tera Term YMODEM sender
+;
+; Parameters:
+;   param2: serial port number
+;   param3: baud rate
+;   param4: firmware image path
+
+if paramcnt != 4 then
+    setexitcode 2
+    end
+endif
+
+str2int serialPort param2
+if result != 1 then
+    setexitcode 2
+    end
+endif
+
+str2int baudRate param3
+if result != 1 then
+    setexitcode 2
+    end
+endif
+
+sprintf2 connectCommand '/C=%d /BAUD=%d /DS /V' serialPort baudRate
+connect connectCommand
+if result != 2 then
+    setexitcode 3
+    closett
+    end
+endif
+
+ymodemsend param4
+transferResult = result
+
+if transferResult = 1 then
+    setexitcode 0
+else
+    setexitcode 1
+endif
+
+closett
+end
