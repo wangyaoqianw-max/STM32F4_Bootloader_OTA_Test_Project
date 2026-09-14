@@ -84,6 +84,9 @@ RTT       = Channel 0
 - 将 Logger 诊断信息保存到 `06_Output/Logs/OTA_APP_rtt_logger.log`；
 - 无 RTT 数据时返回失败，便于 Agent 识别“烧录成功但没有运行时证据”的情况。
 
+`rtt_capture.ps1` 使用 .NET 进程接口启动 Logger，兼容从 `cmd.exe` 调用
+Windows PowerShell 时同时存在 `PATH` / `Path` 环境变量的本机环境。
+
 ## One-command local cycle
 
 统一开发闭环入口：
@@ -108,6 +111,21 @@ Keil Build
 ```
 
 这个脚本只证明本地工具链动作执行成功，不等价于阶段级硬件验证 PASS。具体功能正确性仍必须依据当前 Stage 的测试条件、运行时数据检查和验证报告判断。
+
+## Firmware Image pack tool
+
+打包入口：
+
+```bat
+python 05_Tools\Firmware\pack_firmware.py ^
+    --input 03_Firmware\Application\OTA_APP\MDK-ARM\Objects\OTA_APP.bin ^
+    --output 06_Output\Artifacts\OTA_APP.img ^
+    --version 1.1.0
+```
+
+工具输出固定的 `[64 Byte Header][Payload]` 镜像；Header 使用 S04 Firmware
+Image V1 fixed-offset little-endian 合同。`test_pack_firmware.py` 用于 Python
+侧单元测试，生成镜像的兼容性由 S04 C Host Test 复核。
 
 ## Agent usage
 

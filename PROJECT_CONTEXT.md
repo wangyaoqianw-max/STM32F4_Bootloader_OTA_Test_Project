@@ -6,13 +6,14 @@
 
 - Active Stage: `S04_Firmware_Image_Storage`
 - Active Stage Status: `READY_FOR_VERIFICATION`
-- Branch: `codex/s04-firmware-image-storage`
+- Branch: `main`
 - S04 Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - S04 Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - S04 Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - S04 Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - S04 Plan Owner Acceptance: `PASS`
 - S04 Implementation Commit: `647f32f`
+- S04 Toolchain Commit: `1f756f0`
 - Last Closed Stage: `S03_EEPROM_Storage`
 - Last Closed Stage Status: `CLOSED`
 - Current Role: `Verification Role / Ready to Verify`
@@ -20,7 +21,7 @@
 
 ## Current Goal
 
-S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，阶段进入 `READY_FOR_VERIFICATION`。
+S04 的设计合同与正式 `implementation_plan.md` 已由 Project Owner 批准。Task 1-8 实现、Host 验证、Keil 构建和 S04 主流程真实板测已完成，Application 工具链也已完成本机冒烟验证，阶段仍为 `READY_FOR_VERIFICATION`。
 
 当前目标是严格按照 Task 1 → Task 8 完成 CRC Common、Firmware Image/Header、Metadata 双副本、Firmware Storage、PC pack tool、Keil 集成与 Slot B UART 板测。实现不得自行改变已冻结 Binary Contract 或扩展到 Ymodem / OTA Service / Bootloader 安装。
 
@@ -187,6 +188,20 @@ Board test 最终保留：
 
 验收后退出 production startup 和正式 Keil target。
 
+## Application Toolchain
+
+本机统一入口位于 `05_Tools`：
+
+```text
+05_Tools/Scripts/build_app.bat       Keil OTA_APP 编译
+05_Tools/Scripts/flash_app.bat      J-Link SWD 烧录并运行
+05_Tools/Scripts/rtt_capture.bat    RTT Up Channel 0 采集
+05_Tools/Scripts/run_app_cycle.bat  编译 → 烧录 → RTT 闭环
+05_Tools/Firmware/pack_firmware.py  Firmware Image V1 打包
+```
+
+工具链配置使用被 Git 忽略的 `05_Tools/Config/toolchain.local.bat`；真实机器路径不写入生产代码或提交内容。2026-09-14 已验证 Keil 编译、J-Link 烧录、RTT Logger 连接和闭环执行，证据详见 S04 验证报告与 handoff。
+
 ## Formal S04 Documents
 
 - Design: `00_Project/03_Stages/S04_Firmware_Image_Storage/design.md`
@@ -223,10 +238,10 @@ Board test 最终保留：
 
 ## Next Action
 
-Verification Role 读取正式 Implementation Plan、handoff 和验证报告，补充 Reset Persistence / Power-cycle Persistence 后进入 Review：
+Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项不据此标记为 PASS，阶段仍保留 `READY_FOR_VERIFICATION`，后续如需关闭 S04 需补充真实板测证据后再进入 Review：
 
 ```text
-复核 Host Test、Keil Clean/Rebuild、RTT 实板主流程和持久性场景
+复核 Host Test、Keil Clean/Rebuild、RTT 实板主流程；Reset / Power-cycle 持久性证据仍缺失
 ```
 
 当前阶段已进入 `READY_FOR_VERIFICATION`；在 Verification Role 完成之前不得标记 S04 为 PASS/CLOSED。

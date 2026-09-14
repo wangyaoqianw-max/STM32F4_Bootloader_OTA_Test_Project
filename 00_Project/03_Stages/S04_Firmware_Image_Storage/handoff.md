@@ -4,20 +4,21 @@
 
 - Stage: `S04_Firmware_Image_Storage`
 - Status: `READY_FOR_VERIFICATION`
-- Branch: `codex/s04-firmware-image-storage`
+- Branch: `main`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - Plan Owner Acceptance: `PASS`
 - Implementation Commit: `647f32f`
+- Toolchain Commit: `1f756f0`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-14`
 
 ## Current Objective
 
-S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准；Task 1-8 实现、Host 验证、Keil 构建和主流程实板验证已完成，阶段进入 `READY_FOR_VERIFICATION`。
+S04 设计与 `implementation_plan.md` 均已由 Project Owner 批准；Task 1-8 实现、Host 验证、Keil 构建和主流程实板验证已完成，Application 工具链冒烟验证也已完成，阶段仍为 `READY_FOR_VERIFICATION`。
 
 Implementation Role 可以开始施工，但必须严格遵循冻结设计、计划任务顺序与范围边界。若实现发现设计冲突，不得自行改协议或扩展 OTA 范围，应先记录并回到设计/阻塞处理。
 
@@ -319,6 +320,28 @@ Review                 NOT_STARTED
 - Task 7 — S04 UART → Slot B Board Test：已完成 UART Service 生命周期修正、USART1 IDLE 中断接入、64 Byte Header 分片接收、固定 Slot B 擦除、Payload 流式写入与 CRC、Header 最后提交、整镜像回读，以及 Metadata 双提交和单副本破坏恢复。干净复位/重新烧录后的 RTT 实板主流程 PASS，证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md` 和 `06_Output/Logs/S04_board_test_rtt_clean.log`。
 - Task 8 — Board-test cleanup：已移除 `PROJECT_ENABLE_S04_BOARD_TEST`、Application 启动路径中的板测分支、正式 Keil Target 中的板测源文件及其 include path；板测源码保留在 `04_Test/Board/S04_Firmware_Image_Storage/`。
 
+## Application Toolchain Handoff
+
+统一入口及职责如下：
+
+| 入口 | 职责 | 主要输出 |
+| --- | --- | --- |
+| `05_Tools/Scripts/build_app.bat` | 调用 Keil 编译 `OTA_APP` Target | `06_Output/Logs/OTA_APP_build.log` |
+| `05_Tools/Scripts/flash_app.bat` | 使用 J-Link / SWD 下载并运行 `OTA_APP.hex` | `06_Output/Logs/OTA_APP_flash.log` |
+| `05_Tools/Scripts/rtt_capture.bat [seconds]` | 使用 J-Link RTT Logger 采集 Up Channel 0 | `OTA_APP_rtt.log`、`OTA_APP_rtt_logger.log` |
+| `05_Tools/Scripts/run_app_cycle.bat [seconds]` | 执行 Build → Flash → RTT Capture | 上述日志 |
+| `05_Tools/Firmware/pack_firmware.py` | 生成 S04 `[64 Byte Header][Payload]` 镜像 | 用户指定 `.img` |
+
+本机配置从 `05_Tools/Config/toolchain.local.example.bat` 复制为被 Git 忽略的
+`toolchain.local.bat`，填写 `KEIL_UV4`、`JLINK_EXE`、`JLINK_RTT_LOGGER`、
+`JLINK_DEVICE`、`JLINK_IF`、`JLINK_SPEED`、`JLINK_RTT_CHANNEL` 和
+`RTT_CAPTURE_SECONDS`。真实路径不得提交。
+
+2026-09-14 工具冒烟结果：`build_app.bat` 编译 0 Error / 0 Warning；
+`flash_app.bat` 成功连接 STM32F411CE 并完成下载校验；`run_app_cycle.bat 10`
+返回 0，RTT Logger 找到 Control Block 并捕获 415 Byte 启动日志。该结果只证明
+工具链动作可用，不替代 S04 Reset / Power-cycle Persistence 验证。
+
 ## Task 7 Hardware Execution Gate
 
 当前固件使用 `115200 8N1`，测试输入仍为 `[64 Byte Header][image_size Byte Payload]` raw binary。由于冻结流程要求先验证 Header、再擦除 Slot B，且 S04 不实现流控或正式 Transport，人工发送时必须：
@@ -335,6 +358,6 @@ Review                 NOT_STARTED
 
 ## Next Action
 
-Verification Role 读取本交接、实现提交和验证报告，补充 Reset Persistence / Power-cycle Persistence 后执行正式 Review；当前不得将阶段标记为 `CLOSED`。
+Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项仍保持 `PENDING`，后续如需关闭 S04，Verification Role 必须补充真实板测证据后再执行正式 Review；当前不得将阶段标记为 `CLOSED`。
 
 Task 1 → Task 8 已完成；Implementation Role 不填写最终 Verification PASS，也不关闭 Stage。后续由 Verification/Review Role 根据报告和剩余持久性场景决定阶段结论。

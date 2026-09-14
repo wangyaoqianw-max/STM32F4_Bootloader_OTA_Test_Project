@@ -4,13 +4,14 @@
 
 - Active Stage: `S04_Firmware_Image_Storage`
 - Status: `READY_FOR_VERIFICATION`
-- Branch: `codex/s04-firmware-image-storage`
+- Branch: `main`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
 - Handoff Sync Commit: `b02f6b39e043ee6fef743e9b900e349712aae5df`
 - Review Skeleton Commit: `39602db5997c3277ff764d4a85ac029799b7ee85`
 - Implementation Commit: `647f32f`
+- Toolchain Commit: `1f756f0`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S03_EEPROM_Storage`
@@ -29,7 +30,7 @@ READY_FOR_IMPLEMENTATION
 → READY_FOR_VERIFICATION
 ```
 
-后续由 Verification Role 补充 Reset Persistence / Power-cycle Persistence，并据验证报告执行正式 Review；不得在缺少这两项证据时关闭阶段。
+Project Owner 本轮决定暂不执行 Reset Persistence / Power-cycle Persistence；两项仍记录为 `PENDING`，不得在缺少真实板测证据时关闭阶段。
 
 ## Frozen S04 Design Summary
 
@@ -171,8 +172,22 @@ Verification Role 按以下入口执行：
 00_Project/03_Stages/S04_Firmware_Image_Storage/implementation_plan.md
 ```
 
-读取验证报告和当前提交，补充 Reset Persistence / Power-cycle Persistence 后推进至 `READY_FOR_REVIEW`。
+读取验证报告和当前提交；当前工具链冒烟验证已完成。若后续需要关闭 S04，仍需补充 Reset Persistence / Power-cycle Persistence 后推进至 `READY_FOR_REVIEW`。
 
 ## Blockers
 
-当前无代码或构建阻塞；Reset Persistence / Power-cycle Persistence 尚未补测。
+当前无代码或构建阻塞；Reset Persistence / Power-cycle Persistence 尚未补测，Project Owner 已决定本轮暂不执行。
+
+## Application Toolchain
+
+已纳入版本管理的统一入口：
+
+| 工具 | 用途 | 输出 |
+| --- | --- | --- |
+| `05_Tools/Scripts/build_app.bat` | Keil OTA_APP 编译 | `06_Output/Logs/OTA_APP_build.log` |
+| `05_Tools/Scripts/flash_app.bat` | J-Link SWD 烧录并运行 | `06_Output/Logs/OTA_APP_flash.log` |
+| `05_Tools/Scripts/rtt_capture.bat [seconds]` | RTT Channel 0 采集 | `OTA_APP_rtt.log`、`OTA_APP_rtt_logger.log` |
+| `05_Tools/Scripts/run_app_cycle.bat [seconds]` | 编译 → 烧录 → RTT 闭环 | 上述日志 |
+| `05_Tools/Firmware/pack_firmware.py` | 生成 `[64 Byte Header][Payload]` | 用户指定 `.img` |
+
+机器相关路径仅写入被 Git 忽略的 `05_Tools/Config/toolchain.local.bat`。

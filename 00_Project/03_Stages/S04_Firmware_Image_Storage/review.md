@@ -4,7 +4,7 @@
 
 - Stage: `S04_Firmware_Image_Storage`
 - Status: `NOT_STARTED`
-- Branch: `codex/s04-firmware-image-storage`
+- Branch: `main`
 - Baseline Commit: `245cd3ee550a2c2cc016e6a197609d712ef1e893`
 - Design Commit: `e701910a0452952c632ad8352c6973eedf06b283`
 - Implementation Plan Commit: `bc5360fa40188c189a9e19b91a29ad5d266d8220`
