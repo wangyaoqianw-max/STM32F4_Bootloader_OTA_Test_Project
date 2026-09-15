@@ -6,7 +6,7 @@
 
 - Active Stage: `S05_UART_Ymodem`
 - Active Stage Status: `CLOSED`
-- Branch: `codex/s05-uart-ymodem`
+- Branch: `main`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
@@ -14,46 +14,22 @@
 - S05 Implementation Commit: `00cbd3a`
 - S05 Verification Commit: `1d092de`
 - S05 Review Commit: `1d092de`
-- Last Closed Stage: `S04_Firmware_Image_Storage`
-- S04 Final Result: `CLOSED / PASS`
-- Current Role: `Review Role / S05 verification and review passed`
+- S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
+- Last Closed Stage: `S05_UART_Ymodem`
+- S05 Final Result: `CLOSED / PASS`
+- Next Planned Stage: `S06_RTOS_Runtime`
+- Current Role: `Stage Closed / Ready for S06 Design`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
-按照 Project Owner 已批准的 S05 Design + Implementation Plan 构建：
+S05 已正式关闭并合并到 `main`。下一轮工作从 `S06_RTOS_Runtime` Design Stage 开始。
 
-```text
-Tera Term Ymodem Sender
-        ↓
-service_uart
-        ↓
-ymodem_parser
-        ↓
-ymodem_receiver
-        ↓
-ymodem_sink
-        ↓
-S05 Flash Sink
-        ↓
-firmware_storage
-        ↓
-W25Q64 Slot B
-```
+当前不要直接施工 S06 代码。先读取现有 RTOS、UART、Ymodem、Firmware Storage 和任务结构，重新冻结 Application Runtime / Concurrency Model，再生成 S06 `design.md` 与 `implementation_plan.md`。
 
-S05 建立可靠文件传输能力，不实现正式 OTA Service。
+## Required Reading For S06 Design
 
-设计门禁已经通过：
-
-```text
-DRAFT
-→ DESIGN_APPROVED
-→ READY_FOR_IMPLEMENTATION
-```
-
-## Required Reading
-
-进入 S05 Implementation Role 后按顺序读取：
+建议按顺序读取：
 
 1. `AGENTS.md`
 2. `README.md`
@@ -61,16 +37,18 @@ DRAFT
 4. `00_Project/WORKFLOW.md`
 5. `00_Project/01_Requirements/项目需求V1.md`
 6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S05_UART_Ymodem/design.md`
-8. `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
-9. `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
-10. `00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md`
-11. `03_Firmware/AGENTS.md`
-12. current `service_uart`
-13. current `service_common/crc`
-14. current `service_firmware`
+7. `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+8. `00_Project/03_Stages/S05_UART_Ymodem/review.md`
+9. `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
+10. `03_Firmware/AGENTS.md`
+11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+12. current App / FreeRTOS task initialization
+13. current `service_uart`
+14. current `service_ymodem`
+15. current `service_firmware`
+16. current Platform RTOS abstraction
 
-## Stable S04 Inputs
+## Stable S04 Storage / Firmware Contract
 
 ### External Flash
 
@@ -88,97 +66,92 @@ Payload capacity  : 508 KiB
 
 - Header fixed 64 Byte；
 - Header / Payload CRC32；
-- Image Header is Version / Size / CRC authority；
-- `firmware_storage_validate_image()` is read-only validation；
-- CRC-16/XMODEM already exists in `service_common/crc`；
-- `pack_firmware.py` output is compact `[64 Byte Header][Payload]`。
+- Image Header 是实际 Firmware Version / Size / CRC 权威来源；
+- `firmware_storage_validate_image()` 为只读验证；
+- `pack_firmware.py` 输出 compact `.img = [64 Byte Header][Payload]`；
+- Slot 中必须映射为 Header Sector + Payload Offset，不能线性写入 compact `.img`。
 
-Important S05 mapping rule：
+### Metadata
 
-```text
-compact .img
-Header[64] + Payload
+AT24C02 Metadata 继续使用双副本 + sequence + CRC + commit marker。S05 没有修改 OTA Metadata，也没有建立 `PENDING` 状态。
 
-must become
+## Stable S05 Ymodem Capability
 
-Slot Header @ +0x0000
-Slot Payload @ +0x1000
-```
-
-Do not write compact `.img` linearly from Slot Base.
-
-## S05 Approved Design Summary
-
-### Protocol Scope
-
-Supported：
-
-- Receiver only；
-- Single File；
-- SOH 128 Byte / STX 1024 Byte；
-- Block 0 filename/filesize；
-- CRC-16/XMODEM；
-- ACK / NAK；
-- duplicate / sequence handling；
-- timeout / retry；
-- CAN cancel；
-- EOT + Empty Block 0 end；
-- Parser / Receiver / Sink separation。
-
-Excluded：
-
-- STM32 Ymodem Sender；
-- Batch multi-file business；
-- OTA PENDING / inactive slot / reset；
-- FreeRTOS background OTA；
-- Bootloader installation；
-- Trial/Confirm/Rollback。
-
-### Firmware Storage Extension
-
-Approved APIs：
-
-```c
-firmware_storage_write_payload(...)
-firmware_storage_write_header(...)
-```
-
-S05 Flash Sink caches/validates Header, writes Payload first, commits Header last.
-
-### Config
-
-Ymodem timeout/retry/filename limits go to:
+### Architecture
 
 ```text
-03_Firmware/Application/OTA_APP/00_Config/ymodem_config.h
+PC Sender
+   ↓
+USART1 / DMA / RingBuffer
+   ↓
+service_uart
+   ↓
+ymodem_parser
+   ↓
+ymodem_receiver
+   ↓
+ymodem_sink
+   ↓
+Firmware Storage
 ```
 
-Protocol byte constants remain in `ymodem_def.h`.
+稳定边界：
+
+- `service_uart` 拥有 UART DMA / RingBuffer / TX / error / data-loss；
+- `ymodem_parser` 负责 Packet framing / block complement / CRC-16；
+- `ymodem_receiver` 负责 Block 0、Block sequence、ACK/NAK、retry、timeout、cancel、EOT；
+- `ymodem_sink` 只定义 begin/write/end/abort 生命周期；
+- Ymodem 不感知 Slot、EEPROM Metadata、PENDING、Reset；
+- Packet CRC 复用 CRC-16/XMODEM；
+- Firmware Storage 提供 `write_payload()` / `write_header()`；
+- Header-last commit 保证失败传输不会提交新的有效 Header。
+
+### Board Verification Result
+
+最终 Tera Term 真实板测：
+
+```text
+file_size / received          55884 / 55884
+packets received / accepted  57 / 57
+bytes received / written      55884 / 55884
+retry                         0
+UART dropped / errors         0 / 0
+Payload written               55820
+Header commit                 1
+Slot B validation             VALID
+final result                  PASS
+```
+
+中止传输后 `header_commit=0`，随后重新建立 Session 可以再次成功传输并得到 VALID。
+
+正式证据：
+
+- `00_Project/03_Stages/S05_UART_Ymodem/design.md`
+- `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
+- `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+- `00_Project/03_Stages/S05_UART_Ymodem/review.md`
+- `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
 
 ## PC / Local Tooling
 
-Reference Sender：Tera Term 5 YMODEM；S05 板级测试默认使用仓库内的 Tera Term 自动化入口。
+默认板级 Ymodem Sender：Tera Term 5。
 
-Current machine executable confirmed by Project Owner：
-
-```text
-E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe
-```
-
-This path must only be configured in ignored:
+仓库入口：
 
 ```text
-05_Tools/Config/toolchain.local.bat
-```
-
-Planned committed tools：
-
-```text
-05_Tools/TeraTerm/send_ymodem.ttl
 05_Tools/Scripts/send_ymodem.bat
 ```
 
-Existing stable toolchain remains the board-test base：
+Python Sender：
+
+```text
+05_Tools/Scripts/send_ymodem_python.bat
+05_Tools/Ymodem/
+```
+
+Python Sender 定位为 Host Test、Agent 自动化和协议诊断辅助，不替代 S05 默认 Tera Term 板级验收入口。
+
+Application 稳定工具链：
 
 ```text
 05_Tools/Scripts/build_app.bat
@@ -188,56 +161,83 @@ Existing stable toolchain remains the board-test base：
 05_Tools/Firmware/pack_firmware.py
 ```
 
-S05 board flow：
+真实 Ymodem 板测的已验证顺序：
 
 ```text
-Build
-→ pack Application .bin to Firmware Image .img
-→ devices --json，确认 CH340 COM
-→ 先启动 Python Sender 或 Tera Term，打开串口并等待 C
-→ Flash + Reset / Run
-→ YMODEM Block 0 / 数据 Blocks / EOT 完成
-→ RTT Capture
-→ RTT protocol/storage evidence
-→ firmware_storage_validate_image(Slot B)
+准备合法 .img
+→ 先启动 Sender / Tera Term 并打开 CH340 串口等待 'C'
+→ 再 Flash / Reset MCU
+→ Ymodem transfer
+→ RTT capture
+→ Firmware Storage validation
 ```
 
-S05 当前板级传输不得直接发送原始 Application `.bin`。必须使用 `05_Tools/Firmware/pack_firmware.py` 生成的 `.img = 64 Byte Header + Payload`。Sender/Tera Term 必须在烧录或复位目标板之前打开 CH340 串口；当前实测 CH340 为 `COM10`，未接线的 J-Link CDC `COM3` 不得使用。
+如果先 Reset MCU、后打开 Sender，可能错过初始 `'C'` 并表现为 Receiver Timeout；这是已确认的工具调用顺序约束，不是协议故障。
 
-## Verification Direction
+## Current RTOS Reality Before S06
 
-Host Test：Parser framing/fragmentation/CRC, Block 0 parsing, Receiver state machine, duplicate/sequence/retry/cancel, Firmware Storage write boundary mapping.
+早期 Roadmap 将 S06 描述为“集成 FreeRTOS”，该前提已经过时。
 
-Board Test：real Tera Term transfer, Slot B validation, interruption/cancel recovery, second transfer after failure.
+当前 Application 已经执行 FreeRTOS Kernel 初始化和调度，并存在正式任务基础。S05 板测还实际使用过独立 `s05Ymodem` Thread：该线程绑定为 `service_uart` owner，并作为 RingBuffer 的单 task-context Consumer 执行完整 Ymodem / Storage 流程。
 
-RTT must provide deterministic evidence for filename/filesize, progress, retry/error summary, EOT/session completion, Header/Payload commit and final Firmware validation.
+这只是一项 S05 板测实现，不代表 S06 的正式 Runtime 设计已经冻结。
+
+S06 应重新讨论并冻结：
+
+```text
+Task Topology
++ Task Lifecycle
++ UART Consumer Ownership
++ OTA/Ymodem Task Ownership
++ Task Notification / Queue / Event
++ Mutex / Shared Resource Policy
++ W25Q64 / Firmware Storage Serialization
++ Blocking API Policy
++ Timeout / Cancel / Error Recovery
++ Normal Business vs Background OTA Concurrency
++ Logging Resource Contention
+```
+
+避免再次“移植一遍 FreeRTOS”，也不要直接把 S05 测试线程原样升级成生产任务。
+
+## S06 Design Questions
+
+第一轮 Design Discussion 至少需要回答：
+
+1. `appSystem` 的长期职责是什么；
+2. 是否建立独立 OTA Task，还是由已有任务驱动 OTA Service；
+3. Ymodem Receiver 的生命周期由谁创建、启动、取消和销毁；
+4. `service_uart` ownerThread 是否需要支持重新绑定，还是构造后固定；
+5. UART RingBuffer 单 Consumer 如何成为正式约束；
+6. Firmware Storage / W25Q64 是否需要 Mutex，锁放在哪一层；
+7. OTA 下载期间普通业务允许继续执行到什么程度；
+8. Flash erase/program 的长延迟如何影响调度；
+9. Task Notification、Queue、Event Group 分别解决什么实际问题；
+10. S06 最终应向 S07 提供什么稳定 Runtime API / 运行合同。
 
 ## Deferred Regression
 
-S04 cross-stage items remain:
+S04 跨阶段延期项继续保持：
 
 ```text
 Reset Persistence       PENDING / DEFERRED
 Power-cycle Persistence PENDING / DEFERRED
 ```
 
-They do not block S05/S06 and must be completed before S07 closure.
+它们不阻塞 S06，但必须在 `S07_OTA_Service_V1` 关闭前完成真实硬件验证。
 
-## Formal S05 Documents
+## Explicitly Deferred Beyond S06
 
-- Design: `00_Project/03_Stages/S05_UART_Ymodem/design.md`
-- Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
-- Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
-- Review: `00_Project/03_Stages/S05_UART_Ymodem/review.md`
+- Application OTA Service 完整业务状态机；
+- Inactive Slot / PENDING / Reset；
+- Bootloader Internal Flash installation；
+- Trial / Confirm / Rollback；
+- IWDG failure counter；
+- SHA / AES / HMAC / Digital Signature；
+- Device Manager / generic Storage Manager。
 
-## Completion Summary
+## Next Action
 
-2026-09-15 已使用 CH340 `COM10` 按“先启动 Tera Term 宏并打开串口，再烧录/复位目标板”的顺序完成真实 YMODEM 传输。Tera Term 宏返回 0；RTT 记录 `55884/55884`、`retry=0`、`dropped=0`、`header_commit=1`、Slot B `validation=2`，最终会话结果为 PASS。
+开启 `S06_RTOS_Runtime` 设计讨论。
 
-同日完成中途停止传输回归：接收 `12288/55884` 字节后进入超时错误，`header_commit=0`；随后重新复位并使用 Tera Term 宏连续恢复传输，Slot B 再次校验通过。
-
-S05 已完成 Verification / Review 并关闭。后续默认使用 `05_Tools/Scripts/send_ymodem.bat` 调用 Tera Term；Python Sender 仅作为 Host/诊断辅助工具。下一阶段为 `S06_RTOS_Runtime`。
-
-## Blockers
-
-S05 无阶段内阻塞项。S04 的 Reset Persistence、Power-cycle Persistence 仍按既定计划延期到 `S07_OTA_Service_V1` 关闭前完成，不改变 S05 关闭结论。
+先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。
