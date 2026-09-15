@@ -5,16 +5,19 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - S05 Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
+- S05 Implementation Commit: `00cbd3a`
+- S05 Verification Commit: `1d092de`
+- S05 Review Commit: `1d092de`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - S04 Final Result: `CLOSED / PASS`
-- Current Role: `Implementation Role / Ready to execute Task 1`
-- Updated At: `2026-09-14`
+- Current Role: `Review Role / S05 verification and review passed`
+- Updated At: `2026-09-15`
 
 ## Current Goal
 
@@ -154,7 +157,7 @@ Protocol byte constants remain in `ymodem_def.h`.
 
 ## PC / Local Tooling
 
-Reference Sender：Tera Term 5 YMODEM。
+Reference Sender：Tera Term 5 YMODEM；S05 板级测试默认使用仓库内的 Tera Term 自动化入口。
 
 Current machine executable confirmed by Project Owner：
 
@@ -189,13 +192,17 @@ S05 board flow：
 
 ```text
 Build
-→ Flash
-→ Reset / Run
+→ pack Application .bin to Firmware Image .img
+→ devices --json，确认 CH340 COM
+→ 先启动 Python Sender 或 Tera Term，打开串口并等待 C
+→ Flash + Reset / Run
+→ YMODEM Block 0 / 数据 Blocks / EOT 完成
 → RTT Capture
-→ Tera Term Ymodem Send
 → RTT protocol/storage evidence
 → firmware_storage_validate_image(Slot B)
 ```
+
+S05 当前板级传输不得直接发送原始 Application `.bin`。必须使用 `05_Tools/Firmware/pack_firmware.py` 生成的 `.img = 64 Byte Header + Payload`。Sender/Tera Term 必须在烧录或复位目标板之前打开 CH340 串口；当前实测 CH340 为 `COM10`，未接线的 J-Link CDC `COM3` 不得使用。
 
 ## Verification Direction
 
@@ -221,13 +228,16 @@ They do not block S05/S06 and must be completed before S07 closure.
 - Design: `00_Project/03_Stages/S05_UART_Ymodem/design.md`
 - Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+- Review: `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 
-## Next Action
+## Completion Summary
 
-Implementation Role begins with:
+2026-09-15 已使用 CH340 `COM10` 按“先启动 Tera Term 宏并打开串口，再烧录/复位目标板”的顺序完成真实 YMODEM 传输。Tera Term 宏返回 0；RTT 记录 `55884/55884`、`retry=0`、`dropped=0`、`header_commit=1`、Slot B `validation=2`，最终会话结果为 PASS。
 
-```text
-Task 1: Tera Term Ymodem sender automation entry
-```
+同日完成中途停止传输回归：接收 `12288/55884` 字节后进入超时错误，`header_commit=0`；随后重新复位并使用 Tera Term 宏连续恢复传输，Slot B 再次校验通过。
 
-Task 1 verifies local macro invocation and parameters first; a transfer timeout before MCU Receiver implementation is an expected intermediate result, not a hardware PASS.
+S05 已完成 Verification / Review 并关闭。后续默认使用 `05_Tools/Scripts/send_ymodem.bat` 调用 Tera Term；Python Sender 仅作为 Host/诊断辅助工具。下一阶段为 `S06_RTOS_Runtime`。
+
+## Blockers
+
+S05 无阶段内阻塞项。S04 的 Reset Persistence、Power-cycle Persistence 仍按既定计划延期到 `S07_OTA_Service_V1` 关闭前完成，不改变 S05 关闭结论。

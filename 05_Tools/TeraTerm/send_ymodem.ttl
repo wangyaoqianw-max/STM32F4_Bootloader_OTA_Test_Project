@@ -1,0 +1,46 @@
+; S05 Tera Term YMODEM sender
+;
+; Parameters:
+;   param2: serial port number
+;   param3: baud rate
+;   param4: firmware image path
+
+if paramcnt != 4 then
+    setexitcode 2
+    end
+endif
+
+str2int serialPort param2
+if result != 1 then
+    setexitcode 2
+    end
+endif
+
+str2int baudRate param3
+if result != 1 then
+    setexitcode 2
+    end
+endif
+
+sprintf2 connectCommand '/C=%d /BAUD=%d /CDATABIT=8 /CPARITY=none /CSTOPBIT=1 /CFLOWCTRL=none /DS /V' serialPort baudRate
+connect connectCommand
+if result != 2 then
+    setexitcode 3
+    closett
+    end
+endif
+
+; The target UART uses no modem control lines.
+setdtr 0
+setrts 0
+ymodemsend param4
+transferResult = result
+
+if transferResult = 1 then
+    setexitcode 0
+else
+    setexitcode 1
+endif
+
+closett
+end

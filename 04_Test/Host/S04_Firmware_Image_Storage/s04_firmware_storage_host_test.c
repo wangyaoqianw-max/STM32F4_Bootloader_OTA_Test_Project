@@ -36,6 +36,27 @@ platform_error_t platform_w25q64_read(
     return PLATFORM_ERR_OK;
 }
 
+platform_error_t platform_w25q64_write(
+    platform_w25q64_t *flash,
+    uint32_t address,
+    const uint8_t *data,
+    platform_size_t dataLength)
+{
+    uint32_t offset;
+
+    if ((flash == NULL) || (data == NULL) || (address < flash->baseAddress)) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    offset = address - flash->baseAddress;
+    if ((offset > flash->sizeBytes) || (dataLength > (flash->sizeBytes - offset))) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    (void)memcpy(&flash->memory[offset], data, dataLength);
+    return PLATFORM_ERR_OK;
+}
+
 platform_error_t platform_w25q64_sector_erase(platform_w25q64_t *flash, uint32_t sectorAddress)
 {
     uint32_t offset;

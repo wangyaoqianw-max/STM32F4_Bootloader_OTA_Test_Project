@@ -3,11 +3,11 @@
 ## 1. Stage Metadata
 
 - Stage: `S05_UART_Ymodem`
-- Status: `DRAFT`
+- Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Prerequisites: `S02_External_Flash_Driver` CLOSED, `S04_Firmware_Image_Storage` CLOSED
-- Updated At: `2026-09-14`
+- Updated At: `2026-09-15`
 
 ## 2. Goal
 
@@ -36,7 +36,7 @@ W25Q64 Slot B
 阶段结束时必须能够证明：
 
 - MCU 能与独立 PC Ymodem Sender 正常握手；
-- Block 0 文件名和文件大小可安全解析；
+- Block 0 文件名、文件大小、修改时间和文件权限可安全解析；
 - SOH 128 Byte / STX 1 KiB Packet 均可接收；
 - Packet CRC-16/XMODEM、Block Number、ACK / NAK、Retry、Timeout、Cancel、EOT 可正确处理；
 - 完整 `.img` 可按 S04 Slot 物理布局写入 External Flash；
@@ -52,7 +52,7 @@ S05 建立的是“可靠文件运输能力”，不建立正式 OTA 业务状�
 - Application Ymodem Receiver；
 - Single-file Ymodem Session；
 - Receiver 主动发送 `'C'` 请求 CRC 模式；
-- Block 0 filename / filesize；
+- Block 0 filename / filesize / modification time / file mode；
 - SOH 128 Byte Packet；
 - STX 1024 Byte Packet；
 - Block Number / complement validation；
@@ -283,16 +283,20 @@ Block Number 按 8-bit 自然回卷；不使用文件级 uint8 序号限制文�
 Block 0 Data：
 
 ```text
-filename '\0' filesize [optional fields...]
+filename '\0' [space] filesize [space] moddate [space] mode [space] serial
 ```
 
 S05 必须：
 
 - 在 Packet Data 长度范围内 bounded search 第一个 `\0`；
 - filename 不允许越过 `YMODEM_CFG_FILENAME_MAX_LEN`；
+- 接受文件名后的一个可选空格；
 - filesize 按 ASCII 十进制安全转换为 `uint32_t`；
-- 拒绝非数字、空 size、溢出、0 Byte 和超过允许大小的文件；
-- 忽略 S05 不使用的 timestamp / mode 等后续可选字段；
+- moddate 和 mode 按 ASCII 八进制安全转换为 `uint32_t`；
+- S05 要求 filesize、moddate 和 mode 按顺序出现，不允许跳过中间字段；
+- serial 为可选 ASCII 八进制字段，出现时必须完整解析；
+- 拒绝非数字、非法进制字符、空字段、数值溢出、0 Byte 和超过允许大小的文件；
+- 严格校验已定义字段，最后一个字段之后除 `\0` 外不得出现未解析数据；
 - Empty Block 0 只在 `WAIT_END_HEADER` 状态表示 Session End。
 
 S05 Single-file 模式收到第二个非空 Block 0 时拒绝继续接收第二文件。
@@ -365,7 +369,7 @@ IDLE
  ▼
 WAIT_HEADER
  │ valid Block 0
- │ parse filename/filesize
+ │ parse full Block 0 metadata
  │ sink.begin()
  │ ACK + 'C'
  ▼
@@ -632,9 +636,13 @@ ymodem_receiver_t
 │  ├─ parser
 │  ├─ expectedBlock
 │  ├─ retryCount
-│  ├─ fileSize
+│  ├─ block0Metadata
+│  │  ├─ filename
+│  │  ├─ fileSize
+│  │  ├─ modificationTime
+│  │  ├─ fileMode
+│  │  └─ serialNumber
 │  ├─ receivedSize
-│  ├─ filename
 │  ├─ fileStarted
 │  └─ lastError
 └─ statistics
@@ -673,7 +681,7 @@ cancel_count
 RTT / EasyLogger 应输出：
 
 - Session begin；
-- filename / filesize；
+- Block 0 完整元数据（filename / filesize / moddate / mode / serial）；
 - Header validation；
 - transfer progress；
 - retry reason；
@@ -714,7 +722,7 @@ RTT / EasyLogger 应输出：
 
 1. Tera Term 发送合法 `.img`；
 2. STM32 完成 Ymodem Session；
-3. filename / filesize 正确；
+3. Block 0 完整元数据正确；
 4. SOH / STX 可兼容；
 5. Slot B Header / Payload 落在正确物理区域；
 6. `firmware_storage_validate_image()` 返回 VALID；
@@ -787,3 +795,27 @@ Header is committed last.
 Tera Term 5 is the independent PC reference Sender.
 Machine-specific Tera Term path remains local-only.
 ```
+
+## 21. Board Test Task Ownership Adjustment (2026-09-15)
+
+S05 Board Test uses a dedicated `s05Ymodem` Platform Thread.
+
+```text
+appSystem
+  └─ create s05Ymodem and keep the application task alive
+
+s05Ymodem
+  ├─ initialize Storage and UART Service
+  ├─ own service_uart consumer context
+  ├─ run YMODEM Receiver state machine
+  ├─ write Slot B through S05 Flash Sink
+  └─ validate the final image
+```
+
+The `service_uart` RingBuffer remains a single-consumer path: UART event delivery is performed from ISR context, and `s05Ymodem` performs the read and YMODEM feed. The UART read loop and YMODEM parser are not assigned to separate competing consumers.
+
+## 22. Final Stage Closure (2026-09-15)
+
+S05 Verification / Review 已通过。默认板测发送端为 `05_Tools/Scripts/send_ymodem.bat` 调用 Tera Term 5；必须先打开 CH340 串口并进入等待 `C` 状态，再通过 J-Link 烧录或复位目标板。Python Sender 保留为 Host 和诊断辅助工具，不作为 S05 默认板测入口。
+
+最终正常传输、传输中止后的恢复传输以及 Slot B 镜像校验结果见 `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`。S05 板测入口已从正式 Application 启动和 Keil 生产 target 移除，仍保留在 `04_Test/Board/S05_UART_Ymodem` 供后续回归使用。

@@ -15,7 +15,7 @@
 - Stage: `S05_UART_Ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
-- Status: `DRAFT` until Project Owner approves Design + Plan.
+- Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 
 ## Global Constraints
@@ -33,6 +33,10 @@
 - Tera Term 本机路径只允许写入被 Git 忽略的 `05_Tools/Config/toolchain.local.bat`；不得写死到提交脚本。
 - 修改 `03_Firmware` 前必须读取 `03_Firmware/AGENTS.md`、嵌入式 C 规范和相关接口文档。
 - 每个任务结束执行 `git diff --check`；Host Test 能覆盖的模块先 Host Test，再 Keil Build；编译通过不等于硬件验收通过。
+
+## 2026-09-15 Protocol Profile Amendment
+
+根据 Project Owner 要求，S05 Block 0 采用与 Tera Term 实际发送一致的完整字段配置：文件名、十进制文件大小、八进制修改时间、八进制文件权限；发送方序号字段可选但出现时必须解析。Receiver 不再静默忽略已定义的后续字段，字段顺序不可跳过，未知尾部数据拒绝。
 
 ---
 
@@ -92,7 +96,7 @@
 - Consumes: `toolchain.local.bat` machine-local `TERA_TERM_EXE`, COM port, baud rate, firmware path.
 - Produces: stable command `send_ymodem.bat <COMx> <baud> <firmware.img>` with process exit success/failure suitable for Codex/local Agent invocation.
 
-- [ ] **Step 1: Extend local tool template with Tera Term placeholder.**
+- [x] **Step 1: Extend local tool template with Tera Term placeholder.**
 
 ```bat
 REM Tera Term 5
@@ -101,7 +105,7 @@ set "TERA_TERM_EXE="
 
 Do not place the actual machine path in the committed example.
 
-- [ ] **Step 2: Add `send_ymodem.bat` argument/config validation.**
+- [x] **Step 2: Add `send_ymodem.bat` argument/config validation.**
 
 Required behavior:
 
@@ -113,7 +117,7 @@ firmware file missing -> exit nonzero
 otherwise invoke Tera Term macro and propagate success/failure
 ```
 
-- [ ] **Step 3: Add Tera Term 5 TTL macro.**
+- [x] **Step 3: Add Tera Term 5 TTL macro.**
 
 Macro must:
 
@@ -129,7 +133,7 @@ exit deterministically
 
 Do not automate GUI mouse clicks.
 
-- [ ] **Step 4: Configure the ignored local file on the real machine.**
+- [x] **Step 4: Configure the ignored local file on the real machine.**
 
 ```bat
 set "TERA_TERM_EXE=E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe"
@@ -137,7 +141,7 @@ set "TERA_TERM_EXE=E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe"
 
 This step is local-only and must not be committed.
 
-- [ ] **Step 5: Smoke-test invocation before MCU Receiver exists.**
+- [x] **Step 5: Smoke-test invocation before MCU Receiver exists.**
 
 Expected:
 
@@ -149,7 +153,7 @@ Ymodem transfer eventually fails/times out because no valid Receiver handshake e
 failure is reported as expected, not treated as PASS
 ```
 
-- [ ] **Step 6: Run `git diff --check` and commit.**
+- [x] **Step 6: Run `git diff --check` and commit.**
 
 Suggested commit: `tools: add Tera Term ymodem sender entry`
 
@@ -179,7 +183,7 @@ platform_error_t firmware_storage_write_header(
     const uint8_t rawHeader[FIRMWARE_IMAGE_HEADER_SIZE]);
 ```
 
-- [ ] **Step 1: Write failing Host Tests.**
+- [x] **Step 1: Write failing Host Tests.**
 
 Cover:
 
@@ -193,11 +197,11 @@ null/uninitialized/invalid slot -> reject
 header write -> exactly 64 bytes at slotBase
 ```
 
-- [ ] **Step 2: Compile tests and confirm failure before implementation.**
+- [x] **Step 2: Compile tests and confirm failure before implementation.**
 
 Use the same host stub pattern already established by S04 Firmware Storage tests.
 
-- [ ] **Step 3: Implement minimal write APIs using existing W25Q64 Raw Driver.**
+- [x] **Step 3: Implement minimal write APIs using existing W25Q64 Raw Driver.**
 
 Rules:
 
@@ -208,11 +212,11 @@ no image validation side effect
 no Ymodem concepts
 ```
 
-- [ ] **Step 4: Run Host Tests and S04 Firmware Storage regression tests.**
+- [x] **Step 4: Run Host Tests and S04 Firmware Storage regression tests.**
 
 Expected: S05 tests PASS and existing S04 storage tests remain PASS.
 
-- [ ] **Step 5: Run `git diff --check` and commit.**
+- [x] **Step 5: Run `git diff --check` and commit.**
 
 Suggested commit: `feat: add firmware storage write paths`
 
@@ -253,7 +257,7 @@ platform_error_t ymodem_parser_feed_byte(
     ymodem_packet_t *packet);
 ```
 
-- [ ] **Step 1: Write parser Host Tests first.**
+- [x] **Step 1: Write parser Host Tests first.**
 
 Vectors must include:
 
@@ -272,13 +276,13 @@ CRC error resets whole candidate packet without searching payload for new STX
 
 Use existing `crc16_xmodem_calculate()` to construct valid packets in the test.
 
-- [ ] **Step 2: Confirm test compile/run fails before parser implementation.**
+- [x] **Step 2: Confirm test compile/run fails before parser implementation.**
 
-- [ ] **Step 3: Implement protocol constants and static config.**
+- [x] **Step 3: Implement protocol constants and static config.**
 
 Initial config constants must be named, not magic literals. Timeout/retry values are provisional until Tera Term board integration validates them.
 
-- [ ] **Step 4: Implement two-state incremental parser.**
+- [x] **Step 4: Implement two-state incremental parser.**
 
 ```text
 WAIT_START
@@ -287,11 +291,11 @@ COLLECT_PACKET
 
 Maximum packet buffer = 1029 bytes. CRC bytes are big-endian on wire. CRC covers Data only.
 
-- [ ] **Step 5: Run parser Host Tests.**
+- [x] **Step 5: Run parser Host Tests.**
 
 Expected: all vectors PASS.
 
-- [ ] **Step 6: Run `git diff --check` and commit.**
+- [x] **Step 6: Run `git diff --check` and commit.**
 
 Suggested commit: `feat: add ymodem packet parser`
 
@@ -323,13 +327,13 @@ typedef struct {
 
 Receiver must expose init/start/process-or-feed/cancel/status/statistics APIs consistent with `design.md`; exact signatures are frozen in the implementation before production code changes and then used unchanged by Board Test.
 
-- [ ] **Step 1: Write Receiver Host Test harness with fake Transport TX capture and fake Sink.**
+- [x] **Step 1: Write Receiver Host Test harness with fake Transport TX capture and fake Sink.**
 
 Test normal single-file flow:
 
 ```text
 start -> emits 'C'
-Block0(filename,size) -> sink.begin -> ACK + 'C'
+Block0(full metadata) -> sink.begin -> ACK + 'C'
 Block1..N -> sink.write valid bytes -> ACK
 last packet padding not passed to sink
 EOT -> NAK
@@ -337,7 +341,7 @@ second EOT -> ACK + 'C'
 empty Block0 -> sink.end -> ACK -> FINISHED
 ```
 
-- [ ] **Step 2: Add failure-path tests.**
+- [x] **Step 2: Add failure-path tests.**
 
 Cover:
 
@@ -358,7 +362,7 @@ received bytes < file size when EOT arrives
 single-file mode rejects second non-empty Block0
 ```
 
-- [ ] **Step 3: Implement minimum Receiver state machine.**
+- [x] **Step 3: Implement minimum Receiver state machine.**
 
 Frozen states:
 
@@ -376,15 +380,15 @@ ERROR
 
 ACK must only be emitted after successful Sink commit for the current data chunk.
 
-- [ ] **Step 4: Implement timeout hooks/counters without binding to HAL tick.**
+- [x] **Step 4: Implement timeout hooks/counters without binding to HAL tick.**
 
 Use existing project time/OS abstraction available to Application; do not introduce a second timer subsystem. Packet collection timeout must reset an incomplete parser candidate before Receiver requests retransmission.
 
-- [ ] **Step 5: Run Receiver + Parser Host Tests.**
+- [x] **Step 5: Run Receiver + Parser Host Tests.**
 
 Expected: all normal and fault vectors PASS.
 
-- [ ] **Step 6: Run `git diff --check` and commit.**
+- [x] **Step 6: Run `git diff --check` and commit.**
 
 Suggested commit: `feat: add ymodem receiver state machine`
 
@@ -400,7 +404,7 @@ Suggested commit: `feat: add ymodem receiver state machine`
 - Consumes: `ymodem_sink_t`, `firmware_storage_erase_slot()`, `firmware_storage_write_payload()`, `firmware_storage_write_header()`, `firmware_image_validate_header()`.
 - Produces: S05 Board-only sink fixed to Slot B.
 
-- [ ] **Step 1: Define Sink context.**
+- [x] **Step 1: Define Sink context.**
 
 Context must track:
 
@@ -415,7 +419,7 @@ payload written bytes
 started/failed state
 ```
 
-- [ ] **Step 2: Implement `begin()`.**
+- [x] **Step 2: Implement `begin()`.**
 
 Rules:
 
@@ -426,7 +430,7 @@ do not mark Metadata VALID/PENDING
 prepare context; actual erase can wait until Header is fully parsed so payload size is known
 ```
 
-- [ ] **Step 3: Implement `write()` as a stream transformer.**
+- [x] **Step 3: Implement `write()` as a stream transformer.**
 
 Behavior:
 
@@ -441,7 +445,7 @@ never write padding beyond Ymodem fileSize
 
 If one incoming chunk crosses byte 63/64 boundary, split it correctly between Header accumulation and Payload write.
 
-- [ ] **Step 4: Implement `end()`.**
+- [x] **Step 4: Implement `end()`.**
 
 Only if:
 
@@ -452,11 +456,11 @@ payloadWritten == header.imageSize
 
 then write the 64-byte Header last using `firmware_storage_write_header()`.
 
-- [ ] **Step 5: Implement `abort()`.**
+- [x] **Step 5: Implement `abort()`.**
 
 Do not commit Header. Do not modify Metadata. Clear runtime context so a new transfer can start.
 
-- [ ] **Step 6: Review failure atomicity and commit.**
+- [x] **Step 6: Review failure atomicity and commit.**
 
 Expected invariant: any failure before `end()` leaves no newly committed valid Header for the incomplete transfer.
 
@@ -475,11 +479,11 @@ Suggested commit: `test: add S05 ymodem flash sink`
 - Consumes: existing communication UART construction, `service_uart`, `service_ymodem`, S05 Flash Sink, RTT/EasyLogger, Firmware Storage.
 - Produces: board endpoint that waits for Tera Term Ymodem transfer and logs deterministic verification evidence.
 
-- [ ] **Step 1: Initialize existing board services using S04 patterns.**
+- [x] **Step 1: Initialize existing board services using S04 patterns.**
 
 Reuse existing communication UART, Storage SPI/W25Q64, EEPROM/Firmware Storage and owner thread conventions. Do not duplicate HAL handles or invent a second UART architecture.
 
-- [ ] **Step 2: Start Ymodem Receiver and print one deterministic readiness marker.**
+- [x] **Step 2: Start Ymodem Receiver and print one deterministic readiness marker.**
 
 Example semantic marker:
 
@@ -489,12 +493,12 @@ Example semantic marker:
 
 The PC-side operator/automation can use this as evidence that MCU reached receiver-ready state; do not require RTT and COM port to share the same channel.
 
-- [ ] **Step 3: Add meaningful protocol logs without per-byte spam.**
+- [x] **Step 3: Add meaningful protocol logs without per-byte spam.**
 
 Required evidence:
 
 ```text
-filename / fileSize
+Block 0 metadata: filename / fileSize / moddate / mode / serial
 accepted packet/progress summary
 retry/CRC/sequence/duplicate counters
 cancel/error reason
@@ -503,11 +507,11 @@ Flash payload/header commit result
 firmware_storage_validate_image() result
 ```
 
-- [ ] **Step 4: On FINISHED, validate Slot B using existing `firmware_storage_validate_image()`.**
+- [x] **Step 4: On FINISHED, validate Slot B using existing `firmware_storage_validate_image()`.**
 
 A Ymodem FINISHED event alone is not stage PASS. Board path must distinguish transport success from Firmware Image validation success.
 
-- [ ] **Step 5: Build using the existing unified tool.**
+- [x] **Step 5: Build using the existing unified tool.**
 
 ```bat
 05_Tools\Scripts\build_app.bat
@@ -515,7 +519,7 @@ A Ymodem FINISHED event alone is not stage PASS. Board path must distinguish tra
 
 Expected: normal build and clean rebuild succeed with no unexpected target drift.
 
-- [ ] **Step 6: Flash/capture smoke using existing toolchain.**
+- [x] **Step 6: Flash/capture smoke using existing toolchain.**
 
 ```bat
 05_Tools\Scripts\run_app_cycle.bat 10
@@ -523,7 +527,7 @@ Expected: normal build and clean rebuild succeed with no unexpected target drift
 
 Expected: Build/Flash/RTT tooling works and logs show `YMODEM_READY`; this is toolchain evidence, not full Ymodem PASS.
 
-- [ ] **Step 7: Run `git diff --check` and commit.**
+- [x] **Step 7: Run `git diff --check` and commit.**
 
 Suggested commit: `test: integrate S05 ymodem board endpoint`
 
@@ -539,15 +543,15 @@ Suggested commit: `test: integrate S05 ymodem board endpoint`
 - Use: `05_Tools/Scripts/send_ymodem.bat`
 - Evidence later goes to `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md` during Verification Role, not during implementation.
 
-- [ ] **Step 1: Generate a known S04 Firmware Image V1 `.img`.**
+- [x] **Step 1: Generate a known S04 Firmware Image V1 `.img`.**
 
 Use the existing packer; record source `.bin`, version and resulting file size.
 
-- [ ] **Step 2: Build and flash S05 Board Test with existing tools.**
+- [x] **Step 2: Build and flash S05 Board Test with existing tools.**
 
-- [ ] **Step 3: Start RTT capture and confirm `YMODEM_READY`.**
+- [x] **Step 3: Start RTT capture and confirm `YMODEM_READY`.**
 
-- [ ] **Step 4: Invoke the new Tera Term sender tool.**
+- [x] **Step 4: Invoke the new Tera Term sender tool.**
 
 ```bat
 05_Tools\Scripts\send_ymodem.bat COMx 115200 path\to\firmware.img
@@ -555,12 +559,12 @@ Use the existing packer; record source `.bin`, version and resulting file size.
 
 Expected: Tera Term completes with sender success.
 
-- [ ] **Step 5: Inspect RTT evidence.**
+- [x] **Step 5: Inspect RTT evidence.**
 
 Required:
 
 ```text
-Block0 filename and file size match sender
+Block0 full metadata matches sender
 received file bytes == .img file size
 payload bytes == Header.imageSize
 Ymodem state FINISHED
@@ -569,13 +573,13 @@ Flash Header committed last
 firmware_storage_validate_image(Slot B) == VALID
 ```
 
-- [ ] **Step 6: Cross-check file/image CRC semantics.**
+- [x] **Step 6: Cross-check file/image CRC semantics.**
 
 Do not compare PC CRC32 of compact `.img` directly to the non-contiguous Slot address range as if they were identical layouts. Use S04 Header/Payload validation contract: Header CRC valid and Payload CRC32 from Header matches Flash Payload.
 
 - [ ] **Step 7: If interoperability differs at EOT/CAN details, adjust only inside frozen Receiver compatibility boundary and rerun Host regression + board transfer.**
 
-- [ ] **Step 8: Commit any integration-only fixes after regression passes.**
+- [x] **Step 8: Commit any integration-only fixes after regression passes.**
 
 Suggested commit: `fix: stabilize Tera Term ymodem interoperability`
 
@@ -590,7 +594,7 @@ Suggested commit: `fix: stabilize Tera Term ymodem interoperability`
 **Interfaces:**
 - Produces: repeatable local sequence built on existing Build/Flash/RTT tools plus `send_ymodem.bat`.
 
-- [ ] **Step 1: Test local/remote cancel path.**
+- [x] **Step 1: Test local/remote cancel path.**
 
 Expected:
 
@@ -601,15 +605,15 @@ Header is not committed
 next new transfer can start without reset-induced corruption
 ```
 
-- [ ] **Step 2: Test transfer interruption/timeout.**
+- [x] **Step 2: Test transfer interruption/timeout.**
 
 Stop sender mid-transfer or otherwise create a repeatable interruption. Expected: bounded retry/timeout, no endless wait, no valid Header commit.
 
-- [ ] **Step 3: Test second transfer after a failed transfer.**
+- [x] **Step 3: Test second transfer after a failed transfer.**
 
 Expected: subsequent normal Tera Term transfer succeeds and validates Slot B.
 
-- [ ] **Step 4: Confirm duplicate/retry counters through Host Test; do not require unsafe manual serial corruption if Tera Term cannot inject it deterministically.**
+- [x] **Step 4: Confirm duplicate/retry counters through Host Test; do not require unsafe manual serial corruption if Tera Term cannot inject it deterministically.**
 
 Hardware evidence is required for interruption/cancel/recovery; exact CRC-corruption injection may remain Host Test evidence if no deterministic sender facility exists.
 
@@ -628,11 +632,11 @@ build_app.bat
 
 Do not claim the wrapper itself interprets protocol correctness unless it actually parses deterministic result markers.
 
-- [ ] **Step 6: Run full Host regression, Keil clean rebuild and `git diff --check`.**
+- [x] **Step 6: Run full Host regression, Keil clean rebuild and `git diff --check`.**
 
-- [ ] **Step 7: Remove S05 Board Test from normal production startup/target if the repository stage-test convention requires test-only integration after verification.**
+- [x] **Step 7: Remove S05 Board Test from normal production startup/target if the repository stage-test convention requires test-only integration after verification.**
 
-- [ ] **Step 8: Commit final implementation state.**
+- [x] **Step 8: Commit final implementation state.**
 
 Suggested commit: `feat: complete S05 UART ymodem receiver`
 
@@ -674,3 +678,21 @@ Trial/Confirm/Rollback
 - Authority consistency: S05 writes/validates image data but does not commit OTA Metadata or PENDING state.
 - Tooling consistency: machine paths remain local-only; committed scripts use `toolchain.local.bat`.
 - No new third-party Ymodem runtime dependency is introduced.
+
+## 2026-09-15 RTOS Thread Isolation Experiment
+
+The S05 board test entry now creates a dedicated `s05Ymodem` thread. `appSystem` no longer executes Storage initialization, UART ownership binding, YMODEM processing, or Slot B validation directly. The dedicated thread owns the `service_uart` consumer context and the complete YMODEM session, keeping the existing single-consumer RingBuffer contract intact.
+
+Code verification for this adjustment:
+
+```text
+Keil build: PASS, 0 Error(s), 0 Warning(s)
+YMODEM Host Tests: PASS, 24/24
+Firmware packer tests: PASS, 2/2
+```
+
+此前硬件验证曾因 CH340 端口和调用顺序问题保持 pending；最终 Tera Term `COM10` 板测已完成并通过，证据见阶段验证报告。
+
+## Final Stage Closure (2026-09-15)
+
+计划内代码、Host Test、Keil 构建、Tera Term 真实传输、传输中止/超时保护、失败后恢复传输和正式 Application target 清理均已完成。Tera Term 宏必须在烧录/复位前打开串口并等待 `C`；该顺序已在验证报告中作为固定操作合同记录。阶段状态：`CLOSED`。
