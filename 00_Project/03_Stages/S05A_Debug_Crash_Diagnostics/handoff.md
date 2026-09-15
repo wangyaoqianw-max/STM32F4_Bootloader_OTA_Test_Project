@@ -9,7 +9,7 @@
 - Current Scope: GDB automation, CmBacktrace integration, and staged verification
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
 - Implementation Commit: `54824e9` (`feat(debug): automate GDB runtime snapshots`)
-- CmBacktrace Integration Commit: `Not created yet`
+- CmBacktrace Integration Commit: `1c27c8e` (`feat(debug): integrate CmBacktrace fault diagnostics`)
 - Verification Commit: `54824e9` (verification evidence committed with implementation)
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-15`

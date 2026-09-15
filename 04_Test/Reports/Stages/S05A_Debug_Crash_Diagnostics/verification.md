@@ -8,6 +8,7 @@
 - Scope: GDB automation, CmBacktrace integration, and staged board verification
 - Status: `READY_FOR_VERIFICATION`
 - CmBacktrace: integrated; controlled Fault board verification is pending
+- CmBacktrace Integration Commit: `1c27c8e`
 
 ## 2. Verification Environment
 
