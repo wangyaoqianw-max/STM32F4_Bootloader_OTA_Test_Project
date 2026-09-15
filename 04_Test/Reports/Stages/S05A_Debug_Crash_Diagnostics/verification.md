@@ -5,9 +5,9 @@
 - Stage: `S05A_Debug_Crash_Diagnostics`
 - Date: `2026-09-15`
 - Branch: `main`
-- Scope: GDB automation and real-board verification
-- Status: `READY_FOR_REVIEW`
-- CmBacktrace: not included; source has not been downloaded
+- Scope: GDB automation, CmBacktrace integration, and staged board verification
+- Status: `READY_FOR_VERIFICATION`
+- CmBacktrace: integrated; controlled Fault board verification is pending
 
 ## 2. Verification Environment
 
@@ -38,10 +38,12 @@ The local executable paths are stored only in the ignored
 | Non-listening server | PASS | Startup failure/timeout path returned non-zero |
 | GDB `load` protection | PASS | Both command scripts and wrapper reject `load` |
 | `git diff --check` | PASS | No whitespace errors |
+| CmBacktrace integration contract test | PASS | `05_Tools/Debug/CmBacktrace/test_cm_backtrace_integration.ps1` |
+| Keil full rebuild | PASS | `OTA_APP_rebuild.log`, 0 errors, 14 existing warnings |
 
-No production firmware source was changed, so a new Keil firmware build was
-not required for this tooling-only checkpoint. The tested AXF was the existing
-Keil output at:
+The full Keil rebuild used ARMCC V5.06 update 7 (build 960). The warnings are
+from existing platform and EasyLogger files; the new CmBacktrace and project
+adapter files produced no compiler warnings. The resulting AXF was:
 
 ```text
 03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.axf
@@ -113,6 +115,49 @@ released for subsequent sessions.
 No GDB `load` command was issued and no Flash programming was performed by
 the runtime snapshot flow.
 
+## 6. CmBacktrace Integration Verification
+
+### 6.1 Code integration
+
+The Keil project now compiles and links:
+
+```text
+cm_backtrace.c
+CmBacktrace/fault_handler/keil/cmb_fault.S
+cmbacktrace_port.c
+cmbacktrace_fault_handlers.S
+```
+
+The map file resolves `cm_backtrace_fault`, `cmbacktrace_port_init`,
+`vTaskStackAddr`, `vTaskStackSize`, `vTaskName`, and the `STACK` block symbols.
+The FreeRTOS compatibility patch is guarded by `CMB_USER_CFG` and derives the
+task stack size from `configRECORD_STACK_HIGH_ADDRESS`.
+
+### 6.2 Normal board run
+
+```text
+Flash application                 PASS
+RTT capture for 5 seconds         PASS
+Normal EasyLogger/Application log PASS
+GDB runtime snapshot resume       PASS
+```
+
+The normal RTT log contains successful log initialization, Application startup,
+Storage SPI construction/init/start, and `Application init result: 0`. No reset,
+fault loop, or runtime regression was observed.
+
+### 6.3 Fault board test
+
+```text
+Controlled Fault injection        PENDING
+CmBacktrace Fault RTT output      PENDING
+GDB/CmBacktrace cross-validation  PENDING
+```
+
+This integration change does not add a destructive Fault trigger. The pending
+items require a separately reviewed controlled Fault injection entry and must
+not be inferred from a successful build or normal boot.
+
 ## 6. Logs
 
 The latest local runtime logs are generated at:
@@ -129,12 +174,12 @@ They are ignored local artifacts and are not committed to Git.
 The following remain outside this checkpoint:
 
 ```text
-CmBacktrace source acquisition and port
 Fault injection and Cortex-M fault context capture
 RTT fault output workflow
+GDB Fault Capture automation
+GDB/CmBacktrace cross-validation
 S04 Reset Persistence / Power-cycle Persistence regression
 ```
 
-Next action: complete S05A review. Only after review should the project enter
-S06 RTOS Runtime design; CmBacktrace should be handled as a separately scoped
-follow-up once its source is available.
+Next action: implement and verify the controlled Fault trigger and Fault Capture
+workflow, then complete S05A review before entering S06 RTOS Runtime design.

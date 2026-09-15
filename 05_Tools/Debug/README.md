@@ -8,9 +8,11 @@
 GDB/runtime_snapshot_resume.gdb  运行态快照后继续运行
 GDB/runtime_snapshot_halt.gdb    运行态快照后保持暂停
 GDB/test_gdb_automation.ps1      脚本合同和失败路径测试
+CmBacktrace/test_cm_backtrace_integration.ps1  CmBacktrace 工程接入契约测试
 ```
 
-当前不包含 CmBacktrace 源码、Fault 注入或 MCU Fault 现场采集实现。
+CmBacktrace 源码位于 Application 工程的 `05_Vendors/CmBacktrace`，本目录
+只保存其工程接入契约测试。Fault 注入和 MCU Fault 现场自动采集仍未实现。
 
 ## GDB Runtime Snapshot
 

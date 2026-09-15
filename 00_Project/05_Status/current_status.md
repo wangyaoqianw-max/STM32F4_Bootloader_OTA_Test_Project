@@ -3,8 +3,9 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_REVIEW`
+- Status: `READY_FOR_VERIFICATION`
 - S05A Implementation / Verification Commit: `54824e9`
+- S05A CmBacktrace Integration Commit: `Not created yet`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -18,14 +19,14 @@
 - Last Closed Stage: `S05_UART_Ymodem`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S05A Implementation Role / GDB automation scope`
+- Current Role: `S05A Implementation Role / CmBacktrace integration scope`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
 `S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断暂不进入本轮实现。
+当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已加入并完成第一版 Keil/FreeRTOS/RTT 工程接入、Keil 重建和正常运行板测；受控 Fault 注入、Fault 现场采集和 GDB/CmBacktrace 交叉验证仍待验证。
 
 ## S05 Delivered Capabilities
 
@@ -127,7 +128,7 @@ continue& -> disconnect -> quit                      PASS
 
 正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
-当前 S05A 只覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理和板测证据。CmBacktrace、Fault 注入/现场采集和 S04 Reset/Power-cycle Persistence 仍未完成。
+当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据以及 CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入。受控 Fault 注入/现场采集、GDB/CmBacktrace 交叉验证和 S04 Reset/Power-cycle Persistence 仍未完成。
 
 正式交接：
 
@@ -194,6 +195,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Blockers
 
-S05A GDB 自动化 checkpoint 无阶段内阻塞项；CmBacktrace 源码缺失是后续独立移植任务的前置条件。
+S05A GDB 自动化 checkpoint 无阶段内阻塞项；CmBacktrace 工程接入已完成代码构建和正常运行验证，受控 Fault 注入与现场交叉验证仍是当前后续动作。
 
 当前等待 S05A Review；Review 通过后再进入 S06 Design Discussion。

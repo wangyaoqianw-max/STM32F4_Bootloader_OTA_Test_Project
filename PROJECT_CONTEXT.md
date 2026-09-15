@@ -5,8 +5,9 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - S05A Implementation / Verification Commit: `54824e9`
+- S05A CmBacktrace Integration Commit: `Not created yet`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -20,14 +21,14 @@
 - Last Closed Stage: `S05_UART_Ymodem`
 - S05 Final Result: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S05A Implementation Role / GDB automation scope`
+- Current Role: `S05A Implementation Role / CmBacktrace integration scope`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
 S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前已完成 GDB 自动化、失败清理和 Runtime Snapshot 真实板测。手工 GDB 控制能力也已完成真实板卡验证。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断不属于当前 GDB checkpoint。
+当前已完成 GDB 自动化、失败清理和 Runtime Snapshot 真实板测。手工 GDB 控制能力也已完成真实板卡验证。CmBacktrace 源码已加入 Application，并完成第一版 Keil/FreeRTOS/RTT 工程接入、Keil 重建和正常运行板测；受控 Fault 注入、Fault 现场自动采集和 GDB/CmBacktrace 交叉验证仍待后续验证。
 
 ## Required Reading For S06 Design
 
@@ -224,7 +225,7 @@ J-Link Server / GDB 进程清理        PASS
 
 正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
-当前 S05A 范围只包括：
+当前 S05A 范围包括：
 
 ```text
 GDB toolchain configuration
@@ -232,13 +233,15 @@ GDB runtime snapshot resume/halt scripts
 Agent-callable PowerShell / BAT entrypoints
 Failure cleanup and J-Link release
 Real-board verification
+CmBacktrace Keil/FreeRTOS/RTT integration
 ```
 
 暂不包括：
 
 ```text
-Fault injection / Cortex-M fault context
-CmBacktrace integration and RTT fault workflow
+Controlled Fault injection
+GDB Fault Capture automation
+GDB/CmBacktrace cross validation
 S04 Reset Persistence
 S04 Power-cycle Persistence
 ```
@@ -309,6 +312,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Next Action
 
-完成 S05A Review 后再开启 `S06_RTOS_Runtime` 设计讨论；CmBacktrace 另行安排移植任务。
+完成 CmBacktrace 代码验证、受控 Fault 板测和 S05A Review 后再开启 `S06_RTOS_Runtime` 设计讨论。
 
 S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。

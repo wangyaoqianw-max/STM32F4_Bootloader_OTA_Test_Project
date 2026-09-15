@@ -335,9 +335,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls />
-              <Define>USE_HAL_DRIVER,STM32F411xE</Define>
+              <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine />
-              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../04_Impl/impl_diagnostics;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../05_Vendors/CmBacktrace;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -590,6 +590,36 @@
               <FileName>port.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/04_Impl/Diagnostics</GroupName>
+          <Files>
+            <File>
+              <FileName>cmbacktrace_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_diagnostics/cmbacktrace_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmbacktrace_fault_handlers.S</FileName>
+              <FileType>2</FileType>
+              <FilePath>../04_Impl/impl_diagnostics/cmbacktrace_fault_handlers.S</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/05_Vendors/CmBacktrace</GroupName>
+          <Files>
+            <File>
+              <FileName>cm_backtrace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../05_Vendors/CmBacktrace/cm_backtrace.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmb_fault.S</FileName>
+              <FileType>2</FileType>
+              <FilePath>../05_Vendors/CmBacktrace/fault_handler/keil/cmb_fault.S</FilePath>
             </File>
           </Files>
         </Group>

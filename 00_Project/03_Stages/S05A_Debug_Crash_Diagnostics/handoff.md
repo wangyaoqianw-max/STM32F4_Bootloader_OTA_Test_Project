@@ -3,12 +3,13 @@
 ## Metadata
 
 - Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_REVIEW`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
-- Current Scope: GDB automation and real-board verification
+- Current Scope: GDB automation, CmBacktrace integration, and staged verification
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
 - Implementation Commit: `54824e9` (`feat(debug): automate GDB runtime snapshots`)
+- CmBacktrace Integration Commit: `Not created yet`
 - Verification Commit: `54824e9` (verification evidence committed with implementation)
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-15`
@@ -29,7 +30,13 @@ GDB runtime snapshot automation
 Real-board verification
 ```
 
-CmBacktrace source has not yet been downloaded. Fault injection, Cortex-M fault context integration, CmBacktrace integration, and the related fault-capture workflow are deferred and must not be reported as implemented in this checkpoint.
+CmBacktrace source is now available under
+`03_Firmware/Application/OTA_APP/05_Vendors/CmBacktrace/`. The first integration
+adds the upstream core and Keil HardFault handler, a project-owned configurable
+Fault adapter, RTT output configuration, and the minimal FreeRTOS stack/name
+compatibility patch. Controlled Fault injection, automated GDB Fault Capture,
+and GDB/CmBacktrace cross-validation remain pending and must not be reported as
+hardware PASS.
 
 S04 Reset Persistence and Power-cycle Persistence remain `PENDING / DEFERRED`; they are not part of the current GDB automation checkpoint.
 
@@ -153,10 +160,15 @@ resume, uwTick after approximately 2 seconds: 0x396313 -> 0x399082
 Full evidence is in
 `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`.
 
-After the GDB-only scope is closed, reassess whether the remaining Fault/CmBacktrace work should continue in S05A or be split into a later diagnostics stage before entering S06.
+After the CmBacktrace code and controlled Fault verification are complete,
+reassess whether the remaining automated Fault Capture and persistence work
+should continue in S05A or be split into a later diagnostics stage before
+entering S06.
 
 ## Next Action
 
-The GDB-only checkpoint is ready for review. Do not start CmBacktrace
-integration until its upstream source is available and its vendor integration
-scope is explicitly confirmed.
+The CmBacktrace integration scope has been explicitly confirmed. Current
+implementation has passed the integration contract test, Keil full rebuild,
+flash and normal RTT/runtime checks. The next handoff must record the
+implementation commit, compiler evidence, and the still-pending controlled
+Fault board test.

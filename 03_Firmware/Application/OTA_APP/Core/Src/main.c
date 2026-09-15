@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cmbacktrace_port.h"
 
 /* USER CODE END Includes */
 
@@ -95,6 +96,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+  cmbacktrace_port_init();
 
   /* USER CODE END 2 */
 
