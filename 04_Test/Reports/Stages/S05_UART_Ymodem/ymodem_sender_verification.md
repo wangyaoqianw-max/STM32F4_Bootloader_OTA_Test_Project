@@ -102,7 +102,7 @@ match=True
 open: COM9 @ 115200       PASS
 send: 55 AA 33            PASS
 receive window: 2 seconds
-received_count: 0         
+received_count: 0
 close: COM9               PASS
 ```
 
