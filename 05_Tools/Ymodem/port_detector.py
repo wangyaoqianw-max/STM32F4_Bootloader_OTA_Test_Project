@@ -65,6 +65,9 @@ class PortDetector:
     def scan(self, criteria: PortCriteria) -> list:
         return [info for info in self.provider() if self._matches(info, criteria)]
 
+    def list_all(self) -> list:
+        return list(self.provider())
+
     def select(self, criteria: PortCriteria):
         all_ports = list(self.provider())
         candidates = [info for info in all_ports if self._matches(info, criteria)]

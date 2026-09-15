@@ -26,8 +26,8 @@ REM RTT capture defaults.
 set "JLINK_RTT_CHANNEL=0"
 set "RTT_CAPTURE_SECONDS=10"
 
-REM Reserved for later host-side tools.
-REM set "PYTHON_EXE=python"
+REM Python host-side tools. Leave empty to use python from PATH.
+set "PYTHON_EXE="
 
 REM Tera Term 5
 set "TERA_TERM_EXE="
