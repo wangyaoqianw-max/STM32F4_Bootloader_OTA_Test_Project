@@ -10,7 +10,7 @@
 - CmBacktrace: integrated; controlled Fault and automated capture board verification passed
 - S05A Implementation / Verification Commit: `bd8883d`
 - CmBacktrace Integration Commit: `1c27c8e`
-- Review: `PASS / CLOSED` (review document pending documentation commit)
+- Review: `PASS / CLOSED` (`32f3368`)
 
 ## 2. Verification Environment
 

@@ -6,7 +6,7 @@
 - Status: `CLOSED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
-- S05A Review Commit: `Pending documentation commit`
+- S05A Review Commit: `32f3368`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`

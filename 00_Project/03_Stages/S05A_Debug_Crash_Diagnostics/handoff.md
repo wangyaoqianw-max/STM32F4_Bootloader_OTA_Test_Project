@@ -10,10 +10,12 @@
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
 - Design: `design.md`
 - Implementation Plan: `implementation_plan.md`
+- Design Commit: `32f3368`
+- Implementation Plan Commit: `32f3368`
 - Implementation Commit: `bd8883d` (`feat(debug): add automated fault diagnostics`)
 - CmBacktrace Integration Commit: `1c27c8e` (`feat(debug): integrate CmBacktrace fault diagnostics`)
 - Verification Commit: `bd8883d` (code, automation, and board evidence recorded below)
-- Review Commit: `Pending documentation commit`
+- Review Commit: `32f3368`
 - Updated At: `2026-09-15`
 
 ## Position In Roadmap
