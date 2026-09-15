@@ -18,6 +18,23 @@
 
 然后填写当前电脑的实际工具路径。`toolchain.local.bat` 为本机配置，已被 `.gitignore` 排除，禁止提交 Git。
 
+## 当前脚本入口总表
+
+| 入口 | 功能 |
+|---|---|
+| `build_app.bat` | Keil 编译 `OTA_APP` Target |
+| `flash_app.bat` | J-Link SWD 烧录 `OTA_APP.hex`，并 Reset → Halt → Go |
+| `rtt_capture.bat [秒数]` | 采集 RTT Up Channel 0 |
+| `run_app_cycle.bat [秒数]` | 编译 → 烧录 → RTT 采集 |
+| `start_gdb_server.bat` | 前台启动 J-Link GDB Server，供手工调试 |
+| `gdb_runtime_snapshot.bat halt` | 快照后 `detach → quit`，保持 MCU 暂停 |
+| `gdb_runtime_snapshot.bat resume` | 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
+| `send_ymodem.bat` | 调用 Tera Term 宏发送 YMODEM 固件 |
+| `send_ymodem_python.bat` | 调用 Python Sender，支持 Agent/JSON 场景 |
+
+所有入口从 `toolchain.local.bat` 读取机器相关路径。GDB 使用 `ARM_GDB`
+和 `JLINK_GDB_SERVER`；不需要修改系统 PATH，也不会切换现有 Keil 编译链。
+
 当前项目已固定的目标连接参数：
 
 ```text

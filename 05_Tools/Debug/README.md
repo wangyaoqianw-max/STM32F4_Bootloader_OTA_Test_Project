@@ -2,6 +2,16 @@
 
 保存日志解析、调试辅助和故障分析工具，不保存一次性调试输出。
 
+当前文件：
+
+```text
+GDB/runtime_snapshot_resume.gdb  运行态快照后继续运行
+GDB/runtime_snapshot_halt.gdb    运行态快照后保持暂停
+GDB/test_gdb_automation.ps1      脚本合同和失败路径测试
+```
+
+当前不包含 CmBacktrace 源码、Fault 注入或 MCU Fault 现场采集实现。
+
 ## GDB Runtime Snapshot
 
 S05A 当前只覆盖 GDB 在线调试、运行态快照和退出生命周期，不执行 GDB
