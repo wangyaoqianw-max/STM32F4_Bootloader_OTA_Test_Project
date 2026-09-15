@@ -118,3 +118,7 @@ close: COM9               PASS
 ```
 
 Existing user modifications in the S05 firmware, board test, design, implementation plan, and original verification report were not staged or changed by this Sender implementation.
+
+## 记录边界说明
+
+本文件记录的是 Python Sender 的独立 Host/串口工具验证。文中 `COM9` 初始等待 `C` 超时属于此前的历史测试，不是当前 S05 阶段结论；最终板级验收使用 Tera Term 5 `COM10`，并已在 `verification.md` 中完成正常传输、超时中止、恢复传输和 Slot B `VALID` 记录。后续 S05 板测默认调用 Tera Term 自动化入口。

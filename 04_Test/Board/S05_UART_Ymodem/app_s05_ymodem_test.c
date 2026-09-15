@@ -29,6 +29,7 @@
 #include "service_log.h"
 #include "service_uart.h"
 #include "s05_ymodem_flash_sink.h"
+#include "usart.h"
 #include "ymodem_config.h"
 #include "ymodem_receiver.h"
 
@@ -42,6 +43,7 @@
 #define S05_UART_RING_BUFFER_SIZE           (2048U)
 #define S05_UART_WAIT_TIMEOUT_MS            (1000U)
 #define S05_PROGRESS_LOG_INTERVAL_BYTES     (16U * 1024U)
+#define S05_YMODEM_TASK_STACK_SIZE_BYTES    (4096U)
 //******************************** Defines **********************************//
 
 //******************************** Variables ********************************//
@@ -59,9 +61,21 @@ static uint8_t g_s05UartDmaRxBuffer[S05_UART_DMA_RX_BUFFER_SIZE] = {0U};
 static uint8_t g_s05UartRingBuffer[S05_UART_RING_BUFFER_SIZE] = {0U};
 static s05_ymodem_flash_sink_t g_s05FlashSink = S05_YMODEM_FLASH_SINK_INITIALIZER;
 static ymodem_receiver_t g_s05Receiver = YMODEM_RECEIVER_INITIALIZER;
+static platform_thread_t g_s05TestThread = PLATFORM_OS_OBJECT_INITIALIZER;
 //******************************** Variables ********************************//
 
 //******************************** Private Functions ************************//
+static void s05_ymodem_test_task(void *argument);
+static platform_error_t s05_ymodem_test_execute(void);
+
+static const platform_thread_config_t s_s05_ymodem_test_thread_config = {
+    .name = "s05Ymodem",
+    .entry = s05_ymodem_test_task,
+    .argument = (void *)0,
+    .stackSizeBytes = S05_YMODEM_TASK_STACK_SIZE_BYTES,
+    .priority = PLATFORM_THREAD_PRIORITY_NORMAL,
+};
+
 static platform_error_t s05_ymodem_test_init_storage(void)
 {
     platform_error_t result;
@@ -175,7 +189,25 @@ static platform_error_t s05_ymodem_test_init_uart(void)
         return result;
     }
 
-    return service_uart_start(&g_s05UartService);
+    result = service_uart_start(&g_s05UartService);
+    SERVICE_LOG_I(
+        "[S05] UART RX start result=%d CR1=0x%08lX CR3=0x%08lX DMA_CR=0x%08lX NDTR=%lu",
+        (int)result,
+        (unsigned long)huart1.Instance->CR1,
+        (unsigned long)huart1.Instance->CR3,
+        (unsigned long)DMA2_Stream2->CR,
+        (unsigned long)DMA2_Stream2->NDTR);
+    SERVICE_LOG_I(
+        "[S05] UART pins MODER=0x%08lX AFR1=0x%08lX PUPDR=0x%08lX BRR=0x%08lX SR=0x%08lX APB2ENR=0x%08lX AHB1ENR=0x%08lX",
+        (unsigned long)GPIOA->MODER,
+        (unsigned long)GPIOA->AFR[1],
+        (unsigned long)GPIOA->PUPDR,
+        (unsigned long)USART1->BRR,
+        (unsigned long)USART1->SR,
+        (unsigned long)RCC->APB2ENR,
+        (unsigned long)RCC->AHB1ENR);
+
+    return result;
 }
 
 static platform_error_t s05_ymodem_test_check_uart(void)
@@ -286,7 +318,7 @@ static platform_error_t s05_ymodem_test_process_receiver(void)
             (g_s05Receiver.context.state == YMODEM_RECEIVER_STATE_FINISHED)) {
             SERVICE_LOG_I("[S05] progress=%lu/%lu",
                           (unsigned long)g_s05Receiver.context.receivedSize,
-                          (unsigned long)g_s05Receiver.context.fileSize);
+                          (unsigned long)g_s05Receiver.context.block0Metadata.fileSize);
             nextProgress = g_s05Receiver.context.receivedSize +
                            S05_PROGRESS_LOG_INTERVAL_BYTES;
         }
@@ -305,9 +337,14 @@ static void s05_ymodem_test_log_result(
         "[S05] session state=%d error=%d filename=%s file_size=%lu received=%lu",
         (int)status->state,
         (int)status->lastError,
-        status->filename,
-        (unsigned long)status->fileSize,
+        status->block0Metadata.filename,
+        (unsigned long)status->block0Metadata.fileSize,
         (unsigned long)status->receivedSize);
+    SERVICE_LOG_I(
+        "[S05] block0 mod_time=%lu file_mode=%lu serial=%lu",
+        (unsigned long)status->block0Metadata.modificationTime,
+        (unsigned long)status->block0Metadata.fileMode,
+        (unsigned long)status->block0Metadata.serialNumber);
     SERVICE_LOG_I(
         "[S05] packets received=%lu accepted=%lu bytes=%lu/%lu crc=%lu sequence=%lu duplicate=%lu",
         (unsigned long)statistics->packetReceivedCount,
@@ -335,21 +372,26 @@ static void s05_ymodem_test_log_result(
             (unsigned long)uartStatistics.uartErrorCount,
             (unsigned long)uartStatistics.txBytesCompleted);
     }
+    SERVICE_LOG_I(
+        "[S05] UART end MODER=0x%08lX AFR1=0x%08lX PUPDR=0x%08lX BRR=0x%08lX SR=0x%08lX CR1=0x%08lX CR3=0x%08lX DMA_CR=0x%08lX NDTR=%lu",
+        (unsigned long)GPIOA->MODER,
+        (unsigned long)GPIOA->AFR[1],
+        (unsigned long)GPIOA->PUPDR,
+        (unsigned long)USART1->BRR,
+        (unsigned long)USART1->SR,
+        (unsigned long)USART1->CR1,
+        (unsigned long)USART1->CR3,
+        (unsigned long)DMA2_Stream2->CR,
+        (unsigned long)DMA2_Stream2->NDTR);
 }
 //******************************** Private Functions ************************//
 
 //******************************** Functions ********************************//
-platform_error_t app_s05_ymodem_test_run(void)
+static platform_error_t s05_ymodem_test_execute(void)
 {
     ymodem_receiver_config_t receiverConfig = {0};
     ymodem_sink_t sinkContract = {0};
-    ymodem_receiver_status_t status = {
-        YMODEM_RECEIVER_STATE_UNINITIALIZED,
-        PLATFORM_ERR_OK,
-        0U,
-        0U,
-        {0}
-    };
+    ymodem_receiver_status_t status;
     ymodem_receiver_statistics_t statistics = {0};
     firmware_image_header_t validatedHeader = {0};
     firmware_image_validation_t validation = FIRMWARE_IMAGE_VALIDATION_UNKNOWN;
@@ -442,5 +484,25 @@ platform_error_t app_s05_ymodem_test_run(void)
 
     SERVICE_LOG_I("[S05] YMODEM session complete final result=PASS");
     return PLATFORM_ERR_OK;
+}
+
+static void s05_ymodem_test_task(void *argument)
+{
+    platform_error_t result;
+
+    (void)argument;
+
+    result = s05_ymodem_test_execute();
+    SERVICE_LOG_I("[S05] board test worker return=%d", (int)result);
+
+    for (;;) {
+        (void)platform_time_delay_ms(S05_UART_WAIT_TIMEOUT_MS);
+    }
+}
+
+platform_error_t app_s05_ymodem_test_run(void)
+{
+    return platform_thread_create(&g_s05TestThread,
+                                  &s_s05_ymodem_test_thread_config);
 }
 //******************************** Functions ********************************//

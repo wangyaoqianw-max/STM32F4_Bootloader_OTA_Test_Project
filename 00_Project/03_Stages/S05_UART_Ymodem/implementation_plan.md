@@ -15,7 +15,7 @@
 - Stage: `S05_UART_Ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 
 ## Global Constraints
@@ -33,6 +33,10 @@
 - Tera Term 本机路径只允许写入被 Git 忽略的 `05_Tools/Config/toolchain.local.bat`；不得写死到提交脚本。
 - 修改 `03_Firmware` 前必须读取 `03_Firmware/AGENTS.md`、嵌入式 C 规范和相关接口文档。
 - 每个任务结束执行 `git diff --check`；Host Test 能覆盖的模块先 Host Test，再 Keil Build；编译通过不等于硬件验收通过。
+
+## 2026-09-15 Protocol Profile Amendment
+
+根据 Project Owner 要求，S05 Block 0 采用与 Tera Term 实际发送一致的完整字段配置：文件名、十进制文件大小、八进制修改时间、八进制文件权限；发送方序号字段可选但出现时必须解析。Receiver 不再静默忽略已定义的后续字段，字段顺序不可跳过，未知尾部数据拒绝。
 
 ---
 
@@ -329,7 +333,7 @@ Test normal single-file flow:
 
 ```text
 start -> emits 'C'
-Block0(filename,size) -> sink.begin -> ACK + 'C'
+Block0(full metadata) -> sink.begin -> ACK + 'C'
 Block1..N -> sink.write valid bytes -> ACK
 last packet padding not passed to sink
 EOT -> NAK
@@ -494,7 +498,7 @@ The PC-side operator/automation can use this as evidence that MCU reached receiv
 Required evidence:
 
 ```text
-filename / fileSize
+Block 0 metadata: filename / fileSize / moddate / mode / serial
 accepted packet/progress summary
 retry/CRC/sequence/duplicate counters
 cancel/error reason
@@ -547,7 +551,7 @@ Use the existing packer; record source `.bin`, version and resulting file size.
 
 - [x] **Step 3: Start RTT capture and confirm `YMODEM_READY`.**
 
-- [ ] **Step 4: Invoke the new Tera Term sender tool.**
+- [x] **Step 4: Invoke the new Tera Term sender tool.**
 
 ```bat
 05_Tools\Scripts\send_ymodem.bat COMx 115200 path\to\firmware.img
@@ -555,12 +559,12 @@ Use the existing packer; record source `.bin`, version and resulting file size.
 
 Expected: Tera Term completes with sender success.
 
-- [ ] **Step 5: Inspect RTT evidence.**
+- [x] **Step 5: Inspect RTT evidence.**
 
 Required:
 
 ```text
-Block0 filename and file size match sender
+Block0 full metadata matches sender
 received file bytes == .img file size
 payload bytes == Header.imageSize
 Ymodem state FINISHED
@@ -575,7 +579,7 @@ Do not compare PC CRC32 of compact `.img` directly to the non-contiguous Slot ad
 
 - [ ] **Step 7: If interoperability differs at EOT/CAN details, adjust only inside frozen Receiver compatibility boundary and rerun Host regression + board transfer.**
 
-- [ ] **Step 8: Commit any integration-only fixes after regression passes.**
+- [x] **Step 8: Commit any integration-only fixes after regression passes.**
 
 Suggested commit: `fix: stabilize Tera Term ymodem interoperability`
 
@@ -590,7 +594,7 @@ Suggested commit: `fix: stabilize Tera Term ymodem interoperability`
 **Interfaces:**
 - Produces: repeatable local sequence built on existing Build/Flash/RTT tools plus `send_ymodem.bat`.
 
-- [ ] **Step 1: Test local/remote cancel path.**
+- [x] **Step 1: Test local/remote cancel path.**
 
 Expected:
 
@@ -601,11 +605,11 @@ Header is not committed
 next new transfer can start without reset-induced corruption
 ```
 
-- [ ] **Step 2: Test transfer interruption/timeout.**
+- [x] **Step 2: Test transfer interruption/timeout.**
 
 Stop sender mid-transfer or otherwise create a repeatable interruption. Expected: bounded retry/timeout, no endless wait, no valid Header commit.
 
-- [ ] **Step 3: Test second transfer after a failed transfer.**
+- [x] **Step 3: Test second transfer after a failed transfer.**
 
 Expected: subsequent normal Tera Term transfer succeeds and validates Slot B.
 
@@ -630,9 +634,9 @@ Do not claim the wrapper itself interprets protocol correctness unless it actual
 
 - [x] **Step 6: Run full Host regression, Keil clean rebuild and `git diff --check`.**
 
-- [ ] **Step 7: Remove S05 Board Test from normal production startup/target if the repository stage-test convention requires test-only integration after verification.**
+- [x] **Step 7: Remove S05 Board Test from normal production startup/target if the repository stage-test convention requires test-only integration after verification.**
 
-- [ ] **Step 8: Commit final implementation state.**
+- [x] **Step 8: Commit final implementation state.**
 
 Suggested commit: `feat: complete S05 UART ymodem receiver`
 
@@ -674,3 +678,21 @@ Trial/Confirm/Rollback
 - Authority consistency: S05 writes/validates image data but does not commit OTA Metadata or PENDING state.
 - Tooling consistency: machine paths remain local-only; committed scripts use `toolchain.local.bat`.
 - No new third-party Ymodem runtime dependency is introduced.
+
+## 2026-09-15 RTOS Thread Isolation Experiment
+
+The S05 board test entry now creates a dedicated `s05Ymodem` thread. `appSystem` no longer executes Storage initialization, UART ownership binding, YMODEM processing, or Slot B validation directly. The dedicated thread owns the `service_uart` consumer context and the complete YMODEM session, keeping the existing single-consumer RingBuffer contract intact.
+
+Code verification for this adjustment:
+
+```text
+Keil build: PASS, 0 Error(s), 0 Warning(s)
+YMODEM Host Tests: PASS, 24/24
+Firmware packer tests: PASS, 2/2
+```
+
+此前硬件验证曾因 CH340 端口和调用顺序问题保持 pending；最终 Tera Term `COM10` 板测已完成并通过，证据见阶段验证报告。
+
+## Final Stage Closure (2026-09-15)
+
+计划内代码、Host Test、Keil 构建、Tera Term 真实传输、传输中止/超时保护、失败后恢复传输和正式 Application target 清理均已完成。Tera Term 宏必须在烧录/复位前打开串口并等待 `C`；该顺序已在验证报告中作为固定操作合同记录。阶段状态：`CLOSED`。

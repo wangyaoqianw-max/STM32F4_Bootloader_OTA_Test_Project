@@ -77,7 +77,7 @@ void app_main(void)
     platform_error_t testResult;
 
     testResult = app_s05_ymodem_test_run();
-    SERVICE_LOG_I("[S05] board test return=%d", (int)testResult);
+    SERVICE_LOG_I("[S05] board test thread start result=%d", (int)testResult);
     for (;;) {
         (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
     }

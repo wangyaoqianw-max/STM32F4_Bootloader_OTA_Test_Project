@@ -5,17 +5,19 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - S05 Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - S05 Implementation Commit: `00cbd3a`
+- S05 Verification Commit: `Not created yet`
+- S05 Review Commit: `Not created yet`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - S04 Final Result: `CLOSED / PASS`
-- Current Role: `Implementation Role / implementation complete, hardware verification pending`
-- Updated At: `2026-09-14`
+- Current Role: `Review Role / S05 verification and review passed`
+- Updated At: `2026-09-15`
 
 ## Current Goal
 
@@ -155,7 +157,7 @@ Protocol byte constants remain in `ymodem_def.h`.
 
 ## PC / Local Tooling
 
-Reference Sender：Tera Term 5 YMODEM。
+Reference Sender：Tera Term 5 YMODEM；S05 板级测试默认使用仓库内的 Tera Term 自动化入口。
 
 Current machine executable confirmed by Project Owner：
 
@@ -190,13 +192,17 @@ S05 board flow：
 
 ```text
 Build
-→ Flash
-→ Reset / Run
+→ pack Application .bin to Firmware Image .img
+→ devices --json，确认 CH340 COM
+→ 先启动 Python Sender 或 Tera Term，打开串口并等待 C
+→ Flash + Reset / Run
+→ YMODEM Block 0 / 数据 Blocks / EOT 完成
 → RTT Capture
-→ Tera Term Ymodem Send
 → RTT protocol/storage evidence
 → firmware_storage_validate_image(Slot B)
 ```
+
+S05 当前板级传输不得直接发送原始 Application `.bin`。必须使用 `05_Tools/Firmware/pack_firmware.py` 生成的 `.img = 64 Byte Header + Payload`。Sender/Tera Term 必须在烧录或复位目标板之前打开 CH340 串口；当前实测 CH340 为 `COM10`，未接线的 J-Link CDC `COM3` 不得使用。
 
 ## Verification Direction
 
@@ -222,11 +228,16 @@ They do not block S05/S06 and must be completed before S07 closure.
 - Design: `00_Project/03_Stages/S05_UART_Ymodem/design.md`
 - Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+- Review: `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 
-## Next Action
+## Completion Summary
 
-Implementation Role 已完成计划内代码、Host Test、Keil 集成和工具链 Smoke Test。J-Link 已恢复并可正常烧录；独立 TTL 模块已枚举为 `COM9`，但本轮板端未收到数据，下一步需先核对 TTL 与 USART1 `PA9/PA10` 的 TX/RX/GND 接线，再执行真实 Tera Term YMODEM 传输并回读 Slot B 验证证据。
+2026-09-15 已使用 CH340 `COM10` 按“先启动 Tera Term 宏并打开串口，再烧录/复位目标板”的顺序完成真实 YMODEM 传输。Tera Term 宏返回 0；RTT 记录 `55884/55884`、`retry=0`、`dropped=0`、`header_commit=1`、Slot B `validation=2`，最终会话结果为 PASS。
+
+同日完成中途停止传输回归：接收 `12288/55884` 字节后进入超时错误，`header_commit=0`；随后重新复位并使用 Tera Term 宏连续恢复传输，Slot B 再次校验通过。
+
+S05 已完成 Verification / Review 并关闭。后续默认使用 `05_Tools/Scripts/send_ymodem.bat` 调用 Tera Term；Python Sender 仅作为 Host/诊断辅助工具。下一阶段为 `S06_RTOS_Runtime`。
 
 ## Blockers
 
-当前 TTL 模块为 `COM9`。J-Link 已能正常识别 STM32F411CE 并完成烧录；Tera Term 和独立串口 API 发送后，板端均记录 `rx_events=0`、`rx_bytes=0`，最新单字节 `0x01` 探针也未进入 UART。当前阻塞点是 TTL 模块 TX 到 USART1 `PA10` 的信号路径、共地或电平连接，阶段保持 `IN_PROGRESS`，硬件传输仍为 `PENDING`。
+S05 无阶段内阻塞项。S04 的 Reset Persistence、Power-cycle Persistence 仍按既定计划延期到 `S07_OTA_Service_V1` 关闭前完成，不改变 S05 关闭结论。

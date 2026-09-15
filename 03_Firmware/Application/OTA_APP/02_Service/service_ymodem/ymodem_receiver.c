@@ -102,18 +102,77 @@ static platform_error_t ymodem_receiver_retry(
     return PLATFORM_ERR_OK;
 }
 
-/** @brief 在 Block 0 数据区内有界解析文件名和十进制文件大小。 */
-static platform_error_t ymodem_receiver_parse_block0(
-    ymodem_receiver_t *receiver,
+/** @brief 在 Block 0 字段边界内解析指定进制的无符号整数。 */
+static platform_error_t ymodem_receiver_parse_block0_number(
     const ymodem_packet_t *packet,
-    uint32_t *fileSize)
+    uint16_t *index,
+    uint32_t radix,
+    uint32_t *value)
 {
+    uint32_t parsedValue = 0U;
+    uint8_t byte;
+    uint8_t digit;
+    platform_bool_t hasDigit = PLATFORM_FALSE;
+
+    if ((packet == NULL) || (packet->data == NULL) || (index == NULL) ||
+        (value == NULL)) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if ((radix != 8U) && (radix != 10U)) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    while (*index < packet->dataSize) {
+        byte = packet->data[*index];
+        if ((byte == '\0') || (byte == ' ')) {
+            break;
+        }
+
+        if ((radix == 8U) && ((byte < '0') || (byte > '7'))) {
+            return PLATFORM_ERR_INVALID_PARAM;
+        }
+
+        if ((radix == 10U) && ((byte < '0') || (byte > '9'))) {
+            return PLATFORM_ERR_INVALID_PARAM;
+        }
+
+        digit = (uint8_t)(byte - '0');
+        if (parsedValue > ((0xFFFFFFFFUL - digit) / radix)) {
+            return PLATFORM_ERR_OVERFLOW;
+        }
+
+        parsedValue = (parsedValue * radix) + digit;
+        hasDigit = PLATFORM_TRUE;
+        *index = (uint16_t)(*index + 1U);
+    }
+
+    if (hasDigit == PLATFORM_FALSE) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    *value = parsedValue;
+    return PLATFORM_ERR_OK;
+}
+
+/** @brief 在 Block 0 数据区内有界解析完整文件元数据。 */
+static platform_error_t ymodem_receiver_parse_block0(
+    const ymodem_packet_t *packet,
+    ymodem_receiver_block0_metadata_t *metadata)
+{
+    ymodem_receiver_block0_metadata_t parsedMetadata = {0};
     uint16_t filenameLength = 0U;
     uint16_t fileSizeIndex;
     uint16_t index;
     uint32_t parsedSize = 0U;
-    uint8_t digit;
-    platform_bool_t hasDigit = PLATFORM_FALSE;
+    uint32_t parsedModificationTime;
+    uint32_t parsedFileMode;
+    uint32_t parsedSerialNumber = 0U;
+    platform_error_t result;
+
+    if ((packet == NULL) || (packet->data == NULL) || (metadata == NULL)) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
 
     while ((filenameLength < packet->dataSize) && (packet->data[filenameLength] != '\0')) {
         filenameLength++;
@@ -130,31 +189,85 @@ static platform_error_t ymodem_receiver_parse_block0(
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    for (index = fileSizeIndex; index < packet->dataSize; index++) {
-        if (packet->data[index] == '\0') {
-            break;
-        }
-
-        if ((packet->data[index] < '0') || (packet->data[index] > '9')) {
-            return PLATFORM_ERR_INVALID_PARAM;
-        }
-
-        digit = (uint8_t)(packet->data[index] - '0');
-        if (parsedSize > ((0xFFFFFFFFUL - digit) / 10UL)) {
-            return PLATFORM_ERR_OVERFLOW;
-        }
-
-        parsedSize = (parsedSize * 10UL) + digit;
-        hasDigit = PLATFORM_TRUE;
+    if (packet->data[fileSizeIndex] == ' ') {
+        fileSizeIndex++;
     }
 
-    if ((hasDigit == PLATFORM_FALSE) || (parsedSize == 0U)) {
+    if (fileSizeIndex >= packet->dataSize) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    (void)memcpy(receiver->context.filename, packet->data, filenameLength);
-    receiver->context.filename[filenameLength] = '\0';
-    *fileSize = parsedSize;
+    if (packet->data[fileSizeIndex] == ' ') {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    index = fileSizeIndex;
+    result = ymodem_receiver_parse_block0_number(
+        packet,
+        &index,
+        10U,
+        &parsedSize);
+    if ((result != PLATFORM_ERR_OK) || (parsedSize == 0U)) {
+        return (result == PLATFORM_ERR_OK) ? PLATFORM_ERR_INVALID_PARAM : result;
+    }
+
+    if ((index >= packet->dataSize) || (packet->data[index] != ' ')) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+    index++;
+
+    result = ymodem_receiver_parse_block0_number(
+        packet,
+        &index,
+        8U,
+        &parsedModificationTime);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if ((index >= packet->dataSize) || (packet->data[index] != ' ')) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+    index++;
+
+    result = ymodem_receiver_parse_block0_number(
+        packet,
+        &index,
+        8U,
+        &parsedFileMode);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if (index >= packet->dataSize) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    if (packet->data[index] == ' ') {
+        index++;
+        result = ymodem_receiver_parse_block0_number(
+            packet,
+            &index,
+            8U,
+            &parsedSerialNumber);
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+
+        if ((index >= packet->dataSize) || (packet->data[index] != '\0')) {
+            return PLATFORM_ERR_INVALID_PARAM;
+        }
+    } else if (packet->data[index] != '\0') {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
+
+    (void)memcpy(parsedMetadata.filename, packet->data, filenameLength);
+    parsedMetadata.filename[filenameLength] = '\0';
+    parsedMetadata.fileSize = parsedSize;
+    parsedMetadata.modificationTime = parsedModificationTime;
+    parsedMetadata.fileMode = parsedFileMode;
+    parsedMetadata.serialNumber = parsedSerialNumber;
+    *metadata = parsedMetadata;
     return PLATFORM_ERR_OK;
 }
 
@@ -177,25 +290,25 @@ static platform_error_t ymodem_receiver_accept_header(
     const ymodem_packet_t *packet,
     uint32_t nowMs)
 {
-    uint32_t fileSize;
+    ymodem_receiver_block0_metadata_t metadata = {0};
     platform_error_t result;
 
-    result = ymodem_receiver_parse_block0(receiver, packet, &fileSize);
+    result = ymodem_receiver_parse_block0(packet, &metadata);
     if (result != PLATFORM_ERR_OK) {
         return ymodem_receiver_fail(receiver, result);
     }
 
     result = receiver->config.sink.begin(
         receiver->config.sink.context,
-        receiver->context.filename,
-        fileSize);
+        metadata.filename,
+        metadata.fileSize);
     if (result != PLATFORM_ERR_OK) {
         receiver->config.sink.abort(receiver->config.sink.context);
         return ymodem_receiver_fail(receiver, result);
     }
 
     receiver->context.fileStarted = PLATFORM_TRUE;
-    receiver->context.fileSize = fileSize;
+    receiver->context.block0Metadata = metadata;
     receiver->context.receivedSize = 0U;
     receiver->context.expectedBlock = 1U;
     ymodem_receiver_reset_retry(receiver);
@@ -234,11 +347,11 @@ static platform_error_t ymodem_receiver_accept_data(
         return ymodem_receiver_retry(receiver, YMODEM_NAK, PLATFORM_ERR_INVALID_STATE);
     }
 
-    if (receiver->context.receivedSize > receiver->context.fileSize) {
+    if (receiver->context.receivedSize > receiver->context.block0Metadata.fileSize) {
         return ymodem_receiver_fail(receiver, PLATFORM_ERR_INVALID_STATE);
     }
 
-    remaining = receiver->context.fileSize - receiver->context.receivedSize;
+    remaining = receiver->context.block0Metadata.fileSize - receiver->context.receivedSize;
     writeLength = (packet->dataSize > remaining) ? remaining : packet->dataSize;
     if (writeLength == 0U) {
         return ymodem_receiver_fail(receiver, PLATFORM_ERR_INVALID_PARAM);
@@ -326,7 +439,7 @@ static platform_error_t ymodem_receiver_handle_eot(
     platform_error_t result;
 
     if (receiver->context.state == YMODEM_RECEIVER_STATE_RECEIVE_DATA) {
-        if (receiver->context.receivedSize != receiver->context.fileSize) {
+        if (receiver->context.receivedSize != receiver->context.block0Metadata.fileSize) {
             return ymodem_receiver_fail(receiver, PLATFORM_ERR_INVALID_PARAM);
         }
 
@@ -454,7 +567,9 @@ platform_error_t ymodem_receiver_start(ymodem_receiver_t *receiver)
     ymodem_parser_reset(&receiver->context.parser);
     receiver->context.expectedBlock = 0U;
     receiver->context.retryCount = 0U;
-    receiver->context.fileSize = 0U;
+    (void)memset(&receiver->context.block0Metadata,
+                 0,
+                 sizeof(receiver->context.block0Metadata));
     receiver->context.receivedSize = 0U;
     receiver->context.fileStarted = PLATFORM_FALSE;
     receiver->context.lastError = PLATFORM_ERR_OK;
@@ -547,9 +662,8 @@ platform_error_t ymodem_receiver_get_status(
 
     status->state = receiver->context.state;
     status->lastError = receiver->context.lastError;
-    status->fileSize = receiver->context.fileSize;
+    status->block0Metadata = receiver->context.block0Metadata;
     status->receivedSize = receiver->context.receivedSize;
-    (void)strcpy(status->filename, receiver->context.filename);
     return PLATFORM_ERR_OK;
 }
 

@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S05_UART_Ymodem`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
@@ -14,8 +14,8 @@
 - Review Commit: `Not created yet`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - Last Closed Stage Status: `CLOSED`
-- Current Role: `Implementation Role / implementation complete, hardware verification pending`
-- Updated At: `2026-09-14`
+- Current Role: `Review Role / verification and review passed`
+- Updated At: `2026-09-15`
 
 ## Current Goal
 
@@ -36,6 +36,7 @@ DRAFT
 - Design: `00_Project/03_Stages/S05_UART_Ymodem/design.md`
 - Implementation Plan: `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
 - Handoff: `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+- Review: `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 
 ## Approved Frozen Direction
 
@@ -96,11 +97,11 @@ E:\APP\ProgramFile\tera_term\teraterm5\ttermpro.exe
 05_Tools/Scripts/send_ymodem.bat
 ```
 
-板测主链：
+板测主链（默认使用 Tera Term 自动化入口）：
 
 ```text
-Build → Flash → Reset/Run → RTT Capture
-→ Tera Term Ymodem Send
+Build → 启动 Tera Term 宏并打开 CH340 串口等待 C
+→ Flash/Reset → YMODEM Send
 → RTT protocol/storage evidence
 → firmware_storage_validate_image(Slot B)
 ```
@@ -116,10 +117,12 @@ Power-cycle Persistence PENDING / DEFERRED
 
 Not an S05 blocker; must be completed before S07 closure.
 
-## Next Action
+## Completion Summary
 
-当前测试已暂停。J-Link 已恢复并可正常烧录；独立 TTL 模块已枚举为 `COM9`，但板端未收到数据。恢复后先核对 TTL 与 USART1 `PA9/PA10` 的 TX/RX/GND 接线，再执行真实 Tera Term YMODEM 传输，检查 Block 0、Payload、Header-last 和 Slot B `VALID` 证据。
+2026-09-15 已完成 Tera Term `COM10` 真实板测：宏返回 0，RTT 记录完整文件接收、Header-last 提交和 Slot B `validation=2`，最终会话结果 PASS。中途停止传输时接收端按超时退出且 `header_commit=0`；复位后再次使用 Tera Term 宏传输成功，证明失败后可恢复。
+
+S05 Verification / Review 已通过，阶段关闭。后续进入 `S06_RTOS_Runtime`；S05 板测入口保留在 `04_Test/Board`，不再加入正式 Application 启动和 Keil 生产 target。
 
 ## Blockers
 
-独立 TTL 模块为 `COM9`。J-Link 已完成重新烧录，但 Tera Term、串口 API 以及单字节 `0x01` 探针发送后板端均为 `rx_events=0`、`rx_bytes=0`。当前阻塞限定为 TTL 模块 TX 到 USART1 `PA10` 的信号路径、共地或电平连接；代码验证已完成，硬件传输保持 `PENDING`。
+S05 无阶段内阻塞项。S04 Reset Persistence 与 Power-cycle Persistence 继续作为跨阶段延期回归项，在 `S07_OTA_Service_V1` 关闭前完成。

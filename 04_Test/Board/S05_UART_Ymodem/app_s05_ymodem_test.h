@@ -20,9 +20,9 @@
 
 //******************************** Functions ********************************//
 /**
- * @brief 执行 S05 YMODEM 文件接收、Slot B 写入和镜像验证
- * @return PLATFORM_ERR_OK 表示传输完成且 Slot B 镜像验证为 VALID
- * @return 其他值表示初始化、传输、存储或镜像验证失败
+ * @brief 创建 S05 专用线程执行 YMODEM 文件接收、Slot B 写入和镜像验证
+ * @return PLATFORM_ERR_OK 表示 S05 专用线程创建成功
+ * @return 其他值表示线程创建失败
  * @note 本入口会擦除并写入 Slot B，只应由 S05 专用板测启动路径调用。
  */
 platform_error_t app_s05_ymodem_test_run(void);

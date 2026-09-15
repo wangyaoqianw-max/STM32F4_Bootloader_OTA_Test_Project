@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S05_UART_Ymodem`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED`
 - Branch: `codex/s05-uart-ymodem`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
@@ -12,11 +12,11 @@
 - Implementation Commit: `00cbd3a`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-14`
+- Updated At: `2026-09-15`
 
 ## Current Role
 
-Implementation Role，计划内实现已完成；当前等待真实串口物理链路完成 Verification。
+Review Role，Verification / Review 已通过，S05 阶段已关闭。
 
 Project Owner 已确认 `design.md` 与 `implementation_plan.md`，阶段已通过正常设计门禁：
 
@@ -232,11 +232,37 @@ d9afae4 feat: add ymodem receiver state machine
 
 `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
 
+正式 Review：
+
+`00_Project/03_Stages/S05_UART_Ymodem/review.md`
+
 当前已通过 Parser、Receiver、Firmware Storage Write、Flash Sink Host Test，S04 相关回归，Keil 正常/清理构建，以及 `build_app.bat`、`flash_app.bat`、`rtt_capture.bat` 工具链 Smoke Test。
 
-板端已确认 S05 专用入口初始化 Storage/UART 并输出 `[S05] YMODEM_READY`。J-Link 已恢复并可完成烧录，独立 TTL 模块枚举为 `COM9`。使用 `OTA_APP_s04_v1.1.0.img`、串口 API 以及单字节 `0x01` 探针尝试发送时，板端均记录 `rx_events=0`、`rx_bytes=0`，串口 API 也未读到板端初始 `'C'`。因此尚未取得经独立 TTL 的 Block 0、Header-last 和 Slot B `VALID` 证据，当前需先核对 TTL TX 到 USART1 `PA10` 的信号路径、共地和 3.3V 电平，阶段保持 `IN_PROGRESS`，硬件传输和后续恢复测试保持 `PENDING`。
+历史中间诊断曾记录 S05 专用入口初始化成功但独立 TTL `COM9` 未收到数据；该状态已被后续 CH340 `COM10` 最终板测取代，不再代表当前阶段状态。
 
-下一步：当前测试暂停。恢复后先核对独立 3.3V USB-TTL 与 USART1 `PA9/PA10` 的交叉 TX/RX 和共地，再复用现有 Sender 入口重新执行真实传输；成功后补写 Verification Commit 和 Review 输入。
+历史下一步为核对独立 TTL 线路；后续已确认实际问题为 Sender 与 MCU 复位之间的调用顺序竞态，并完成 Tera Term 正常传输、超时中止和恢复传输。
+
+## 2026-09-15 RTOS Thread Isolation Update
+
+S05 Board Test has been changed to create a dedicated `s05Ymodem` thread. `appSystem` only starts the test thread and remains alive; the dedicated thread binds itself as the `service_uart` owner and performs the complete YMODEM/Storage/Slot B flow. The UART RingBuffer still has one task-context consumer.
+
+Code verification: Keil build PASS with 0 errors and 0 warnings; YMODEM Host Tests PASS 24/24; firmware packer tests PASS 2/2.
+
+Hardware verification is still PENDING. The next test uses only the CH340 serial path. Resolve its current COM number with `ymodem_sender devices --json`; do not use the unconnected J-Link CDC serial port.
+
+最新 CH340 `COM10` 板测已增加并完成一次阻塞式 RX 探针：在 RX DMA 和 `service_uart` 启动前，`platform_uart_read()` 等待主机发送 `0xA5`，结果为 `result=2`、`read=0`。同时标准线程隔离版本仍记录 `tx_bytes=11`、`rx_bytes=0`，Sender 返回 `exit_code=4`。因此当前最早失败边界位于 CH340 TX 到 USART1 `PA10`/HAL 接收入口之间；临时探针已移除，最终固件已恢复为标准线程隔离版本并重新烧录。
+
+最新运行时寄存器快照已确认：PA9/PA10 的 `MODER=Alternate Function`、`AFR[1]=AF7`，USART1/APB2 和 DMA2/AHB1 时钟均已打开，`USART1->SR=0xC0` 仅有 TXE/TC、没有 RXNE。主机发送 `0xA5` 后仍为 `rx_events=0`、`rx_bytes=0`，因此下一步应直接测量 CH340 TX 到 MCU PA10 的实际电平；当前没有证据支持继续修改 RingBuffer 或 YMODEM。
+
+用户随后短接 MCU PA9→PA10，并完成一次 HAL 阻塞式本地回环：TX/RX status 均为 0，收到 `0x55`；标准 DMA 会话随后统计 `rx_events=11`、`rx_bytes=11`、`buffered/read=11/11`、`dropped/errors=0/0`，DMA2 Stream2 `NDTR` 从 256 变化到 245。该证据确认 USART1、DMA、UART Service、RingBuffer 和 S05 专用线程工作正常；临时 HAL 回环探针已移除并重新编译/烧录。当前只剩 CH340 外部 TX/RX 物理路径待确认。
+
+## 2026-09-15 当前工程与参考工程 A/B 复测
+
+开发板重新上电后，当前工程重新烧录并运行。CH340 当前端口为 `COM10`：发送单字节 `0xA5` 后，当前工程仍为 `rx_events=0`、`rx_bytes=0`；YMODEM Sender 等待初始 `C` 超时，返回 `exit_code=4`。
+
+随后刷入参考工程 `E:\my_project_2026\Git_test\stm32f4_DMA_UART_ring_RTOS\RTT_elog_DMA_UART_ring_project\MDK-ARM\Objects\RTT_elog_DMA_UART_ring_project.hex`。参考工程 RTT 输出 `communication runtime started`，向其定义的串口命令发送 `HELP\r\n` 后，COM10 仍无响应。测试完成后已重新刷回当前工程固件。
+
+该 A/B 测试未形成任何一个工程的 CH340 收发闭环，因此不能把失败归因于当前工程新增的 YMODEM。下一步保持代码不变，继续核对 CH340 与 USART1 `PA9/PA10` 的 TX/RX 交叉、实际引脚、共地和电平路径。
 
 ## Deferred Cross-stage Regression
 
@@ -252,3 +278,49 @@ Not an S05 blocker; must be closed before S07 closure.
 ## Implementation Entry
 
 Implementation Role 已完成当前可执行的计划内实现和代码验证；下游 Verification/Review 需要先取得 USART1 真实串口物理链路，才能完成 S05 的硬件闭环门禁。
+
+## 2026-09-15 自动化链路最终复测结论
+
+同一块 STM32F411CE、同一 CH340 `COM10`、115200 8N1、同一当前 S05 固件下，Python Sender 和 Tera Term 均完成了 `.img` 传输。两次测试均采用：
+
+```text
+关闭串口助手
+→ 上位机 Sender/Tera Term 先打开 COM10 并等待 C
+→ 使用 flash_app.bat 通过 J-Link 烧录并复位目标板
+→ 接收 C
+→ Block 0 / ACK / C
+→ Block 1...N / ACK
+→ EOT NAK / EOT ACK / 空 Block 0 ACK
+```
+
+必须发送：
+
+```text
+06_Output\Packages\OTA_APP_s04_v1.1.0.img
+```
+
+不能直接发送原始：
+
+```text
+06_Output\Firmware\OTA_APP_s04_test.bin
+```
+
+原始 `.bin` 会在第一个数据 Block 的 Firmware Image Header 校验处返回 `PLATFORM_ERR_INVALID_PARAM`，表现为 Sender 卡在 Block 1 重试；这不是串口硬件、Python 字节编码或 YMODEM Block 1 格式问题。
+
+实测结果：
+
+```text
+Python Sender：exit_code=0，55 blocks，55884 bytes，0 retries
+Tera Term：宏 exit code=0
+RTT：progress=55884/55884
+```
+
+后续所有自动化调用必须先执行 `ymodem_sender devices --json` 确认 CH340 端口，不使用未接线的 J-Link CDC `COM3`；Tera Term 必须在目标板烧录或复位之前打开串口。最终 Slot B 校验、超时中止和恢复传输已在本交接末尾补齐。
+
+调用顺序错误的表现已经确认：若先烧录/复位、后启动 Sender，板端初始 `C` 会在 Sender 进入读取状态前发出，Sender 返回 `exit_code=4`，并非硬件或字节编码错误。当前自动化入口必须保持“打开串口并等待 `C` → 再烧录/复位”的顺序。
+
+## 2026-09-15 S05 Closure
+
+默认板测发送端固定为 Tera Term 5，入口为 `05_Tools/Scripts/send_ymodem.bat`。最终正常传输结果：宏返回 0；RTT 记录 `state=6`、`received=55884`、`bytes=55884/55884`、`retry=0`、`dropped=0`、`header_commit=1`、`Slot B validation=2`，最终会话结果 PASS。
+
+中止回归在接收 `12288/55884` 字节后触发超时：`state=8`、`timeout=11`、`retry=10`、`header_commit=0`；随后重新烧录/复位并再次使用 Tera Term 宏传输，Slot B 校验再次通过。完整证据见验证报告；S04 Reset Persistence 与 Power-cycle Persistence 仍为跨阶段延期回归项。

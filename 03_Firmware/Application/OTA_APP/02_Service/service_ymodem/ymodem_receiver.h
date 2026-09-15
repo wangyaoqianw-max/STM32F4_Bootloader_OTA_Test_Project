@@ -47,6 +47,16 @@ typedef struct
     ymodem_sink_t sink;   /**< 文件生命周期和数据写入回调。 */
 } ymodem_receiver_config_t;
 
+/** @brief YMODEM Block 0 中已解析的文件元数据。 */
+typedef struct
+{
+    char filename[YMODEM_CFG_FILENAME_MAX_LEN + 1U]; /**< Block 0 文件名，以 NUL 结尾。 */
+    uint32_t fileSize;                              /**< Block 0 声明的文件总长度。 */
+    uint32_t modificationTime; /**< ASCII 八进制修改时间转换后的秒数。 */
+    uint32_t fileMode;         /**< ASCII 八进制文件权限转换后的数值。 */
+    uint32_t serialNumber;     /**< ASCII 八进制发送方序号，未提供时为 0。 */
+} ymodem_receiver_block0_metadata_t;
+
 /** @brief Receiver 当前 Session 的运行上下文。 */
 typedef struct
 {
@@ -54,10 +64,9 @@ typedef struct
     ymodem_parser_t parser;        /**< 增量字节 Parser 上下文。 */
     uint8_t expectedBlock;          /**< 下一个期望接收的 Packet 序号。 */
     uint32_t retryCount;            /**< 当前等待目标的连续重试次数。 */
-    uint32_t fileSize;              /**< Block 0 声明的文件总长度。 */
+    ymodem_receiver_block0_metadata_t block0Metadata; /**< Block 0 已解析的完整元数据。 */
     uint32_t receivedSize;          /**< 已交给 Sink 的有效文件字节数。 */
     uint32_t lastActivityMs;        /**< 最近一次 UART 活动时间戳。 */
-    char filename[YMODEM_CFG_FILENAME_MAX_LEN + 1U]; /**< 已解析并以 NUL 结尾的文件名。 */
     platform_bool_t fileStarted;   /**< Sink begin 已成功且尚未 end/abort。 */
     platform_error_t lastError;    /**< 最近一次不可恢复错误。 */
 } ymodem_receiver_context_t;
@@ -82,9 +91,8 @@ typedef struct
 {
     ymodem_receiver_state_t state; /**< 当前 Session 状态。 */
     platform_error_t lastError;    /**< 最近一次错误。 */
-    uint32_t fileSize;              /**< 当前文件总长度。 */
+    ymodem_receiver_block0_metadata_t block0Metadata; /**< 当前 Block 0 完整元数据。 */
     uint32_t receivedSize;          /**< 当前已接收有效长度。 */
-    char filename[YMODEM_CFG_FILENAME_MAX_LEN + 1U]; /**< 当前文件名。 */
 } ymodem_receiver_status_t;
 
 /** @brief YMODEM Receiver 对象，配置、上下文和统计分离保存。 */

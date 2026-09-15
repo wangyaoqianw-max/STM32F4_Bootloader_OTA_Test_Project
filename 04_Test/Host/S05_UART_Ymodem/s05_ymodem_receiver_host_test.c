@@ -113,8 +113,23 @@ static void build_block0(uint8_t *data, const char *filename, uint32_t fileSize)
     (void)memcpy(data, filename, filenameLength);
     (void)snprintf((char *)&data[filenameLength + 1U],
                    YMODEM_PACKET_DATA_SIZE_128 - filenameLength - 1U,
-                   "%lu",
+                   " %lu 15251747316 100644",
                    (unsigned long)fileSize);
+}
+
+static void build_block0_with_fields(
+    uint8_t *data,
+    const char *filename,
+    const char *fields)
+{
+    size_t filenameLength = strlen(filename);
+
+    (void)memset(data, 0, YMODEM_PACKET_DATA_SIZE_128);
+    (void)memcpy(data, filename, filenameLength);
+    (void)snprintf((char *)&data[filenameLength + 1U],
+                   YMODEM_PACKET_DATA_SIZE_128 - filenameLength - 1U,
+                   "%s",
+                   fields);
 }
 
 static int feed_bytes(ymodem_receiver_t *receiver, const uint8_t *data, uint16_t length, uint32_t *nowMs)
@@ -184,6 +199,7 @@ static int test_normal_single_file_flow(void)
     service_uart_t uart = {0};
     test_sink_context_t sink = {0};
     ymodem_receiver_t receiver;
+    ymodem_receiver_status_t status;
     uint32_t nowMs = 0U;
     uint16_t index;
 
@@ -203,7 +219,21 @@ static int test_normal_single_file_flow(void)
         (receiver.context.state != YMODEM_RECEIVER_STATE_RECEIVE_DATA) ||
         (sink.beginCount != 1U) ||
         (sink.fileSize != 130U) ||
-        (strcmp(sink.filename, "firmware.img") != 0)) {
+        (strcmp(sink.filename, "firmware.img") != 0) ||
+        (receiver.context.block0Metadata.fileSize != 130U) ||
+        (strcmp(receiver.context.block0Metadata.filename, "firmware.img") != 0) ||
+        (receiver.context.block0Metadata.modificationTime != 1789382350U) ||
+        (receiver.context.block0Metadata.fileMode != 33188U) ||
+        (receiver.context.block0Metadata.serialNumber != 0U)) {
+        return 1;
+    }
+
+    if ((ymodem_receiver_get_status(&receiver, &status) != PLATFORM_ERR_OK) ||
+        (status.block0Metadata.fileSize != 130U) ||
+        (strcmp(status.block0Metadata.filename, "firmware.img") != 0) ||
+        (status.block0Metadata.modificationTime != 1789382350U) ||
+        (status.block0Metadata.fileMode != 33188U) ||
+        (status.block0Metadata.serialNumber != 0U)) {
         return 1;
     }
 
@@ -279,6 +309,14 @@ static int test_block0_validation_and_sink_failure(void)
     uint32_t nowMs;
     uint16_t index;
     const char *invalidValues[] = {"", "abc", "4294967296", "0"};
+    const char *invalidMetadata[] = {
+        " 55884",
+        " 55884 15251747316",
+        " 55884 15251747318 100644",
+        " 55884 15251747316 100648",
+        " 55884 15251747316 100644 128 7",
+        "  55884 15251747316 100644"
+    };
 
     for (index = 0U; index < sizeof(invalidValues) / sizeof(invalidValues[0]); index++) {
         (void)memset(&uart, 0, sizeof(uart));
@@ -287,6 +325,55 @@ static int test_block0_validation_and_sink_failure(void)
         (void)memset(block0, 0, sizeof(block0));
         (void)strcpy((char *)block0, "fw.img");
         (void)strcpy((char *)&block0[7], invalidValues[index]);
+        build_packet(YMODEM_SOH, 0U, block0, sizeof(block0), packet, &packetSize);
+        if (init_receiver(&receiver, &uart, &sink) != 0) {
+            return 1;
+        }
+        (void)feed_bytes(&receiver, packet, packetSize, &nowMs);
+        if ((receiver.context.state != YMODEM_RECEIVER_STATE_ERROR) ||
+            (sink.beginCount != 0U)) {
+            return 1;
+        }
+    }
+
+    (void)memset(&uart, 0, sizeof(uart));
+    (void)memset(&sink, 0, sizeof(sink));
+    nowMs = 0U;
+    build_block0(block0, "OTA_APP_s04_v1.1.0.img", 55884U);
+    build_packet(YMODEM_SOH, 0U, block0, sizeof(block0), packet, &packetSize);
+    if ((init_receiver(&receiver, &uart, &sink) != 0) ||
+        (feed_bytes(&receiver, packet, packetSize, &nowMs) != 0) ||
+        (receiver.context.state != YMODEM_RECEIVER_STATE_RECEIVE_DATA) ||
+        (sink.beginCount != 1U) ||
+        (sink.fileSize != 55884U) ||
+        (strcmp(sink.filename, "OTA_APP_s04_v1.1.0.img") != 0) ||
+        (receiver.context.block0Metadata.fileSize != 55884U) ||
+        (strcmp(receiver.context.block0Metadata.filename, "OTA_APP_s04_v1.1.0.img") != 0) ||
+        (receiver.context.block0Metadata.modificationTime != 1789382350U) ||
+        (receiver.context.block0Metadata.fileMode != 33188U) ||
+        (receiver.context.block0Metadata.serialNumber != 0U)) {
+        return 1;
+    }
+
+    (void)memset(&uart, 0, sizeof(uart));
+    (void)memset(&sink, 0, sizeof(sink));
+    nowMs = 0U;
+    build_block0_with_fields(block0, "fw.img", " 55884 15251747316 100644 123");
+    build_packet(YMODEM_SOH, 0U, block0, sizeof(block0), packet, &packetSize);
+    if ((init_receiver(&receiver, &uart, &sink) != 0) ||
+        (feed_bytes(&receiver, packet, packetSize, &nowMs) != 0) ||
+        (receiver.context.state != YMODEM_RECEIVER_STATE_RECEIVE_DATA) ||
+        (receiver.context.block0Metadata.modificationTime != 1789382350U) ||
+        (receiver.context.block0Metadata.fileMode != 33188U) ||
+        (receiver.context.block0Metadata.serialNumber != 83U)) {
+        return 1;
+    }
+
+    for (index = 0U; index < sizeof(invalidMetadata) / sizeof(invalidMetadata[0]); index++) {
+        (void)memset(&uart, 0, sizeof(uart));
+        (void)memset(&sink, 0, sizeof(sink));
+        nowMs = 0U;
+        build_block0_with_fields(block0, "fw.img", invalidMetadata[index]);
         build_packet(YMODEM_SOH, 0U, block0, sizeof(block0), packet, &packetSize);
         if (init_receiver(&receiver, &uart, &sink) != 0) {
             return 1;
