@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -26,7 +26,7 @@
 
 S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前先完成 GDB 自动化与真实板测。手工 GDB 控制能力已经完成真实板卡验证；S05A 自动化脚本、失败清理和 Runtime Snapshot 板测尚未实施。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断不属于当前 GDB checkpoint。
+当前已完成 GDB 自动化、失败清理和 Runtime Snapshot 真实板测。手工 GDB 控制能力也已完成真实板卡验证。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断不属于当前 GDB checkpoint。
 
 ## Required Reading For S06 Design
 
@@ -177,7 +177,7 @@ Application 稳定工具链：
 
 ## S05A GDB Debug Checkpoint
 
-S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `READY_FOR_IMPLEMENTATION`。
+S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `READY_FOR_REVIEW`。
 
 已完成真实板卡验证：
 
@@ -208,6 +208,20 @@ Running state
 ```
 
 `continue& → disconnect` 已通过重新连接和 `uwTick` 增长验证。GDB 自动化不得执行 `load`；Resume 会话不得使用 `-batch`，也不得在 `continue&` 后执行 `detach`。J-Link GDB Server 使用 `monitor reset`，不使用 `monitor reset halt`。
+
+自动化板测已完成：
+
+```text
+halt 入口                         PASS
+halt 后 uwTick 约 2 秒             0x38A62C -> 0x38A62C
+resume 入口                       PASS
+resume 后 uwTick 约 2 秒           0x396313 -> 0x399082
+continue& -> disconnect -> quit    PASS
+失败路径与非零退出码               PASS
+J-Link Server / GDB 进程清理        PASS
+```
+
+正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
 当前 S05A 范围只包括：
 
@@ -294,6 +308,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Next Action
 
-先实施并板测通过 S05A GDB Runtime Snapshot 自动化；S05A 关闭后再开启 `S06_RTOS_Runtime` 设计讨论。
+完成 S05A Review 后再开启 `S06_RTOS_Runtime` 设计讨论；CmBacktrace 另行安排移植任务。
 
 S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。

@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -24,7 +24,7 @@
 
 `S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前 S05A 先只完成 GDB 自动化与真实板测。手工 GDB 控制能力已经完成真实板卡验证，下一步实现 Agent 可调用的 Runtime Snapshot resume/halt 入口。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断暂不进入本轮实现。
+当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断暂不进入本轮实现。
 
 ## S05 Delivered Capabilities
 
@@ -87,7 +87,7 @@ final result                  PASS
 
 ## S05A GDB Debug Checkpoint
 
-S05A 位于已关闭的 S05 与计划中的 S06 之间，当前状态为 `READY_FOR_IMPLEMENTATION`。
+S05A 位于已关闭的 S05 与计划中的 S06 之间，当前状态为 `READY_FOR_REVIEW`。
 
 已完成的真实板测基线：
 
@@ -114,6 +114,17 @@ running state → continue&
 ```
 
 `continue& → disconnect` 已通过重新连接和 `uwTick` 增长验证。S05A 自动化不得执行 GDB `load`，Resume 会话不得使用 `-batch`，也不得在 `continue&` 后使用 `detach`。
+
+自动化板测结果：
+
+```text
+halt 后 uwTick 约 2 秒：0x38A62C -> 0x38A62C       PASS
+resume 后 uwTick 约 2 秒：0x396313 -> 0x399082     PASS
+continue& -> disconnect -> quit                      PASS
+失败路径、非零退出码、PID 清理、J-Link 释放            PASS
+```
+
+正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
 当前 S05A 只覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理和板测证据。CmBacktrace、Fault 注入/现场采集和 S04 Reset/Power-cycle Persistence 仍未完成。
 
@@ -182,6 +193,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Blockers
 
-S05 无阶段内阻塞项。
+S05A GDB 自动化 checkpoint 无阶段内阻塞项；CmBacktrace 源码缺失是后续独立移植任务的前置条件。
 
-当前仅等待 S06 Design Discussion，不存在必须先修复的 Ymodem 阻塞问题。
+当前等待 S05A Review；Review 通过后再进入 S06 Design Discussion。

@@ -3,13 +3,13 @@
 ## Metadata
 
 - Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Current Scope: GDB automation and real-board verification
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
-- Implementation Commit: `Not created yet`
-- Verification Commit: `Not created yet`
+- Implementation Commit: `To be recorded after implementation commit`
+- Verification Commit: `To be recorded after verification commit`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-15`
 
@@ -102,7 +102,7 @@ GDB runtime automation must not execute `load`; Flash programming remains the re
 
 ## Implementation Inputs
 
-The next implementation should add the GDB-only tooling described in the S05A plan:
+The implemented GDB-only tooling described in the S05A plan is:
 
 ```text
 05_Tools/Config/toolchain.local.example.bat
@@ -122,9 +122,14 @@ halt:   snapshot → detach → quit
 
 The PowerShell wrapper may terminate only the J-Link GDB Server PID that it created. It must not use a global image-name kill. Every configuration, startup, GDB, timeout, and cleanup failure must return a non-zero error code and write a diagnostic log.
 
+The runtime wrapper uses .NET process APIs instead of PowerShell `Start-Process`
+so Windows PowerShell environments containing both `PATH` and `Path` can start
+the tools reliably. It captures stdout/stderr, waits for the GDB port, and
+terminates only the Server PID created by the current invocation.
+
 ## Verification Handoff
 
-Before S05A can close, verify on the real board:
+S05A GDB checkpoint verification on the real board is complete:
 
 ```text
 GDB runtime snapshot resume mode       PASS
@@ -135,11 +140,23 @@ No implicit Flash programming         PASS
 Server PID cleanup                    PASS
 J-Link released                       PASS
 Non-zero failure paths                PASS
-Existing Flash / RTT reuse             PASS
+Existing Flash / RTT reuse             NOT_APPLICABLE / no firmware source changed
 ```
+
+Observed board evidence:
+
+```text
+halt, uwTick after approximately 2 seconds:   0x38A62C -> 0x38A62C
+resume, uwTick after approximately 2 seconds: 0x396313 -> 0x399082
+```
+
+Full evidence is in
+`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`.
 
 After the GDB-only scope is closed, reassess whether the remaining Fault/CmBacktrace work should continue in S05A or be split into a later diagnostics stage before entering S06.
 
 ## Next Action
 
-Implement and board-test the GDB runtime snapshot automation. Do not start CmBacktrace integration until its upstream source is available and its vendor integration scope is explicitly confirmed.
+The GDB-only checkpoint is ready for review. Do not start CmBacktrace
+integration until its upstream source is available and its vendor integration
+scope is explicitly confirmed.

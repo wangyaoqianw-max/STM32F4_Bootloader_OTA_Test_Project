@@ -87,6 +87,25 @@ RTT       = Channel 0
 `rtt_capture.ps1` 使用 .NET 进程接口启动 Logger，兼容从 `cmd.exe` 调用
 Windows PowerShell 时同时存在 `PATH` / `Path` 环境变量的本机环境。
 
+## GDB runtime snapshot
+
+GDB 调试入口：
+
+```bat
+05_Tools\Scripts\gdb_runtime_snapshot.bat resume
+05_Tools\Scripts\gdb_runtime_snapshot.bat halt
+```
+
+依赖 `toolchain.local.bat` 中的 `ARM_GDB` 和 `JLINK_GDB_SERVER`。入口自动启动并回收本次创建的 J-Link GDB Server，使用 Keil 生成的 `OTA_APP.axf` 读取运行态信息，不执行 GDB `load`，不会隐式烧录 Flash。
+
+退出合同为：`resume = continue& -> disconnect -> quit`，`halt = detach -> quit`。日志输出到 `06_Output/Logs/OTA_APP_gdb_server.log` 和 `06_Output/Logs/OTA_APP_gdb_snapshot.log`。
+
+需要手工维护 Server 生命周期时，可使用：
+
+```bat
+05_Tools\Scripts\start_gdb_server.bat
+```
+
 ## One-command local cycle
 
 统一开发闭环入口：

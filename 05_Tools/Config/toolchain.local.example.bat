@@ -17,10 +17,20 @@ REM SEGGER J-Link tools
 set "JLINK_EXE="
 set "JLINK_RTT_LOGGER="
 
+REM GNU Arm GDB
+set "ARM_GDB="
+
+REM SEGGER J-Link GDB Server
+set "JLINK_GDB_SERVER="
+
 REM Stable target connection settings verified for this project.
 set "JLINK_DEVICE=STM32F411CE"
 set "JLINK_IF=SWD"
 set "JLINK_SPEED=4000"
+
+REM GDB connection settings
+set "GDB_PORT=2331"
+set "GDB_START_TIMEOUT_SECONDS=10"
 
 REM RTT capture defaults.
 set "JLINK_RTT_CHANNEL=0"
