@@ -4,7 +4,7 @@
 ;* All Rights Reserved.                                                       *
 ;*                                                                            *
 ;* @file cmbacktrace_fault_handlers.S                                         *
-;* @brief 将可配置 Cortex-M Fault 转交给 CmBacktrace。                       *
+;* @brief 将 Cortex-M Fault 统一转交给工程诊断和 CmBacktrace。               *
 ;******************************************************************************
 
     AREA |.text|, CODE, READONLY, ALIGN=2
@@ -12,28 +12,38 @@
     REQUIRE8
     PRESERVE8
 
-    IMPORT cm_backtrace_fault
+    IMPORT diagnostics_fault_handler
+    EXPORT HardFault_Handler
     EXPORT MemManage_Handler
     EXPORT BusFault_Handler
     EXPORT UsageFault_Handler
+    EXPORT diagnostics_fault_capture_stop
+
+HardFault_Handler     PROC
+    B       diagnostics_fault_entry
+    ENDP
 
 MemManage_Handler    PROC
-    B       cmbacktrace_fault_entry
+    B       diagnostics_fault_entry
     ENDP
 
 BusFault_Handler     PROC
-    B       cmbacktrace_fault_entry
+    B       diagnostics_fault_entry
     ENDP
 
 UsageFault_Handler   PROC
-    B       cmbacktrace_fault_entry
+    B       diagnostics_fault_entry
     ENDP
 
-cmbacktrace_fault_entry PROC
+diagnostics_fault_entry PROC
     MOV     r0, lr
-    MOV     r1, sp
-    BL      cm_backtrace_fault
+    TST     r0, #4
+    ITE     EQ
+    MRSEQ   r1, MSP
+    MRSNE   r1, PSP
+    BL      diagnostics_fault_handler
 
+diagnostics_fault_capture_stop
 Fault_Loop
     B       Fault_Loop
     ENDP

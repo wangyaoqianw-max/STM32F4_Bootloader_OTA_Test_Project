@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cmbacktrace_port.h"
+#include "diagnostics_fault.h"
 
 /* USER CODE END Includes */
 
@@ -97,6 +98,7 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   cmbacktrace_port_init();
+  diagnostics_fault_init();
 
   /* USER CODE END 2 */
 

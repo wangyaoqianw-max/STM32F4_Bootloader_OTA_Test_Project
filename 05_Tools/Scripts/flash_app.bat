@@ -5,10 +5,15 @@ REM ============================================================
 REM OTA_APP J-Link Flash Entry
 REM
 REM Purpose:
-REM   Program the latest Keil-generated OTA_APP.hex and start it.
+REM   Program the latest Keil-generated OTA_APP.hex.
 REM
 REM Usage:
-REM   05_Tools\Scripts\flash_app.bat
+REM   05_Tools\Scripts\flash_app.bat run
+REM   05_Tools\Scripts\flash_app.bat prepare
+REM
+REM run     : program, reset, and start the application.
+REM prepare : program and leave the target halted for a listener/debugger
+REM           that must be opened before the next reset/run operation.
 REM ============================================================
 
 set "SCRIPT_DIR=%~dp0"
@@ -19,6 +24,13 @@ set "FIRMWARE_FILE=%REPO_ROOT%\03_Firmware\Application\OTA_APP\MDK-ARM\Objects\O
 set "LOG_DIR=%REPO_ROOT%\06_Output\Logs"
 set "FLASH_LOG=%LOG_DIR%\OTA_APP_flash.log"
 set "JLINK_COMMAND_FILE=%TEMP%\stm32f4_ota_flash_%RANDOM%_%RANDOM%.jlink"
+set "FLASH_MODE=%~1"
+
+if not defined FLASH_MODE set "FLASH_MODE=run"
+if /I not "%FLASH_MODE%"=="run" if /I not "%FLASH_MODE%"=="prepare" (
+    echo [FLASH][ERROR] Mode must be run or prepare.
+    exit /b 25
+)
 
 if not exist "%LOCAL_CONFIG%" (
     echo [FLASH][ERROR] Local toolchain configuration not found.
@@ -59,18 +71,19 @@ if not exist "%LOG_DIR%" (
 )
 
 > "%JLINK_COMMAND_FILE%" echo EoE 1
->>"%JLINK_COMMAND_FILE%" echo r
->>"%JLINK_COMMAND_FILE%" echo h
 >>"%JLINK_COMMAND_FILE%" echo loadfile "%FIRMWARE_FILE%"
->>"%JLINK_COMMAND_FILE%" echo r
->>"%JLINK_COMMAND_FILE%" echo h
->>"%JLINK_COMMAND_FILE%" echo g
+if /I "%FLASH_MODE%"=="run" (
+    >>"%JLINK_COMMAND_FILE%" echo r
+    >>"%JLINK_COMMAND_FILE%" echo h
+    >>"%JLINK_COMMAND_FILE%" echo g
+)
 >>"%JLINK_COMMAND_FILE%" echo exit
 
 echo ============================================================
 echo [FLASH] Device   : %JLINK_DEVICE%
 echo [FLASH] Interface: %JLINK_IF%
 echo [FLASH] Speed    : %JLINK_SPEED% kHz
+echo [FLASH] Mode     : %FLASH_MODE%
 echo [FLASH] Firmware : %FIRMWARE_FILE%
 echo [FLASH] Log      : %FLASH_LOG%
 echo ============================================================
@@ -94,6 +107,8 @@ if exist "%FLASH_LOG%" type "%FLASH_LOG%"
 echo.
 if "%JLINK_RESULT%"=="0" (
     echo [FLASH][PASS] J-Link programming command completed successfully.
+    if /I "%FLASH_MODE%"=="prepare" echo [FLASH][INFO] Target remains halted; open the required listener before reset/run.
+    if /I "%FLASH_MODE%"=="run" echo [FLASH][INFO] Target was reset and started.
 ) else (
     echo [FLASH][FAIL] J-Link returned ERRORLEVEL=%JLINK_RESULT%.
     echo [FLASH][INFO] Check that Keil, RTT Viewer, RTT Logger, or another debugger is not holding the J-Link.

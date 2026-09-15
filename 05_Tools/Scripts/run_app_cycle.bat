@@ -4,7 +4,7 @@ setlocal EnableExtensions
 REM ============================================================
 REM OTA_APP Local Development Cycle
 REM
-REM Build -> Flash -> RTT capture
+REM Build -> Flash/run -> RTT capture
 REM
 REM This command validates tool execution only. It does not replace
 REM stage-specific board-test assertions or verification reports.
@@ -23,7 +23,7 @@ if %BUILD_RESULT% GEQ 2 (
 
 echo.
 echo [CYCLE] Step 2/3: Flash
-call "%SCRIPT_DIR%flash_app.bat"
+call "%SCRIPT_DIR%flash_app.bat" run
 set "FLASH_RESULT=%ERRORLEVEL%"
 
 if not "%FLASH_RESULT%"=="0" (

@@ -606,6 +606,16 @@
               <FileType>2</FileType>
               <FilePath>../04_Impl/impl_diagnostics/cmbacktrace_fault_handlers.S</FilePath>
             </File>
+            <File>
+              <FileName>diagnostics_fault_trigger.S</FileName>
+              <FileType>2</FileType>
+              <FilePath>../04_Impl/impl_diagnostics/diagnostics_fault_trigger.S</FilePath>
+            </File>
+            <File>
+              <FileName>diagnostics_fault.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_diagnostics/diagnostics_fault.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -615,11 +625,6 @@
               <FileName>cm_backtrace.c</FileName>
               <FileType>1</FileType>
               <FilePath>../05_Vendors/CmBacktrace/cm_backtrace.c</FilePath>
-            </File>
-            <File>
-              <FileName>cmb_fault.S</FileName>
-              <FileType>2</FileType>
-              <FilePath>../05_Vendors/CmBacktrace/fault_handler/keil/cmb_fault.S</FilePath>
             </File>
           </Files>
         </Group>

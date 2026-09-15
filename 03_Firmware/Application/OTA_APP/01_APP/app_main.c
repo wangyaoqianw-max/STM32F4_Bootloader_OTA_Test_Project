@@ -18,6 +18,7 @@
 
 #include "platform_time.h"
 #include "project_config.h"
+#include "diagnostics_fault.h"
 #include "service_log.h"
 #if (PROJECT_ENABLE_S05_YMODEM_BOARD_TEST != 0U)
 #include "app_s05_ymodem_test.h"
@@ -96,6 +97,11 @@ void app_main(void)
             (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
         }
     }
+
+#if (DIAG_FAULT_TEST_ENABLE != 0U)
+    (void)platform_time_delay_ms(DIAG_FAULT_TEST_DELAY_MS);
+    diagnostics_fault_trigger(DIAG_FAULT_TEST_TYPE);
+#endif
 
     for (;;) {
         (void)platform_led_on(&g_statusLed);

@@ -53,10 +53,11 @@ $faultAdapters = Get-Content -LiteralPath $faultAdapterFile -Raw
 Require-Text $project 'CMB_USER_CFG' 'Keil project defines CMB_USER_CFG'
 Require-Text $project '\.\./05_Vendors/CmBacktrace' 'Keil project includes CmBacktrace headers'
 Require-Text $project '\.\./05_Vendors/CmBacktrace/cm_backtrace\.c' 'Keil project compiles cm_backtrace.c'
-Require-Text $project '\.\./05_Vendors/CmBacktrace/fault_handler/keil/cmb_fault\.S' 'Keil project compiles upstream HardFault handler'
 Require-Text $project '\.\./04_Impl/impl_diagnostics/cmbacktrace_port\.c' 'Keil project compiles the project port'
 Require-Text $project '\.\./04_Impl/impl_diagnostics/cmbacktrace_fault_handlers\.S' 'Keil project compiles configurable fault adapters'
+Require-Text $project '\.\./04_Impl/impl_diagnostics/diagnostics_fault\.c' 'Keil project compiles project fault diagnostics'
 Require-Text $main 'cmbacktrace_port_init\s*\(' 'main initializes CmBacktrace'
+Require-Text $faultAdapters 'EXPORT\s+HardFault_Handler' 'HardFault uses the project fault adapter'
 Require-Text $faultAdapters 'EXPORT\s+(MemManage_Handler|BusFault_Handler|UsageFault_Handler)' 'configurable faults are exported by the assembly adapter'
 Forbid-Text $interrupts '(?s)void\s+(HardFault|MemManage|BusFault|UsageFault)_Handler\s*\(' 'legacy C fault handlers must not collide with assembly handlers'
 Require-Text $freertosConfig 'configRECORD_STACK_HIGH_ADDRESS\s+1' 'FreeRTOS records the high stack address'
@@ -64,6 +65,7 @@ Require-Text $tasks 'uint32_t\s*\*\s*vTaskStackAddr\s*\(' 'FreeRTOS exposes curr
 Require-Text $tasks 'uint32_t\s+vTaskStackSize\s*\(' 'FreeRTOS exposes current stack size'
 Require-Text $tasks 'char\s*\*\s*vTaskName\s*\(' 'FreeRTOS exposes current task name'
 Require-Text $readme 'CmBacktrace' 'vendor README records CmBacktrace integration'
+Forbid-Text $project '05_Vendors/CmBacktrace/fault_handler/keil/cmb_fault\.S' 'Keil project has one HardFault owner'
 
 if ($failures.Count -gt 0) {
     Write-Output '[CmBacktrace][FAIL] integration contract is not satisfied.'
