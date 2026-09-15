@@ -5,6 +5,9 @@
  *
  * @file cmbacktrace_port.c
  * @brief CmBacktrace 工程适配实现。
+ * @author YaoQian Wang
+ * @date 2026-09-15
+ * @version V1.0
  */
 
 #include "cmbacktrace_port.h"

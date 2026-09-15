@@ -16,14 +16,14 @@
 #include "cm_backtrace.h"
 #include "stm32f4xx.h"
 
-volatile diagnostics_fault_context_t g_diagnostics_fault_context = {0};
-
 #define DIAG_FAULT_INVALID_ADDRESS_PTR  \
     ((volatile uint32_t *)DIAG_FAULT_INVALID_ADDRESS_VALUE)
 
+volatile diagnostics_fault_context_t g_diagnostics_fault_context = {0};
+
 static void diagnostics_fault_print_context(void)
 {
-    SEGGER_RTT_WriteString(0U, "\r\n[DIAG_FAULT_CONTEXT]\r\n");
+    (void)SEGGER_RTT_WriteString(0U, "\r\n[DIAG_FAULT_CONTEXT]\r\n");
     SEGGER_RTT_printf(0U, "EXC_RETURN = 0x%08lx\r\n",
                       (unsigned long)g_diagnostics_fault_context.exceptionReturn);
     SEGGER_RTT_printf(0U, "STACKED_SP = 0x%08lx\r\n",

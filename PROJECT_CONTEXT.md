@@ -5,9 +5,10 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
+- S05A Review Commit: `Pending documentation commit`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -21,14 +22,14 @@
 - Last Closed Stage: `S05_UART_Ymodem`
 - S05 Final Result: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S05A Verification Role / Review handoff`
+- Current Role: `S06 Design Role / context handoff`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
 S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对。S04 Reset / Power-cycle Persistence 仍为跨阶段延期回归。
+S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 仍为跨阶段延期回归。
 
 ## Required Reading For S06 Design
 
@@ -43,13 +44,18 @@ S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新�
 7. `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
 8. `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 9. `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
-10. `03_Firmware/AGENTS.md`
-11. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-12. current App / FreeRTOS task initialization
-13. current `service_uart`
-14. current `service_ymodem`
-15. current `service_firmware`
-16. current Platform RTOS abstraction
+10. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/design.md`
+11. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/implementation_plan.md`
+12. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+13. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
+14. `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
+15. `03_Firmware/AGENTS.md`
+16. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+17. current App / FreeRTOS task initialization
+18. current `service_uart`
+19. current `service_ymodem`
+20. current `service_firmware`
+21. current Platform RTOS abstraction
 
 ## Stable S04 Storage / Firmware Contract
 
@@ -179,7 +185,7 @@ Application 稳定工具链：
 
 ## S05A GDB Debug Checkpoint
 
-S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `READY_FOR_REVIEW`。
+S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `CLOSED`。
 
 已完成真实板卡验证：
 
@@ -311,6 +317,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Next Action
 
-完成 S05A Review 后再开启 `S06_RTOS_Runtime` 设计讨论；S04 Reset / Power-cycle Persistence 继续作为 S07 前延期回归。
+S05A Review 已通过；下一步开启 `S06_RTOS_Runtime` 设计讨论。S04 Reset / Power-cycle Persistence 继续作为 S07 前延期回归。
 
 S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。

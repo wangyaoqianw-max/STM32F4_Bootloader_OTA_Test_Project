@@ -8,8 +8,9 @@ REM Usage:
 REM   05_Tools\Scripts\gdb_fault_capture.bat capture
 REM   05_Tools\Scripts\gdb_fault_capture.bat trigger
 REM
-REM The target must already be stopped in the project Fault handler.
-REM This flow captures GDB and RTT evidence and never resumes the MCU.
+REM capture: target must already be stopped in the project Fault handler.
+REM trigger: target is prepared, then reset and run through the open GDB session.
+REM Both modes capture GDB and RTT evidence and never resume after capture.
 REM ============================================================
 
 set "SCRIPT_DIR=%~dp0"

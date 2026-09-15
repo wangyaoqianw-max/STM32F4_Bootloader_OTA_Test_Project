@@ -13,10 +13,13 @@
 #ifndef DIAGNOSTICS_FAULT_H
 #define DIAGNOSTICS_FAULT_H
 
-#include <stdint.h>
-
 #include "diagnostics_config.h"
 
+#include <stdint.h>
+
+/**
+ * @brief 受控 Fault 测试类型。
+ */
 typedef enum {
     DIAG_FAULT_NONE = 0,
     DIAG_FAULT_INVALID_ADDRESS,
@@ -24,6 +27,9 @@ typedef enum {
     DIAG_FAULT_DIV_BY_ZERO
 } diagnostics_fault_type_t;
 
+/**
+ * @brief 保存 Cortex-M 自动压栈帧和系统 Fault 寄存器快照。
+ */
 typedef struct {
     uint32_t exceptionReturn;
     uint32_t stackedSp;
@@ -43,6 +49,9 @@ typedef struct {
     uint32_t xpsr;
 } diagnostics_fault_context_t;
 
+/**
+ * @brief 供 Fault Handler 写入、供调试器读取的最新现场快照。
+ */
 extern volatile diagnostics_fault_context_t g_diagnostics_fault_context;
 
 /**

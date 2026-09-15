@@ -5,6 +5,9 @@
  *
  * @file cmb_user_cfg.h
  * @brief CmBacktrace 的 Application 工程配置。
+ * @author YaoQian Wang
+ * @date 2026-09-15
+ * @version V1.0
  */
 
 #ifndef CMB_USER_CFG_H
@@ -12,6 +15,7 @@
 
 #include "SEGGER_RTT.h"
 
+/* CmBacktrace 要求保留此宏名，输出使用 Fault 路径的 raw RTT 接口。 */
 #define cmb_println(...)                                                       \
     do {                                                                       \
         (void)SEGGER_RTT_printf(0U, __VA_ARGS__);                              \

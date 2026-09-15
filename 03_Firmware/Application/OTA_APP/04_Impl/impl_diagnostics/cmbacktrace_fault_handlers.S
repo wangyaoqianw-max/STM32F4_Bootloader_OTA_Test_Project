@@ -4,7 +4,10 @@
 ;* All Rights Reserved.                                                       *
 ;*                                                                            *
 ;* @file cmbacktrace_fault_handlers.S                                         *
-;* @brief 将 Cortex-M Fault 统一转交给工程诊断和 CmBacktrace。               *
+;* @brief 将 Cortex-M Fault 统一转交给工程诊断和 CmBacktrace。                *
+;* @author YaoQian Wang                                                       *
+;* @date 2026-09-15                                                          *
+;* @version V1.0                                                             *
 ;******************************************************************************
 
     AREA |.text|, CODE, READONLY, ALIGN=2

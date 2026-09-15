@@ -3,15 +3,17 @@
 ## Metadata
 
 - Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - Branch: `main`
 - Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Current Scope: GDB automation, CmBacktrace integration, controlled Fault capture, and staged verification
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
+- Design: `design.md`
+- Implementation Plan: `implementation_plan.md`
 - Implementation Commit: `bd8883d` (`feat(debug): add automated fault diagnostics`)
 - CmBacktrace Integration Commit: `1c27c8e` (`feat(debug): integrate CmBacktrace fault diagnostics`)
 - Verification Commit: `bd8883d` (code, automation, and board evidence recorded below)
-- Review Commit: `Not created yet`
+- Review Commit: `Pending documentation commit`
 - Updated At: `2026-09-15`
 
 ## Position In Roadmap
@@ -196,4 +198,5 @@ not block the S05A review, but must be completed before S07 is closed.
 ## Next Action
 
 The CmBacktrace integration and controlled Fault scope have been verified. The
-next action is S05A Review; after Review approval, enter S06 design discussion.
+S05A Review is complete with `PASS / CLOSED`. The next action is to enter S06
+design discussion.

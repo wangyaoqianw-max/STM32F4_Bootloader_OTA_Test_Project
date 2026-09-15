@@ -3,9 +3,10 @@
 ## Context Metadata
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
+- S05A Review Commit: `Pending documentation commit`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
@@ -19,7 +20,7 @@
 - Last Closed Stage: `S05_UART_Ymodem`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S05A Verification Role / Review handoff`
+- Current Role: `S06 Design Role / context handoff`
 - Updated At: `2026-09-15`
 
 ## Current Goal
@@ -89,7 +90,7 @@ final result                  PASS
 
 ## S05A GDB Debug Checkpoint
 
-S05A 位于已关闭的 S05 与计划中的 S06 之间，当前状态为 `READY_FOR_REVIEW`。
+S05A 位于已关闭的 S05 与计划中的 S06 之间，当前状态为 `CLOSED`。
 
 已完成的真实板测基线：
 
@@ -128,7 +129,7 @@ continue& -> disconnect -> quit                      PASS
 
 正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
-当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据、CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入，以及三类受控 Fault 注入、现场采集和 GDB/CmBacktrace 交叉验证。S04 Reset/Power-cycle Persistence 仍未完成，继续延期到后续阶段。
+当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据、CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入，以及三类受控 Fault 注入、现场采集和 GDB/CmBacktrace 交叉验证。Review 已通过并关闭 S05A；S04 Reset/Power-cycle Persistence 仍未完成，继续延期到后续阶段。
 
 正式交接：
 
@@ -195,6 +196,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Blockers
 
-S05A GDB / CmBacktrace / controlled Fault checkpoint 无阶段内阻塞项；当前只等待 S05A Review。S04 Reset / Power-cycle Persistence 作为跨阶段延期回归，不阻塞本次 Review。
+S05A GDB / CmBacktrace / controlled Fault checkpoint 无阶段内阻塞项，Review 已通过。S04 Reset / Power-cycle Persistence 作为跨阶段延期回归，不阻塞 S05A 关闭。
 
-当前等待 S05A Review；Review 通过后再进入 S06 Design Discussion。
+下一步进入 S06 Design Discussion；S04 Reset / Power-cycle Persistence 仍须在 S07 关闭前完成。
