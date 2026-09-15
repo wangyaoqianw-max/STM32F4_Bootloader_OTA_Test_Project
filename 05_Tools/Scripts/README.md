@@ -23,12 +23,15 @@
 | 入口 | 功能 |
 |---|---|
 | `build_app.bat` | Keil 编译 `OTA_APP` Target |
-| `flash_app.bat` | J-Link SWD 烧录 `OTA_APP.hex`，并 Reset → Halt → Go |
+| `flash_app.bat run` | J-Link SWD 烧录 `OTA_APP.hex`，并 Reset → Halt → Go |
+| `flash_app.bat prepare` | J-Link SWD 烧录 `OTA_APP.hex` 后保持 MCU Halt，等待调试工具预启动 |
 | `rtt_capture.bat [秒数]` | 采集 RTT Up Channel 0 |
 | `run_app_cycle.bat [秒数]` | 编译 → 烧录 → RTT 采集 |
 | `start_gdb_server.bat` | 前台启动 J-Link GDB Server，供手工调试 |
 | `gdb_runtime_snapshot.bat halt` | 快照后 `detach → quit`，保持 MCU 暂停 |
 | `gdb_runtime_snapshot.bat resume` | 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
+| `gdb_fault_capture.bat capture` | 已发生 Fault 时读取 GDB Fault 现场并保持 MCU Halt |
+| `gdb_fault_capture.bat trigger` | GDB 已启动后执行复位、运行受控 Fault 测试并采集现场 |
 | `send_ymodem.bat` | 调用 Tera Term 宏发送 YMODEM 固件 |
 | `send_ymodem_python.bat` | 调用 Python Sender，支持 Agent/JSON 场景 |
 
@@ -64,7 +67,7 @@ RTT       = Channel 0
 统一烧录入口：
 
 ```bat
-05_Tools\Scripts\flash_app.bat
+05_Tools\Scripts\flash_app.bat run
 ```
 
 功能：
@@ -72,11 +75,13 @@ RTT       = Channel 0
 - 使用 `JLink.exe` 连接 `STM32F411CE`；
 - 通过 SWD 4 MHz 下载 Keil 生成的 `OTA_APP.hex`；
 - `loadfile` 自带写入校验；
-- 下载后执行 Reset -> Halt -> Go，使 Application 进入运行状态；
+- `run` 模式下载后执行 Reset -> Halt -> Go，使 Application 进入运行状态；
+- `prepare` 模式下载后保持 MCU Halt，工具链可以在下一次复位前预启动监听器；
 - 输出 `06_Output/Logs/OTA_APP_flash.log`；
 - J-Link 被 Keil、RTT Viewer 或其他调试器占用时返回失败。
 
-执行烧录前应先运行 `build_app.bat`，确保 HEX 是当前代码对应的产物。
+执行烧录前应先运行 `build_app.bat`，确保 HEX 是当前代码对应的产物。需要捕获复位后早期事件时，
+先运行 `flash_app.bat prepare`，再启动 GDB 工具，最后由 GDB 执行复位和运行。
 
 ## RTT capture
 
@@ -121,6 +126,40 @@ GDB 调试入口：
 
 ```bat
 05_Tools\Scripts\start_gdb_server.bat
+```
+
+## GDB Fault capture
+
+受控 Fault 测试入口：
+
+```bat
+05_Tools\Scripts\flash_app.bat prepare
+05_Tools\Scripts\gdb_fault_capture.bat trigger
+```
+
+`trigger` 模式要求当前 AXF 对应的测试固件已经启用 `DIAG_FAULT_TEST_ENABLE=1`。
+它会先启动 J-Link GDB Server 和 GDB 客户端、设置工程 Fault-loop 断点，再由该 GDB 会话执行：
+
+```text
+set breakpoint -> monitor reset -> continue& -> Fault Handler capture -> detach -> quit
+```
+
+如果 Fault 已经由其他方式产生，使用：
+
+```bat
+05_Tools\Scripts\gdb_fault_capture.bat capture
+```
+
+Fault Capture 不执行 `load`、不自动恢复 MCU。GDB 释放 J-Link 后，脚本才启动 RTT Logger 读取
+CmBacktrace 已写入的 RTT 缓冲；J-Link 同一时刻只能由一个工具占用，不能把 RTT Logger 与 GDB
+Server 并行启动后再烧录或复位。
+
+输出：
+
+```text
+06_Output/Logs/OTA_APP_fault_gdb.log
+06_Output/Logs/OTA_APP_fault_rtt.log
+06_Output/Logs/OTA_APP_gdb_server.log
 ```
 
 ## One-command local cycle

@@ -3,14 +3,14 @@
 ## Metadata
 
 - Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
-- Current Scope: GDB automation, CmBacktrace integration, and staged verification
+- Current Scope: GDB automation, CmBacktrace integration, controlled Fault capture, and staged verification
 - Design / Implementation Plan Input: Project Owner supplied S05A plan, 2026-09-15
-- Implementation Commit: `54824e9` (`feat(debug): automate GDB runtime snapshots`)
+- Implementation Commit: `bd8883d` (`feat(debug): add automated fault diagnostics`)
 - CmBacktrace Integration Commit: `1c27c8e` (`feat(debug): integrate CmBacktrace fault diagnostics`)
-- Verification Commit: `54824e9` (verification evidence committed with implementation)
+- Verification Commit: `bd8883d` (code, automation, and board evidence recorded below)
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-15`
 
@@ -18,7 +18,7 @@
 
 S05A is a new small stage inserted after the closed `S05_UART_Ymodem` stage and before `S06_RTOS_Runtime`. It does not reopen S05 and does not change the S05 Ymodem or Firmware Storage contract.
 
-The immediate S05A delivery is limited to:
+The completed S05A delivery is:
 
 ```text
 Keil AXF
@@ -35,8 +35,7 @@ CmBacktrace source is now available under
 adds the upstream core and Keil HardFault handler, a project-owned configurable
 Fault adapter, RTT output configuration, and the minimal FreeRTOS stack/name
 compatibility patch. Controlled Fault injection, automated GDB Fault Capture,
-and GDB/CmBacktrace cross-validation remain pending and must not be reported as
-hardware PASS.
+and GDB/CmBacktrace cross-validation are now verified on the real board.
 
 S04 Reset Persistence and Power-cycle Persistence remain `PENDING / DEFERRED`; they are not part of the current GDB automation checkpoint.
 
@@ -107,9 +106,28 @@ Running state
 
 GDB runtime automation must not execute `load`; Flash programming remains the responsibility of the existing `flash_app.bat` flow.
 
+For the controlled Fault workflow, the tool order is fixed:
+
+```text
+Keil Build
+→ flash_app.bat prepare
+→ start J-Link GDB Server and GDB client
+→ set diagnostics_fault_capture_stop breakpoint
+→ monitor reset
+→ continue&
+→ Fault Handler saves context
+→ breakpoint capture
+→ detach
+→ start RTT Logger after J-Link is released
+```
+
+`J-Link` is single-owner. RTT Logger must not be opened in parallel with the
+GDB Server or Flash Commander; it reads the retained RTT buffer only after GDB
+has detached and released the Probe.
+
 ## Implementation Inputs
 
-The implemented GDB-only tooling described in the S05A plan is:
+The implemented S05A tooling and firmware integration described in the plan is:
 
 ```text
 05_Tools/Config/toolchain.local.example.bat
@@ -118,6 +136,12 @@ The implemented GDB-only tooling described in the S05A plan is:
 05_Tools/Scripts/start_gdb_server.bat
 05_Tools/Scripts/gdb_runtime_snapshot.bat
 05_Tools/Scripts/gdb_runtime_snapshot.ps1
+05_Tools/Scripts/gdb_fault_capture.bat
+05_Tools/Scripts/gdb_fault_capture.ps1
+03_Firmware/Application/OTA_APP/00_Config/diagnostics_config.h
+03_Firmware/Application/OTA_APP/04_Impl/impl_diagnostics/diagnostics_fault.c
+03_Firmware/Application/OTA_APP/04_Impl/impl_diagnostics/diagnostics_fault.h
+03_Firmware/Application/OTA_APP/04_Impl/impl_diagnostics/diagnostics_fault_trigger.S
 ```
 
 Required runtime modes:
@@ -147,7 +171,13 @@ No implicit Flash programming         PASS
 Server PID cleanup                    PASS
 J-Link released                       PASS
 Non-zero failure paths                PASS
-Existing Flash / RTT reuse             NOT_APPLICABLE / no firmware source changed
+Existing Flash / RTT reuse             PASS
+Controlled Invalid Address Fault      PASS
+Controlled Undefined Instruction      PASS
+Controlled Divide-by-zero Fault       PASS
+GDB/CmBacktrace PC/context agreement   PASS
+Normal firmware recovery after tests  PASS
+Fault detach leaves MCU halted        PASS
 ```
 
 Observed board evidence:
@@ -160,15 +190,10 @@ resume, uwTick after approximately 2 seconds: 0x396313 -> 0x399082
 Full evidence is in
 `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`.
 
-After the CmBacktrace code and controlled Fault verification are complete,
-reassess whether the remaining automated Fault Capture and persistence work
-should continue in S05A or be split into a later diagnostics stage before
-entering S06.
+The remaining S04 persistence regression is intentionally deferred. It does
+not block the S05A review, but must be completed before S07 is closed.
 
 ## Next Action
 
-The CmBacktrace integration scope has been explicitly confirmed. Current
-implementation has passed the integration contract test, Keil full rebuild,
-flash and normal RTT/runtime checks. The next handoff must record the
-implementation commit, compiler evidence, and the still-pending controlled
-Fault board test.
+The CmBacktrace integration and controlled Fault scope have been verified. The
+next action is S05A Review; after Review approval, enter S06 design discussion.

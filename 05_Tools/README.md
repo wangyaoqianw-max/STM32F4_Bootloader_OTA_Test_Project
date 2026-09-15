@@ -5,6 +5,7 @@
 ```text
 Keil 编译 → J-Link 烧录 → RTT 采集
                      ↘ GDB 在线调试 / Runtime Snapshot
+Fault Test Build → Flash prepare → GDB Server/GDB → monitor reset → continue& → Fault Capture → RTT 读取
 PC 固件文件 → YMODEM 发送 → STM32F411 → External Flash
 Keil .bin → Firmware Image V1 .img
 ```
@@ -21,7 +22,7 @@ Keil .bin → Firmware Image V1 .img
 | `Firmware/` | `pack_firmware.py`、测试 | 生成 S04 Firmware Image V1，校验 Header/Payload 规则 |
 | `Ymodem/` | Python Sender、串口/协议模块、Host Test | 自动识别串口、发送固件、JSON 结果、协议测试 |
 | `TeraTerm/` | `send_ymodem.ttl` | Tera Term 5 真实板级 YMODEM 发送宏 |
-| `Debug/` | GDB 命令脚本、自动化契约测试 | Runtime Snapshot、halt/resume 生命周期和失败路径检查 |
+| `Debug/` | GDB/CmBacktrace 命令脚本、自动化契约测试 | Runtime Snapshot、Fault Capture、CmBacktrace 接入和失败路径检查 |
 | `CI/` | README 占位目录 | 当前没有独立 CI 配置或可执行工具 |
 | `Packaging/` | README 占位目录 | 当前没有独立打包工具，打包功能在 `Firmware/` |
 
@@ -32,9 +33,10 @@ Keil .bin → Firmware Image V1 .img
 | 入口 | 支持功能 | 主要输出 |
 |---|---|---|
 | `Scripts/build_app.bat` | 使用 Keil/uVision 编译 `OTA_APP` Target；区分成功、警告、错误退出码 | `06_Output/Logs/OTA_APP_build.log`；生成 Keil `.hex/.bin/.axf` |
-| `Scripts/flash_app.bat` | 使用 J-Link Commander 通过 SWD 烧录 `OTA_APP.hex`，随后 Reset → Halt → Go | `06_Output/Logs/OTA_APP_flash.log` |
+| `Scripts/flash_app.bat run` | 使用 J-Link Commander 通过 SWD 烧录 `OTA_APP.hex`，随后 Reset → Halt → Go | `06_Output/Logs/OTA_APP_flash.log` |
+| `Scripts/flash_app.bat prepare` | 烧录 `OTA_APP.hex` 后保持 MCU Halt，供必须在下一次 Reset 前启动的调试工具使用 | `06_Output/Logs/OTA_APP_flash.log` |
 | `Scripts/rtt_capture.bat [秒数]` | 使用 J-Link RTT Logger 采集 RTT Up Channel 0；默认 10 秒 | `OTA_APP_rtt.log`、`OTA_APP_rtt_logger.log` |
-| `Scripts/run_app_cycle.bat [秒数]` | `Build → Flash → RTT Capture` 一键闭环；编译警告会保留为警告结果 | 上述编译、烧录、RTT 日志 |
+| `Scripts/run_app_cycle.bat [秒数]` | `Build → Flash(run) → RTT Capture` 一键闭环；编译警告会保留为警告结果 | 上述编译、烧录、RTT 日志 |
 
 这些入口默认使用 `STM32F411CE / SWD / 4000 kHz`。闭环成功只表示工具链动作成功，不能替代阶段级功能验收。
 
@@ -54,7 +56,24 @@ GDB 使用 Keil 生成的 `OTA_APP.axf` 加载符号，但不会执行 GDB `load
 06_Output/Logs/OTA_APP_gdb_snapshot.log
 ```
 
-### 3. Firmware Image V1 打包
+### 3. Fault / Crash 诊断
+
+| 入口 | 支持功能 |
+|---|---|
+| `Scripts/gdb_fault_capture.bat capture` | 连接已经停在 Fault Handler 的 MCU，读取 Fault PC/LR、MSP/PSP、CFSR/HFSR/MMFAR/BFAR、源码位置、Backtrace 和栈内存；保持 Halt |
+| `Scripts/gdb_fault_capture.bat trigger` | 适用于启用 `DIAG_FAULT_TEST_ENABLE=1` 的测试固件；由已启动的 GDB 会话设置 Fault-loop 断点，再执行 `monitor reset → continue&`，命中后采集 Fault |
+| `Debug/GDB/fault_capture.gdb` | 已发生 Fault 的只读现场采集脚本，不执行 `load`、`reset` 或 `continue&` |
+| `Debug/GDB/fault_trigger_capture.gdb` | 在 GDB 已启动后设置捕获断点，执行复位和 `continue&`，待工程 Fault Handler 保存现场后采集 |
+| `Debug/CmBacktrace/test_fault_diagnostics.ps1` | 检查 Fault 类型、现场字段、CmBacktrace 调用和 Fault Capture 契约 |
+| `Debug/test_tool_sequence.ps1` | 检查 prepare、预启动 GDB、复位触发和 J-Link 所有权顺序 |
+
+Fault 测试的调用顺序固定为：`build_app.bat → flash_app.bat prepare → gdb_fault_capture.bat trigger`。
+其中 `prepare` 烧录后不运行；`gdb_fault_capture.bat trigger` 会先启动 GDB Server/GDB 客户端并设置
+`diagnostics_fault_capture_stop` 断点，随后才由 GDB 执行 `monitor reset` 和 `continue&`。
+RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，因此 RTT Fault 日志在 GDB
+`detach` 释放 J-Link 后再读取 RTT 缓冲，不与 GDB 并行抢占设备。
+
+### 4. Firmware Image V1 打包
 
 `Firmware/pack_firmware.py` 将 Application Payload 打包为 S04 固定格式：
 
@@ -73,7 +92,7 @@ python .\05_Tools\Firmware\pack_firmware.py `
 
 此工具只负责生成 `.img`，不负责串口传输、Flash 烧录或 Bootloader 安装。
 
-### 4. YMODEM 固件发送
+### 5. YMODEM 固件发送
 
 #### Tera Term 真实板级入口
 
@@ -148,8 +167,8 @@ python -B -m unittest discover -s .\05_Tools\Ymodem\tests -v
 ## 当前未提供的功能
 
 ```text
-CmBacktrace 移植与 Fault 现场采集
-Fault 注入和 RTT Fault 输出工作流
+S04 Reset Persistence / Power-cycle Persistence 回归证据
+完整 Core Dump、GCC/CMake 构建迁移和 FreeRTOS 全任务栈解析
 Bootloader 内部 Flash 安装
 Trial / Confirm / Rollback
 独立 CI 流水线配置

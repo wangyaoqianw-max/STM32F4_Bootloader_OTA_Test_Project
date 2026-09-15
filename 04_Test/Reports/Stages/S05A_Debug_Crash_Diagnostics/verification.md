@@ -6,8 +6,9 @@
 - Date: `2026-09-15`
 - Branch: `main`
 - Scope: GDB automation, CmBacktrace integration, and staged board verification
-- Status: `READY_FOR_VERIFICATION`
-- CmBacktrace: integrated; controlled Fault board verification is pending
+- Status: `READY_FOR_REVIEW`
+- CmBacktrace: integrated; controlled Fault and automated capture board verification passed
+- S05A Implementation / Verification Commit: `bd8883d`
 - CmBacktrace Integration Commit: `1c27c8e`
 
 ## 2. Verification Environment
@@ -38,13 +39,16 @@ The local executable paths are stored only in the ignored
 | Invalid port | PASS | Port `0` rejected with non-zero result |
 | Non-listening server | PASS | Startup failure/timeout path returned non-zero |
 | GDB `load` protection | PASS | Both command scripts and wrapper reject `load` |
+| Fault diagnostic contract test | PASS | `05_Tools/Debug/CmBacktrace/test_fault_diagnostics.ps1` |
+| Tool ordering contract test | PASS | `05_Tools/Debug/test_tool_sequence.ps1` |
 | `git diff --check` | PASS | No whitespace errors |
 | CmBacktrace integration contract test | PASS | `05_Tools/Debug/CmBacktrace/test_cm_backtrace_integration.ps1` |
-| Keil full rebuild | PASS | `OTA_APP_rebuild.log`, 0 errors, 14 existing warnings |
+| Keil full rebuild | PASS | `OTA_APP_build.log`, 0 errors, 14 existing warnings |
 
 The full Keil rebuild used ARMCC V5.06 update 7 (build 960). The warnings are
-from existing platform and EasyLogger files; the new CmBacktrace and project
-adapter files produced no compiler warnings. The resulting AXF was:
+from existing platform and EasyLogger files; the new CmBacktrace, project
+adapter and undefined-instruction trigger files produced no compiler warnings.
+The resulting AXF was:
 
 ```text
 03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.axf
@@ -124,10 +128,15 @@ The Keil project now compiles and links:
 
 ```text
 cm_backtrace.c
-CmBacktrace/fault_handler/keil/cmb_fault.S
 cmbacktrace_port.c
 cmbacktrace_fault_handlers.S
+diagnostics_fault.c
+diagnostics_fault_trigger.S
 ```
+
+The project-owned fault adapter is the only owner of the four Cortex-M Fault
+vectors; the upstream `CmBacktrace/fault_handler/keil/cmb_fault.S` is retained
+as vendor source but is not compiled by the Keil project.
 
 The map file resolves `cm_backtrace_fault`, `cmbacktrace_port_init`,
 `vTaskStackAddr`, `vTaskStackSize`, `vTaskName`, and the `STACK` block symbols.
@@ -147,25 +156,58 @@ The normal RTT log contains successful log initialization, Application startup,
 Storage SPI construction/init/start, and `Application init result: 0`. No reset,
 fault loop, or runtime regression was observed.
 
-### 6.3 Fault board test
+### 6.3 Controlled Fault board test
 
 ```text
-Controlled Fault injection        PENDING
-CmBacktrace Fault RTT output      PENDING
-GDB/CmBacktrace cross-validation  PENDING
+Invalid Address Fault             PASS
+Undefined Instruction Fault       PASS
+Divide by Zero Fault              PASS
+CmBacktrace Fault RTT output      PASS
+GDB/CmBacktrace PC/context        PASS
+Normal firmware recovery          PASS
+Fault detach leaves MCU halted    PASS
 ```
 
-This integration change does not add a destructive Fault trigger. The pending
-items require a separately reviewed controlled Fault injection entry and must
-not be inferred from a successful build or normal boot.
+Each test used the same ordered workflow:
+
+```text
+build_app.bat
+→ flash_app.bat prepare
+→ gdb_fault_capture.bat trigger
+```
+
+`trigger` started J-Link GDB Server and the GDB client before issuing
+`monitor reset` and `continue&`. It stopped at
+`diagnostics_fault_capture_stop` after the project handler had saved context,
+then detached. RTT Logger started only after GDB released the single-owner
+J-Link Probe.
+
+Observed field evidence:
+
+| Fault type | GDB / RTT Fault PC | CFSR | Expected status |
+|---|---:|---:|---|
+| Invalid Address | `0x08004FEE` | `0x00000400` | Imprecise BusFault |
+| Undefined Instruction | `0x080002C6` | `0x00010000` | UsageFault / UNDEFINSTR |
+| Divide by Zero | `0x08004FE0` | `0x02000000` | UsageFault / DIVBYZERO |
+
+For the Invalid Address case, `CFSR=0x00000400` means `BFARVALID` is not set;
+the BFAR/MMFAR values are therefore not treated as a valid fault address.
+Across all three cases, GDB and RTT agreed on Fault PC, EXC_RETURN, stacked SP,
+PSP/MSP and stacked core registers. CmBacktrace also identified the
+`appSystem` thread and emitted its retained RTT Fault report.
+After the final Invalid Address capture, an independent J-Link `Regs` check
+reported `PC=0x080002C0` and `IPSR=005 (BusFault)` without a running-CPU
+report, confirming that the Fault-loop remained halted after `detach`.
 
 ## 6. Logs
 
-The latest local runtime logs are generated at:
+The latest local runtime and Fault logs are generated at:
 
 ```text
 06_Output/Logs/OTA_APP_gdb_server.log
 06_Output/Logs/OTA_APP_gdb_snapshot.log
+06_Output/Logs/OTA_APP_fault_gdb.log
+06_Output/Logs/OTA_APP_fault_rtt.log
 ```
 
 They are ignored local artifacts and are not committed to Git.
@@ -175,12 +217,7 @@ They are ignored local artifacts and are not committed to Git.
 The following remain outside this checkpoint:
 
 ```text
-Fault injection and Cortex-M fault context capture
-RTT fault output workflow
-GDB Fault Capture automation
-GDB/CmBacktrace cross-validation
 S04 Reset Persistence / Power-cycle Persistence regression
 ```
 
-Next action: implement and verify the controlled Fault trigger and Fault Capture
-workflow, then complete S05A review before entering S06 RTOS Runtime design.
+Next action: complete S05A review before entering S06 RTOS Runtime design.

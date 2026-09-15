@@ -7,12 +7,17 @@
 ```text
 GDB/runtime_snapshot_resume.gdb  运行态快照后继续运行
 GDB/runtime_snapshot_halt.gdb    运行态快照后保持暂停
+GDB/fault_capture.gdb             已发生 Fault 的只读现场采集
+GDB/fault_trigger_capture.gdb     GDB 已启动后复位并触发受控 Fault
 GDB/test_gdb_automation.ps1      脚本合同和失败路径测试
 CmBacktrace/test_cm_backtrace_integration.ps1  CmBacktrace 工程接入契约测试
+CmBacktrace/test_fault_diagnostics.ps1          Fault 诊断契约测试
+test_tool_sequence.ps1             工具调用顺序契约测试
 ```
 
-CmBacktrace 源码位于 Application 工程的 `05_Vendors/CmBacktrace`，本目录
-只保存其工程接入契约测试。Fault 注入和 MCU Fault 现场自动采集仍未实现。
+CmBacktrace 源码位于 Application 工程的 `05_Vendors/CmBacktrace`，本目录只保存工程接入、Fault
+诊断和工具调用顺序契约测试。Fault 原始输出通过 SEGGER RTT 最小接口写入，不依赖 EasyLogger、
+Mutex、Queue 或阻塞 UART。
 
 ## GDB Runtime Snapshot
 
@@ -52,9 +57,34 @@ halt:   snapshot -> detach -> quit
 Resume 模式不得使用 -batch，也不得在 continue& 后使用 detach。
 Halt 模式保持 MCU 暂停。两个模式都不执行 load。
 
+## GDB Fault Capture
+
+已发生 Fault 的采集：
+
+~~~bat
+05_Tools\Scripts\gdb_fault_capture.bat capture
+~~~
+
+测试固件的完整触发与采集：
+
+~~~bat
+05_Tools\Scripts\flash_app.bat prepare
+05_Tools\Scripts\gdb_fault_capture.bat trigger
+~~~
+
+`prepare` 只烧录并保持 MCU Halt；`trigger` 随后先启动 GDB Server/GDB 客户端并设置
+`diagnostics_fault_capture_stop` 断点，再通过已建立的 GDB 会话执行 `monitor reset` 和 `continue&`。
+这样需要在复位前打开的 GDB 工具已经处于工作状态。命中断点表示工程 Fault Handler 已保存现场，
+随后执行 `halt-and-detach`，不会执行 `load` 或再次恢复 MCU。
+
+J-Link 同一时刻只能由一个工具占用。RTT Logger 不能与 GDB Server 并行连接，因此脚本在 GDB
+释放 Probe 后再读取 RTT 缓冲中的 CmBacktrace 输出。
+
 输出日志：
 
 ~~~text
 06_Output/Logs/OTA_APP_gdb_server.log
 06_Output/Logs/OTA_APP_gdb_snapshot.log
+06_Output/Logs/OTA_APP_fault_gdb.log
+06_Output/Logs/OTA_APP_fault_rtt.log
 ~~~
