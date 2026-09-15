@@ -56,14 +56,19 @@ V1.0 采用 YMODEM-1K 数据包、CRC-16/XMODEM、Block 0、有限重试和明�
 
 ### `ymodem_sender.py`
 
-负责参数解析、文件和串口选择、日志、资源关闭以及退出码映射。支持：
+负责子命令解析、文件和串口选择、日志、资源关闭以及退出码映射。稳定 CLI 以两个子命令为主：
 
 ```text
-python ymodem_sender.py --file app.bin --baud 115200
-python ymodem_sender.py --port COM7 --file app.bin --baud 115200
+ymodem_sender devices [--json]
+ymodem_sender send app.bin [--port COM7] [--baud 115200]
 ```
 
-额外支持超时、最大重试次数、VID、PID 和描述匹配参数，以便自动化环境明确控制选择策略。
+`send` 额外支持超时、最大重试次数、VID、PID、描述匹配和 `--json` 参数；`devices` 用于让大模型或脚本在发送前查询当前串口列表。脚本文件直接执行时等价于：
+
+```text
+python ymodem_sender.py devices
+python ymodem_sender.py send app.bin --port COM7 --baud 115200
+```
 
 ## 可靠性和退出码
 
@@ -72,10 +77,13 @@ python ymodem_sender.py --port COM7 --file app.bin --baud 115200
 标准调用约束：
 
 ```text
-输入：--file、可选 --port、--baud 及筛选/重试参数
-输出：阶段日志写入标准输出，错误日志写入标准错误
+输入：devices 或 send 子命令、文件路径、可选 --port、--baud 及筛选/重试参数
+默认输出：阶段日志写入标准输出，错误日志写入标准错误
+--json：标准输出只写一个 JSON 结果对象，协议/诊断日志写入标准错误
 结果：进程退出码表示最终状态
 ```
+
+`--json` V1 只提供稳定的轻量结果字段：`ok`、`command`、`exit_code`、`port`、`file`、`bytes_sent`、`blocks_sent`、`retries`、`phase` 和 `error`；不把 JSON 设计成新的协议层。
 
 ```text
 0 SUCCESS
@@ -87,11 +95,11 @@ python ymodem_sender.py --port COM7 --file app.bin --baud 115200
 6 RECEIVER_CANCELLED（收到 CAN）
 ```
 
-日志使用固定前缀，包括 `[PORT]`、`[WAIT]`、`[TX]`、`[RETRY]`、`[DONE]` 和 `[ERROR]`。发送失败时尽力发送双 CAN，但不能用取消动作覆盖原始失败原因。
+日志使用固定前缀，包括 `[PORT]`、`[WAIT]`、`[RX]`、`[TX]`、`[RETRY]`、`[DONE]` 和 `[ERROR]`，关键控制字节 `C / ACK / NAK / CAN`、Block 序号和 EOT 都要能从日志诊断。发送失败时尽力发送双 CAN，但不能用取消动作覆盖原始失败原因。
 
 ## 测试策略
 
-Host Test 使用标准库 `unittest` 和脚本化传输对象，不依赖真实 COM：
+Host Test 使用标准库 `unittest` 和 Mock/脚本化 Transport，不依赖真实 COM：
 
 - CRC-16/XMODEM 已知向量；
 - Block 0 字段、长度和填充；
@@ -100,6 +108,7 @@ Host Test 使用标准库 `unittest` 和脚本化传输对象，不依赖真实 
 - NAK/超时重试上限；
 - 初始 Receiver 超时和 CAN 取消；
 - VID/PID/描述筛选、唯一候选和多候选拒绝。
+- `devices` / `send` 子命令、`--json` 单对象输出和退出码映射。
 
 Host Test 通过后，使用当前 S05 工程作为真实 Receiver：优先发送已有 `.img` 完成 Receiver/Sink 闭环，再以 `.bin` 做透明传输测试。COM9 的物理连接、板端 `rx_bytes`、Block 0、Slot B 和最终镜像校验分别记录，不能把 Python Host Test 结果表述为硬件验证通过。
 
@@ -108,5 +117,6 @@ Host Test 通过后，使用当前 S05 工程作为真实 Receiver：优先发�
 - 不修改 `03_Firmware` Receiver、Flash Sink 或现有 S05 未提交修改；
 - 不自动烧录、复位、采集 RTT 或分析固件版本；
 - 不随机选择多个未知串口；
+- 不把 `--json` 扩展成复杂事件流；V1 只输出一个最终结果对象；
 - 不把 Tera Term 的本机路径写入提交文件；
 - 不把真实串口测试结果伪装成代码或 Host 验证结果。
