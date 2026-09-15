@@ -4,6 +4,7 @@
 
 - Active Stage: `S05A_Debug_Crash_Diagnostics`
 - Status: `READY_FOR_REVIEW`
+- S05A Implementation / Verification Commit: `54824e9`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
