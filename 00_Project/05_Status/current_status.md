@@ -2,9 +2,10 @@
 
 ## Context Metadata
 
-- Active Stage: `S05_UART_Ymodem`
-- Status: `CLOSED`
+- Active Stage: `S05A_Debug_Crash_Diagnostics`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
+- S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
@@ -15,15 +16,15 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05_UART_Ymodem`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime`
-- Current Role: `Stage Closed / Ready for S06 Design`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
+- Current Role: `S05A Implementation Role / GDB automation scope`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
-`S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。
+`S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前不再继续修改 Ymodem 主链；下一步进入 `S06_RTOS_Runtime` 的设计讨论，先基于现有 FreeRTOS 运行状态重新冻结 Task、IPC、资源所有权和后台 OTA 并发模型，再创建 S06 正式 Stage 文档。
+当前 S05A 先只完成 GDB 自动化与真实板测。手工 GDB 控制能力已经完成真实板卡验证，下一步实现 Agent 可调用的 Runtime Snapshot resume/halt 入口。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断暂不进入本轮实现。
 
 ## S05 Delivered Capabilities
 
@@ -83,6 +84,42 @@ final result                  PASS
 
 - `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 - `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
+
+## S05A GDB Debug Checkpoint
+
+S05A 位于已关闭的 S05 与计划中的 S06 之间，当前状态为 `READY_FOR_IMPLEMENTATION`。
+
+已完成的真实板测基线：
+
+```text
+J-Link GDB Server V7.92             PASS
+STM32F411CE + SWD @ 4000 kHz        PASS
+Keil OTA_APP.axf symbol loading     PASS
+Breakpoint / Continue               PASS
+Next / Step                         PASS
+Backtrace / Memory read             PASS
+Variable read                       PASS
+```
+
+已冻结的退出合同：
+
+```text
+halt state   → detach
+             → MCU remains halted
+
+running state → continue&
+              → disconnect
+              → quit
+              → MCU continues running
+```
+
+`continue& → disconnect` 已通过重新连接和 `uwTick` 增长验证。S05A 自动化不得执行 GDB `load`，Resume 会话不得使用 `-batch`，也不得在 `continue&` 后使用 `detach`。
+
+当前 S05A 只覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理和板测证据。CmBacktrace、Fault 注入/现场采集和 S04 Reset/Power-cycle Persistence 仍未完成。
+
+正式交接：
+
+- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
 - `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
 
 ## Stable Tooling After S05
@@ -111,13 +148,13 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Design Entry
+## S06 Design Entry After S05A
 
 S06 名称保持 `S06_RTOS_Runtime`，但需要修正早期路线中的一个前提：**FreeRTOS 已经存在并正常运行，不需要再次“集成 FreeRTOS”。**
 
 当前 Application 已具备 RTOS Kernel、`appSystem` 等任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
 
-因此 S06 应优先讨论：
+因此 S06 应在 S05A GDB 自动化关闭后优先讨论：
 
 1. Application 正式 Task 划分与生命周期；
 2. OTA / Ymodem 应由哪个 Task 拥有；

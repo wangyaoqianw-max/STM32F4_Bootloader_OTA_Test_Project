@@ -4,9 +4,10 @@
 
 ## Context Metadata
 
-- Active Stage: `S05_UART_Ymodem`
-- Active Stage Status: `CLOSED`
+- Active Stage: `S05A_Debug_Crash_Diagnostics`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
+- S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
 - S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
@@ -17,15 +18,15 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05_UART_Ymodem`
 - S05 Final Result: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime`
-- Current Role: `Stage Closed / Ready for S06 Design`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
+- Current Role: `S05A Implementation Role / GDB automation scope`
 - Updated At: `2026-09-15`
 
 ## Current Goal
 
-S05 已正式关闭并合并到 `main`。下一轮工作从 `S06_RTOS_Runtime` Design Stage 开始。
+S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前不要直接施工 S06 代码。先读取现有 RTOS、UART、Ymodem、Firmware Storage 和任务结构，重新冻结 Application Runtime / Concurrency Model，再生成 S06 `design.md` 与 `implementation_plan.md`。
+当前先完成 GDB 自动化与真实板测。手工 GDB 控制能力已经完成真实板卡验证；S05A 自动化脚本、失败清理和 Runtime Snapshot 板测尚未实施。CmBacktrace 源码尚未下载，Fault/CmBacktrace 诊断不属于当前 GDB checkpoint。
 
 ## Required Reading For S06 Design
 
@@ -174,6 +175,61 @@ Application 稳定工具链：
 
 如果先 Reset MCU、后打开 Sender，可能错过初始 `'C'` 并表现为 Receiver Timeout；这是已确认的工具调用顺序约束，不是协议故障。
 
+## S05A GDB Debug Checkpoint
+
+S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `READY_FOR_IMPLEMENTATION`。
+
+已完成真实板卡验证：
+
+```text
+J-Link GDB Server V7.92             PASS
+STM32F411CE + SWD @ 4000 kHz        PASS
+Keil OTA_APP.axf symbol loading     PASS
+Breakpoint / Continue               PASS
+Next / Step                         PASS
+Backtrace / Memory read             PASS
+Variable read                       PASS
+```
+
+已冻结运行与退出行为：
+
+```text
+Halt state
+→ detach
+→ MCU remains halted
+```
+
+```text
+Running state
+→ continue&
+→ disconnect
+→ quit
+→ MCU continues running
+```
+
+`continue& → disconnect` 已通过重新连接和 `uwTick` 增长验证。GDB 自动化不得执行 `load`；Resume 会话不得使用 `-batch`，也不得在 `continue&` 后执行 `detach`。J-Link GDB Server 使用 `monitor reset`，不使用 `monitor reset halt`。
+
+当前 S05A 范围只包括：
+
+```text
+GDB toolchain configuration
+GDB runtime snapshot resume/halt scripts
+Agent-callable PowerShell / BAT entrypoints
+Failure cleanup and J-Link release
+Real-board verification
+```
+
+暂不包括：
+
+```text
+Fault injection / Cortex-M fault context
+CmBacktrace integration and RTT fault workflow
+S04 Reset Persistence
+S04 Power-cycle Persistence
+```
+
+正式交接：`00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+
 ## Current RTOS Reality Before S06
 
 早期 Roadmap 将 S06 描述为“集成 FreeRTOS”，该前提已经过时。
@@ -238,6 +294,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Next Action
 
-开启 `S06_RTOS_Runtime` 设计讨论。
+先实施并板测通过 S05A GDB Runtime Snapshot 自动化；S05A 关闭后再开启 `S06_RTOS_Runtime` 设计讨论。
 
-先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。
+S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。

@@ -79,7 +79,8 @@ S12  增加 OTA 安全机制实验
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Read / Write；8 Byte Page Split；ACK Polling；边界；RTT 板测 | S01；AT24C02 / I2C 资料 | `CLOSED` | 单字节/页内/跨页、越界、Reset/掉电保持和错误诊断通过 |
 | `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 基础模型 | Slot A/B；Firmware Header；Version / Size / CRC；Metadata 双副本；Firmware Storage；PC pack tool | S02；S03 | `CLOSED` | Firmware Contract、Host Test、Keil Build、真实板测和 Review 通过；Persistence 延期回归保留到 S07 前 |
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | Tera Term Reference Sender；UART DMA/RingBuffer；Ymodem Parser / Receiver / Sink；Block 0；CRC-16；Timeout / Cancel / Retry；Firmware Storage Header/Payload 写入；RTT 板测 | S02；S04；现有通信 UART；Ymodem 高可信参考 | `CLOSED` | Tera Term 发送 S04 `.img`；MCU 完整接收并按 Slot 合同写入；`firmware_storage_validate_image()` VALID；中止后不提交 Header，重新传输可恢复 |
-| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
+| `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试与运行态快照能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `READY_FOR_IMPLEMENTATION` | Resume/Halt 快照通过；`continue& → disconnect → quit` 可恢复 MCU；halt 模式保持暂停；无隐式 Flash 编程；失败路径、PID 清理和 J-Link 释放通过 |
+| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06；补齐 S04 persistence regression | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image；Persistence 补测通过 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
@@ -101,7 +102,7 @@ Application
 └─ 识别 Firmware Image / Slot / Metadata
 ```
 
-### S05 - S07: OTA Download Path
+### S05 - S05A - S07: OTA Download Path and Debug Gate
 
 建立 Firmware 从 PC 进入设备到 Application 设置升级请求的完整下载链。
 
@@ -121,7 +122,7 @@ PENDING
 Reset
 ```
 
-S05 已解决可靠文件运输；S06 解决正式并发运行模型；S07 才组合业务状态和升级请求。
+S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S06 解决正式并发运行模型；S07 才组合业务状态和升级请求。
 
 ### S08 - S10: Bootloader & Reliability
 
@@ -233,6 +234,23 @@ S05 正式入口：
 - `00_Project/03_Stages/S05_UART_Ymodem/review.md`
 - `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
 
+当前活动阶段：
+
+```text
+S05A_Debug_Crash_Diagnostics
+Roadmap State: READY_FOR_IMPLEMENTATION
+Branch: main
+Baseline Commit: ec6119f64306d027c86208329823cf42b77ceebf
+Scope: GDB automation and real-board verification
+Next action: implement Runtime Snapshot resume/halt entrypoints
+```
+
+S05A 当前已完成 GDB 手工兼容性与控制能力板测，包括 Breakpoint、Continue、Next、Step、Backtrace、Memory Read、Variable Read，以及 `continue& → disconnect → quit` 后 MCU 恢复运行的行为确认。CmBacktrace 源码尚未下载，Fault/CmBacktrace 和 S04 Persistence 回归不属于当前 GDB checkpoint。
+
+S05A 交接入口：
+
+- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+
 下一阶段：
 
 ```text
@@ -241,4 +259,4 @@ Roadmap State: PLANNED
 Next action: Design Discussion
 ```
 
-S06 尚未创建正式 Stage 文档，不直接施工。
+S06 尚未创建正式 Stage 文档；S05A 关闭前不直接施工 S06。
