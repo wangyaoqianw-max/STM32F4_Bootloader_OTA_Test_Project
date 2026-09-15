@@ -12,8 +12,8 @@
 - S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - S05 Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - S05 Implementation Commit: `00cbd3a`
-- S05 Verification Commit: `Not created yet`
-- S05 Review Commit: `Not created yet`
+- S05 Verification Commit: `1d092de`
+- S05 Review Commit: `1d092de`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - S04 Final Result: `CLOSED / PASS`
 - Current Role: `Review Role / S05 verification and review passed`

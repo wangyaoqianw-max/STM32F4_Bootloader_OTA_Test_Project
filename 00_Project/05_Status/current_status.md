@@ -10,8 +10,8 @@
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - Implementation Commit: `00cbd3a`
-- Verification Commit: `Not created yet`
-- Review Commit: `Not created yet`
+- Verification Commit: `1d092de`
+- Review Commit: `1d092de`
 - Last Closed Stage: `S04_Firmware_Image_Storage`
 - Last Closed Stage Status: `CLOSED`
 - Current Role: `Review Role / verification and review passed`
