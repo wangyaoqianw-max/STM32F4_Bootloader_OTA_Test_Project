@@ -67,6 +67,16 @@ python ymodem_sender.py --port COM7 --file app.bin --baud 115200
 
 ## 可靠性和退出码
 
+这个工具的首要调用方包括 Codex、GPT、PowerShell 和 CMD，因此 CLI 是自动化接口，不提供交互式选择、确认提示或 GUI。调用方必须能够仅凭命令行参数、固定日志前缀和进程退出码完成一次发送并判断结果；自动串口模式在多个候选时直接失败，不等待人工选择。
+
+标准调用约束：
+
+```text
+输入：--file、可选 --port、--baud 及筛选/重试参数
+输出：阶段日志写入标准输出，错误日志写入标准错误
+结果：进程退出码表示最终状态
+```
+
 ```text
 0 SUCCESS
 1 INVALID_ARGUMENT
