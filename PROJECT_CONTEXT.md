@@ -5,82 +5,55 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `DESIGN_APPROVED`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Branch: `main`
+- S05B Initial Design Commit: `9d6b037`
+- S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
+- S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
-- S05B Initial Design Commit: `9d6b037`
-- S05B Design Approval Commit: `Pending current documentation commit`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
-- Branch: `main`
-- S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
-- S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
-- S05 Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
-- S05 Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
-- S05 Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
-- S05 Implementation Commit: `00cbd3a`
-- S05 Verification Commit: `1d092de`
-- S05 Review Commit: `1d092de`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
-- S05 Final Result: `CLOSED / PASS`
+- Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `S05B Design Role`
+- Current Role: `S05B Implementation Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
 
-S05 已正式关闭并合并到 `main`。S05A 已关闭后，在进入 `S06_RTOS_Runtime` 之前新增 `S05B_Toolkit_Reuse` 小阶段。
+S05 和 S05A 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段是 `S05B_Toolkit_Reuse`。
 
-S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 已作为补充回归完成真实板测。
+S05B 的目标不是简单整理目录，而是把已经验证过的 PC 工具从“当前工程专用脚本集合”重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。
 
-当前 S05B 已通过 Design Review，状态为 `DESIGN_APPROVED`。本阶段目标是把 `05_Tools` 从当前工程专用脚本集合重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架，而不是单纯整理目录。
-
-已冻结：
+冻结架构：
 
 ```text
-Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers
+Human / Agent
+      ↓
+Unified Entry / Legacy Entry
+      ↓
+Workflows
+      ↓
+Core + Adapters
+      ↓
+Keil / J-Link / GDB
 ```
 
-Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router；旧 `Scripts` 保留兼容但最终只作为薄包装。
-
-正式设计仅保存在：
+正式设计与实施计划：
 
 ```text
 00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
 ```
 
-当前尚未迁移工具实现。下一步编写正式 `implementation_plan.md`，计划审阅通过后再进入 `READY_FOR_IMPLEMENTATION`。
+当前状态已进入 `READY_FOR_IMPLEMENTATION`。实施必须从 Task 1 的三层配置合同与 Core Config/Path/Logging 开始，不得先移动 Build/GDB 业务脚本。
 
-## Required Reading For S06 Design
+## Required Reading For S05B Implementation
 
-建议按顺序读取：
-
-1. `AGENTS.md`
-2. `README.md`
-3. `PROJECT_CONTEXT.md`
-4. `00_Project/WORKFLOW.md`
-5. `00_Project/01_Requirements/项目需求V1.md`
-6. `00_Project/02_Roadmap/development_roadmap.md`
-7. `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
-8. `00_Project/03_Stages/S05_UART_Ymodem/review.md`
-9. `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
-10. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/design.md`
-11. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/implementation_plan.md`
-12. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
-13. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
-14. `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
-15. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
-16. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
-17. `03_Firmware/AGENTS.md`
-18. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-19. current App / FreeRTOS task initialization
-20. current `service_uart`
-21. current `service_ymodem`
-22. current `service_firmware`
-23. current Platform RTOS abstraction
-
-## Required Reading For S05B Toolkit Reuse
+按顺序读取：
 
 1. `AGENTS.md`
 2. `README.md`
@@ -89,15 +62,115 @@ Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.loca
 5. `00_Project/02_Roadmap/development_roadmap.md`
 6. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
 7. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
-8. `05_Tools/README.md`
-9. `05_Tools/Scripts/README.md`
-10. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
-11. `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
-12. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
+8. `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
+9. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+10. `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
+11. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
+12. `05_Tools/README.md`
+13. `05_Tools/Scripts/README.md`
+14. 当前 `05_Tools/Scripts/*.bat` / `*.ps1`
+15. 当前 `05_Tools/Debug/GDB`、`Debug/CmBacktrace`、`Firmware`、`Ymodem`
+
+## S05B Frozen Design
+
+### Architecture
+
+```text
+Config
++ Core
++ Adapters
++ Workflows
++ Project Tests
++ Legacy Wrappers
+```
+
+Adapter 按变化轴拆分：
+
+```text
+Adapters/Build/Keil
+Adapters/Probe/JLink
+Adapters/Debug/GDB
+```
+
+不使用 `STM32_Keil_JLink` 组合式 Adapter，避免以后增加 GCC/CMake 或其他 Probe 时产生组合爆炸。
+
+### Configuration Model
+
+```text
+toolchain.local.bat   machine tool paths, ignored
+project.defaults.bat  repository project facts, committed
+project.local.bat     machine-specific project overrides, ignored
+```
+
+工程 Target、Keil project 相对路径、AXF/HEX/BIN 相对路径和 MCU 型号属于工程事实；Keil/J-Link/GDB 安装位置属于机器事实；COM、GDB Port、J-Link Speed 等允许由 local override 覆盖。
+
+### Unified Entry
+
+目标稳定入口：
+
+```text
+toolkit.bat build
+toolkit.bat flash run|prepare
+toolkit.bat run
+toolkit.bat rtt
+toolkit.bat snapshot halt|resume
+toolkit.bat fault capture|trigger
+toolkit.bat firmware pack ...
+toolkit.bat ymodem ...
+```
+
+旧 `05_Tools/Scripts/*.bat` 继续存在，但完成迁移后只允许做薄包装，不保留第二套核心实现。
+
+### Stable Exit Classes
+
+```text
+0  SUCCESS
+10 CONFIG_ERROR
+20 BUILD_ERROR
+30 PROBE_ERROR
+40 DEBUG_ERROR
+50 TRANSFER_ERROR
+60 TEST_ERROR
+```
+
+### Project Test Boundary
+
+S04 Persistence 属于当前项目专用 Test Extension：
+
+```text
+05_Tools/Tests/S04_Persistence/
+```
+
+S04 专用 AXF、symbol、解析规则和 runner 不得进入通用 Core/Adapter/Workflow；GDB lifecycle、RTT capture、lock、timeout、logging 等仍由公共能力提供。
+
+## S05B Implementation Order
+
+实施计划共 8 个 Task：
+
+```text
+Task 1  三层配置 + Config/Path/Logging Core
+Task 2  Process / Lock / Cleanup Core
+Task 3  Build/Probe Adapter + Application Workflows
+Task 4  GDB Adapter + Debug Workflows
+Task 5  toolkit Router + Legacy Wrappers
+Task 6  S04 Persistence Project Test Extension
+Task 7  Firmware/Ymodem Router + README/占位目录清理
+Task 8  Full Regression + Cross-project Reuse + Verification Handoff
+```
+
+每个 Task 必须先写/运行合同测试，再迁移实现，并独立提交。任一回归 FAIL 时停在当前 Task。
+
+第二工程复用首选：
+
+```text
+wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS
+```
+
+演练使用临时 clone，只替换 Toolkit 配置，不修改第二工程生产代码，也不得为了适配第二工程编辑通用 Core / Adapter / Workflow。
 
 ## Stable S04 Storage / Firmware Contract
 
-### External Flash
+External Flash：
 
 ```text
 Slot A: 0x000000 ~ 0x07FFFF
@@ -109,22 +182,18 @@ Per Slot:
 Payload capacity  : 508 KiB
 ```
 
-### Firmware Image V1
+Firmware Image V1：
 
 - Header fixed 64 Byte；
 - Header / Payload CRC32；
-- Image Header 是实际 Firmware Version / Size / CRC 权威来源；
+- Image Header 是 Firmware Version / Size / CRC 权威来源；
 - `firmware_storage_validate_image()` 为只读验证；
 - `pack_firmware.py` 输出 compact `.img = [64 Byte Header][Payload]`；
-- Slot 中必须映射为 Header Sector + Payload Offset，不能线性写入 compact `.img`。
+- Slot 中映射为 Header Sector + Payload Offset，不能线性写入 compact `.img`。
 
-### Metadata
-
-AT24C02 Metadata 继续使用双副本 + sequence + CRC + commit marker。S05 没有修改 OTA Metadata，也没有建立 `PENDING` 状态。
+AT24C02 Metadata 保持双副本 + sequence + CRC + commit marker。S05 没有建立 `PENDING`。
 
 ## Stable S05 Ymodem Capability
-
-### Architecture
 
 ```text
 PC Sender
@@ -145,277 +214,87 @@ Firmware Storage
 稳定边界：
 
 - `service_uart` 拥有 UART DMA / RingBuffer / TX / error / data-loss；
-- `ymodem_parser` 负责 Packet framing / block complement / CRC-16；
-- `ymodem_receiver` 负责 Block 0、Block sequence、ACK/NAK、retry、timeout、cancel、EOT；
-- `ymodem_sink` 只定义 begin/write/end/abort 生命周期；
+- `ymodem_parser` 负责 framing / block complement / CRC-16；
+- `ymodem_receiver` 负责 Block 0、sequence、ACK/NAK、retry、timeout、cancel、EOT；
+- `ymodem_sink` 只定义 begin/write/end/abort；
 - Ymodem 不感知 Slot、EEPROM Metadata、PENDING、Reset；
-- Packet CRC 复用 CRC-16/XMODEM；
-- Firmware Storage 提供 `write_payload()` / `write_header()`；
-- Header-last commit 保证失败传输不会提交新的有效 Header。
+- Header-last commit 保证失败传输不会提交新有效 Header。
 
-### Board Verification Result
+真实 Tera Term 板测已验证 Slot B 最终 `VALID`；中止时 `header_commit=0`，重新建立 Session 后可恢复。
 
-最终 Tera Term 真实板测：
+当前 Sender 定位：
 
-```text
-file_size / received          55884 / 55884
-packets received / accepted  57 / 57
-bytes received / written      55884 / 55884
-retry                         0
-UART dropped / errors         0 / 0
-Payload written               55820
-Header commit                 1
-Slot B validation             VALID
-final result                  PASS
-```
+- Tera Term：S05 真实板默认验收入口；
+- Python Sender：Host Test、Agent 自动化、协议诊断，支持 `--json`。
 
-中止传输后 `header_commit=0`，随后重新建立 Session 可以再次成功传输并得到 VALID。
+## Stable S05A GDB Contract
 
-正式证据：
+真实板已验证：Breakpoint / Continue / Next / Step / Backtrace / Memory Read / Variable Read、Runtime Snapshot、CmBacktrace、三类受控 Fault 和 GDB/RTT 交叉核对。
 
-- `00_Project/03_Stages/S05_UART_Ymodem/design.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/review.md`
-- `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
-
-## PC / Local Tooling
-
-默认板级 Ymodem Sender：Tera Term 5。
-
-仓库入口：
+冻结退出合同：
 
 ```text
-05_Tools/Scripts/send_ymodem.bat
-```
-
-Python Sender：
-
-```text
-05_Tools/Scripts/send_ymodem_python.bat
-05_Tools/Ymodem/
-```
-
-Python Sender 定位为 Host Test、Agent 自动化和协议诊断辅助，不替代 S05 默认 Tera Term 板级验收入口。
-
-Application 稳定工具链（S05B 重塑前的兼容入口）：
-
-```text
-05_Tools/Scripts/build_app.bat
-05_Tools/Scripts/flash_app.bat
-05_Tools/Scripts/rtt_capture.bat
-05_Tools/Scripts/run_app_cycle.bat
-05_Tools/Firmware/pack_firmware.py
-```
-
-真实 Ymodem 板测的已验证顺序：
-
-```text
-准备合法 .img
-→ 先启动 Sender / Tera Term 并打开 CH340 串口等待 'C'
-→ 再 Flash / Reset MCU
-→ Ymodem transfer
-→ RTT capture
-→ Firmware Storage validation
-```
-
-如果先 Reset MCU、后打开 Sender，可能错过初始 `'C'` 并表现为 Receiver Timeout；这是已确认的工具调用顺序约束，不是协议故障。
-
-## S05A GDB Debug Checkpoint
-
-S05A 是 S05 关闭后、S06 设计前新增的独立小阶段，当前状态为 `CLOSED`。
-
-已完成真实板卡验证：
-
-```text
-J-Link GDB Server V7.92             PASS
-STM32F411CE + SWD @ 4000 kHz        PASS
-Keil OTA_APP.axf symbol loading     PASS
-Breakpoint / Continue               PASS
-Next / Step                         PASS
-Backtrace / Memory read             PASS
-Variable read                       PASS
-```
-
-已冻结运行与退出行为：
-
-```text
-Halt state
+halt state
 → detach
 → MCU remains halted
 ```
 
 ```text
-Running state
+running state
 → continue&
 → disconnect
 → quit
 → MCU continues running
 ```
 
-`continue& → disconnect` 已通过重新连接和 `uwTick` 增长验证。GDB 自动化不得执行 `load`；Resume 会话不得使用 `-batch`，也不得在 `continue&` 后执行 `detach`。J-Link GDB Server 使用 `monitor reset`，不使用 `monitor reset halt`。
+约束：
 
-自动化板测已完成：
+- GDB 自动化不得执行 `load`；
+- Resume 不使用 `-batch`；
+- `continue&` 后不得再执行 `detach`；
+- GDB/RTT/J-Link Commander 同一时刻不能并发占用同一 Probe；
+- 只清理当前工具自己创建的进程。
 
-```text
-halt 入口                         PASS
-halt 后 uwTick 约 2 秒             0x38A62C -> 0x38A62C
-resume 入口                       PASS
-resume 后 uwTick 约 2 秒           0x396313 -> 0x399082
-continue& -> disconnect -> quit    PASS
-失败路径与非零退出码               PASS
-J-Link Server / GDB 进程清理        PASS
-```
+S05B 只能抽取配置与生命周期公共能力，不得改变上述调试语义。
 
-正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
+## Current Tooling Before S05B Implementation
 
-当前 S05A 范围包括：
+当前兼容入口：
 
 ```text
-GDB toolchain configuration
-GDB runtime snapshot resume/halt scripts
-Agent-callable PowerShell / BAT entrypoints
-Failure cleanup and J-Link release
-Real-board verification
-CmBacktrace Keil/FreeRTOS/RTT integration
-Controlled Fault injection and Cortex-M context capture
-GDB Fault Capture and GDB/CmBacktrace cross validation
+05_Tools/Scripts/build_app.bat
+05_Tools/Scripts/flash_app.bat
+05_Tools/Scripts/rtt_capture.bat
+05_Tools/Scripts/run_app_cycle.bat
+05_Tools/Scripts/gdb_runtime_snapshot.bat
+05_Tools/Scripts/gdb_fault_capture.bat
+05_Tools/Scripts/send_ymodem.bat
+05_Tools/Scripts/send_ymodem_python.bat
+05_Tools/Firmware/pack_firmware.py
 ```
 
-S04 Persistence 的 Reset / Power-cycle 两项补充回归也已完成并记录为 PASS。
+当前已知重复能力包括 GDB PowerShell 脚本中的 process start/capture、TCP readiness、stdout/stderr merge、timeout、owned process cleanup 等；这些应在 Task 2 收敛到 Core，而不是复制到新目录。
 
-正式交接：`00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+## Verification Gate
 
-## S05B Toolkit Reuse Frozen Design
+Implementation Role 完成 Task 8 后状态只能进入 `READY_FOR_VERIFICATION`，不能直接关闭 S05B。
 
-当前正式设计：
+Verification Role 需要独立记录：
 
-```text
-00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
-```
-
-架构：
-
-```text
-Human / Agent
-      │
-      ▼
-Unified Entry / Legacy Entry
-      │
-      ▼
-Workflows
-      │
- ┌────┴────┐
- ▼         ▼
-Core    Adapters
-          │
-          ▼
- Keil / J-Link / GDB
-```
-
-配置模型：
-
-```text
-toolchain.local.bat   machine tool paths, ignored
-project.defaults.bat  repository project facts, committed
-project.local.bat     machine-specific project overrides, ignored
-```
-
-第一版 Adapter：
-
-```text
-Adapters/Build/Keil
-Adapters/Probe/JLink
-Adapters/Debug/GDB
-```
-
-兼容策略：
-
-```text
-toolkit.bat → Workflow → Core / Adapter
-legacy Scripts/*.bat → toolkit.bat / Workflow
-```
-
-Firmware / Ymodem / TeraTerm 第一版继续作为独立工具能力；S04 Persistence 归入项目 Test Extension。关闭 S05B 前必须完成现有能力回归与第二同类工程复用证明。
+- Core/Application/Debug/Compatibility 合同测试；
+- Firmware/Ymodem/S04 Host Test；
+- 当前工程 Build / Flash / RTT / GDB；
+- Legacy Entry compatibility；
+- 第二同类工程只改配置的复用证据；
+- 本机绝对路径、临时代码、缓存没有提交；
+- 无法执行的硬件项明确为 `PENDING`，不能用 Host PASS 替代。
 
 ## Current RTOS Reality Before S06
 
-早期 Roadmap 将 S06 描述为“集成 FreeRTOS”，该前提已经过时。
+FreeRTOS 已经存在并正常运行，S06 不再是“移植 FreeRTOS”，而是正式化 Application Runtime / Concurrency Model。
 
-当前 Application 已经执行 FreeRTOS Kernel 初始化和调度，并存在正式任务基础。S05 板测还实际使用过独立 `s05Ymodem` Thread：该线程绑定为 `service_uart` owner，并作为 RingBuffer 的单 task-context Consumer 执行完整 Ymodem / Storage 流程。
-
-这只是一项 S05 板测实现，不代表 S06 的正式 Runtime 设计已经冻结。
-
-S06 应重新讨论并冻结：
-
-```text
-Task Topology
-+ Task Lifecycle
-+ UART Consumer Ownership
-+ OTA/Ymodem Task Ownership
-+ Task Notification / Queue / Event
-+ Mutex / Shared Resource Policy
-+ W25Q64 / Firmware Storage Serialization
-+ Blocking API Policy
-+ Timeout / Cancel / Error Recovery
-+ Normal Business vs Background OTA Concurrency
-+ Logging Resource Contention
-```
-
-避免再次“移植一遍 FreeRTOS”，也不要直接把 S05 测试线程原样升级成生产任务。
-
-## S06 Design Questions
-
-第一轮 Design Discussion 至少需要回答：
-
-1. `appSystem` 的长期职责是什么；
-2. 是否建立独立 OTA Task，还是由已有任务驱动 OTA Service；
-3. Ymodem Receiver 的生命周期由谁创建、启动、取消和销毁；
-4. `service_uart` ownerThread 是否需要支持重新绑定，还是构造后固定；
-5. UART RingBuffer 单 Consumer 如何成为正式约束；
-6. Firmware Storage / W25Q64 是否需要 Mutex，锁放在哪一层；
-7. OTA 下载期间普通业务允许继续执行到什么程度；
-8. Flash erase/program 的长延迟如何影响调度；
-9. Task Notification、Queue、Event Group 分别解决什么实际问题；
-10. S06 最终应向 S07 提供什么稳定 Runtime API / 运行合同。
-
-## S04 Persistence Regression Completion
-
-2026-09-16 已完成 S04 两项跨阶段持久性回归：
-
-```text
-Reset Persistence       PASS
-Power-cycle Persistence PASS
-```
-
-Power-cycle 自动化使用指定测试 AXF 解析的 `_SEGGER_RTT` 固定地址；Logger 无数据卡死时由 watchdog 重启，目标不可连接时按 1/2/4 秒退避重连，并要求启动标志之后捕获新快照。真实日志捕获 2 次启动标志、62 条快照，事件前后快照全部一致。正式 Keil target 已移除临时入口，复测需通过本机配置提供独立测试 AXF。详细证据见：
-
-```text
-04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md
-00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md
-```
-
-## Deferred Regression
-
-当前没有未完成的 S04 Persistence 跨阶段延期项：
-
-```text
-Reset Persistence       PASS
-Power-cycle Persistence PASS
-```
-
-两项回归已完成，不再形成 S07 关闭前待办。
-
-## Explicitly Deferred Beyond S06
-
-- Application OTA Service 完整业务状态机；
-- Inactive Slot / PENDING / Reset；
-- Bootloader Internal Flash installation；
-- Trial / Confirm / Rollback；
-- IWDG failure counter；
-- SHA / AES / HMAC / Digital Signature；
-- Device Manager / generic Storage Manager。
+S06 在 S05B 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage Serialization、Blocking API、Timeout/Cancel/Error Recovery、正常业务与后台 OTA 并发、日志资源竞争。
 
 ## Next Action
 
-S05B 设计已由 Project Owner 确认。下一步基于冻结设计创建正式 `implementation_plan.md`；在计划审阅完成并进入 `READY_FOR_IMPLEMENTATION` 前，不修改工具实现。S06 在 S05B 关闭后继续。
+按 `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md` 从 Task 1 开始实施。Task 1 必须先建立配置合同测试和 Core Config/Path/Logging；禁止跳过 Core 直接迁移 Build/GDB 脚本。
