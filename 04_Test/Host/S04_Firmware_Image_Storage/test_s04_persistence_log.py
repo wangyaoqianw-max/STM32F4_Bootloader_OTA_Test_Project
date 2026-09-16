@@ -6,7 +6,7 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 
-SCRIPT_ROOT = Path(__file__).resolve().parents[3] / "05_Tools" / "Scripts"
+SCRIPT_ROOT = Path(__file__).resolve().parents[3] / "05_Tools" / "Tests" / "S04_Persistence"
 sys.path.insert(0, str(SCRIPT_ROOT))
 
 from s04_persistence_test import build_rtt_logger_arguments

@@ -7,9 +7,9 @@
 ```text
 GDB/runtime_snapshot_resume.gdb  运行态快照后继续运行
 GDB/runtime_snapshot_halt.gdb    运行态快照后保持暂停
-GDB/s04_reset_persistence.gdb    复位前后读取 S04 持久性快照
 GDB/fault_capture.gdb             已发生 Fault 的只读现场采集
 GDB/fault_trigger_capture.gdb     GDB 已启动后复位并触发受控 Fault
+Tests/S04_Persistence/s04_reset_persistence.gdb 复位前后读取 S04 持久性快照
 GDB/test_gdb_automation.ps1      脚本合同和失败路径测试
 CmBacktrace/test_cm_backtrace_integration.ps1  CmBacktrace 工程接入契约测试
 CmBacktrace/test_fault_diagnostics.ps1          Fault 诊断契约测试
@@ -83,7 +83,7 @@ J-Link 同一时刻只能由一个工具占用。RTT Logger 不能与 GDB Server
 
 ## S04 Reset / Power-cycle Persistence
 
-`GDB/s04_reset_persistence.gdb` 只负责连接临时测试固件、执行复位和释放 Probe，执行顺序为：
+`Tests/S04_Persistence/s04_reset_persistence.gdb` 只负责连接临时测试固件、执行复位和释放 Probe，执行顺序为：
 
 ```text
 target extended-remote -> monitor reset -> continue& -> disconnect -> quit
