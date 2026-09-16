@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S05B_Toolkit_Reuse`
-- Status: `READY_FOR_REVIEW`
+- Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - Baseline Commit: `5c26fe63`
 - Previous Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
@@ -11,8 +11,8 @@
 - Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`
 - Verification Commit: `98efc77`
-- Review Commit: `Not created yet`
-- Current Role: `Verification Role`
+- Review Commit: `Pending final review commit`
+- Current Role: `Review Role → Implementation Role`
 - Updated At: `2026-09-16`
 
 ## Input
@@ -98,6 +98,8 @@ DESIGN_APPROVED
   → Implementation Role
   → Task 1–8 complete
   → READY_FOR_REVIEW
+  → Review Role
+  → CHANGES_REQUESTED
 ```
 
 实施时必须先读取：
@@ -115,7 +117,7 @@ PROJECT_CONTEXT.md
 
 ## Next Action
 
-由 Review Role 回读 `design.md`、`implementation_plan.md`、本交接和验证报告，复核最终差异、架构边界、API 一致性、编译结果、测试结果及文档一致性。当前已进入 `READY_FOR_REVIEW`，不得直接关闭 S05B。
+Review Role 已完成回读并发现两项返工：通用 J-Link ownership 锁未接入实际 Workflow；Unified Exit Code 对外部失败码 `1` 的映射不一致。由 Implementation Role 修复并补充相关合同测试后，重新进入 Verification Role；当前处于 `CHANGES_REQUESTED`，不得关闭 S05B。
 
 ## Task 8 Implementation Output
 
@@ -179,12 +181,12 @@ Output: Objects\RTT_elog_DMA_UART_ring_project.axf
 
 源仓库原有未提交删除项及一个 `codex_build.log` 未被本任务修改；临时复用目录已清理。
 
-## Verification Completion
+## Review Feedback
 
-S04 Reset / Power-cycle Persistence、Fault trigger/capture、第二工程真实板级 Flash/RTT 以及既有 Host/Contract 回归均已完成并记录在：
+Verification Role 已完成 S04 Reset / Power-cycle Persistence、Fault trigger/capture、第二工程真实板级 Flash/RTT 以及既有 Host/Contract 回归，证据记录在：
 
 ```text
 04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
 ```
 
-当前无待执行的 S05B 验证项。阶段处于 `READY_FOR_REVIEW`，等待 Review Role 最终审核，不直接标记为 `CLOSED`。
+Review Role 发现的两项返工要求详见 `review.md`。修复后需重新验证 J-Link ownership 和 Exit Code 映射；阶段处于 `CHANGES_REQUESTED`，不标记为 `CLOSED`。

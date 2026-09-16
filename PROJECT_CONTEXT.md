@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CHANGES_REQUESTED`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
@@ -18,7 +18,7 @@
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `Verification Role → Review Role`
+- Current Role: `Review Role → Implementation Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
@@ -49,7 +49,7 @@ Keil / J-Link / GDB
 00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
 ```
 
-Task 1–8 已完成，当前状态进入 `READY_FOR_REVIEW`。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、Fault、S04 Reset/Power-cycle 以及第二工程真实板测记录于：
+Task 1–8 和 Verification 已完成，但 Review 发现通用 J-Link ownership 锁未接入实际 Workflow，且 Unified Exit Code 对外部失败码 `1` 映射不一致，当前状态为 `CHANGES_REQUESTED`。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、Fault、S04 Reset/Power-cycle 以及第二工程真实板测记录于：
 
 ```text
 04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
@@ -301,4 +301,4 @@ S06 在 S05B 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer O
 
 ## Next Action
 
-Review Role 回读 `00_Project/03_Stages/S05B_Toolkit_Reuse/verification.md`、最终差异及全部提交，检查架构边界、API 一致性、编译/测试结果和文档一致性；确认后再决定是否关闭 S05B。
+Implementation Role 修复 `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md` 中的 J-Link ownership 与 Exit Code 映射问题，补充回归后交 Verification Role；未复核通过前不得关闭 S05B。
