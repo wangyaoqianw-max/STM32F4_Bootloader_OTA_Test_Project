@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S05B_Toolkit_Reuse`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED`
 - Branch: `main`
 - Baseline Commit: `5c26fe63`
 - Previous Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
@@ -13,8 +13,9 @@
 - Implementation Rework Commit: `2140117` (`fix(s05b): enforce toolkit ownership and exit mapping`)
 - Previous Verification Commit: `98efc77`
 - Verification Commit: `33a1dfe` (`docs(s05b): hand off ownership fixes for re-review`)
-- Review Commit: `ec90dbb`
-- Current Role: `Verification Role → Review Role`
+- Previous Review Commit: `ec90dbb`
+- Review Commit: `Not created yet`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-16`
 
 ## Input
@@ -102,6 +103,10 @@ DESIGN_APPROVED
   → READY_FOR_REVIEW
   → Review Role
   → CHANGES_REQUESTED
+  → Implementation Role
+  → Verification Role
+  → Review Role
+  → CLOSED / PASS
 ```
 
 实施时必须先读取：
@@ -119,7 +124,7 @@ PROJECT_CONTEXT.md
 
 ## Next Action
 
-Review Role 已完成回读并发现两项返工：通用 J-Link ownership 锁未接入实际 Workflow；Unified Exit Code 对外部失败码 `1` 的映射不一致。由 Implementation Role 修复并补充相关合同测试后，重新进入 Verification Role；当前处于 `CHANGES_REQUESTED`，不得关闭 S05B。
+S05B 已完成最终复核并关闭。下一步进入 `S06_RTOS_Runtime` Design。
 
 ## Task 8 Implementation Output
 
@@ -214,4 +219,8 @@ toolkit.bat run 5                        EXIT=0
 git diff --check                          PASS
 ```
 
-当前状态为 `READY_FOR_REVIEW`；Review Role 需要基于 `2140117` 和本验证报告重新审核，阶段仍不得直接标记为 `CLOSED`。
+## Final Review Closure
+
+Review Role 基于 `2140117` 和验证报告完成最终复核：共享 J-Link ownership 已覆盖 Flash、RTT、Run、Snapshot、Fault，并在 `finally` 释放；Run/Fault 的多步骤持锁边界、锁冲突返回 `30` 和无残留进程均已验证。Firmware/YMODEM 外部失败码已统一映射为 `50`，Build/Run warning `1` 的保留范围明确，缺失文件回归已通过。
+
+代码验证、编译与 Host/Contract 回归、真实板级 smoke、YMODEM/Tera Term、Fault、S04 持久化、第二工程 Flash/RTT、架构边界、API 一致性和文档一致性均为 `PASS`。阶段结论：`CLOSED / PASS`。

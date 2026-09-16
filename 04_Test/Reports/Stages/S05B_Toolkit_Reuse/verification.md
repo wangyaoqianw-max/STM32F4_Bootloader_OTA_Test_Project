@@ -5,12 +5,13 @@
 - Stage: `S05B_Toolkit_Reuse`
 - Date: `2026-09-16`
 - Branch: `main`
-- Status: `READY_FOR_REVIEW`
-- Current role: `Verification Role`
+- Status: `CLOSED`
+- Current role: `Review Role → Project Owner`
 - Scope: reusable Toolkit Core/Adapters/Workflows, unified Router, Legacy compatibility, S04 project-test isolation, Firmware/YMODEM routing, and cross-project reuse
 - Code validation: `PASS`
 - Hardware validation: `PASS` for current-project public-entry smoke, real YMODEM/Tera Term transfer, S04 Reset/Power-cycle Persistence, Fault trigger/capture, and second-project Flash/RTT
-- Review: `PENDING_RE_REVIEW`
+- Review: `PASS`
+- Closure Decision: `CLOSED / PASS`
 
 ## 2. Implementation Commits
 
@@ -91,7 +92,7 @@ Evidence:
 - independent GDB adapter check read `uwTick = 0x23adc`, then continued and disconnected successfully;
 - after the smoke, no `JLinkGDBServerCL`, `JLinkGDBServer`, `arm-none-eabi-gdb`, `JLinkRTTLogger` or `JLink` process remained.
 
-This is a public-entry/toolchain smoke result. Stage-specific acceptance evidence is recorded below. The two prior Review findings are addressed by `2140117`; the stage remains `READY_FOR_REVIEW` pending re-review and must not transition to `CLOSED` yet.
+This is a public-entry/toolchain smoke result. Stage-specific acceptance evidence is recorded below. The two prior Review findings are addressed by `2140117` and passed final re-review.
 
 ### 4.1 Real YMODEM / Tera Term Transfer
 
@@ -221,4 +222,4 @@ The source repository was not modified by this task. Its pre-existing deleted fi
 
 All planned S05B verification items and the two Review rework checks are complete. No production firmware, Flash/Memory Layout, RTOS interface, Firmware Image contract, MCU-side YMODEM code, or second-project source code was changed in S05B. Temporary board-test integration files and AXF were restored/removed; the persistent rework changes are the shared Workflow lock ownership, exit-code mapping, tests, and synchronized documentation.
 
-Stage status is `READY_FOR_REVIEW`. Review Role found two closure-blocking issues; Implementation Role fixed both in `2140117`, and Verification Role reran the affected contracts and current-board public-entry smoke. Review Role must re-audit the commit; the stage must not transition to `CLOSED` yet.
+Stage status is `CLOSED / PASS`. Review Role re-audited the two prior closure-blocking issues after `2140117`: shared J-Link ownership is enforced across the public workflows, and Firmware/YMODEM external failures map to `50` while Build/Run warning `1` remains scoped. The affected contracts passed again, with no residual process, lock file, cache, or temporary board-test integration left in the repository.

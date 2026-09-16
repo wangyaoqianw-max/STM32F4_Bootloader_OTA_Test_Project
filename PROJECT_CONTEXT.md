@@ -5,27 +5,28 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - S05B Rework Implementation Commit: `2140117`
 - S05B Verification Commit: `33a1dfe`
+- S05B Review Commit: `Not created yet`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
+- Last Closed Stage: `S05B_Toolkit_Reuse`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `Verification Role → Review Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-16`
 
 ## Current Goal
 
-S05 和 S05A 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段是 `S05B_Toolkit_Reuse`。
+S05、S05A 和 S05B 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。下一阶段为 `S06_RTOS_Runtime`。
 
 S05B 的目标不是简单整理目录，而是把已经验证过的 PC 工具从“当前工程专用脚本集合”重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。
 
@@ -304,4 +305,4 @@ S06 在 S05B 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer O
 
 ## Next Action
 
-Review Role 基于 `2140117` 和 `04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md` 重新审核；未完成复核和 Project Owner 关闭前不得关闭 S05B。
+S05B 已完成最终复核并以 `CLOSED / PASS` 关闭；下一步进入 `S06_RTOS_Runtime` Design。
