@@ -4,4 +4,4 @@
 
 `Not created yet`。
 
-实施计划将在设计规格经 Project Owner 审阅通过并进入 `DESIGN_APPROVED` 后，按照已冻结设计单独创建。
+当前阶段设计已由 Project Owner 确认并进入 `DESIGN_APPROVED`。下一步基于 `design.md` 单独编写正式实施计划；在实施计划完成、审阅并进入 `READY_FOR_IMPLEMENTATION` 前，不修改 `05_Tools` 实现。

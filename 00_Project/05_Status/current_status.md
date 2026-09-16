@@ -3,11 +3,12 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Status: `DRAFT`
+- Status: `DESIGN_APPROVED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
-- S05B Design Commit: `9d6b037`
+- S05B Initial Design Commit: `9d6b037`
+- S05B Design Approval Commit: `Pending current documentation commit`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
@@ -31,7 +32,15 @@
 
 当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-当前 S05B 处于 `DRAFT`。本阶段先重塑 `05_Tools`，支持同类 `STM32 + Keil + J-Link` 工程复用；采用 Config、Core、Adapter、Workflow、Project Test 分层，保留旧 `Scripts` 兼容入口。设计规格已提交，待 Project Owner 审阅后再创建实施计划。
+当前 S05B 已完成 Design Review 并进入 `DESIGN_APPROVED`。本阶段目标不是简单整理目录，而是把当前已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
+
+正式设计仅保存在：
+
+```text
+00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+```
+
+下一步创建正式 `implementation_plan.md`，在实施计划完成并进入 `READY_FOR_IMPLEMENTATION` 前不修改 `05_Tools` 实现。
 
 ## S05 Delivered Capabilities
 
@@ -142,11 +151,40 @@ continue& -> disconnect -> quit                      PASS
 
 ## S05B Tools Toolkit Reuse
 
-当前阶段为 `S05B_Toolkit_Reuse`，状态为 `DRAFT`。目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的工具包，先完成 Config、Core、Adapter、Workflow 和 Project Test 的边界设计，再进入实现。
+当前阶段为 `S05B_Toolkit_Reuse`，工作流状态为 `DESIGN_APPROVED`，Roadmap 状态为 `ACTIVE`。
 
-设计规格：`docs/superpowers/specs/2026-09-16-s05b-toolkit-reuse-design.md`。
+正式设计：
 
-当前下一步：Project Owner 审阅设计规格；审阅通过后创建 `implementation_plan.md`，在此之前不迁移脚本或删除旧入口。
+```text
+00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+```
+
+冻结边界：
+
+```text
+Human / Agent
+      ↓
+Unified Entry / Legacy Entry
+      ↓
+Workflows
+      ↓
+Core + Adapters
+      ↓
+Keil / J-Link / GDB
+```
+
+主要决策：
+
+- `Core` 只承载 Config、Path、Process、Logging、Lock、Cleanup 等公共能力；
+- Adapter 按 `Build/Keil`、`Probe/JLink`、`Debug/GDB` 拆分；
+- 工程固有事实提交到 `project.defaults.bat`，机器工具路径进入 ignored `toolchain.local.bat`，机器工程差异进入 ignored `project.local.bat`；
+- 统一入口 `toolkit.bat` 只做 Router；
+- 旧 `Scripts` 最终只做薄包装，禁止双轨实现；
+- Firmware / Ymodem / TeraTerm 第一版不强制改为 Adapter；
+- S04 Persistence 归入项目专用 Test Extension；
+- 关闭阶段前必须完成跨工程复用证明。
+
+当前下一步：创建并审阅正式 `implementation_plan.md`。
 
 ## Stable Tooling After S05
 
@@ -174,13 +212,13 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Design Entry After S05A
+## S06 Design Entry After S05B
 
 S06 名称保持 `S06_RTOS_Runtime`，但需要修正早期路线中的一个前提：**FreeRTOS 已经存在并正常运行，不需要再次“集成 FreeRTOS”。**
 
 当前 Application 已具备 RTOS Kernel、`appSystem` 等任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
 
-因此 S06 应在 S05A GDB 自动化关闭后优先讨论：
+因此 S06 应在 S05B 关闭后优先讨论：
 
 1. Application 正式 Task 划分与生命周期；
 2. OTA / Ymodem 应由哪个 Task 拥有；
@@ -204,13 +242,10 @@ Reset Persistence       PASS
 Power-cycle Persistence PASS
 ```
 
-Power-cycle 通过自动 RTT 固定地址、无数据 watchdog 和退避重连捕获上电启动标志，并要求启动
-标志之后出现新快照；事件前后快照一致。正式 Keil target 已移除临时入口，复测需通过
-`S04_PERSISTENCE_AXF` 提供独立测试 AXF。详细证据见
-`04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
+Power-cycle 通过自动 RTT 固定地址、无数据 watchdog 和退避重连捕获上电启动标志，并要求启动标志之后出现新快照；事件前后快照一致。正式 Keil target 已移除临时入口，复测需通过 `S04_PERSISTENCE_AXF` 提供独立测试 AXF。详细证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
 
 ## Blockers
 
-S05A GDB / CmBacktrace / controlled Fault checkpoint 无阶段内阻塞项，Review 已通过。S04 Persistence 补充回归已完成，无相关阻塞项。
+S05B 当前无设计阻塞项，设计已获 Project Owner 确认。尚未生成正式实施计划，因此当前不能进入工具迁移实现。
 
-下一步进入 S06 Design Discussion；S04 Reset / Power-cycle Persistence 补充回归已完成。
+下一步：创建 `S05B_Toolkit_Reuse/implementation_plan.md`，完成计划审阅后再进入 `READY_FOR_IMPLEMENTATION`。

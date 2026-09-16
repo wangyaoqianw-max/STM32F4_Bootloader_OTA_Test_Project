@@ -5,11 +5,12 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `DRAFT`
+- Active Stage Status: `DESIGN_APPROVED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
-- S05B Design Commit: `9d6b037`
+- S05B Initial Design Commit: `9d6b037`
+- S05B Design Approval Commit: `Pending current documentation commit`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
@@ -33,7 +34,23 @@ S05 已正式关闭并合并到 `main`。S05A 已关闭后，在进入 `S06_RTOS
 
 S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 已作为补充回归完成真实板测。
 
-当前 S05B 处于 Design Role / `DRAFT`：目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的配置驱动工具包。设计规格和交接入口已提交，尚未迁移工具实现；设计规格经 Project Owner 审阅通过后再进入实施计划。
+当前 S05B 已通过 Design Review，状态为 `DESIGN_APPROVED`。本阶段目标是把 `05_Tools` 从当前工程专用脚本集合重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架，而不是单纯整理目录。
+
+已冻结：
+
+```text
+Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers
+```
+
+Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router；旧 `Scripts` 保留兼容但最终只作为薄包装。
+
+正式设计仅保存在：
+
+```text
+00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+```
+
+当前尚未迁移工具实现。下一步编写正式 `implementation_plan.md`，计划审阅通过后再进入 `READY_FOR_IMPLEMENTATION`。
 
 ## Required Reading For S06 Design
 
@@ -53,13 +70,15 @@ S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、Cm
 12. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
 13. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
 14. `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
-15. `03_Firmware/AGENTS.md`
-16. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
-17. current App / FreeRTOS task initialization
-18. current `service_uart`
-19. current `service_ymodem`
-20. current `service_firmware`
-21. current Platform RTOS abstraction
+15. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+16. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
+17. `03_Firmware/AGENTS.md`
+18. `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md`
+19. current App / FreeRTOS task initialization
+20. current `service_uart`
+21. current `service_ymodem`
+22. current `service_firmware`
+23. current Platform RTOS abstraction
 
 ## Required Reading For S05B Toolkit Reuse
 
@@ -72,8 +91,8 @@ S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、Cm
 7. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
 8. `05_Tools/README.md`
 9. `05_Tools/Scripts/README.md`
-10. `docs/superpowers/specs/2026-09-16-s05b-toolkit-reuse-design.md`
-11. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+10. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+11. `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
 12. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
 
 ## Stable S04 Storage / Firmware Contract
@@ -263,14 +282,61 @@ Controlled Fault injection and Cortex-M context capture
 GDB Fault Capture and GDB/CmBacktrace cross validation
 ```
 
-暂不包括：
-
-```text
-S04 Reset Persistence       PASS
-S04 Power-cycle Persistence PASS
-```
+S04 Persistence 的 Reset / Power-cycle 两项补充回归也已完成并记录为 PASS。
 
 正式交接：`00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+
+## S05B Toolkit Reuse Frozen Design
+
+当前正式设计：
+
+```text
+00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+```
+
+架构：
+
+```text
+Human / Agent
+      │
+      ▼
+Unified Entry / Legacy Entry
+      │
+      ▼
+Workflows
+      │
+ ┌────┴────┐
+ ▼         ▼
+Core    Adapters
+          │
+          ▼
+ Keil / J-Link / GDB
+```
+
+配置模型：
+
+```text
+toolchain.local.bat   machine tool paths, ignored
+project.defaults.bat  repository project facts, committed
+project.local.bat     machine-specific project overrides, ignored
+```
+
+第一版 Adapter：
+
+```text
+Adapters/Build/Keil
+Adapters/Probe/JLink
+Adapters/Debug/GDB
+```
+
+兼容策略：
+
+```text
+toolkit.bat → Workflow → Core / Adapter
+legacy Scripts/*.bat → toolkit.bat / Workflow
+```
+
+Firmware / Ymodem / TeraTerm 第一版继续作为独立工具能力；S04 Persistence 归入项目 Test Extension。关闭 S05B 前必须完成现有能力回归与第二同类工程复用证明。
 
 ## Current RTOS Reality Before S06
 
@@ -322,10 +388,7 @@ Reset Persistence       PASS
 Power-cycle Persistence PASS
 ```
 
-Power-cycle 自动化使用指定测试 AXF 解析的 `_SEGGER_RTT` 固定地址；Logger 无数据卡死时由
-watchdog 重启，目标不可连接时按 1/2/4 秒退避重连，并要求启动标志之后捕获新快照。真实日志
-捕获 2 次启动标志、62 条快照，事件前后快照全部一致。正式 Keil target 已移除临时入口，
-复测需通过本机配置提供独立测试 AXF。详细证据见：
+Power-cycle 自动化使用指定测试 AXF 解析的 `_SEGGER_RTT` 固定地址；Logger 无数据卡死时由 watchdog 重启，目标不可连接时按 1/2/4 秒退避重连，并要求启动标志之后捕获新快照。真实日志捕获 2 次启动标志、62 条快照，事件前后快照全部一致。正式 Keil target 已移除临时入口，复测需通过本机配置提供独立测试 AXF。详细证据见：
 
 ```text
 04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md
@@ -355,6 +418,4 @@ Power-cycle Persistence PASS
 
 ## Next Action
 
-S05A Review 已通过，S04 Persistence 补充回归也已完成；当前先执行 `S05B_Toolkit_Reuse` 设计规格审阅。
-
-S05B 设计规格审阅通过后再创建实施计划；S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计，不直接进入实现。
+S05B 设计已由 Project Owner 确认。下一步基于冻结设计创建正式 `implementation_plan.md`；在计划审阅完成并进入 `READY_FOR_IMPLEMENTATION` 前，不修改工具实现。S06 在 S05B 关闭后继续。
