@@ -3,12 +3,13 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Status: `DESIGN_APPROVED`
+- Status: `READY_FOR_IMPLEMENTATION`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
 - S05B Initial Design Commit: `9d6b037`
-- S05B Design Approval Commit: `Pending current documentation commit`
+- S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
+- S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
@@ -23,24 +24,25 @@
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `S05B Design Role`
+- Current Role: `S05B Implementation Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
 
 `S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。S05A 已关闭；在进入 `S06_RTOS_Runtime` 之前新增 `S05B_Toolkit_Reuse` 小阶段。
 
-当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
+S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-当前 S05B 已完成 Design Review 并进入 `DESIGN_APPROVED`。本阶段目标不是简单整理目录，而是把当前已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
+S05B 已完成设计冻结和正式实施计划，当前状态为 `READY_FOR_IMPLEMENTATION`。本阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
 
-正式设计仅保存在：
+正式设计与实施计划：
 
 ```text
 00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
 ```
 
-下一步创建正式 `implementation_plan.md`，在实施计划完成并进入 `READY_FOR_IMPLEMENTATION` 前不修改 `05_Tools` 实现。
+下一步从实施计划 Task 1 开始：先建立三层配置合同与 Core Config/Path/Logging，不得先搬迁 Build/GDB 业务脚本。
 
 ## S05 Delivered Capabilities
 
@@ -151,12 +153,13 @@ continue& -> disconnect -> quit                      PASS
 
 ## S05B Tools Toolkit Reuse
 
-当前阶段为 `S05B_Toolkit_Reuse`，工作流状态为 `DESIGN_APPROVED`，Roadmap 状态为 `ACTIVE`。
+当前阶段为 `S05B_Toolkit_Reuse`，工作流状态为 `READY_FOR_IMPLEMENTATION`，Roadmap 状态为 `ACTIVE`。
 
-正式设计：
+正式设计与计划：
 
 ```text
 00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
 ```
 
 冻结边界：
@@ -173,18 +176,20 @@ Core + Adapters
 Keil / J-Link / GDB
 ```
 
-主要决策：
+实施计划共 8 个 Task：
 
-- `Core` 只承载 Config、Path、Process、Logging、Lock、Cleanup 等公共能力；
-- Adapter 按 `Build/Keil`、`Probe/JLink`、`Debug/GDB` 拆分；
-- 工程固有事实提交到 `project.defaults.bat`，机器工具路径进入 ignored `toolchain.local.bat`，机器工程差异进入 ignored `project.local.bat`；
-- 统一入口 `toolkit.bat` 只做 Router；
-- 旧 `Scripts` 最终只做薄包装，禁止双轨实现；
-- Firmware / Ymodem / TeraTerm 第一版不强制改为 Adapter；
-- S04 Persistence 归入项目专用 Test Extension；
-- 关闭阶段前必须完成跨工程复用证明。
+```text
+1 Config + Config/Path/Logging Core
+2 Process / Lock Core
+3 Build/Probe Adapter + Application Workflow
+4 GDB Adapter + Debug Workflow
+5 toolkit Router + Legacy Wrapper
+6 S04 Project Test Extension
+7 Firmware/Ymodem Router + Docs
+8 Full Regression + Cross-project Reuse + Verification Handoff
+```
 
-当前下一步：创建并审阅正式 `implementation_plan.md`。
+第二工程复用首选：`wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS`，使用临时 clone，仅修改配置，不修改其生产代码或通用 Toolkit 实现。
 
 ## Stable Tooling After S05
 
@@ -214,24 +219,9 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 
 ## S06 Design Entry After S05B
 
-S06 名称保持 `S06_RTOS_Runtime`，但需要修正早期路线中的一个前提：**FreeRTOS 已经存在并正常运行，不需要再次“集成 FreeRTOS”。**
+S06 名称保持 `S06_RTOS_Runtime`，但早期“集成 FreeRTOS”的前提已过时。当前 Application 已具备 RTOS Kernel 和任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
 
-当前 Application 已具备 RTOS Kernel、`appSystem` 等任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
-
-因此 S06 应在 S05B 关闭后优先讨论：
-
-1. Application 正式 Task 划分与生命周期；
-2. OTA / Ymodem 应由哪个 Task 拥有；
-3. `service_uart` ownerThread 和 RingBuffer 单消费者边界；
-4. Task Notification / Queue / Event / Mutex 的实际需求；
-5. W25Q64 / Firmware Storage 的并发访问和串行化策略；
-6. 正常业务与后台 Firmware 下载如何并发；
-7. Blocking API 的允许位置、Timeout 和调度影响；
-8. 任务退出、Cancel、Error Recovery；
-9. 日志与 OTA 数据路径的资源竞争；
-10. S07 OTA Service 需要从 S06 获得哪些稳定 Runtime 能力。
-
-S06 尚未创建正式 `design.md / implementation_plan.md`，当前不得直接施工 S06 生产代码。
+S06 在 S05B 关闭后重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
 
 ## Deferred Regression
 
@@ -242,10 +232,10 @@ Reset Persistence       PASS
 Power-cycle Persistence PASS
 ```
 
-Power-cycle 通过自动 RTT 固定地址、无数据 watchdog 和退避重连捕获上电启动标志，并要求启动标志之后出现新快照；事件前后快照一致。正式 Keil target 已移除临时入口，复测需通过 `S04_PERSISTENCE_AXF` 提供独立测试 AXF。详细证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
+详细证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
 
 ## Blockers
 
-S05B 当前无设计阻塞项，设计已获 Project Owner 确认。尚未生成正式实施计划，因此当前不能进入工具迁移实现。
+S05B 当前无已知阻塞项。设计和实施计划均已冻结，可以进入 Implementation Role。
 
-下一步：创建 `S05B_Toolkit_Reuse/implementation_plan.md`，完成计划审阅后再进入 `READY_FOR_IMPLEMENTATION`。
+下一步：严格按 `implementation_plan.md` 从 Task 1 开始，实现过程中每个 Task 独立测试、独立提交；完成 Task 8 后进入 `READY_FOR_VERIFICATION`，不得直接关闭 S05B。
