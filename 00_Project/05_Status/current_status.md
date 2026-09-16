@@ -7,6 +7,7 @@
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
+- S05B Design Commit: `9d6b037`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
@@ -30,7 +31,7 @@
 
 当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-当前 S05B 处于 `DRAFT`。本阶段先重塑 `05_Tools`，支持同类 `STM32 + Keil + J-Link` 工程复用；采用 Config、Core、Adapter、Workflow、Project Test 分层，保留旧 `Scripts` 兼容入口。设计规格已创建，待 Project Owner 审阅后再创建实施计划。
+当前 S05B 处于 `DRAFT`。本阶段先重塑 `05_Tools`，支持同类 `STM32 + Keil + J-Link` 工程复用；采用 Config、Core、Adapter、Workflow、Project Test 分层，保留旧 `Scripts` 兼容入口。设计规格已提交，待 Project Owner 审阅后再创建实施计划。
 
 ## S05 Delivered Capabilities
 

@@ -9,6 +9,7 @@
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
+- S05B Design Commit: `9d6b037`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
@@ -32,7 +33,7 @@ S05 已正式关闭并合并到 `main`。S05A 已关闭后，在进入 `S06_RTOS
 
 S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 已作为补充回归完成真实板测。
 
-当前 S05B 处于 Design Role / `DRAFT`：目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的配置驱动工具包。当前只冻结设计和交接入口，尚未迁移工具实现；设计规格经 Project Owner 审阅通过后再进入实施计划。
+当前 S05B 处于 Design Role / `DRAFT`：目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的配置驱动工具包。设计规格和交接入口已提交，尚未迁移工具实现；设计规格经 Project Owner 审阅通过后再进入实施计划。
 
 ## Required Reading For S06 Design
 

@@ -6,7 +6,7 @@
 - Status: `DRAFT`
 - Branch: `main`
 - Baseline Commit: `9208cfd`
-- Design Commit: `Not created yet`
+- Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
 - Implementation Plan Commit: `Not created yet`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
