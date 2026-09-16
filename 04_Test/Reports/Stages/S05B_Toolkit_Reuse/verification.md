@@ -22,6 +22,7 @@ ac1cc4b refactor(tools): separate gdb adapter from debug workflows
 e34e005 refactor(tools): add unified toolkit router
 0719f83 refactor(tools): isolate s04 persistence extension
 92cf50a docs(tools): expose reusable firmware and transport entries
+98efc77 test(s05b): complete remaining board verification
 ```
 
 ## 3. Code and Host Verification
