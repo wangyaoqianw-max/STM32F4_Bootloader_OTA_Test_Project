@@ -106,6 +106,33 @@ if ((Test-Path -LiteralPath $gdbSessionPath -PathType Leaf) -and
     Assert-Contains $snapshotWorkflow 'Invoke-GdbSession' 'Snapshot workflow delegates lifecycle to GDB adapter'
     Assert-Contains $faultWorkflow 'Invoke-GdbSession' 'Fault workflow delegates lifecycle to GDB adapter'
     Assert-Contains $faultWorkflow 'Invoke-JLinkRtt' 'Fault workflow captures RTT after GDB releases J-Link'
+
+    foreach ($workflowEntry in @(
+            @{ Text = $snapshotWorkflow; Name = 'Snapshot workflow' },
+            @{ Text = $faultWorkflow; Name = 'Fault workflow' })) {
+        Assert-Contains $workflowEntry.Text 'Get-ToolkitJLinkLockPath' "$($workflowEntry.Name) resolves the shared J-Link lock"
+        Assert-Contains $workflowEntry.Text 'Enter-ToolkitLock' "$($workflowEntry.Name) acquires the shared J-Link lock"
+        Assert-Contains $workflowEntry.Text 'finally' "$($workflowEntry.Name) releases ownership in a finally block"
+        Assert-Contains $workflowEntry.Text 'Exit-ToolkitLock' "$($workflowEntry.Name) releases the shared J-Link lock"
+    }
+
+    foreach ($workflowPath in @(
+            (Join-Path $toolsRoot 'Workflows\Application\flash.ps1'),
+            (Join-Path $toolsRoot 'Workflows\Application\rtt.ps1'),
+            (Join-Path $toolsRoot 'Workflows\Application\run.ps1'))) {
+        $workflowText = Get-Content -LiteralPath $workflowPath -Raw
+        $workflowName = Split-Path -Leaf $workflowPath
+        Assert-Contains $workflowText 'Get-ToolkitJLinkLockPath' "$workflowName resolves the shared J-Link lock"
+        Assert-Contains $workflowText 'Enter-ToolkitLock' "$workflowName acquires the shared J-Link lock"
+        Assert-Contains $workflowText 'finally' "$workflowName releases ownership in a finally block"
+        Assert-Contains $workflowText 'Exit-ToolkitLock' "$workflowName releases the shared J-Link lock"
+    }
+
+    Assert-True (($faultWorkflow.IndexOf('Enter-ToolkitLock') -lt $faultWorkflow.IndexOf('Invoke-GdbSession')) -and
+        ($faultWorkflow.IndexOf('Exit-ToolkitLock') -gt $faultWorkflow.IndexOf('Invoke-JLinkRtt'))) 'Fault workflow must hold one lock across GDB and RTT'
+    $runWorkflowText = Get-Content -LiteralPath (Join-Path $toolsRoot 'Workflows\Application\run.ps1') -Raw
+    Assert-True (($runWorkflowText.IndexOf('Enter-ToolkitLock') -lt $runWorkflowText.IndexOf('Invoke-JLinkFlash')) -and
+        ($runWorkflowText.IndexOf('Exit-ToolkitLock') -gt $runWorkflowText.IndexOf('Invoke-JLinkRtt'))) 'Run workflow must hold one lock across Flash and RTT'
 }
 
 if ($failures.Count -gt 0) {

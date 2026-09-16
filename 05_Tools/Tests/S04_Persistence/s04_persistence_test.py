@@ -20,7 +20,7 @@ RTT_STALL_TIMEOUT_SECONDS = 5.0
 RTT_SYMBOL_ADDRESS_PATTERN = re.compile(rb"\$\d+\s*=\s*0x([0-9a-fA-F]+)")
 PERSISTENCE_TEST_SYMBOL = "app_s04_persistence_test_run"
 POWER_CYCLE_EVENT_MARKER = b"[S04-PERSIST] POWER_CYCLE_BOOT_CONFIRMED"
-JLINK_LOCK_FILE_NAME = "S04_persistence_jlink.lock"
+JLINK_LOCK_FILE_NAME = "toolkit_jlink.lock"
 
 
 def parse_arguments(arguments=None):

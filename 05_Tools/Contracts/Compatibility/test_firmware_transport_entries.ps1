@@ -28,6 +28,18 @@ function Assert-Contains {
     Assert-True ($Text -match $Pattern) $Message
 }
 
+function Assert-Equal {
+    param(
+        [object]$Actual,
+        [object]$Expected,
+        [string]$Message
+    )
+
+    if ($Actual -ne $Expected) {
+        $failures.Add("$Message; expected '$Expected', got '$Actual'")
+    }
+}
+
 Assert-Contains $routerBat 'toolkit\.ps1' 'toolkit.bat remains the stable process entry'
 Assert-Contains $router 'Firmware\\pack_firmware\.py' 'Router exposes the existing Firmware packer'
 Assert-Contains $router 'Ymodem\\ymodem_sender\.py' 'Router exposes the existing Python YMODEM sender'
@@ -39,6 +51,16 @@ foreach ($entry in @(@{Text = $pythonLegacy; Name = 'send_ymodem_python.bat'; Mo
     Assert-Contains $entry.Text 'toolkit\.bat' "$($entry.Name) must delegate to toolkit.bat"
     Assert-Contains $entry.Text ("ymodem.*{0}" -f $entry.Mode) "$($entry.Name) must preserve its $($entry.Mode) route"
     Assert-True ($entry.Text -notmatch 'PYTHON_EXE|TERA_TERM_EXE|ttpmacro|TeraTerm|ymodem_sender\.py') "$($entry.Name) must not own transport tool setup"
+}
+
+$missingFirmware = Join-Path ([System.IO.Path]::GetTempPath()) ("toolkit-review-missing-" + [Guid]::NewGuid().ToString("N") + ".img")
+try {
+    $missingOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $toolsRoot 'toolkit.ps1') ymodem python $missingFirmware --port COM999 2>&1
+    $missingExitCode = $LASTEXITCODE
+    Assert-Equal $missingExitCode 50 'YMODEM external argument/file failure must map to TRANSFER_ERROR'
+}
+finally {
+    Remove-Item -LiteralPath $missingFirmware -Force -ErrorAction SilentlyContinue
 }
 
 if ($failures.Count -gt 0) {

@@ -36,8 +36,9 @@
 05_Tools\toolkit.bat ymodem send app.img --port COM10 --baud 115200 --json
 ```
 
-统一退出码类别：`0 SUCCESS`、`10 CONFIG_ERROR`、`20 BUILD_ERROR`、`30 PROBE_ERROR`、
-`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
+统一退出码类别：`0 SUCCESS`、`1 BUILD_WARNING`（仅 Build/Run 警告）、`10 CONFIG_ERROR`、
+`20 BUILD_ERROR`、`30 PROBE_ERROR`、`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
+Firmware/YMODEM 的外部工具非零退出码统一映射为 `50 TRANSFER_ERROR`，不能透传原始 `1`。
 
 ## 当前脚本入口总表
 
@@ -89,7 +90,7 @@ Commit。Host 解析器比较事件前后的快照，并校验字段枚举范围
 退出或连续 5 秒无新数据时，脚本会结束旧进程并按 1/2/4 秒退避重连，同时记录
 `TARGET_UNAVAILABLE`、`RTT_CONTROL_BLOCK_NOT_FOUND` 或 `RTT_DATA_STALLED` 到正式输出日志。
 控制器还要求启动标志之后出现新快照。当前串口模块为 `COM9`，但本测试的证据来自 RTT，
-不占用 COM9。脚本还创建本地 J-Link 锁文件，防止两个测试进程并发运行；外部 Keil Debug
+不占用 COM9。脚本还使用共享的 `toolkit_jlink.lock` 文件，防止两个测试进程并发运行；外部 Keil Debug
 或 RTT Viewer 仍应在启动前关闭。
 
 输出目录：
@@ -142,7 +143,7 @@ RTT       = Channel 0
 - `run` 模式下载后执行 Reset -> Halt -> Go，使 Application 进入运行状态；
 - `prepare` 模式下载后保持 MCU Halt，供已经预启动的监听器或后续 GDB 会话使用；
 - 输出 `06_Output/Logs/OTA_APP_flash.log`；
-- J-Link 被 Keil、RTT Viewer 或其他调试器占用时返回失败。
+- J-Link 被 Keil、RTT Viewer 或其他调试器占用时返回失败；公共 Workflow 自身发生锁冲突时返回 `30 PROBE_ERROR`，不会启动第二个 J-Link owner。
 
 执行烧录前应先运行 `toolkit.bat build`，确保 HEX 是当前代码对应的产物。需要接收串口早期信息或 YMODEM 时，必须先打开串口监听器/Tera Term 并等待设备发送 `C`，再执行会触发复位的烧录或 GDB 操作；需要捕获复位后早期事件时，使用 `flash prepare` 后由已启动的 GDB 执行复位和运行。
 

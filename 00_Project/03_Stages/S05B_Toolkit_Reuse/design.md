@@ -376,9 +376,11 @@ load config
 → validate config / paths
 → build
 → validate build result
+→ acquire J-Link ownership for Flash / RTT actions
 → flash
 → reset / run
 → optional RTT capture
+→ release J-Link ownership in finally
 → write log / result
 → return stable exit code
 ```
@@ -415,7 +417,8 @@ S05B 只抽取配置、生命周期和复用边界，不重新定义 GDB 调试�
 
 ## 11. Tool Ownership and Ordering
 
-- 同一时刻只允许一个工具持有 J-Link；
+- 同一时刻只允许一个工具持有 J-Link；公共 Flash、RTT、GDB、Run 和 Fault Workflow 共享
+  `PROJECT_LOG_DIR/toolkit_jlink.lock`，并在 `finally` 中释放；锁冲突返回 `30 PROBE_ERROR`，不启动第二个 owner；
 - 只清理当前 Workflow 自己启动的进程，不关闭用户已有进程；
 - 失败时按启动顺序逆序清理；
 - 必须先启动的 Listener / Sender / Debugger 顺序继续由 Workflow 明确表达；
@@ -428,6 +431,7 @@ S05B 至少冻结统一 Exit Code 分类：
 
 ```text
 0   SUCCESS
+1   BUILD_WARNING (仅 Build / Run 警告，不是通用外部工具失败码)
 10  CONFIG_ERROR
 20  BUILD_ERROR
 30  PROBE_ERROR
@@ -436,7 +440,8 @@ S05B 至少冻结统一 Exit Code 分类：
 60  TEST_ERROR
 ```
 
-具体脚本可以继续保留工具原始日志，但 Workflow 必须把外部工具错误映射为稳定分类。
+具体脚本可以继续保留工具原始日志，但 Workflow 必须把外部工具错误映射为稳定分类；Firmware/YMODEM
+外部工具的所有非零退出码统一映射为 `50 TRANSFER_ERROR`，不得透传原始 `1`。
 
 结构化结果文件作为演进方向：
 

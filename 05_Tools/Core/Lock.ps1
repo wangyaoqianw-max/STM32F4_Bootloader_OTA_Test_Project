@@ -1,3 +1,15 @@
+function Get-ToolkitJLinkLockPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Configuration
+    )
+
+    $projectRoot = Assert-ToolkitRequiredValue -Configuration $Configuration -Name "PROJECT_ROOT"
+    $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $projectRoot -RelativePath (Assert-ToolkitRequiredValue -Configuration $Configuration -Name "PROJECT_LOG_DIR")
+    New-ToolkitLogDirectory -Path $logDirectory | Out-Null
+    return Join-Path $logDirectory "toolkit_jlink.lock"
+}
+
 function Enter-ToolkitLock {
     param(
         [Parameter(Mandatory = $true)]

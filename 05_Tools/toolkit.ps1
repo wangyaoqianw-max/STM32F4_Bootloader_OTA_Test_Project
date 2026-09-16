@@ -34,7 +34,16 @@ function ConvertTo-ToolkitExitCode {
         [int]$ExitCode
     )
 
-    if ($ExitCode -in @(0, 1, 10, 20, 30, 40, 50, 60)) {
+    if ($ExitCode -eq 0) {
+        return 0
+    }
+    if ($Workflow -in @("firmware", "ymodem")) {
+        return 50
+    }
+    if (($Workflow -in @("build", "run")) -and ($ExitCode -eq 1)) {
+        return 1
+    }
+    if ($ExitCode -in @(10, 20, 30, 40, 50, 60)) {
         return $ExitCode
     }
     switch ($Workflow) {
@@ -44,8 +53,6 @@ function ConvertTo-ToolkitExitCode {
         "run" { return 30 }
         "snapshot" { return 40 }
         "fault" { return 40 }
-        "firmware" { return 50 }
-        "ymodem" { return 50 }
     }
     return 10
 }

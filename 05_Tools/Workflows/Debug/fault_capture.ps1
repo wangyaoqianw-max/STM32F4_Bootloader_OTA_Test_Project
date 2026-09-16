@@ -16,6 +16,8 @@ if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
 $serverLog = $null
 $gdbLog = $null
 $rttLog = $null
+$lock = $null
+$exitCode = 40
 try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Debug\GDB\gdb_session.ps1")
@@ -29,6 +31,7 @@ try {
     $rttLog = Join-Path $logDirectory ("{0}_fault_rtt.log" -f $target)
     $gdbScriptName = if ($Mode -eq "capture") { "fault_capture.gdb" } else { "fault_trigger_capture.gdb" }
     $gdbScript = Join-Path $frameworkRoot ("Debug\GDB\{0}" -f $gdbScriptName)
+    $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)
 
     if ($Seconds -lt 1) {
         throw "RTT capture duration must be positive: $Seconds"
@@ -50,7 +53,7 @@ try {
     }
 
     Write-Host "[GDB][PASS] Fault capture completed; MCU remains halted."
-    exit 0
+    $exitCode = 0
 }
 catch {
     $message = $_.Exception.Message
@@ -60,5 +63,12 @@ catch {
             Write-ToolkitLog -Path $path -Message "[GDB][FAIL] $message"
         }
     }
-    exit 40
+    $exitCode = if ($_.Exception.Message -like "Toolkit lock is already held:*") { 30 } else { 40 }
 }
+finally {
+    if ($null -ne $lock) {
+        Exit-ToolkitLock -Lock $lock
+    }
+}
+
+exit $exitCode

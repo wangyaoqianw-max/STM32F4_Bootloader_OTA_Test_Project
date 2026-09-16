@@ -103,7 +103,7 @@ Build → Flash(run) 启动只读测试固件 → 关闭可能占用 J-Link 的�
 `_SEGGER_RTT` 地址，将该地址传给 RTT Logger；Logger
 退出或连续 5 秒无新数据时自动重启，重连间隔按 1/2/4 秒退避并记录原因。Host 判定 PASS
 要求控制器确认启动标志后还捕获到新快照，并比较事件前后的快照；电源键动作仍需操作者
-确认并记录到 S04 验证报告。脚本使用 `06_Output/Logs/S04_persistence_jlink.lock` 防止
+确认并记录到 S04 验证报告。脚本使用 `06_Output/Logs/toolkit_jlink.lock` 防止
 多个本地测试进程同时占用 J-Link，仍需关闭 Keil Debug、RTT Viewer 等外部 J-Link 客户端。
 
 ### 4. Fault / Crash 诊断
@@ -206,12 +206,15 @@ S04_PERSISTENCE_CAPTURE_SECONDS  S04 电源循环监听时长，默认 90 秒
 配置加载顺序固定为：`project.defaults.bat → project.local.bat（可选） → toolchain.local.bat`。
 `project.defaults.bat` 进入 Git；两个 `.local.bat` 只保留本机信息并被忽略。
 
-统一退出码类别为：`0 SUCCESS`、`10 CONFIG_ERROR`、`20 BUILD_ERROR`、`30 PROBE_ERROR`、
-`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
+统一退出码类别为：`0 SUCCESS`、`1 BUILD_WARNING`（仅 Build/Run 警告）、`10 CONFIG_ERROR`、
+`20 BUILD_ERROR`、`30 PROBE_ERROR`、`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
+Firmware/YMODEM 的外部工具非零退出码统一映射为 `50 TRANSFER_ERROR`，不能透传原始 `1`。
 
 不要求把 GDB 或 ARM GCC 加入全局 `PATH`；填写 `ARM_GDB` 的完整路径即可，避免影响现有 Keil 编译链。
 
-J-Link 同一时刻只能由一个工具占用。执行烧录、RTT 或 GDB 前应关闭 Keil Debug、RTT Viewer、RTT Logger 和其他 J-Link 客户端。
+J-Link 同一时刻只能由一个工具占用。Flash、RTT、GDB、Run 和 Fault 公共 Workflow 会共同获取
+`PROJECT_LOG_DIR/toolkit_jlink.lock`，并在成功或失败时释放；锁冲突返回 `30 PROBE_ERROR`，不会启动第二个
+J-Link owner。执行工具前仍应关闭 Keil Debug、RTT Viewer、RTT Logger 和其他外部 J-Link 客户端。
 
 ## 测试入口
 

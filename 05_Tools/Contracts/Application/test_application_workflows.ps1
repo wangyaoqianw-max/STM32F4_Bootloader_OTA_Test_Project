@@ -207,6 +207,21 @@ set "TERA_TERM_EXE=$keilPath"
     Assert-Equal $emptyRttResult.ExitCode 30 "RTT workflow should classify a timed-out empty capture as a probe failure"
     Remove-Item Env:FAKE_RTT_EMPTY -ErrorAction SilentlyContinue
 
+    $ownershipLockPath = Join-Path (Split-Path -Parent $flashLog) "toolkit_jlink.lock"
+    $ownershipLock = Enter-ToolkitLock -Path $ownershipLockPath
+    try {
+        Clear-Content -LiteralPath $fakeLog
+        $flashConflictResult = Invoke-Workflow -Script $flashWorkflow -Arguments @("-ToolsRoot", $toolsRoot, "-Mode", "run")
+        Assert-Equal $flashConflictResult.ExitCode 30 "Flash workflow should report a Probe error when the shared J-Link lock is held"
+        $conflictLog = Get-Content -LiteralPath $fakeLog -Raw -Encoding UTF8
+        if ($null -eq $conflictLog) { $conflictLog = "" }
+        Assert-True (-not $conflictLog.Contains("JLINK")) "Flash workflow must not start a second J-Link owner after lock conflict"
+    }
+    finally {
+        Exit-ToolkitLock -Lock $ownershipLock
+    }
+    Assert-True (-not (Test-Path -LiteralPath $ownershipLockPath)) "Workflow lock test should release its held lock"
+
     Clear-Content -LiteralPath $fakeLog
     $runResult = Invoke-Workflow -Script $runWorkflow -Arguments @("-ToolsRoot", $toolsRoot, "-Seconds", "2")
     Assert-Equal $runResult.ExitCode 0 "Application run workflow should succeed"

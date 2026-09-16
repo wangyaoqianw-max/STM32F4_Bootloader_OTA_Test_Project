@@ -18,6 +18,7 @@ Export-ModuleMember -Function @(
     "Invoke-ToolkitProcess",
     "Stop-ToolkitOwnedProcess",
     "Test-ToolkitTcpPort",
+    "Get-ToolkitJLinkLockPath",
     "Enter-ToolkitLock",
     "Exit-ToolkitLock"
 )

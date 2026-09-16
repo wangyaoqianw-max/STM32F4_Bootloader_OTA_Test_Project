@@ -10,6 +10,8 @@ if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
     $ToolsRoot = $frameworkRoot
 }
 
+$lock = $null
+$exitCode = 10
 try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Build\Keil\keil_build.ps1")
@@ -24,34 +26,46 @@ try {
     $buildResult = Invoke-KeilBuild -Configuration $configuration -LogPath (Join-Path $logDirectory ("{0}_build.log" -f $target))
     if ($buildResult.ExitCode -ge 2) {
         Write-Host "[CYCLE][FAIL] Build failed."
-        exit 20
+        $exitCode = 20
     }
+    else {
+        $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)
 
-    Write-Host "[CYCLE] Step 2/3: Flash"
-    $flashResult = Invoke-JLinkFlash -Configuration $configuration -Mode "run" -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $target))
-    if ($flashResult.ExitCode -ne 0) {
-        Write-Host "[CYCLE][FAIL] Flash failed."
-        exit 30
+        Write-Host "[CYCLE] Step 2/3: Flash"
+        $flashResult = Invoke-JLinkFlash -Configuration $configuration -Mode "run" -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $target))
+        if ($flashResult.ExitCode -ne 0) {
+            Write-Host "[CYCLE][FAIL] Flash failed."
+            $exitCode = 30
+        }
+        else {
+            Write-Host "[CYCLE] Step 3/3: RTT capture"
+            if ($Seconds -lt 1) {
+                $Seconds = if ($configuration.PSObject.Properties["RTT_CAPTURE_SECONDS"]) { [int]$configuration.RTT_CAPTURE_SECONDS } else { 10 }
+            }
+            $rttResult = Invoke-JLinkRtt -Configuration $configuration -Seconds $Seconds -OutputPath (Join-Path $logDirectory ("{0}_rtt.log" -f $target)) -DiagnosticPath (Join-Path $logDirectory ("{0}_rtt_logger.log" -f $target))
+            if ($rttResult.ExitCode -ne 0) {
+                Write-Host "[CYCLE][FAIL] RTT capture failed."
+                $exitCode = 30
+            }
+            elseif ($buildResult.ExitCode -eq 1) {
+                Write-Host "[CYCLE][WARN] Build, flash, and RTT capture completed with Keil warnings."
+                $exitCode = 1
+            }
+            else {
+                Write-Host "[CYCLE][PASS] Build, flash, and RTT capture commands completed."
+                $exitCode = 0
+            }
+        }
     }
-
-    Write-Host "[CYCLE] Step 3/3: RTT capture"
-    if ($Seconds -lt 1) {
-        $Seconds = if ($configuration.PSObject.Properties["RTT_CAPTURE_SECONDS"]) { [int]$configuration.RTT_CAPTURE_SECONDS } else { 10 }
-    }
-    $rttResult = Invoke-JLinkRtt -Configuration $configuration -Seconds $Seconds -OutputPath (Join-Path $logDirectory ("{0}_rtt.log" -f $target)) -DiagnosticPath (Join-Path $logDirectory ("{0}_rtt_logger.log" -f $target))
-    if ($rttResult.ExitCode -ne 0) {
-        Write-Host "[CYCLE][FAIL] RTT capture failed."
-        exit 30
-    }
-
-    if ($buildResult.ExitCode -eq 1) {
-        Write-Host "[CYCLE][WARN] Build, flash, and RTT capture completed with Keil warnings."
-        exit 1
-    }
-    Write-Host "[CYCLE][PASS] Build, flash, and RTT capture commands completed."
-    exit 0
 }
 catch {
     Write-Host "[CYCLE][ERROR] $($_.Exception.Message)"
-    exit 10
+    $exitCode = if ($_.Exception.Message -like "Toolkit lock is already held:*") { 30 } else { 10 }
 }
+finally {
+    if ($null -ne $lock) {
+        Exit-ToolkitLock -Lock $lock
+    }
+}
+
+exit $exitCode

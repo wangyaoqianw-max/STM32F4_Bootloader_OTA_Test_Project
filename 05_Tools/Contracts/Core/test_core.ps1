@@ -105,6 +105,9 @@ set "TERA_TERM_EXE=C:\fake\ttpmacro.exe"
     $resolvedProject = Resolve-ToolkitProjectPath -ProjectRoot $config.PROJECT_ROOT -RelativePath $config.PROJECT_KEIL_PROJECT_FILE
     Assert-Equal $resolvedProject $projectFile "Relative project path should resolve from project root"
 
+    $sharedLockPath = Get-ToolkitJLinkLockPath -Configuration $config
+    Assert-Equal $sharedLockPath (Join-Path $tempRoot "logs\toolkit_jlink.lock") "J-Link ownership should use the configured project log directory"
+
     $logPath = Join-Path $tempRoot "generated-logs"
     $createdLogPath = New-ToolkitLogDirectory -Path $logPath
     Assert-True (Test-Path -LiteralPath $logPath -PathType Container) "Log directory should be created"

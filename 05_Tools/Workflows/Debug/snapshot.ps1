@@ -13,6 +13,8 @@ if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
 
 $serverLog = $null
 $snapshotLog = $null
+$lock = $null
+$exitCode = 40
 try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Debug\GDB\gdb_session.ps1")
@@ -23,6 +25,7 @@ try {
     $serverLog = Join-Path $logDirectory ("{0}_gdb_server.log" -f $target)
     $snapshotLog = Join-Path $logDirectory ("{0}_gdb_snapshot.log" -f $target)
     $gdbScript = Join-Path $frameworkRoot ("Debug\GDB\runtime_snapshot_{0}.gdb" -f $Mode)
+    $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)
 
     $session = Invoke-GdbSession -Configuration $configuration -Mode $Mode -GdbScript $gdbScript -ServerLog $serverLog -ClientLog $snapshotLog
     $output = [string]$session.ClientOutput
@@ -40,7 +43,7 @@ try {
     }
 
     Write-Host "[GDB][PASS] GDB runtime snapshot completed."
-    exit 0
+    $exitCode = 0
 }
 catch {
     $message = $_.Exception.Message
@@ -51,5 +54,12 @@ catch {
     if ($null -ne $serverLog) {
         Write-ToolkitLog -Path $serverLog -Message "[GDB][FAIL] $message"
     }
-    exit 40
+    $exitCode = if ($_.Exception.Message -like "Toolkit lock is already held:*") { 30 } else { 40 }
 }
+finally {
+    if ($null -ne $lock) {
+        Exit-ToolkitLock -Lock $lock
+    }
+}
+
+exit $exitCode

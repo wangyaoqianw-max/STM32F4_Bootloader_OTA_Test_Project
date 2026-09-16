@@ -109,7 +109,7 @@ git commit -m "refactor(tools): establish reusable configuration core"
 
 **Files:** `05_Tools/Core/Process.ps1`、`Lock.ps1`、`Toolkit.Core.psm1`、`Contracts/Core/test_core.ps1`。
 
-**Interfaces:** `Invoke-ToolkitProcess`、`Stop-ToolkitOwnedProcess`、`Test-ToolkitTcpPort`、`Enter-ToolkitLock`、`Exit-ToolkitLock`。Process result 至少包含 `ExitCode/Stdout/Stderr/TimedOut/ProcessId`。
+**Interfaces:** `Invoke-ToolkitProcess`、`Stop-ToolkitOwnedProcess`、`Test-ToolkitTcpPort`、`Get-ToolkitJLinkLockPath`、`Enter-ToolkitLock`、`Exit-ToolkitLock`。Process result 至少包含 `ExitCode/Stdout/Stderr/TimedOut/ProcessId`。
 
 - [ ] **Step 1: 写失败测试**：正常退出、非零退出、超时 kill、TCP probe、owned cleanup、lock conflict。
 - [ ] **Step 2: 确认测试 FAIL**。
@@ -175,7 +175,7 @@ toolkit.bat snapshot [halt|resume]
 toolkit.bat fault [capture|trigger]
 ```
 
-**Exit Classes:** `0 SUCCESS / 10 CONFIG_ERROR / 20 BUILD_ERROR / 30 PROBE_ERROR / 40 DEBUG_ERROR / 50 TRANSFER_ERROR / 60 TEST_ERROR`。
+**Exit Classes:** `0 SUCCESS / 1 BUILD_WARNING (only Build/Run warnings) / 10 CONFIG_ERROR / 20 BUILD_ERROR / 30 PROBE_ERROR / 40 DEBUG_ERROR / 50 TRANSFER_ERROR / 60 TEST_ERROR`。Firmware/YMODEM 外部工具的所有非零退出码统一映射为 `50 TRANSFER_ERROR`。
 
 - [ ] **Step 1: 写 Router/Legacy Contract Test**：未知命令必须失败；legacy wrapper 不再出现 Keil/J-Link/GDB 核心命令。
 - [ ] **Step 2: `toolkit.bat` 只定位自身并调用 `toolkit.ps1`；PowerShell Router 只负责参数校验、Workflow 路由、Exit Code 映射**。
