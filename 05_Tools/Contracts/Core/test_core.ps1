@@ -126,6 +126,52 @@ set "KEIL_UV4="
 '@ | Set-Content -LiteralPath (Join-Path $missingValueConfigRoot "toolchain.local.bat") -Encoding ASCII
     $missingValueConfig = Import-ToolkitConfiguration -ToolsRoot $missingValueRoot
     Assert-Throws { Assert-ToolkitRequiredValue -Configuration $missingValueConfig -Name "KEIL_UV4" } "Missing required configuration value should fail"
+
+    $successResult = Invoke-ToolkitProcess -FilePath $env:ComSpec -Arguments @("/d", "/c", "echo TOOLKIT_STDOUT & echo TOOLKIT_STDERR 1>&2") -TimeoutMilliseconds 5000
+    Assert-Equal $successResult.ExitCode 0 "Process result should preserve successful exit code"
+    Assert-True ($successResult.Stdout.Contains("TOOLKIT_STDOUT")) "Process result should capture stdout"
+    Assert-True ($successResult.Stderr.Contains("TOOLKIT_STDERR")) "Process result should capture stderr"
+    Assert-True (-not $successResult.TimedOut) "Successful process should not be marked timed out"
+    Assert-True ($successResult.ProcessId -gt 0) "Process result should include a process id"
+
+    $failureResult = Invoke-ToolkitProcess -FilePath $env:ComSpec -Arguments @("/d", "/c", "exit 7") -TimeoutMilliseconds 5000
+    Assert-Equal $failureResult.ExitCode 7 "Process result should preserve non-zero exit code"
+
+    $timeoutResult = Invoke-ToolkitProcess -FilePath (Get-Command powershell.exe).Source -Arguments @("-NoProfile", "-Command", "Start-Sleep -Seconds 30") -TimeoutMilliseconds 250
+    Assert-True $timeoutResult.TimedOut "Long-running process should be marked timed out"
+
+    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 0)
+    $listener.Start()
+    try {
+        $listenerPort = $listener.LocalEndpoint.Port
+        Assert-True (Test-ToolkitTcpPort -HostName "127.0.0.1" -PortNumber $listenerPort) "TCP probe should detect a listening port"
+    }
+    finally {
+        $listener.Stop()
+    }
+    Assert-True (-not (Test-ToolkitTcpPort -HostName "127.0.0.1" -PortNumber $listenerPort)) "TCP probe should reject a closed port"
+
+    $ownedProcess = Start-Process -FilePath (Get-Command powershell.exe).Source -ArgumentList "-NoProfile", "-Command", "Start-Sleep -Seconds 30" -PassThru
+    try {
+        Start-Sleep -Milliseconds 100
+        Stop-ToolkitOwnedProcess -Process $ownedProcess
+        $ownedProcess.Refresh()
+        Assert-True $ownedProcess.HasExited "Owned cleanup should stop only the supplied process"
+    }
+    finally {
+        Stop-ToolkitOwnedProcess -Process $ownedProcess
+    }
+
+    $lockPath = Join-Path $tempRoot "toolkit.lock"
+    $lock = Enter-ToolkitLock -Path $lockPath
+    try {
+        Assert-True (Test-Path -LiteralPath $lockPath -PathType Leaf) "Lock acquisition should create the lock file"
+        Assert-Throws { Enter-ToolkitLock -Path $lockPath } "A second owner should not acquire the same lock"
+    }
+    finally {
+        Exit-ToolkitLock -Lock $lock
+    }
+    Assert-True (-not (Test-Path -LiteralPath $lockPath)) "Lock release should remove the lock file"
 }
 finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
@@ -137,5 +183,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-"[TEST][PASS] Toolkit Core configuration/path/logging contract checks passed."
+"[TEST][PASS] Toolkit Core configuration/path/process/lock/logging contract checks passed."
 exit 0
