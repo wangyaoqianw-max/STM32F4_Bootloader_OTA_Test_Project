@@ -18,15 +18,36 @@
 
 然后填写当前电脑的实际工具路径。`toolchain.local.bat` 为本机配置，已被 `.gitignore` 排除，禁止提交 Git。
 
+## Unified Router
+
+推荐从 `05_Tools\toolkit.bat` 进入；本目录的 BAT 保留为兼容透传入口：
+
+```bat
+05_Tools\toolkit.bat build
+05_Tools\toolkit.bat flash run
+05_Tools\toolkit.bat flash prepare
+05_Tools\toolkit.bat run 10
+05_Tools\toolkit.bat rtt 10
+05_Tools\toolkit.bat snapshot halt
+05_Tools\toolkit.bat snapshot resume
+05_Tools\toolkit.bat fault capture
+05_Tools\toolkit.bat firmware pack --input app.bin --output app.img --version 1.1.0
+05_Tools\toolkit.bat ymodem tera COM10 115200 app.img
+05_Tools\toolkit.bat ymodem send app.img --port COM10 --baud 115200 --json
+```
+
+统一退出码类别：`0 SUCCESS`、`10 CONFIG_ERROR`、`20 BUILD_ERROR`、`30 PROBE_ERROR`、
+`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
+
 ## 当前脚本入口总表
 
 | 入口 | 功能 |
 |---|---|
-| `build_app.bat` | Keil 编译 `OTA_APP` Target |
-| `flash_app.bat run` | J-Link SWD 烧录 `OTA_APP.hex`，并 Reset → Halt → Go |
-| `flash_app.bat prepare` | J-Link SWD 烧录 `OTA_APP.hex` 后保持 MCU Halt，等待调试工具预启动 |
-| `rtt_capture.bat [秒数]` | 采集 RTT Up Channel 0 |
-| `run_app_cycle.bat [秒数]` | 编译 → 烧录 → RTT 采集 |
+| `build_app.bat` | 透传到 `toolkit.bat build`，使用 Keil 编译当前工程 Target |
+| `flash_app.bat run` | 透传到 `toolkit.bat flash run`，J-Link SWD 烧录并 Reset → Halt → Go |
+| `flash_app.bat prepare` | 透传到 `toolkit.bat flash prepare`，烧录后保持 MCU Halt |
+| `rtt_capture.bat [秒数]` | 透传到 `toolkit.bat rtt`，采集 RTT |
+| `run_app_cycle.bat [秒数]` | 透传到 `toolkit.bat run`，编译 → 烧录 → RTT 采集 |
 | `start_gdb_server.bat` | 前台启动 J-Link GDB Server，供手工调试 |
 | `gdb_runtime_snapshot.bat halt` | 快照后 `detach → quit`，保持 MCU 暂停 |
 | `gdb_runtime_snapshot.bat resume` | 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
@@ -93,8 +114,10 @@ RTT       = Channel 0
 统一编译入口：
 
 ```bat
-05_Tools\Scripts\build_app.bat
+05_Tools\toolkit.bat build
 ```
+
+`Scripts/build_app.bat` 仍可作为兼容入口。
 
 功能：
 
@@ -108,7 +131,7 @@ RTT       = Channel 0
 统一烧录入口：
 
 ```bat
-05_Tools\Scripts\flash_app.bat run
+05_Tools\toolkit.bat flash run
 ```
 
 功能：
@@ -117,19 +140,18 @@ RTT       = Channel 0
 - 通过 SWD 4 MHz 下载 Keil 生成的 `OTA_APP.hex`；
 - `loadfile` 自带写入校验；
 - `run` 模式下载后执行 Reset -> Halt -> Go，使 Application 进入运行状态；
-- `prepare` 模式下载后保持 MCU Halt，工具链可以在下一次复位前预启动监听器；
+- `prepare` 模式下载后保持 MCU Halt，供已经预启动的监听器或后续 GDB 会话使用；
 - 输出 `06_Output/Logs/OTA_APP_flash.log`；
 - J-Link 被 Keil、RTT Viewer 或其他调试器占用时返回失败。
 
-执行烧录前应先运行 `build_app.bat`，确保 HEX 是当前代码对应的产物。需要捕获复位后早期事件时，
-先运行 `flash_app.bat prepare`，再启动 GDB 工具，最后由 GDB 执行复位和运行。
+执行烧录前应先运行 `toolkit.bat build`，确保 HEX 是当前代码对应的产物。需要接收串口早期信息或 YMODEM 时，必须先打开串口监听器/Tera Term 并等待设备发送 `C`，再执行会触发复位的烧录或 GDB 操作；需要捕获复位后早期事件时，使用 `flash prepare` 后由已启动的 GDB 执行复位和运行。
 
 ## RTT capture
 
 统一 RTT 采集入口：
 
 ```bat
-05_Tools\Scripts\rtt_capture.bat
+05_Tools\toolkit.bat rtt
 ```
 
 默认采集 10 秒，也可以覆盖时间：
@@ -155,8 +177,8 @@ Windows PowerShell 时同时存在 `PATH` / `Path` 环境变量的本机环境�
 GDB 调试入口：
 
 ```bat
-05_Tools\Scripts\gdb_runtime_snapshot.bat resume
-05_Tools\Scripts\gdb_runtime_snapshot.bat halt
+05_Tools\toolkit.bat snapshot resume
+05_Tools\toolkit.bat snapshot halt
 ```
 
 依赖 `toolchain.local.bat` 中的 `ARM_GDB` 和 `JLINK_GDB_SERVER`。入口自动启动并回收本次创建的 J-Link GDB Server，使用 Keil 生成的 `OTA_APP.axf` 读取运行态信息，不执行 GDB `load`，不会隐式烧录 Flash。
@@ -174,8 +196,8 @@ GDB 调试入口：
 受控 Fault 测试入口：
 
 ```bat
-05_Tools\Scripts\flash_app.bat prepare
-05_Tools\Scripts\gdb_fault_capture.bat trigger
+05_Tools\toolkit.bat flash prepare
+05_Tools\toolkit.bat fault trigger
 ```
 
 `trigger` 模式要求当前 AXF 对应的测试固件已经启用 `DIAG_FAULT_TEST_ENABLE=1`。
@@ -188,7 +210,7 @@ set breakpoint -> monitor reset -> continue& -> Fault Handler capture -> detach 
 如果 Fault 已经由其他方式产生，使用：
 
 ```bat
-05_Tools\Scripts\gdb_fault_capture.bat capture
+05_Tools\toolkit.bat fault capture
 ```
 
 Fault Capture 不执行 `load`、不自动恢复 MCU。GDB 释放 J-Link 后，脚本才启动 RTT Logger 读取
@@ -208,13 +230,13 @@ Server 并行启动后再烧录或复位。
 统一开发闭环入口：
 
 ```bat
-05_Tools\Scripts\run_app_cycle.bat
+05_Tools\toolkit.bat run
 ```
 
 或者指定 RTT 采集秒数：
 
 ```bat
-05_Tools\Scripts\run_app_cycle.bat 20
+05_Tools\toolkit.bat run 20
 ```
 
 执行顺序：
@@ -233,7 +255,7 @@ Keil Build
 打包入口：
 
 ```bat
-python 05_Tools\Firmware\pack_firmware.py ^
+05_Tools\toolkit.bat firmware pack ^
     --input 03_Firmware\Application\OTA_APP\MDK-ARM\Objects\OTA_APP.bin ^
     --output 06_Output\Artifacts\OTA_APP.img ^
     --version 1.1.0
@@ -248,3 +270,5 @@ Image V1 fixed-offset little-endian 合同。`test_pack_firmware.py` 用于 Pyth
 GPT、DeepSeek、Claude 或其他模型只要运行在可访问本机 Shell 和 USB 调试器的 Agent 环境中，都应优先调用这些稳定入口，而不是自行搜索 Keil、J-Link 或工程路径。
 
 云端、容器或无 USB 透传环境不能因为脚本存在就视为具备真实硬件访问能力。
+
+Firmware/YMODEM 的 Host Test 只能验证镜像格式、协议和参数处理；Tera Term YMODEM 发送还需要真实串口和目标板。需要接收复位后的早期串口信息时，先启动监听工具并确认等待到 `C`，再执行会触发复位的烧录/复位动作。RTT Logger、J-Link Commander、GDB Server 和 RTT Viewer 共享同一个 J-Link Probe，不能并行启动；Fault 流程必须在 GDB 释放 Probe 后再采集 RTT。

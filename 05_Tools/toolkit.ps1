@@ -44,8 +44,102 @@ function ConvertTo-ToolkitExitCode {
         "run" { return 30 }
         "snapshot" { return 40 }
         "fault" { return 40 }
+        "firmware" { return 50 }
+        "ymodem" { return 50 }
     }
     return 10
+}
+
+function Get-ToolkitConfiguration {
+    Import-Module -Name (Join-Path $toolsRoot "Core\Toolkit.Core.psm1") -Force
+    return Import-ToolkitConfiguration -ToolsRoot $toolsRoot
+}
+
+function Get-ConfiguredPython {
+    param([object]$Configuration)
+
+    $property = $Configuration.PSObject.Properties["PYTHON_EXE"]
+    if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+        return [string]$property.Value
+    }
+    return "python"
+}
+
+function Invoke-ExternalToolkitCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$CommandArguments = @(),
+        [string]$WorkingDirectory = $toolsRoot
+    )
+
+    $result = Invoke-ToolkitProcess -FilePath $FilePath -Arguments $CommandArguments -WorkingDirectory $WorkingDirectory
+    if (-not [string]::IsNullOrEmpty([string]$result.Stdout)) {
+        Write-Host ([string]$result.Stdout).TrimEnd()
+    }
+    if (-not [string]::IsNullOrEmpty([string]$result.Stderr)) {
+        Write-Host ([string]$result.Stderr).TrimEnd()
+    }
+    return [int]$result.ExitCode
+}
+
+function Invoke-FirmwarePack {
+    param([string[]]$PackArguments)
+
+    $configuration = Get-ToolkitConfiguration
+    $python = Get-ConfiguredPython -Configuration $configuration
+    $packer = Join-Path $toolsRoot "Firmware\pack_firmware.py"
+    if (-not (Test-Path -LiteralPath $packer -PathType Leaf)) {
+        throw "Firmware packer not found: $packer"
+    }
+    return Invoke-ExternalToolkitCommand -FilePath $python -CommandArguments (@($packer) + $PackArguments) -WorkingDirectory $configuration.PROJECT_ROOT
+}
+
+function Invoke-TeraTermYmodem {
+    param(
+        [object]$Configuration,
+        [string[]]$TransferArguments
+    )
+
+    if ($TransferArguments.Count -ne 3) {
+        throw "Tera Term YMODEM requires: <COMx> <baud> <firmware.img>"
+    }
+    $port = $TransferArguments[0] -replace '(?i)^COM', ''
+    if ((-not (Test-PositiveInteger $port))) {
+        throw "COM port must be a positive number or COMx: $($TransferArguments[0])"
+    }
+    if (-not (Test-PositiveInteger $TransferArguments[1])) {
+        throw "Baud rate must be a positive integer: $($TransferArguments[1])"
+    }
+    $firmware = Resolve-Path -LiteralPath $TransferArguments[2] -ErrorAction Stop
+    $teraTerm = Assert-ToolkitRequiredValue -Configuration $Configuration -Name "TERA_TERM_EXE"
+    $macro = Join-Path $toolsRoot "TeraTerm\send_ymodem.ttl"
+    $macroExe = Join-Path (Split-Path -Parent $teraTerm) "ttpmacro.exe"
+    foreach ($path in @($macro, $macroExe)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Required Tera Term file not found: $path"
+        }
+    }
+    return Invoke-ExternalToolkitCommand -FilePath $macroExe -CommandArguments @(
+        "/V", $macro, $port, $TransferArguments[1], $firmware.Path
+    ) -WorkingDirectory $configuration.PROJECT_ROOT
+}
+
+function Invoke-Ymodem {
+    param([string[]]$YmodemArguments)
+
+    $configuration = Get-ToolkitConfiguration
+    $transport = if ($YmodemArguments.Count -gt 0) { $YmodemArguments[0].ToLowerInvariant() } else { "python" }
+    if ($transport -eq "tera") {
+        return Invoke-TeraTermYmodem -Configuration $configuration -TransferArguments ($YmodemArguments | Select-Object -Skip 1)
+    }
+    if ($transport -eq "python") {
+        $YmodemArguments = @($YmodemArguments | Select-Object -Skip 1)
+    }
+    $sender = Join-Path $toolsRoot "Ymodem\ymodem_sender.py"
+    if (-not (Test-Path -LiteralPath $sender -PathType Leaf)) {
+        throw "YMODEM sender not found: $sender"
+    }
+    return Invoke-ExternalToolkitCommand -FilePath (Get-ConfiguredPython -Configuration $configuration) -CommandArguments (@($sender) + $YmodemArguments) -WorkingDirectory $configuration.PROJECT_ROOT
 }
 
 function New-WorkflowArguments {
@@ -60,6 +154,7 @@ function New-WorkflowArguments {
 try {
     $workflowPath = $null
     $workflowArguments = @()
+    $workflowCode = 0
     $workflow = $Command.ToLowerInvariant()
     switch ($workflow) {
         "build" {
@@ -110,6 +205,17 @@ try {
             $workflowPath = Join-Path $toolsRoot "Workflows\Debug\fault_capture.ps1"
             $workflowArguments = @("-Mode", $mode)
         }
+        "firmware" {
+            if ($Arguments.Count -lt 1 -or $Arguments[0].ToLowerInvariant() -ne "pack") {
+                throw "firmware command must be: firmware pack <arguments>"
+            }
+            $workflowCode = Invoke-FirmwarePack -PackArguments @($Arguments | Select-Object -Skip 1)
+            exit (ConvertTo-ToolkitExitCode -Workflow $workflow -ExitCode $workflowCode)
+        }
+        "ymodem" {
+            $workflowCode = Invoke-Ymodem -YmodemArguments $Arguments
+            exit (ConvertTo-ToolkitExitCode -Workflow $workflow -ExitCode $workflowCode)
+        }
         default {
             throw "Unknown toolkit command: $Command"
         }
@@ -120,5 +226,8 @@ try {
 }
 catch {
     Write-Host "[TOOLKIT][ERROR] $($_.Exception.Message)"
+    if ($workflow -in @("firmware", "ymodem")) {
+        exit 50
+    }
     exit 10
 }

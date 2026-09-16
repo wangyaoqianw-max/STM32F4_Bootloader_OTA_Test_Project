@@ -41,6 +41,7 @@ try {
         }
     }
 
+    Write-Host "[J-Link] GDB session released the probe; starting RTT capture."
     Write-Host "[RTT] Capturing retained Fault RTT output..."
     $rttResult = Invoke-JLinkRtt -Configuration $configuration -Seconds $Seconds -OutputPath $rttLog -DiagnosticPath ($rttLog + ".logger")
     if ($rttResult.ExitCode -ne 0) {

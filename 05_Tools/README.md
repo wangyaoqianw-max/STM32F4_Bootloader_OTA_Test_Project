@@ -13,18 +13,39 @@ Keil .bin → Firmware Image V1 .img
 当前文档基于 `2026-09-16` 的仓库状态。机器相关路径只保存在被 Git
 忽略的 `Config/toolchain.local.bat`，不能把本机路径写入脚本或提交到 Git。
 
+## 统一入口
+
+推荐使用 `05_Tools\toolkit.bat`，旧 `Scripts\*.bat` 继续作为兼容入口：
+
+```text
+toolkit.bat build
+toolkit.bat flash [run|prepare]
+toolkit.bat run [rtt_seconds]
+toolkit.bat rtt [seconds]
+toolkit.bat snapshot [halt|resume]
+toolkit.bat fault [capture|trigger]
+toolkit.bat firmware pack <pack_firmware.py arguments>
+toolkit.bat ymodem [python] <ymodem_sender.py arguments>
+toolkit.bat ymodem tera <COMx> <baud> <firmware.img>
+```
+
+Router 只负责参数校验、配置读取、Workflow/既有工具转发和统一退出码，不复制 Firmware
+打包或 YMODEM 协议实现。
+
 ## 目录总览
 
 | 目录 | 当前内容 | 支持的功能 |
 |---|---|---|
-| `Config/` | `toolchain.local.example.bat`、本机 `toolchain.local.bat` | 收口 Keil、J-Link、GDB、Python、Tera Term 路径及目标参数 |
+| `Config/` | `toolchain.local.example.bat`、`project.defaults.bat`、`project.local.example.bat` | 分离机器工具路径、工程事实和本机工程覆盖 |
 | `Scripts/` | `.bat` / `.ps1` 稳定入口 | 编译、烧录、RTT、GDB、S04 持久性测试、YMODEM 和开发闭环 |
+| `Core/` | 配置、路径、进程、日志、锁 | 被 Adapter/Workflow 复用的公共能力 |
+| `Adapters/` | Keil、J-Link、GDB 适配器 | 对接具体本机工具，不承载 Workflow 编排 |
+| `Workflows/` | Application、Debug 工作流 | 表达 Build/Flash/RTT/Snapshot/Fault 动作和验收证据 |
+| `Tests/S04_Persistence/` | S04 专用 runner、GDB 资产和入口 | 项目测试扩展，不进入通用 Core/Adapter/Workflow |
 | `Firmware/` | `pack_firmware.py`、测试 | 生成 S04 Firmware Image V1，校验 Header/Payload 规则 |
 | `Ymodem/` | Python Sender、串口/协议模块、Host Test | 自动识别串口、发送固件、JSON 结果、协议测试 |
 | `TeraTerm/` | `send_ymodem.ttl` | Tera Term 5 真实板级 YMODEM 发送宏 |
-| `Debug/` | GDB/CmBacktrace 命令脚本、自动化契约测试 | Runtime Snapshot、Fault Capture、S04 复位测试、CmBacktrace 接入和失败路径检查 |
-| `CI/` | README 占位目录 | 当前没有独立 CI 配置或可执行工具 |
-| `Packaging/` | README 占位目录 | 当前没有独立打包工具，打包功能在 `Firmware/` |
+| `Debug/` | GDB/CmBacktrace 命令脚本、自动化契约测试 | Runtime Snapshot、Fault Capture、CmBacktrace 接入和失败路径检查 |
 
 ## 当前工具与支持功能
 
@@ -62,7 +83,7 @@ GDB 使用 Keil 生成的 `OTA_APP.axf` 加载符号，但不会执行 GDB `load
 |---|---|---|
 | `Scripts/s04_persistence_test.bat reset` | GDB 读取复位前后快照，执行 `monitor reset → continue& → disconnect`；不烧录、不擦写 External Flash/EEPROM | `S04_reset_persistence.log`、`S04_persistence_gdb_server.log` |
 | `Scripts/s04_persistence_test.bat power-cycle` | 先启动 RTT Logger，检测到 `READY` 后由操作者关闭/打开电源；按 AXF 固定 RTT 地址重连，覆盖 Logger 退出和无数据卡死 | `S04_power_cycle_persistence.log`、分段 RTT/诊断日志 |
-| `Debug/GDB/s04_reset_persistence.gdb` | 读取 `g_s04PersistenceSnapshot`，验证 GDB 复位退出链 | GDB 快照文本 |
+| `Tests/S04_Persistence/s04_reset_persistence.gdb` | 读取 `g_s04PersistenceSnapshot`，验证 GDB 复位退出链 | GDB 快照文本 |
 | `04_Test/Host/S04_Firmware_Image_Storage/s04_persistence_log.py` | 解析快照并比较 Image、Metadata、Slot 状态和版本号 | PASS / FAIL / NOT_READY |
 
 板测固件只读取 Slot B 和 Metadata A/B，不调用擦除、写入或 Commit。临时板测入口已从正式
@@ -104,7 +125,7 @@ RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，�
 
 ### 5. Firmware Image V1 打包
 
-`Firmware/pack_firmware.py` 将 Application Payload 打包为 S04 固定格式：
+`Firmware/pack_firmware.py` 将 Application Payload 打包为 S04 固定格式；统一入口只做转发：
 
 ```text
 .img = 64 Byte Header + Payload
@@ -113,7 +134,7 @@ RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，�
 支持版本号、Payload 长度、Payload CRC32、Header CRC32 和 Slot 容量检查。示例：
 
 ```powershell
-python .\05_Tools\Firmware\pack_firmware.py `
+05_Tools\toolkit.bat firmware pack `
   --input .\03_Firmware\Application\OTA_APP\MDK-ARM\Objects\OTA_APP.bin `
   --output .\06_Output\Packages\OTA_APP_v1.1.0.img `
   --version 1.1.0
@@ -126,7 +147,7 @@ python .\05_Tools\Firmware\pack_firmware.py `
 #### Tera Term 真实板级入口
 
 ```bat
-05_Tools\Scripts\send_ymodem.bat COM10 115200 firmware.img
+05_Tools\toolkit.bat ymodem tera COM10 115200 firmware.img
 ```
 
 使用 `TeraTerm/send_ymodem.ttl` 执行单文件 YMODEM 发送，支持串口号、波特率和固件文件参数。当前 S05 板端完整验收输入是包含 64 Byte Header 的 `.img`，不能直接把原始 `.bin` 当作最终验收文件。
@@ -134,8 +155,8 @@ python .\05_Tools\Firmware\pack_firmware.py `
 #### Python / Agent 入口
 
 ```powershell
-05_Tools\Scripts\send_ymodem_python.bat devices --json
-05_Tools\Scripts\send_ymodem_python.bat send firmware.img --port COM10 --baud 115200 --json
+05_Tools\toolkit.bat ymodem devices --json
+05_Tools\toolkit.bat ymodem send firmware.img --port COM10 --baud 115200 --json
 ```
 
 Python Sender 支持：
@@ -148,6 +169,12 @@ Python Sender 支持：
 
 Python Sender 主要用于 Host Test、Agent 自动化和协议诊断；S05 默认真实板级验收仍使用 Tera Term 入口。
 
+### 7. 监听器、烧录/复位和 J-Link 所有权
+
+需要接收串口早期启动信息或 YMODEM 的场景，必须先启动串口监听器/Tera Term，确认已经打开并等待到设备发送 `C`，再执行会触发复位的烧录或 GDB 操作；否则会漏掉启动阶段信息。`flash prepare` 只在需要由后续 GDB 复位时使用，不能替代监听器预启动。
+
+RTT Logger 是 J-Link 客户端，受单 Probe 所有权限制，不能与 J-Link Commander、GDB Server 或 RTT Viewer 并行连接。Fault 流程因此严格执行 `GDB detach/quit → 释放 J-Link → RTT Logger`；串口监听器不占用 J-Link，可提前打开。
+
 ## 配置与依赖
 
 首次使用：
@@ -155,7 +182,8 @@ Python Sender 主要用于 Host Test、Agent 自动化和协议诊断；S05 默�
 ```text
 复制 Config/toolchain.local.example.bat
 为   Config/toolchain.local.bat
-填写本机实际路径
+填写本机实际路径；需要本机覆盖时再复制 project.local.example.bat
+为   project.local.bat
 ```
 
 配置项按用途分为：
@@ -174,6 +202,12 @@ JLINK_RTT_CHANNEL    RTT 通道，默认 0
 SERIAL_PORT          外部串口模块，当前为 COM9；RTT 测试不使用
 S04_PERSISTENCE_CAPTURE_SECONDS  S04 电源循环监听时长，默认 90 秒
 ```
+
+配置加载顺序固定为：`project.defaults.bat → project.local.bat（可选） → toolchain.local.bat`。
+`project.defaults.bat` 进入 Git；两个 `.local.bat` 只保留本机信息并被忽略。
+
+统一退出码类别为：`0 SUCCESS`、`10 CONFIG_ERROR`、`20 BUILD_ERROR`、`30 PROBE_ERROR`、
+`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
 
 不要求把 GDB 或 ARM GCC 加入全局 `PATH`；填写 `ARM_GDB` 的完整路径即可，避免影响现有 Keil 编译链。
 
@@ -194,9 +228,13 @@ python -B -m unittest discover -s .\05_Tools\Ymodem\tests -v
 
 # S04 Persistence Host Test
 python -B -m unittest discover -s .\04_Test\Host\S04_Firmware_Image_Storage -p "test_*.py" -v
+
+# Toolkit contract tests
+powershell -NoProfile -ExecutionPolicy Bypass -File .\05_Tools\Contracts\Compatibility\test_legacy_entries.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\05_Tools\Contracts\Compatibility\test_firmware_transport_entries.ps1
 ```
 
-云端、容器或没有 USB/J-Link 透传的 Agent 环境只能执行静态检查和 Host Test，不能把脚本存在视为真实板测能力。
+Host Test/Contract Test 只能验证脚本、协议和解析逻辑；真实板测还需要连接目标板、正确的本机工具配置和可回读的串口/RTT/GDB 数据。云端、容器或没有 USB/J-Link 透传的 Agent 环境不得把脚本存在或编译成功视为硬件功能通过。
 
 ## 当前未提供的功能
 
@@ -204,8 +242,6 @@ python -B -m unittest discover -s .\04_Test\Host\S04_Firmware_Image_Storage -p "
 完整 Core Dump、GCC/CMake 构建迁移和 FreeRTOS 全任务栈解析
 Bootloader 内部 Flash 安装
 Trial / Confirm / Rollback
-独立 CI 流水线配置
-独立 Packaging 工具链
 ```
 
 这些功能属于后续阶段，不应从当前工具目录说明中推断为已实现。
