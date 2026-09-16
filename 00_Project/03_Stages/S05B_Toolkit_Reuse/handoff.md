@@ -3,16 +3,16 @@
 ## Metadata
 
 - Stage: `S05B_Toolkit_Reuse`
-- Status: `DESIGN_APPROVED`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - Baseline Commit: `9208cfd`
 - Previous Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
-- Design Approval Commit: `Pending current documentation commit`
-- Implementation Plan Commit: `Not created yet`
+- Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
+- Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
-- Current Role: `S05B Design Role`
+- Current Role: `S05B Implementation Role`
 - Updated At: `2026-09-16`
 
 ## Input
@@ -25,63 +25,92 @@
 
 ## Frozen Design Output
 
-正式详细设计仅保存在：
+正式详细设计：
 
 ```text
 00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
 ```
 
-不再使用 `docs/superpowers/specs/` 作为本项目阶段设计的正式落点。
+正式实施计划：
 
-设计已冻结以下决策：
+```text
+00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
+```
+
+不使用 `docs/superpowers/specs/` 或 `docs/superpowers/plans/` 作为本项目阶段正式文档落点。
+
+设计已冻结：
 
 1. `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers` 分层；
-2. Adapter 按 `Build / Probe / Debug` 变化轴拆分，而不是使用 `STM32_Keil_JLink` 组合 Adapter；
-3. 配置采用三层模型：
-   - `toolchain.local.bat`：本机工具安装事实，ignored；
-   - `project.defaults.bat`：工程固有事实，committed；
-   - `project.local.bat`：本机工程覆盖，ignored；
-4. 增加统一 `toolkit.bat` Router，Human / Agent 使用稳定入口；
-5. 旧 `Scripts/*.bat` 保留兼容，但最终只做薄包装，不保留第二套业务实现；
-6. Firmware / Ymodem / TeraTerm 第一版继续作为独立格式/协议工具，不强制抽象为 Transport Adapter；
-7. S04 Persistence 收敛到 `Tests/S04_Persistence` 项目扩展边界；
-8. S05B 至少冻结稳定 Exit Code 分类，并为后续 JSON Result 留出方向；
-9. 不建立动态插件框架，不为尚未使用的 GCC/CMake、OpenOCD、GD32 等提前实现 Adapter；
-10. S05B 关闭前必须证明跨工程复用，而不是只证明目录更整齐。
+2. Adapter 按 `Build / Probe / Debug` 变化轴拆分；
+3. 三层配置：`toolchain.local.bat`（machine, ignored）+ `project.defaults.bat`（project, committed）+ `project.local.bat`（machine override, ignored）；
+4. `toolkit.bat` / `toolkit.ps1` 作为统一 Human / Agent Router；
+5. 旧 `Scripts/*.bat` 最终只做薄包装，禁止双轨业务实现；
+6. Firmware / Ymodem / TeraTerm 第一版继续作为独立工具能力；
+7. S04 Persistence 收敛为 `Tests/S04_Persistence` 项目扩展；
+8. 稳定 Exit Code 分类；
+9. 不提前实现动态插件、GCC/CMake、OpenOCD、GD32 等未使用能力；
+10. S05B 关闭前必须完成跨工程复用证明。
+
+## Implementation Plan Summary
+
+实施顺序固定为：
+
+```text
+Task 1  三层配置 + Config/Path/Logging Core
+Task 2  Process / Lock / Cleanup Core
+Task 3  Keil + J-Link Adapter 与 Application Workflows
+Task 4  GDB Adapter 与 Debug Workflows
+Task 5  toolkit Router + Legacy Wrappers
+Task 6  S04 Persistence Project Test Extension
+Task 7  Firmware / Ymodem Router 接入 + README/占位目录清理
+Task 8  全量回归 + 第二工程复用演练 + Verification Handoff
+```
+
+第二工程复用首选 `wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS`，在临时 clone 中只替换配置，不修改通用 Core / Adapter / Workflow。
 
 ## Scope Boundary
 
-- 只重塑 `05_Tools`、配置模板、公共工具能力、调用契约和相关文档；
 - 不修改生产固件、Flash/Memory Layout、RTOS 接口、Firmware Image Contract 或 MCU 侧 Ymodem；
 - 不提交本机工具路径，不修改系统 `PATH`；
 - 不提交临时板测代码、构建缓存或调试输出；
-- 未进入 `READY_FOR_IMPLEMENTATION` 前，不迁移脚本、不删除旧入口、不修改工具实现。
+- 每个 Task 先测试再迁移，失败时停在当前 Task；
+- Host PASS 不替代 Board PASS；无 USB/J-Link 的执行环境必须明确记录硬件项 `PENDING`。
 
 ## Acceptance Direction
 
-S05B 验收分四层：
-
 ```text
 Level 1  现有 Build / Flash / RTT / GDB / Fault / Firmware / Ymodem 能力无退化
-Level 2  当前工程实现配置驱动，通用实现无工程专用硬编码
-Level 3  Workflow / Adapter / Core 边界可独立演化
+Level 2  当前工程配置驱动，通用实现无工程专用硬编码
+Level 3  Workflow / Adapter / Core 可独立演化，旧入口只做 wrapper
 Level 4  第二同类 STM32 + Keil + J-Link 工程只改配置即可复用
 ```
 
-旧入口继续可用，但必须转发到统一 Workflow，禁止长期双轨维护。
-
 ## Tool Switch Information
 
-当前已完成 Design Review，工作流状态为 `DESIGN_APPROVED`：
+当前状态：
 
 ```text
-Design approved
-  → create implementation_plan.md
-  → review plan consistency
+DESIGN_APPROVED
+  → implementation_plan.md complete
+  → plan self-review complete
   → READY_FOR_IMPLEMENTATION
   → Implementation Role
 ```
 
+实施时必须先读取：
+
+```text
+AGENTS.md
+PROJECT_CONTEXT.md
+00_Project/WORKFLOW.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
+05_Tools/README.md
+05_Tools/Scripts/README.md
+```
+
 ## Next Action
 
-基于已冻结的 `design.md` 创建正式 `implementation_plan.md`。计划需要按迁移顺序拆分任务，并明确每一步的回归、兼容验证和停止条件；在计划完成并确认前不开始移动 `05_Tools` 实现。
+从 `implementation_plan.md` Task 1 开始施工：先建立三层配置合同和 Core Config/Path/Logging 测试，不得先移动现有 Build/GDB 脚本。Implementation 完成后进入 `READY_FOR_VERIFICATION`，不得直接关闭 S05B。
