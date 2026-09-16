@@ -9,6 +9,7 @@
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
+- S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - S05 Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`

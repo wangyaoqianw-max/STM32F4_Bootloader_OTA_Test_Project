@@ -11,6 +11,7 @@
 - Implementation Commit: `647f32f`
 - Verification Commit: `72a7403`
 - Scoped Review Commit: `f2b6ed9`
+- Supplementary Regression Commit: `6f2fad5`
 - Closure Decision: `PASS`
 - Updated At: `2026-09-16`
 

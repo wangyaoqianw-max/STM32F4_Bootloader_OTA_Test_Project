@@ -9,6 +9,7 @@
 - 调试器：J-Link V9，S/N `602713300`
 - UART：Persistence 测试不使用串口；外接串口模块为 `COM9`，仅作现场记录
 - 镜像：`OTA_APP_s04_v1.1.0.img`
+- Persistence 自动化提交：`6f2fad5`
 
 ## 代码验证
 
