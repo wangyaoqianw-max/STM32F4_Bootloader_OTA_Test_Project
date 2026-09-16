@@ -27,7 +27,8 @@ try {
     $serverLog = Join-Path $logDirectory ("{0}_gdb_server.log" -f $target)
     $gdbLog = Join-Path $logDirectory ("{0}_fault_gdb.log" -f $target)
     $rttLog = Join-Path $logDirectory ("{0}_fault_rtt.log" -f $target)
-    $gdbScript = Join-Path $frameworkRoot ("Debug\GDB\fault_{0}_capture.gdb" -f $Mode)
+    $gdbScriptName = if ($Mode -eq "capture") { "fault_capture.gdb" } else { "fault_trigger_capture.gdb" }
+    $gdbScript = Join-Path $frameworkRoot ("Debug\GDB\{0}" -f $gdbScriptName)
 
     if ($Seconds -lt 1) {
         throw "RTT capture duration must be positive: $Seconds"

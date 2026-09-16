@@ -59,7 +59,7 @@ function Assert-GdbScriptContract {
         "trigger" {
             foreach ($pattern in @(
                     '(?im)^\s*monitor\s+reset\s*$',
-                    'continue&',
+                    '(?im)^\s*continue\s*$',
                     '(?im)^\s*break\s+diagnostics_fault_capture_stop\s*$')) {
                 if ($Content -notmatch $pattern) {
                     throw "Fault trigger GDB script is missing required command: $pattern"

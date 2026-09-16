@@ -50,4 +50,5 @@ detach
 quit
 end
 monitor reset
-continue&
+monitor halt
+continue

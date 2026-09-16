@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `READY_FOR_VERIFICATION`
+- Active Stage Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
@@ -18,7 +18,7 @@
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `S05B Implementation Role → Verification Role`
+- Current Role: `Verification Role → Review Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
@@ -49,7 +49,7 @@ Keil / J-Link / GDB
 00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
 ```
 
-Task 1–8 已完成，当前状态进入 `READY_FOR_VERIFICATION`。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、第二工程复用演练和未执行硬件项记录于：
+Task 1–8 已完成，当前状态进入 `READY_FOR_REVIEW`。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、Fault、S04 Reset/Power-cycle 以及第二工程真实板测记录于：
 
 ```text
 04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
@@ -255,7 +255,7 @@ running state
 
 - GDB 自动化不得执行 `load`；
 - Resume 不使用 `-batch`；
-- `continue&` 后不得再执行 `detach`；
+- `continue&` 后不得再执行 `detach`；触发型 Fault GDB 会话使用阻塞 `continue` 等待 `diagnostics_fault_capture_stop`，运行态 Snapshot 仍使用 `continue&`；
 - GDB/RTT/J-Link Commander 同一时刻不能并发占用同一 Probe；
 - 只清理当前工具自己创建的进程。
 
@@ -281,7 +281,7 @@ S05B 只能抽取配置与生命周期公共能力，不得改变上述调试语
 
 ## Verification Gate
 
-Implementation Role 完成 Task 8 后状态只能进入 `READY_FOR_VERIFICATION`，不能直接关闭 S05B。
+Implementation Role 完成 Task 8 后状态只能进入 `READY_FOR_VERIFICATION`；Verification Role 完成证据核验后进入 `READY_FOR_REVIEW`，不能直接关闭 S05B。
 
 Verification Role 需要独立记录：
 
@@ -301,4 +301,4 @@ S06 在 S05B 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer O
 
 ## Next Action
 
-按 `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md` 从 Task 1 开始实施。Task 1 必须先建立配置合同测试和 Core Config/Path/Logging；禁止跳过 Core 直接迁移 Build/GDB 脚本。
+Review Role 回读 `00_Project/03_Stages/S05B_Toolkit_Reuse/verification.md`、最终差异及全部提交，检查架构边界、API 一致性、编译/测试结果和文档一致性；确认后再决定是否关闭 S05B。

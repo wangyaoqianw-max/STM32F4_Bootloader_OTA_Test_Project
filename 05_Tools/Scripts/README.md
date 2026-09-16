@@ -204,7 +204,7 @@ GDB 调试入口：
 它会先启动 J-Link GDB Server 和 GDB 客户端、设置工程 Fault-loop 断点，再由该 GDB 会话执行：
 
 ```text
-set breakpoint -> monitor reset -> continue& -> Fault Handler capture -> detach -> quit
+set breakpoint -> monitor reset -> halt -> continue -> Fault Handler capture -> detach -> quit
 ```
 
 如果 Fault 已经由其他方式产生，使用：

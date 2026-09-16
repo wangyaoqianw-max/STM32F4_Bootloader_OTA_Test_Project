@@ -80,7 +80,7 @@ Assert-NotContains $fault '(?im)^\s*load(?:\s|$)' 'Fault capture never programs 
 Assert-Contains $trigger '(?im)^\s*target\s+remote\s+localhost:2331' 'Fault trigger attaches before target control'
 Assert-Contains $trigger '(?im)^\s*break\s+diagnostics_fault_capture_stop\s*$' 'Fault trigger breaks after project capture'
 Assert-Contains $trigger '(?im)^\s*monitor\s+reset\s*$' 'Fault trigger resets through the open GDB connection'
-Assert-Contains $trigger 'continue&' 'Fault trigger runs the test firmware asynchronously'
+Assert-Contains $trigger '(?im)^\s*continue\s*$' 'Fault trigger waits for the test firmware to reach the capture breakpoint'
 Assert-Contains $trigger '(?im)^\s*detach\s*$' 'Fault trigger detaches after evidence capture'
 Assert-NotContains $trigger '(?im)^\s*load(?:\s|$)' 'Fault trigger never programs Flash'
 

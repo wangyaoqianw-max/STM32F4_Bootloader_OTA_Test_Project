@@ -74,7 +74,7 @@ Halt 模式保持 MCU 暂停。两个模式都不执行 load。
 ~~~
 
 `prepare` 只烧录并保持 MCU Halt；`trigger` 随后先启动 GDB Server/GDB 客户端并设置
-`diagnostics_fault_capture_stop` 断点，再通过已建立的 GDB 会话执行 `monitor reset` 和 `continue&`。
+`diagnostics_fault_capture_stop` 断点，再通过已建立的 GDB 会话执行 `monitor reset`、`monitor halt` 和阻塞 `continue`。
 这样需要在复位前打开的 GDB 工具已经处于工作状态。命中断点表示工程 Fault Handler 已保存现场，
 随后执行 `halt-and-detach`，不会执行 `load` 或再次恢复 MCU。
 

@@ -58,7 +58,7 @@ if ($failures.Count -eq 0) {
     Require-Text $router 'fault' 'Fault route exists'
     Require-Text $router 'trigger' 'Fault route supports reset-before-trigger mode'
     Require-Text $trigger 'monitor reset' 'Trigger GDB session resets through an already-open GDB connection'
-    Require-Text $trigger 'continue&' 'Trigger GDB session runs the test firmware'
+    Require-Text $trigger '(?im)^\s*continue\s*$' 'Trigger GDB session waits for the test firmware to reach the capture breakpoint'
     Require-Text $trigger 'diagnostics_fault_capture_stop' 'Trigger GDB session breaks after project Fault capture'
     Require-Text $trigger '(?im)^\s*detach\s*$' 'Trigger GDB session detaches without running again'
     Require-Text $faultBatText 'toolkit\.bat' 'Fault legacy entry delegates to Router'

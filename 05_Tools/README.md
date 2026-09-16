@@ -5,7 +5,7 @@
 ```text
 Keil 编译 → J-Link 烧录 → RTT 采集
                      ↘ GDB 在线调试 / Runtime Snapshot
-Fault Test Build → Flash prepare → GDB Server/GDB → monitor reset → continue& → Fault Capture → RTT 读取
+Fault Test Build → Flash prepare → GDB Server/GDB → monitor reset → halt → continue → Fault Capture → RTT 读取
 PC 固件文件 → YMODEM 发送 → STM32F411 → External Flash
 Keil .bin → Firmware Image V1 .img
 ```
@@ -111,15 +111,15 @@ Build → Flash(run) 启动只读测试固件 → 关闭可能占用 J-Link 的�
 | 入口 | 支持功能 |
 |---|---|
 | `Scripts/gdb_fault_capture.bat capture` | 连接已经停在 Fault Handler 的 MCU，读取 Fault PC/LR、MSP/PSP、CFSR/HFSR/MMFAR/BFAR、源码位置、Backtrace 和栈内存；保持 Halt |
-| `Scripts/gdb_fault_capture.bat trigger` | 适用于启用 `DIAG_FAULT_TEST_ENABLE=1` 的测试固件；由已启动的 GDB 会话设置 Fault-loop 断点，再执行 `monitor reset → continue&`，命中后采集 Fault |
+| `Scripts/gdb_fault_capture.bat trigger` | 适用于启用 `DIAG_FAULT_TEST_ENABLE=1` 的测试固件；由已启动的 GDB 会话设置 Fault-loop 断点，再执行 `monitor reset → halt → continue`，命中后采集 Fault |
 | `Debug/GDB/fault_capture.gdb` | 已发生 Fault 的只读现场采集脚本，不执行 `load`、`reset` 或 `continue&` |
-| `Debug/GDB/fault_trigger_capture.gdb` | 在 GDB 已启动后设置捕获断点，执行复位和 `continue&`，待工程 Fault Handler 保存现场后采集 |
+| `Debug/GDB/fault_trigger_capture.gdb` | 在 GDB 已启动后设置捕获断点，执行复位、halt 和阻塞 `continue`，待工程 Fault Handler 保存现场后采集 |
 | `Debug/CmBacktrace/test_fault_diagnostics.ps1` | 检查 Fault 类型、现场字段、CmBacktrace 调用和 Fault Capture 契约 |
 | `Debug/test_tool_sequence.ps1` | 检查 prepare、预启动 GDB、复位触发和 J-Link 所有权顺序 |
 
 Fault 测试的调用顺序固定为：`build_app.bat → flash_app.bat prepare → gdb_fault_capture.bat trigger`。
 其中 `prepare` 烧录后不运行；`gdb_fault_capture.bat trigger` 会先启动 GDB Server/GDB 客户端并设置
-`diagnostics_fault_capture_stop` 断点，随后才由 GDB 执行 `monitor reset` 和 `continue&`。
+`diagnostics_fault_capture_stop` 断点，随后才由 GDB 执行 `monitor reset`、`monitor halt` 和阻塞 `continue`。
 RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，因此 RTT Fault 日志在 GDB
 `detach` 释放 J-Link 后再读取 RTT 缓冲，不与 GDB 并行抢占设备。
 
