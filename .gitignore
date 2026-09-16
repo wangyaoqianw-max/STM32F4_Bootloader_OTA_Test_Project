@@ -9,6 +9,7 @@
 
 # Machine-local toolchain configuration
 05_Tools/Config/toolchain.local.bat
+05_Tools/Config/project.local.bat
 
 # Common generated build directories
 **/build/
