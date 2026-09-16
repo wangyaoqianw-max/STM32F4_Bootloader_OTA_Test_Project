@@ -4,10 +4,10 @@
 
 - 阶段：`S04_Firmware_Image_Storage`
 - 分支：`main`
-- 验证日期：2026-09-14
+- 验证日期：2026-09-14；Persistence 补充验证：2026-09-16
 - 目标板：STM32F411CE
 - 调试器：J-Link V9，S/N `602713300`
-- UART：USART1，115200 8N1，J-Link CDC UART `COM3`
+- UART：Persistence 测试不使用串口；外接串口模块为 `COM9`，仅作现场记录
 - 镜像：`OTA_APP_s04_v1.1.0.img`
 
 ## 代码验证
@@ -59,23 +59,59 @@ Host 测试使用临时目录 `s04_host_verification` 编译，不产生仓库�
 
 `rtt_capture.ps1` 的 Logger 进程启动兼容修复已记录于提交 `1f756f0`。本节只证明本机工具链动作可执行，不替代持久性场景。
 
-## Deferred Regression Items
+## Supplementary Persistence Regression
 
-以下场景尚未实际执行，结果保持 `PENDING`：
+以下延期回归已于 2026-09-16 完成真实硬件验证：
 
-- Reset Persistence：`PENDING / DEFERRED`
-- Power-cycle Persistence：`PENDING / DEFERRED`
+- Reset Persistence：`PASS`
+- Power-cycle Persistence：`PASS`
 
-Project Owner 于 2026-09-14 明确决定将这两项从 S04 阶段关闭阻塞项调整为跨阶段延期回归项。
+### Reset Persistence
 
-该调整不代表测试通过，也不删除原设计中的验证要求。两项必须在以下门禁前补充真实硬件证据：
+证据：`06_Output/Logs/S04_reset_persistence.log`
+
+在不重新烧录、不擦写 Slot B 和 Metadata 的条件下，GDB 执行
+`monitor reset → continue& → disconnect → quit`，复位前后快照一致，结果为 `PASS`。
+
+### Power-cycle Persistence
+
+证据：
 
 ```text
-Must be completed before:
-S07_OTA_Service_V1 stage closure
+06_Output/Logs/S04_power_cycle_persistence.log
+06_Output/Logs/S04_power_cycle_persistence_chunk_*.log
+06_Output/Logs/S04_power_cycle_persistence_logger_*.log
 ```
 
-可以在 S05 / S06 / S07 更早执行。
+操作者确认断电后开发板 3.3 V 对 GND 接近 0 V。自动监听器使用独立测试 AXF 解析的
+`_SEGGER_RTT = 0x2000A820`，在 Logger 无数据卡死和目标不可连接时自动重连；本次记录了：
+
+```text
+RTT_DATA_STALLED      → retry 1，等待 1 s
+TARGET_UNAVAILABLE    → retry 2，等待 2 s
+post-power boot marker captured
+```
+
+首末快照均为：
+
+```text
+image_validation=2
+image_size=55820
+image_crc=0x3ED1C72E
+metadata_a_valid=1
+metadata_b_valid=0
+selected_copy=1
+sequence=0
+active_slot=255
+confirmed_slot=255
+slot_a_state=0
+slot_b_state=1
+confirmed_version=1.1.0
+```
+
+快照数量为 62，启动标志数量为 2，事件前后的 Host 解析器结果为 `PASS`。本测试不使用
+COM9，串口模块仅作为现场连接记录。当前脚本还会把重连原因、退避次数和等待时间写入正式
+输出日志，并拒绝普通 Application AXF。
 
 ## 2026-09-14 Review 复核补充
 
@@ -87,10 +123,11 @@ S07_OTA_Service_V1 stage closure
 
 S04 范围内硬件主流程验证：`PASS`
 
-跨阶段持久性回归：`PENDING / DEFERRED`
+跨阶段持久性回归：`PASS`
 
-当前证据证明：Firmware Image 写入、CRC、Header-last 提交、完整回读、Metadata 双副本提交与单副本恢复，以及本机 Build/Flash/RTT 工具链动作均通过。
+当前证据证明：Firmware Image 写入、CRC、Header-last 提交、完整回读、Metadata 双副本提交与单副本恢复，
+Reset / Power-cycle Persistence，以及本机 Build/Flash/RTT 工具链动作均通过。
 
-依据 Project Owner 的范围调整，两项 Persistence 不再阻塞 S04 关闭，但在 S07 阶段关闭前必须补测。最终阶段关闭决定见：
+两项 Persistence 已完成，不再属于 S07 关闭前的待办回归。最终阶段关闭决定见：
 
 `00_Project/03_Stages/S04_Firmware_Image_Storage/review.md`

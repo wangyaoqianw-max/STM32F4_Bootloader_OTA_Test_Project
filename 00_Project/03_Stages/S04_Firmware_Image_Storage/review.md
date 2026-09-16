@@ -12,30 +12,25 @@
 - Verification Commit: `72a7403`
 - Scoped Review Commit: `f2b6ed9`
 - Closure Decision: `PASS`
-- Updated At: `2026-09-14`
+- Updated At: `2026-09-16`
 
 ## Review Entry Condition
 
 S04 已完成实现、Host Test、Keil Build、Firmware Image 主流程真实板测、Application Toolchain 冒烟验证以及范围化 Review。
 
-原设计中的以下两个持久性测试尚未实际执行：
+原设计中的以下两个持久性测试在阶段首次关闭时曾作为延期回归项：
 
 - Reset Persistence；
 - Power-cycle Persistence。
 
-Project Owner 于 2026-09-14 明确决定：这两项不再作为 S04 阶段关闭阻塞项，而是转为跨阶段 `deferred regression`（延期回归项）。该决定不把两项结果改写为 PASS，也不删除历史验收要求；原始设计和验证报告继续保留其 `PENDING` 事实。
-
-延期回归门禁：
+Project Owner 于 2026-09-16 安排补充真实板测。两项测试均已完成，结果如下：
 
 ```text
-Reset Persistence       PENDING / DEFERRED
-Power-cycle Persistence PENDING / DEFERRED
-
-Must be completed before:
-S07_OTA_Service_V1 stage closure
+Reset Persistence       PASS
+Power-cycle Persistence PASS
 ```
 
-可以在 S05 / S06 或 S07 更早补测，但 S07 不得在缺少这两项真实硬件证据时关闭。
+补充验证使用只读测试固件、固定 `_SEGGER_RTT` 地址和自动重连监听器；测试完成后已将临时入口从正式 Application/Keil target 移除，仅保留 `04_Test/Board` 测试资产。
 
 ## Review Focus
 
@@ -84,29 +79,28 @@ S07_OTA_Service_V1 stage closure
 | Slot B Firmware 主流程实板测试 | PASS |
 | Header-last commit / full re-read validation | PASS |
 | Metadata 双副本提交与单副本恢复 | PASS |
-| Reset Persistence | `PENDING / DEFERRED`，未执行 |
-| Power-cycle Persistence | `PENDING / DEFERRED`，未执行 |
+| Reset Persistence | PASS；GDB `monitor reset → continue& → disconnect` 后事件前后快照一致 |
+| Power-cycle Persistence | PASS；断电/上电后捕获启动标志和新快照，事件前后快照一致 |
 
 审查中发现阶段计划中的 Format Host Test 示例缺少 `04_Impl/impl_board` include path 和 `firmware_metadata.c`；已同步修正 `implementation_plan.md` 和 Host README，并使用修正后的命令重新验证通过。
 
 ## Project Owner Scope Decision
 
-本次关闭不是把缺失证据视为已通过，而是调整其项目管理归属：
+本次补充验证关闭了原先的延期回归项：
 
 ```text
 Before:
-S04 blocking acceptance item
+Cross-stage deferred regression item
 
 After:
-Cross-stage deferred regression item
+Completed cross-stage regression item
 ```
 
 调整理由：
 
-- S04 已验证 Firmware Image / Slot / CRC / Metadata 存储合同和主链路；
-- S05 主要依赖已冻结的 Firmware Contract、UART、CRC16/XMODEM 和 W25Q64 能力，不依赖 Reset/Power-cycle 后的完整 OTA 状态机；
-- 两项持久性测试在 S07 Application OTA Service 真正使用持久化 Metadata 时具有更直接的系统意义；
-- 因此允许 S04 关闭并继续 S05，但将两项回归测试作为 S07 阶段关闭硬门禁保留。
+- S04 的 Firmware Image / Slot / CRC / Metadata 存储合同和主链路已完成验证；
+- Reset / Power-cycle 后持久化字段保持一致，补充证据已落盘；
+- 临时板测代码已退出正式 Keil target，避免影响生产 Application 构建。
 
 ## Final Review Decision
 
@@ -122,8 +116,8 @@ Build Verification   PASS
 Main Board Flow      PASS
 Review               PASS
 
-Reset Persistence       PENDING / DEFERRED
-Power-cycle Persistence PENDING / DEFERRED
+Reset Persistence       PASS
+Power-cycle Persistence PASS
 
 S04_Firmware_Image_Storage → CLOSED
 ```

@@ -32,11 +32,52 @@
 | `gdb_runtime_snapshot.bat resume` | 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
 | `gdb_fault_capture.bat capture` | 已发生 Fault 时读取 GDB Fault 现场并保持 MCU Halt |
 | `gdb_fault_capture.bat trigger` | GDB 已启动后执行复位、运行受控 Fault 测试并采集现场 |
+| `s04_persistence_test.bat reset` | GDB 读取复位前后持久性快照；执行 `monitor reset → continue& → disconnect` |
+| `s04_persistence_test.bat power-cycle` | 先启动 RTT 监听，等待 `READY` 后由操作者完成断电/上电；固定地址重连并处理退出/卡死 |
 | `send_ymodem.bat` | 调用 Tera Term 宏发送 YMODEM 固件 |
 | `send_ymodem_python.bat` | 调用 Python Sender，支持 Agent/JSON 场景 |
 
 所有入口从 `toolchain.local.bat` 读取机器相关路径。GDB 使用 `ARM_GDB`
 和 `JLINK_GDB_SERVER`；不需要修改系统 PATH，也不会切换现有 Keil 编译链。
+
+## S04 Persistence 临时板测
+
+板测源码位于 `04_Test/Board/S04_Firmware_Image_Storage`，已从正式 Keil target 移除。复测时
+须临时接入并单独生成测试 AXF，通过 `S04_PERSISTENCE_AXF` 指定；脚本会离线检查
+`app_s04_persistence_test_run` 符号，拒绝普通 Application AXF。测试固件只读验证 Slot B
+镜像和 Metadata A/B，并每秒输出固定格式的 `[S04-PERSIST] SNAPSHOT`，不执行擦除、写入或
+Commit。Host 解析器比较事件前后的快照，并校验字段枚举范围。
+
+复位测试：
+
+```bat
+05_Tools\Scripts\s04_persistence_test.bat reset
+```
+
+该入口启动 GDB Server/GDB，读取基线，执行 `monitor reset`、`continue&`，读取复位后快照，最后
+`disconnect -> quit`。GDB 脚本使用 AXF 符号，不执行 `load`；RTT Logger 不会与 GDB 并行启动。
+
+电源循环测试：
+
+```bat
+05_Tools\Scripts\s04_persistence_test.bat power-cycle
+```
+
+该入口先用 ARM GDB 从指定测试 AXF 离线解析 `_SEGGER_RTT` 地址，再启动 RTT Logger，并在捕获第一条
+快照后打印 `READY`。看到 `READY` 后关闭电源，等待几秒再打开电源；监听持续 90 秒。Logger
+退出或连续 5 秒无新数据时，脚本会结束旧进程并按 1/2/4 秒退避重连，同时记录
+`TARGET_UNAVAILABLE`、`RTT_CONTROL_BLOCK_NOT_FOUND` 或 `RTT_DATA_STALLED` 到正式输出日志。
+控制器还要求启动标志之后出现新快照。当前串口模块为 `COM9`，但本测试的证据来自 RTT，
+不占用 COM9。脚本还创建本地 J-Link 锁文件，防止两个测试进程并发运行；外部 Keil Debug
+或 RTT Viewer 仍应在启动前关闭。
+
+输出目录：
+
+```text
+06_Output/Logs/S04_reset_persistence.log
+06_Output/Logs/S04_power_cycle_persistence.log
+06_Output/Logs/S04_power_cycle_persistence_chunk_*.log
+```
 
 当前项目已固定的目标连接参数：
 

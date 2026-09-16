@@ -21,13 +21,13 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
 - Current Role: `S06 Design Role / context handoff`
-- Updated At: `2026-09-15`
+- Updated At: `2026-09-16`
 
 ## Current Goal
 
 `S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。
+当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
 ## S05 Delivered Capabilities
 
@@ -129,7 +129,7 @@ continue& -> disconnect -> quit                      PASS
 
 正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
-当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据、CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入，以及三类受控 Fault 注入、现场采集和 GDB/CmBacktrace 交叉验证。Review 已通过并关闭 S05A；S04 Reset/Power-cycle Persistence 仍未完成，继续延期到后续阶段。
+当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据、CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入，以及三类受控 Fault 注入、现场采集和 GDB/CmBacktrace 交叉验证。Review 已通过并关闭 S05A；S04 Reset/Power-cycle Persistence 已在补充回归中完成。
 
 正式交接：
 
@@ -185,17 +185,20 @@ S06 尚未创建正式 `design.md / implementation_plan.md`，当前不得直接
 
 ## Deferred Regression
 
-以下 S04 跨阶段回归仍保持真实状态：
+S04 跨阶段回归已完成，当前无延期项：
 
 ```text
-Reset Persistence       PENDING / DEFERRED
-Power-cycle Persistence PENDING / DEFERRED
+Reset Persistence       PASS
+Power-cycle Persistence PASS
 ```
 
-它们不阻塞 S06，但必须在 `S07_OTA_Service_V1` 关闭前完成真实硬件验证。
+Power-cycle 通过自动 RTT 固定地址、无数据 watchdog 和退避重连捕获上电启动标志，并要求启动
+标志之后出现新快照；事件前后快照一致。正式 Keil target 已移除临时入口，复测需通过
+`S04_PERSISTENCE_AXF` 提供独立测试 AXF。详细证据见
+`04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
 
 ## Blockers
 
-S05A GDB / CmBacktrace / controlled Fault checkpoint 无阶段内阻塞项，Review 已通过。S04 Reset / Power-cycle Persistence 作为跨阶段延期回归，不阻塞 S05A 关闭。
+S05A GDB / CmBacktrace / controlled Fault checkpoint 无阶段内阻塞项，Review 已通过。S04 Persistence 补充回归已完成，无相关阻塞项。
 
-下一步进入 S06 Design Discussion；S04 Reset / Power-cycle Persistence 仍须在 S07 关闭前完成。
+下一步进入 S06 Design Discussion；S04 Reset / Power-cycle Persistence 补充回归已完成。

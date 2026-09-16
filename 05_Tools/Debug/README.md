@@ -7,6 +7,7 @@
 ```text
 GDB/runtime_snapshot_resume.gdb  运行态快照后继续运行
 GDB/runtime_snapshot_halt.gdb    运行态快照后保持暂停
+GDB/s04_reset_persistence.gdb    复位前后读取 S04 持久性快照
 GDB/fault_capture.gdb             已发生 Fault 的只读现场采集
 GDB/fault_trigger_capture.gdb     GDB 已启动后复位并触发受控 Fault
 GDB/test_gdb_automation.ps1      脚本合同和失败路径测试
@@ -79,6 +80,20 @@ Halt 模式保持 MCU 暂停。两个模式都不执行 load。
 
 J-Link 同一时刻只能由一个工具占用。RTT Logger 不能与 GDB Server 并行连接，因此脚本在 GDB
 释放 Probe 后再读取 RTT 缓冲中的 CmBacktrace 输出。
+
+## S04 Reset / Power-cycle Persistence
+
+`GDB/s04_reset_persistence.gdb` 只负责连接临时测试固件、执行复位和释放 Probe，执行顺序为：
+
+```text
+target extended-remote -> monitor reset -> continue& -> disconnect -> quit
+```
+
+快照由 RTT Logger 采集并由 Host Parser 比对；GDB 脚本不执行 `load`，也不修改 Slot B 或 Metadata。电源循环由
+`Scripts/s04_persistence_test.bat power-cycle` 启动 RTT Logger；看到 `READY` 后由操作者完成
+断电/上电。Power-cycle 模式从 AXF 解析 `_SEGGER_RTT` 固定地址，Logger 退出或 5 秒无新数据
+时自动按 1/2/4 秒退避重连，并在输出日志中记录原因。当前串口模块为 `COM9`，但 S04
+持久性证据来自 RTT Channel 0。
 
 输出日志：
 

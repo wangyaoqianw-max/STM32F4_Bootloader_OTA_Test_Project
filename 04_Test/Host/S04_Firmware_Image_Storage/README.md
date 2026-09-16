@@ -28,4 +28,7 @@ python -m unittest 05_Tools/Firmware/test_pack_firmware.py -v
 
 Storage Host Test 的完整命令和 PC 打包工具的交叉解码命令以同阶段
 `implementation_plan.md` 为准。Reset Persistence 与 Power-cycle Persistence
-属于真实板测场景，本轮按 Project Owner 决定跳过，不能以 Host Test 或编译结果替代。
+属于真实板测场景，真实硬件证据见 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`。
+
+Host Persistence Parser 还会拒绝非法枚举值，并在 Power-cycle 模式要求控制器插入的
+`POWER_CYCLE_BOOT_CONFIRMED` 标记之后出现新快照，避免把断电前快照误判为上电后结果。

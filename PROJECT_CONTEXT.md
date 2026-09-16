@@ -23,13 +23,13 @@
 - S05 Final Result: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
 - Current Role: `S06 Design Role / context handoff`
-- Updated At: `2026-09-15`
+- Updated At: `2026-09-16`
 
 ## Current Goal
 
 S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
 
-S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 仍为跨阶段延期回归。
+S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 已作为补充回归完成真实板测。
 
 ## Required Reading For S06 Design
 
@@ -247,8 +247,8 @@ GDB Fault Capture and GDB/CmBacktrace cross validation
 暂不包括：
 
 ```text
-S04 Reset Persistence
-S04 Power-cycle Persistence
+S04 Reset Persistence       PASS
+S04 Power-cycle Persistence PASS
 ```
 
 正式交接：`00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
@@ -294,16 +294,35 @@ Task Topology
 9. Task Notification、Queue、Event Group 分别解决什么实际问题；
 10. S06 最终应向 S07 提供什么稳定 Runtime API / 运行合同。
 
-## Deferred Regression
+## S04 Persistence Regression Completion
 
-S04 跨阶段延期项继续保持：
+2026-09-16 已完成 S04 两项跨阶段持久性回归：
 
 ```text
-Reset Persistence       PENDING / DEFERRED
-Power-cycle Persistence PENDING / DEFERRED
+Reset Persistence       PASS
+Power-cycle Persistence PASS
 ```
 
-它们不阻塞 S06，但必须在 `S07_OTA_Service_V1` 关闭前完成真实硬件验证。
+Power-cycle 自动化使用指定测试 AXF 解析的 `_SEGGER_RTT` 固定地址；Logger 无数据卡死时由
+watchdog 重启，目标不可连接时按 1/2/4 秒退避重连，并要求启动标志之后捕获新快照。真实日志
+捕获 2 次启动标志、62 条快照，事件前后快照全部一致。正式 Keil target 已移除临时入口，
+复测需通过本机配置提供独立测试 AXF。详细证据见：
+
+```text
+04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md
+00_Project/03_Stages/S04_Firmware_Image_Storage/handoff.md
+```
+
+## Deferred Regression
+
+当前没有未完成的 S04 Persistence 跨阶段延期项：
+
+```text
+Reset Persistence       PASS
+Power-cycle Persistence PASS
+```
+
+两项回归已完成，不再形成 S07 关闭前待办。
 
 ## Explicitly Deferred Beyond S06
 
@@ -317,6 +336,6 @@ Power-cycle Persistence PENDING / DEFERRED
 
 ## Next Action
 
-S05A Review 已通过；下一步开启 `S06_RTOS_Runtime` 设计讨论。S04 Reset / Power-cycle Persistence 继续作为 S07 前延期回归。
+S05A Review 已通过，S04 Persistence 补充回归也已完成；下一步开启 `S06_RTOS_Runtime` 设计讨论。
 
 S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。

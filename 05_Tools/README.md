@@ -10,7 +10,7 @@ PC 固件文件 → YMODEM 发送 → STM32F411 → External Flash
 Keil .bin → Firmware Image V1 .img
 ```
 
-当前文档基于 `2026-09-15` 的仓库状态。机器相关路径只保存在被 Git
+当前文档基于 `2026-09-16` 的仓库状态。机器相关路径只保存在被 Git
 忽略的 `Config/toolchain.local.bat`，不能把本机路径写入脚本或提交到 Git。
 
 ## 目录总览
@@ -18,11 +18,11 @@ Keil .bin → Firmware Image V1 .img
 | 目录 | 当前内容 | 支持的功能 |
 |---|---|---|
 | `Config/` | `toolchain.local.example.bat`、本机 `toolchain.local.bat` | 收口 Keil、J-Link、GDB、Python、Tera Term 路径及目标参数 |
-| `Scripts/` | `.bat` / `.ps1` 稳定入口 | 编译、烧录、RTT、GDB 快照、YMODEM 和开发闭环 |
+| `Scripts/` | `.bat` / `.ps1` 稳定入口 | 编译、烧录、RTT、GDB、S04 持久性测试、YMODEM 和开发闭环 |
 | `Firmware/` | `pack_firmware.py`、测试 | 生成 S04 Firmware Image V1，校验 Header/Payload 规则 |
 | `Ymodem/` | Python Sender、串口/协议模块、Host Test | 自动识别串口、发送固件、JSON 结果、协议测试 |
 | `TeraTerm/` | `send_ymodem.ttl` | Tera Term 5 真实板级 YMODEM 发送宏 |
-| `Debug/` | GDB/CmBacktrace 命令脚本、自动化契约测试 | Runtime Snapshot、Fault Capture、CmBacktrace 接入和失败路径检查 |
+| `Debug/` | GDB/CmBacktrace 命令脚本、自动化契约测试 | Runtime Snapshot、Fault Capture、S04 复位测试、CmBacktrace 接入和失败路径检查 |
 | `CI/` | README 占位目录 | 当前没有独立 CI 配置或可执行工具 |
 | `Packaging/` | README 占位目录 | 当前没有独立打包工具，打包功能在 `Firmware/` |
 
@@ -56,7 +56,36 @@ GDB 使用 Keil 生成的 `OTA_APP.axf` 加载符号，但不会执行 GDB `load
 06_Output/Logs/OTA_APP_gdb_snapshot.log
 ```
 
-### 3. Fault / Crash 诊断
+### 3. S04 Reset / Power-cycle Persistence 临时测试
+
+| 入口 | 支持功能 | 主要输出 |
+|---|---|---|
+| `Scripts/s04_persistence_test.bat reset` | GDB 读取复位前后快照，执行 `monitor reset → continue& → disconnect`；不烧录、不擦写 External Flash/EEPROM | `S04_reset_persistence.log`、`S04_persistence_gdb_server.log` |
+| `Scripts/s04_persistence_test.bat power-cycle` | 先启动 RTT Logger，检测到 `READY` 后由操作者关闭/打开电源；按 AXF 固定 RTT 地址重连，覆盖 Logger 退出和无数据卡死 | `S04_power_cycle_persistence.log`、分段 RTT/诊断日志 |
+| `Debug/GDB/s04_reset_persistence.gdb` | 读取 `g_s04PersistenceSnapshot`，验证 GDB 复位退出链 | GDB 快照文本 |
+| `04_Test/Host/S04_Firmware_Image_Storage/s04_persistence_log.py` | 解析快照并比较 Image、Metadata、Slot 状态和版本号 | PASS / FAIL / NOT_READY |
+
+板测固件只读取 Slot B 和 Metadata A/B，不调用擦除、写入或 Commit。临时板测入口已从正式
+Application/Keil target 移除，源码保留在 `04_Test/Board/S04_Firmware_Image_Storage`；
+复测时须先临时接入并单独生成测试 AXF，不能直接使用普通 `OTA_APP.axf`。
+`power-cycle` 使用 RTT，不占用 `COM9`；当前串口模块 `COM9` 仅作为本机硬件记录，串口类
+工具仍应显式传入该端口。
+
+调用顺序：
+
+```text
+Build → Flash(run) 启动只读测试固件 → 关闭可能占用 J-Link 的工具 → 启动 S04 listener → READY → 操作电源键
+```
+
+`reset` 模式由 GDB 负责复位；`power-cycle` 模式由操作者负责电源断开/恢复。Power-cycle
+模式先确认 AXF 含有 `app_s04_persistence_test_run` 测试入口，再用 ARM GDB 离线读取 AXF 中的
+`_SEGGER_RTT` 地址，将该地址传给 RTT Logger；Logger
+退出或连续 5 秒无新数据时自动重启，重连间隔按 1/2/4 秒退避并记录原因。Host 判定 PASS
+要求控制器确认启动标志后还捕获到新快照，并比较事件前后的快照；电源键动作仍需操作者
+确认并记录到 S04 验证报告。脚本使用 `06_Output/Logs/S04_persistence_jlink.lock` 防止
+多个本地测试进程同时占用 J-Link，仍需关闭 Keil Debug、RTT Viewer 等外部 J-Link 客户端。
+
+### 4. Fault / Crash 诊断
 
 | 入口 | 支持功能 |
 |---|---|
@@ -73,7 +102,7 @@ Fault 测试的调用顺序固定为：`build_app.bat → flash_app.bat prepare 
 RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，因此 RTT Fault 日志在 GDB
 `detach` 释放 J-Link 后再读取 RTT 缓冲，不与 GDB 并行抢占设备。
 
-### 4. Firmware Image V1 打包
+### 5. Firmware Image V1 打包
 
 `Firmware/pack_firmware.py` 将 Application Payload 打包为 S04 固定格式：
 
@@ -92,7 +121,7 @@ python .\05_Tools\Firmware\pack_firmware.py `
 
 此工具只负责生成 `.img`，不负责串口传输、Flash 烧录或 Bootloader 安装。
 
-### 5. YMODEM 固件发送
+### 6. YMODEM 固件发送
 
 #### Tera Term 真实板级入口
 
@@ -142,6 +171,8 @@ TERA_TERM_EXE        Tera Term 5 主程序
 JLINK_DEVICE/IF/SPEED 目标连接参数
 GDB_PORT             GDB Server 端口，默认 2331
 JLINK_RTT_CHANNEL    RTT 通道，默认 0
+SERIAL_PORT          外部串口模块，当前为 COM9；RTT 测试不使用
+S04_PERSISTENCE_CAPTURE_SECONDS  S04 电源循环监听时长，默认 90 秒
 ```
 
 不要求把 GDB 或 ARM GCC 加入全局 `PATH`；填写 `ARM_GDB` 的完整路径即可，避免影响现有 Keil 编译链。
@@ -160,6 +191,9 @@ python -B -m unittest discover -s .\05_Tools\Firmware -p "test_*.py" -v
 
 # Python YMODEM Host Test
 python -B -m unittest discover -s .\05_Tools\Ymodem\tests -v
+
+# S04 Persistence Host Test
+python -B -m unittest discover -s .\04_Test\Host\S04_Firmware_Image_Storage -p "test_*.py" -v
 ```
 
 云端、容器或没有 USB/J-Link 透传的 Agent 环境只能执行静态检查和 Host Test，不能把脚本存在视为真实板测能力。
@@ -167,7 +201,6 @@ python -B -m unittest discover -s .\05_Tools\Ymodem\tests -v
 ## 当前未提供的功能
 
 ```text
-S04 Reset Persistence / Power-cycle Persistence 回归证据
 完整 Core Dump、GCC/CMake 构建迁移和 FreeRTOS 全任务栈解析
 Bootloader 内部 Flash 安装
 Trial / Confirm / Rollback

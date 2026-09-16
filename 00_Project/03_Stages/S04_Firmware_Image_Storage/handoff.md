@@ -14,7 +14,7 @@
 - Verification Commit: `72a7403`
 - Scoped Review Commit: `f2b6ed9`
 - Final Closure Decision: `PASS`
-- Updated At: `2026-09-14`
+- Updated At: `2026-09-16`
 
 ## Stage Result
 
@@ -140,7 +140,8 @@ Board Test：
 04_Test/Board/S04_Firmware_Image_Storage/
 ```
 
-Board Test 已退出 production startup 和正式 Keil target，仅作为阶段测试资产保留。
+Board Test 已退出 production startup 和正式 Keil target，仅作为阶段测试资产保留在
+`04_Test/Board/S04_Firmware_Image_Storage/`。如需复测，应临时重新加入 Keil target 并启用测试入口；提交态不启用该入口。
 
 Firmware pack tool：
 
@@ -170,27 +171,31 @@ Firmware pack tool：
 
 `04_Test/Reports/Stages/S04_Firmware_Image_Storage/verification.md`
 
-## Deferred Regression
+## Persistence Regression
 
-以下两项没有执行，结果仍为 `PENDING`：
-
-```text
-Reset Persistence       PENDING / DEFERRED
-Power-cycle Persistence PENDING / DEFERRED
-```
-
-Project Owner 已将其从 S04 关闭阻塞项调整为跨阶段延期回归项。
-
-硬门禁：
+以下两项跨阶段回归已于 2026-09-16 完成真实硬件验证：
 
 ```text
-Must be completed before:
-S07_OTA_Service_V1 stage closure
+Reset Persistence       PASS
+Power-cycle Persistence PASS
 ```
 
-S05 / S06 可以继续，不需要等待这两项；若在 S05/S06 有合适板测窗口，可以提前补测。
+Reset 测试通过 GDB `monitor reset → continue& → disconnect → quit` 验证，复位前后快照一致。
+Power-cycle 测试由操作者实际断电/上电，自动 RTT 监听器通过固定 RTT 地址、无数据 watchdog 和
+1/2/4 秒退避重连捕获上电启动标志，并要求启动标志之后出现新快照，事件前后快照一致。
 
-不得把上述 `PENDING` 描述成 PASS。
+Power-cycle 证据日志：
+
+```text
+06_Output/Logs/S04_power_cycle_persistence.log
+06_Output/Logs/S04_power_cycle_persistence_chunk_*.log
+06_Output/Logs/S04_power_cycle_persistence_logger_*.log
+```
+
+本次自动化还记录并处理了 `RTT_DATA_STALLED` 和 `TARGET_UNAVAILABLE` 两类重连事件。
+两项 Persistence 已完成，不再属于 S07 关闭前的待办回归。
+
+上述两项已完成，不再作为 `PENDING` 项维护。
 
 ## Application Toolchain
 
@@ -245,9 +250,9 @@ Verification   : PASS within closed S04 scope
 Review         : PASS
 Stage          : CLOSED
 
-Deferred Regression:
-- Reset Persistence       PENDING
-- Power-cycle Persistence PENDING
+Persistence Regression:
+- Reset Persistence       PASS
+- Power-cycle Persistence PASS
 ```
 
 下一次对话可以从 `S05_UART_Ymodem` Design Stage 开始。
