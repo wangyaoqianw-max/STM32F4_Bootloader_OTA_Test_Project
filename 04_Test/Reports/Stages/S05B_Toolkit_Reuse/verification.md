@@ -5,12 +5,12 @@
 - Stage: `S05B_Toolkit_Reuse`
 - Date: `2026-09-16`
 - Branch: `main`
-- Status: `CHANGES_REQUESTED`
-- Current role: `Review Role`
+- Status: `READY_FOR_REVIEW`
+- Current role: `Verification Role`
 - Scope: reusable Toolkit Core/Adapters/Workflows, unified Router, Legacy compatibility, S04 project-test isolation, Firmware/YMODEM routing, and cross-project reuse
 - Code validation: `PASS`
 - Hardware validation: `PASS` for current-project public-entry smoke, real YMODEM/Tera Term transfer, S04 Reset/Power-cycle Persistence, Fault trigger/capture, and second-project Flash/RTT
-- Review: `CHANGES_REQUESTED`
+- Review: `PENDING_RE_REVIEW`
 
 ## 2. Implementation Commits
 
@@ -23,6 +23,7 @@ e34e005 refactor(tools): add unified toolkit router
 0719f83 refactor(tools): isolate s04 persistence extension
 92cf50a docs(tools): expose reusable firmware and transport entries
 98efc77 test(s05b): complete remaining board verification
+2140117 fix(s05b): enforce toolkit ownership and exit mapping
 ```
 
 ## 3. Code and Host Verification
@@ -54,6 +55,21 @@ Additional checks:
 - selected 10-item Host/Contract regression rerun after the Fault workflow fix: all `PASS`;
 - normal Application final build completed with warnings (`ExitCode=1`, `TimedOut=False`), with no compiler error; final Flash and RTT startup check passed.
 
+### 3.1 Review Rework Verification
+
+The review rework commit `2140117` was verified with fresh tests:
+
+| Check | Result | Evidence |
+|---|---|---|
+| PowerShell syntax parse | PASS | all `05_Tools/**/*.ps1` files |
+| Shared J-Link lock path | PASS | `PROJECT_LOG_DIR/toolkit_jlink.lock` |
+| Lock conflict | PASS | Flash returned `30`; fake J-Link was not started |
+| Workflow ownership structure | PASS | Flash / RTT / Run / Snapshot / Fault acquire and release in `finally` |
+| Firmware/YMODEM external failure mapping | PASS | missing YMODEM file returned `50` |
+| J-Link/RTT/GDB process cleanup | PASS | no residual process or lock file after smoke |
+
+The YMODEM invalid-file regression intentionally exercises the Python sender's raw exit code `1`; the public Router now maps it to `50 TRANSFER_ERROR`. Build/Run warning code `1` remains reserved for the documented warning case.
+
 ## 4. Current Project Board Smoke
 
 The connected and powered board was tested through the public entry:
@@ -63,6 +79,7 @@ cmd /d /c ".\05_Tools\toolkit.bat build"             PASS
 cmd /d /c ".\05_Tools\toolkit.bat flash run"         PASS
 cmd /d /c ".\05_Tools\toolkit.bat rtt 10"            PASS
 cmd /d /c ".\05_Tools\toolkit.bat snapshot resume"   PASS
+cmd /d /c ".\05_Tools\toolkit.bat run 5"              PASS
 ```
 
 Evidence:
@@ -74,7 +91,7 @@ Evidence:
 - independent GDB adapter check read `uwTick = 0x23adc`, then continued and disconnected successfully;
 - after the smoke, no `JLinkGDBServerCL`, `JLinkGDBServer`, `arm-none-eabi-gdb`, `JLinkRTTLogger` or `JLink` process remained.
 
-This is a public-entry/toolchain smoke result. Stage-specific acceptance evidence is recorded below; Review Role completed the audit and requested the two fixes recorded in `review.md`.
+This is a public-entry/toolchain smoke result. Stage-specific acceptance evidence is recorded below. The two prior Review findings are addressed by `2140117`; the stage remains `READY_FOR_REVIEW` pending re-review and must not transition to `CLOSED` yet.
 
 ### 4.1 Real YMODEM / Tera Term Transfer
 
@@ -202,6 +219,6 @@ The source repository was not modified by this task. Its pre-existing deleted fi
 
 ## 7. Verification Boundary
 
-All planned S05B verification items are complete. No production firmware, Flash/Memory Layout, RTOS interface, Firmware Image contract, MCU-side YMODEM code, or second-project source code was changed in S05B. Temporary board-test integration files and AXF were restored/removed; the only persistent changes in this verification pass are the Fault workflow fix, its contracts, and synchronized documentation.
+All planned S05B verification items and the two Review rework checks are complete. No production firmware, Flash/Memory Layout, RTOS interface, Firmware Image contract, MCU-side YMODEM code, or second-project source code was changed in S05B. Temporary board-test integration files and AXF were restored/removed; the persistent rework changes are the shared Workflow lock ownership, exit-code mapping, tests, and synchronized documentation.
 
-Stage status is `CHANGES_REQUESTED`. Review Role found two closure-blocking issues: generic J-Link ownership is not enforced by the actual Workflows, and external failure code `1` can bypass the documented Unified Exit Code mapping. Implementation Role must fix both and Verification Role must rerun the affected contracts before the next review; the stage must not transition to `CLOSED` yet.
+Stage status is `READY_FOR_REVIEW`. Review Role found two closure-blocking issues; Implementation Role fixed both in `2140117`, and Verification Role reran the affected contracts and current-board public-entry smoke. Review Role must re-audit the commit; the stage must not transition to `CLOSED` yet.

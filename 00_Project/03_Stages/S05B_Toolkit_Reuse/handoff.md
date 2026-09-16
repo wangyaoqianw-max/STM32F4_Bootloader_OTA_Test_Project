@@ -3,16 +3,17 @@
 ## Metadata
 
 - Stage: `S05B_Toolkit_Reuse`
-- Status: `CHANGES_REQUESTED`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `5c26fe63`
 - Previous Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
 - Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`
+- Implementation Rework Commit: `2140117` (`fix(s05b): enforce toolkit ownership and exit mapping`)
 - Verification Commit: `98efc77`
 - Review Commit: `ec90dbb`
-- Current Role: `Review Role → Implementation Role`
+- Current Role: `Verification Role → Review Role`
 - Updated At: `2026-09-16`
 
 ## Input
@@ -189,4 +190,27 @@ Verification Role 已完成 S04 Reset / Power-cycle Persistence、Fault trigger/
 04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
 ```
 
-Review Role 发现的两项返工要求详见 `review.md`。修复后需重新验证 J-Link ownership 和 Exit Code 映射；阶段处于 `CHANGES_REQUESTED`，不标记为 `CLOSED`。
+Review Role 发现的两项返工要求详见 `review.md`。本次已完成修复并重新验证：
+
+1. `05_Tools/Core/Lock.ps1` 新增 `Get-ToolkitJLinkLockPath`；Flash、RTT、Run、Snapshot、Fault Workflow 均在启动 Probe 前获取共享 `toolkit_jlink.lock`，并在 `finally` 释放；Run 持锁覆盖 Flash → RTT，Fault 持锁覆盖 GDB → RTT；S04 runner 改用同一锁文件名。
+2. `toolkit.ps1` 将 `1` 正式限定为 Build/Run warning；Firmware/YMODEM 的所有非零外部退出码统一映射为 `50 TRANSFER_ERROR`。
+
+返工验证证据：
+
+```text
+PowerShell parse                         PASS
+PowerShell contract regression           PASS
+Firmware unittest: 2 tests               PASS
+YMODEM unittest: 24 tests                 PASS
+S04 Host unittest: 15 tests               PASS
+Lock conflict: no second J-Link started  PASS
+YMODEM invalid file: exit 50             PASS
+toolkit.bat build                        EXIT=0
+toolkit.bat flash run                    EXIT=0
+toolkit.bat rtt 10                       EXIT=0
+toolkit.bat snapshot resume              EXIT=0
+toolkit.bat run 5                        EXIT=0
+git diff --check                          PASS
+```
+
+当前状态为 `READY_FOR_REVIEW`；Review Role 需要基于 `2140117` 和本验证报告重新审核，阶段仍不得直接标记为 `CLOSED`。
