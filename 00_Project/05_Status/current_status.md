@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_VERIFICATION`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -13,18 +13,18 @@
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
-- Baseline Commit: `8173a3da2c174294350e47d8e889cf22b9066e23`
+- Baseline Commit: `5c26fe63`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
-- Implementation Commit: `00cbd3a`
-- Verification Commit: `1d092de`
-- Review Commit: `1d092de`
+- S05B Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`
+- Verification Commit: `Not created yet`
+- Review Commit: `Not created yet`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `S05B Implementation Role`
+- Current Role: `S05B Implementation Role → Verification Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
@@ -33,7 +33,7 @@
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-S05B 已完成设计冻结和正式实施计划，当前状态为 `READY_FOR_IMPLEMENTATION`。本阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
+S05B 已完成设计冻结、正式实施计划和 Task 1–8 实施，当前状态为 `READY_FOR_VERIFICATION`。本阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
 
 正式设计与实施计划：
 
@@ -42,7 +42,7 @@ S05B 已完成设计冻结和正式实施计划，当前状态为 `READY_FOR_IMP
 00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
 ```
 
-下一步从实施计划 Task 1 开始：先建立三层配置合同与 Core Config/Path/Logging，不得先搬迁 Build/GDB 业务脚本。
+配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已完成。全量回归、当前工程板级 smoke、第二工程复用演练和未执行硬件项记录于 `04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md`。
 
 ## S05 Delivered Capabilities
 
@@ -153,7 +153,7 @@ continue& -> disconnect -> quit                      PASS
 
 ## S05B Tools Toolkit Reuse
 
-当前阶段为 `S05B_Toolkit_Reuse`，工作流状态为 `READY_FOR_IMPLEMENTATION`，Roadmap 状态为 `ACTIVE`。
+当前阶段为 `S05B_Toolkit_Reuse`，工作流状态为 `READY_FOR_VERIFICATION`，Roadmap 状态为 `ACTIVE`。
 
 正式设计与计划：
 
@@ -189,7 +189,7 @@ Keil / J-Link / GDB
 8 Full Regression + Cross-project Reuse + Verification Handoff
 ```
 
-第二工程复用首选：`wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS`，使用临时 clone，仅修改配置，不修改其生产代码或通用 Toolkit 实现。
+第二工程复用首选：`wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS`，已使用本地仓库做临时副本演练，仅修改副本配置；通用 Core/Adapter/Workflow/Router 未改动，第二工程源仓库未修改。该工程没有 CmBacktrace，故 CmBacktrace 集成不属于本次复用验收范围。
 
 ## Stable Tooling After S05
 
@@ -236,6 +236,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-S05B 当前无已知阻塞项。设计和实施计划均已冻结，可以进入 Implementation Role。
+S05B 当前无已知阻塞项。设计、实施计划和实现均已完成，当前进入 Verification Role；板级 YMODEM/Tera Term 实传、Fault capture、S04 Reset/Power-cycle 专项和第二工程板测仍需按验证条件独立确认。
 
-下一步：严格按 `implementation_plan.md` 从 Task 1 开始，实现过程中每个 Task 独立测试、独立提交；完成 Task 8 后进入 `READY_FOR_VERIFICATION`，不得直接关闭 S05B。
+下一步：Verification Role 独立复核 `04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md` 及全部实现提交，确认 Host/Contract 与板级证据，再决定是否进入 `READY_FOR_REVIEW`；不得直接关闭 S05B。

@@ -3,16 +3,16 @@
 ## Metadata
 
 - Stage: `S05B_Toolkit_Reuse`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
-- Baseline Commit: `9208cfd`
+- Baseline Commit: `5c26fe63`
 - Previous Design Commit: `9d6b037` (`docs(s05b): add reusable tools toolkit design`)
 - Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
-- Implementation Commit: `Not created yet`
+- Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
-- Current Role: `S05B Implementation Role`
+- Current Role: `S05B Implementation Role → Verification Role`
 - Updated At: `2026-09-16`
 
 ## Input
@@ -96,6 +96,8 @@ DESIGN_APPROVED
   → plan self-review complete
   → READY_FOR_IMPLEMENTATION
   → Implementation Role
+  → Task 1–8 complete
+  → READY_FOR_VERIFICATION
 ```
 
 实施时必须先读取：
@@ -113,4 +115,67 @@ PROJECT_CONTEXT.md
 
 ## Next Action
 
-从 `implementation_plan.md` Task 1 开始施工：先建立三层配置合同和 Core Config/Path/Logging 测试，不得先移动现有 Build/GDB 脚本。Implementation 完成后进入 `READY_FOR_VERIFICATION`，不得直接关闭 S05B。
+由 Verification Role 独立回读 `design.md`、`implementation_plan.md`、本交接和验证报告，复核全量 Host/Contract、当前工程板级 smoke、第二工程配置复用证据及未执行硬件项。验证通过后进入 `READY_FOR_REVIEW`，不得直接关闭 S05B。
+
+## Task 8 Implementation Output
+
+### Full Host / Contract Regression
+
+以下 13 组命令均返回 `EXIT=0`：
+
+```text
+Core contract
+Application workflow contract
+Debug workflow contract
+Legacy compatibility
+Firmware / transport compatibility
+S04 isolation
+GDB automation
+Tool sequence
+CmBacktrace integration
+Fault diagnostics
+Firmware unittest: 2 tests
+YMODEM unittest: 24 tests
+S04 Host unittest: 15 tests
+```
+
+`git diff --check`：`PASS`。
+
+### Current Project Board Smoke
+
+当前板卡已连接并通电，使用统一入口完成：
+
+```text
+toolkit.bat build           PASS
+toolkit.bat flash run       PASS
+toolkit.bat rtt 10          PASS
+toolkit.bat snapshot resume PASS
+```
+
+证据包括：Keil build `ExitCode=0`；RTT 日志 415 bytes，包含日志初始化、Application 启动、Storage SPI 初始化和 `Application init result: 0`；GDB snapshot 包含 PC/SP/backtrace 和 `resume-and-disconnect`；独立 GDB 会话读取 `uwTick = 0x23adc` 后成功恢复运行。测试后未残留 J-Link/GDB/RTT 相关进程。
+
+串口/Tera Term/YMODEM 的顺序约束保持为：先打开监听工具并等待 `C`，再执行可能产生早期启动信息的烧录/复位；否则可能漏掉启动信息。RTT Logger 属于 J-Link 客户端，必须在 Flash/GDB 释放 Probe 后启动，不能与其他 J-Link owner 并发。
+
+### Second Project Reuse
+
+复用源：`E:\my_project_2026\Git_test\stm32f4_DMA_UART_ring_RTOS`。通过临时副本调整 `project.defaults.bat` 后，发现并复用了：
+
+```text
+RTT_elog_DMA_UART_ring_project\MDK-ARM\RTT_elog_DMA_UART_ring_project.uvprojx
+Target: RTT_elog_DMA_UART_ring_project
+Device: STM32F411CEUx
+Output: Objects\RTT_elog_DMA_UART_ring_project.axf
+```
+
+临时副本 `toolkit.bat build`：`PASS`。Core、Adapters、Workflows 和 `toolkit.ps1` 与当前工程版本的聚合 SHA-256 均一致；未修改通用实现。该工程没有 CMake，也没有 CmBacktrace；本次只证明 Keil 工程配置复用，未执行第二工程板级 Flash/RTT。
+
+源仓库原有未提交删除项及一个 `codex_build.log` 未被本任务修改；临时复用目录已清理。
+
+## Pending Verification Items
+
+- `PENDING`：真实 YMODEM/Tera Term 串口传输闭环；需先开监听并等待 `C`，再烧录/复位。
+- `PENDING`：S04 Reset / Power-cycle Persistence 专项板测；需要对应 S04 测试镜像和验收数据。
+- `PENDING`：Fault `trigger/capture` 专项板测；需要按受控 Fault 条件执行并回读 RTT/GDB 证据。
+- `PENDING`：第二工程真实板级 Flash/RTT；当前只完成本地临时副本 build 复用证明。
+
+以上 PENDING 项不影响已完成的代码/Host/当前工程公共入口 smoke 证据，但在 Verification Role 独立确认前不得将 S05B 标记为 `CLOSED`。

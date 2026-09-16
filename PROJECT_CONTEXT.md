@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
@@ -18,7 +18,7 @@
 - Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `S05B Implementation Role`
+- Current Role: `S05B Implementation Role → Verification Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
@@ -49,7 +49,11 @@ Keil / J-Link / GDB
 00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
 ```
 
-当前状态已进入 `READY_FOR_IMPLEMENTATION`。实施必须从 Task 1 的三层配置合同与 Core Config/Path/Logging 开始，不得先移动 Build/GDB 业务脚本。
+Task 1–8 已完成，当前状态进入 `READY_FOR_VERIFICATION`。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、第二工程复用演练和未执行硬件项记录于：
+
+```text
+04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
+```
 
 ## Required Reading For S05B Implementation
 
@@ -166,7 +170,7 @@ Task 8  Full Regression + Cross-project Reuse + Verification Handoff
 wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS
 ```
 
-演练使用临时 clone，只替换 Toolkit 配置，不修改第二工程生产代码，也不得为了适配第二工程编辑通用 Core / Adapter / Workflow。
+演练使用本地仓库的临时副本，只替换 Toolkit 配置，不修改第二工程生产代码，也不得为了适配第二工程编辑通用 Core / Adapter / Workflow。该工程没有 CmBacktrace，CmBacktrace 集成不属于该复用目标的验收范围。
 
 ## Stable S04 Storage / Firmware Contract
 
