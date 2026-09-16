@@ -68,7 +68,8 @@ function Assert-SnapshotFailure {
     Assert-True ($outputText.Contains($ExpectedText)) "$Message; expected '$ExpectedText', output was: $outputText"
 }
 
-$exampleConfig = Join-Path $repoRoot "05_Tools\Config\toolchain.local.example.bat"
+$toolchainExample = Join-Path $repoRoot "05_Tools\Config\toolchain.local.example.bat"
+$projectExample = Join-Path $repoRoot "05_Tools\Config\project.local.example.bat"
 $resumeScript = Join-Path $gdbRoot "runtime_snapshot_resume.gdb"
 $haltScript = Join-Path $gdbRoot "runtime_snapshot_halt.gdb"
 $snapshotBat = Join-Path $repoRoot "05_Tools\Scripts\gdb_runtime_snapshot.bat"
@@ -78,10 +79,10 @@ $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("gdb-automation-test-" 
 $testServerLog = Join-Path $tempRoot "server.log"
 $testSnapshotLog = Join-Path $tempRoot "snapshot.log"
 
-Assert-FileContains $exampleConfig 'set "ARM_GDB=' 'GDB executable configuration is missing'
-Assert-FileContains $exampleConfig 'set "JLINK_GDB_SERVER=' 'J-Link GDB Server configuration is missing'
-Assert-FileContains $exampleConfig 'set "GDB_PORT=2331"' 'GDB port configuration is missing'
-Assert-FileContains $exampleConfig 'set "GDB_START_TIMEOUT_SECONDS=' 'GDB startup timeout configuration is missing'
+Assert-FileContains $toolchainExample 'set "ARM_GDB=' 'GDB executable configuration is missing'
+Assert-FileContains $toolchainExample 'set "JLINK_GDB_SERVER=' 'J-Link GDB Server configuration is missing'
+Assert-FileContains $projectExample 'set "GDB_PORT=' 'GDB port override configuration is missing'
+Assert-FileContains $projectExample 'set "JLINK_SPEED=' 'J-Link speed override configuration is missing'
 
 Assert-FileContains $resumeScript 'target remote localhost:2331' 'Resume script must attach to the configured GDB port'
 Assert-FileContains $resumeScript 'continue&' 'Resume script must continue asynchronously'

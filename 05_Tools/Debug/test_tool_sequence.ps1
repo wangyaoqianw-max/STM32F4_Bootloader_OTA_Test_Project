@@ -5,6 +5,7 @@ $flashBat = Join-Path $repoRoot '05_Tools\Scripts\flash_app.bat'
 $cycleBat = Join-Path $repoRoot '05_Tools\Scripts\run_app_cycle.bat'
 $faultBat = Join-Path $repoRoot '05_Tools\Scripts\gdb_fault_capture.bat'
 $faultPs1 = Join-Path $repoRoot '05_Tools\Scripts\gdb_fault_capture.ps1'
+$gdbSessionPs1 = Join-Path $repoRoot '05_Tools\Adapters\Debug\GDB\gdb_session.ps1'
 $faultTriggerGdb = Join-Path $repoRoot '05_Tools\Debug\GDB\fault_trigger_capture.gdb'
 $readme = Join-Path $repoRoot '05_Tools\README.md'
 
@@ -22,7 +23,7 @@ function Require-Text([string]$Text, [string]$Pattern, [string]$Description) {
     }
 }
 
-foreach ($path in @($flashBat, $cycleBat, $faultBat, $faultPs1, $faultTriggerGdb, $readme)) {
+foreach ($path in @($flashBat, $cycleBat, $faultBat, $faultPs1, $gdbSessionPs1, $faultTriggerGdb, $readme)) {
     Require-File $path
 }
 
@@ -31,6 +32,7 @@ if ($failures.Count -eq 0) {
     $cycle = Get-Content -LiteralPath $cycleBat -Raw
     $faultBatText = Get-Content -LiteralPath $faultBat -Raw
     $faultPs = Get-Content -LiteralPath $faultPs1 -Raw
+    $gdbSession = Get-Content -LiteralPath $gdbSessionPs1 -Raw
     $trigger = Get-Content -LiteralPath $faultTriggerGdb -Raw
     $toolsReadme = Get-Content -LiteralPath $readme -Raw
 
@@ -38,12 +40,12 @@ if ($failures.Count -eq 0) {
         ($trigger.IndexOf('monitor reset') -le $trigger.IndexOf('target remote'))) {
         $failures.Add('GDB client must attach before monitor reset')
     }
-    if (($faultPs.IndexOf('Starting J-Link GDB Server') -lt 0) -or
-        ($faultPs.IndexOf('$gdbCapture = Start-CapturedProcess') -le $faultPs.IndexOf('Starting J-Link GDB Server'))) {
+    if (($gdbSession.IndexOf('Starting J-Link GDB Server') -lt 0) -or
+        ($gdbSession.IndexOf('Start-ToolkitProcess') -le $gdbSession.IndexOf('Starting J-Link GDB Server'))) {
         $failures.Add('GDB Server must start before the GDB client')
     }
-    if (($faultPs.IndexOf('Stop-OwnedProcess -Process $gdbProcess') -lt 0) -or
-        ($faultPs.IndexOf('$rttCapture = Start-CapturedProcess') -le $faultPs.IndexOf('Stop-OwnedProcess -Process $gdbProcess'))) {
+    if (($faultPs.IndexOf('Invoke-GdbSession') -lt 0) -or
+        ($faultPs.IndexOf('Invoke-JLinkRtt') -le $faultPs.IndexOf('Invoke-GdbSession'))) {
         $failures.Add('RTT Logger must start after GDB releases J-Link')
     }
 

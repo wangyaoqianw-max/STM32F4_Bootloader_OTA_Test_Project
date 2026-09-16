@@ -14,6 +14,7 @@ $projectFile = Join-Path $appRoot 'MDK-ARM\OTA_APP.uvprojx'
 $faultGdb = Join-Path $repoRoot '05_Tools\Debug\GDB\fault_capture.gdb'
 $faultBat = Join-Path $repoRoot '05_Tools\Scripts\gdb_fault_capture.bat'
 $faultPs1 = Join-Path $repoRoot '05_Tools\Scripts\gdb_fault_capture.ps1'
+$gdbSessionPs1 = Join-Path $repoRoot '05_Tools\Adapters\Debug\GDB\gdb_session.ps1'
 
 $failures = [System.Collections.Generic.List[string]]::new()
 
@@ -43,7 +44,8 @@ foreach ($path in @(
         $faultAdapter,
         $faultGdb,
         $faultBat,
-        $faultPs1)) {
+        $faultPs1,
+        $gdbSessionPs1)) {
     Require-File $path
 }
 
@@ -59,6 +61,7 @@ if ($failures.Count -eq 0) {
     $gdb = Get-Content -LiteralPath $faultGdb -Raw
     $bat = Get-Content -LiteralPath $faultBat -Raw
     $ps1 = Get-Content -LiteralPath $faultPs1 -Raw
+    $gdbSessionPs = Get-Content -LiteralPath $gdbSessionPs1 -Raw
 
     Require-Text $config 'DIAG_FAULT_TEST_ENABLE\s+\(?0U?\)?' 'Fault test is disabled by default'
     Require-Text $header 'DIAG_FAULT_NONE' 'Fault type NONE exists'
@@ -98,9 +101,9 @@ if ($failures.Count -eq 0) {
     Require-Text $bat 'OTA_APP_fault_gdb\.log' 'Fault GDB log path is declared'
     Require-Text $bat 'OTA_APP_fault_rtt\.log' 'Fault RTT log path is declared'
     Require-Text $ps1 'ServerLog|GdbLog|RttLog' 'Fault wrapper receives diagnostic log paths'
-    Require-Text $ps1 'Stop-OwnedProcess' 'Fault wrapper owns process cleanup'
-    Require-Text $ps1 'Error in sourced command file|Cannot execute this command' 'Fault wrapper rejects GDB command execution errors'
-    Forbid-Text $ps1 'taskkill\s+/IM|Stop-Process\s+-Name' 'Fault wrapper does not globally kill processes'
+    Require-Text $gdbSessionPs 'Stop-ToolkitProcess' 'GDB adapter owns process cleanup'
+    Require-Text $gdbSessionPs 'Error in sourced command file|Cannot execute this command' 'GDB adapter rejects command execution errors'
+    Forbid-Text ($ps1 + $gdbSessionPs) 'taskkill\s+/IM|Stop-Process\s+-Name' 'Fault workflow does not globally kill processes'
 }
 
 if ($failures.Count -gt 0) {

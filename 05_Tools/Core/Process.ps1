@@ -73,21 +73,15 @@ function Stop-ToolkitOwnedProcess {
     }
 }
 
-function Invoke-ToolkitProcess {
+function Start-ToolkitProcess {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
 
         [string[]]$Arguments = @(),
 
-        [int]$TimeoutMilliseconds = 60000,
-
         [string]$WorkingDirectory = ""
     )
-
-    if ($TimeoutMilliseconds -lt 1) {
-        throw "Process timeout must be positive: $TimeoutMilliseconds"
-    }
 
     $processFilePath = $FilePath
     $processArguments = $Arguments
@@ -111,29 +105,91 @@ function Invoke-ToolkitProcess {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $startInfo
     [void]$process.Start()
-    $processId = $process.Id
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
-    $timedOut = -not $process.WaitForExit($TimeoutMilliseconds)
-
-    if ($timedOut) {
-        Stop-ToolkitOwnedProcess -Process $process
-    }
-    else {
-        $process.WaitForExit()
-    }
-
-    $stdout = $stdoutTask.GetAwaiter().GetResult()
-    $stderr = $stderrTask.GetAwaiter().GetResult()
-    $exitCode = $process.ExitCode
 
     return [PSCustomObject]@{
-        ExitCode = $exitCode
+        Process = $process
+        StdoutTask = $stdoutTask
+        StderrTask = $stderrTask
+        ProcessId = $process.Id
+    }
+}
+
+function Get-ToolkitProcessResult {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Capture,
+
+        [bool]$TimedOut = $false
+    )
+
+    $process = $Capture.Process
+    try {
+        $process.WaitForExit()
+    }
+    catch {
+    }
+
+    $stdout = $Capture.StdoutTask.GetAwaiter().GetResult()
+    $stderr = $Capture.StderrTask.GetAwaiter().GetResult()
+    return [PSCustomObject]@{
+        ExitCode = $process.ExitCode
         Stdout = $stdout
         Stderr = $stderr
-        TimedOut = $timedOut
-        ProcessId = $processId
+        TimedOut = $TimedOut
+        ProcessId = $Capture.ProcessId
     }
+}
+
+function Complete-ToolkitProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Capture,
+
+        [int]$TimeoutMilliseconds = 60000
+    )
+
+    if ($TimeoutMilliseconds -lt 1) {
+        throw "Process timeout must be positive: $TimeoutMilliseconds"
+    }
+
+    $timedOut = -not $Capture.Process.WaitForExit($TimeoutMilliseconds)
+    if ($timedOut) {
+        Stop-ToolkitOwnedProcess -Process $Capture.Process
+    }
+
+    return Get-ToolkitProcessResult -Capture $Capture -TimedOut $timedOut
+}
+
+function Stop-ToolkitProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Capture
+    )
+
+    Stop-ToolkitOwnedProcess -Process $Capture.Process
+    return Get-ToolkitProcessResult -Capture $Capture -TimedOut $true
+}
+
+function Invoke-ToolkitProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+
+        [string[]]$Arguments = @(),
+
+        [int]$TimeoutMilliseconds = 60000,
+
+        [string]$WorkingDirectory = ""
+    )
+
+    if ($TimeoutMilliseconds -lt 1) {
+        throw "Process timeout must be positive: $TimeoutMilliseconds"
+    }
+
+    $capture = Start-ToolkitProcess -FilePath $FilePath -Arguments $Arguments -WorkingDirectory $WorkingDirectory
+    return Complete-ToolkitProcess -Capture $capture -TimeoutMilliseconds $TimeoutMilliseconds
 }
 
 function Test-ToolkitTcpPort {
