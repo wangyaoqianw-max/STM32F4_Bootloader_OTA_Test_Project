@@ -9,7 +9,7 @@
 - Current role: `S05B Implementation Role → Verification Role`
 - Scope: reusable Toolkit Core/Adapters/Workflows, unified Router, Legacy compatibility, S04 project-test isolation, Firmware/YMODEM routing, and cross-project reuse
 - Code validation: `PASS`
-- Hardware validation: `PASS` for current-project public-entry smoke; stage-specific items below remain `PENDING`
+- Hardware validation: `PASS` for current-project public-entry smoke and real YMODEM/Tera Term transfer; S04, Fault, and second-project board items below remain `PENDING`
 - Review: `Not created yet`
 
 ## 2. Implementation Commits
@@ -73,6 +73,29 @@ Evidence:
 
 This is a public-entry/toolchain smoke result. It does not by itself close the stage-specific YMODEM, Fault, S04, or second-project board acceptance items.
 
+### 4.1 Real YMODEM / Tera Term Transfer
+
+The S05 board-test entry was temporarily enabled in the Keil project by adding the existing files under `04_Test/Board/S05_UART_Ymodem` and defining `PROJECT_ENABLE_S05_YMODEM_BOARD_TEST=1`. After the test, the project definition, include path, and source references were restored; the normal Application was rebuilt and reflashed successfully.
+
+The detected CH340 port was `COM9`. Tera Term `ttermpro`/`ttpmacro` were opened first and entered the YMODEM wait state before `flash run` reset the board. The real Tera Term macro exited with code `0`. The sent image was `OTA_APP_s04_v1.1.0.img` with 55884 bytes.
+
+The board RTT log showed `YMODEM_READY` and progress through `16384/55884`, `32768/55884`, `49152/55884`, and `55884/55884`. Because the RTT up-channel buffer was already occupied by startup/progress output, the final application lines were independently checked through GDB while the test firmware was still running:
+
+```text
+receiver_state       = 6 (FINISHED)
+receiver_error       = 0
+received_size        = 55884
+expected_size        = 55884
+payload_written      = 55820
+header_committed     = 1
+file_started         = 0
+packets_received     = 57
+packets_accepted     = 57
+retries              = 0
+```
+
+Conclusion: real YMODEM/Tera Term transfer, Slot B payload/header commit, and receiver completion passed. The board was then returned to the normal Application, whose RTT startup log showed `Application init result: 0`.
+
 ## 5. Listener and Probe Ownership Ordering
 
 For serial/Tera Term/YMODEM tests, open the listener first and wait for the receiver's `C` before any Flash/reset action that can emit early startup information. This ordering is required to avoid losing boot logs and transfer negotiation data.
@@ -99,7 +122,6 @@ The source repository was not modified by this task. Its pre-existing deleted fi
 
 ## 7. Pending Items and Verification Boundary
 
-- `PENDING`: real YMODEM/Tera Term serial transfer, including receiver `C` negotiation and firmware validation;
 - `PENDING`: S04 Reset / Power-cycle Persistence board test with the dedicated S04 image;
 - `PENDING`: Fault `trigger/capture` board test with controlled fault injection and RTT/GDB evidence;
 - `PENDING`: second-project board Flash/RTT smoke.

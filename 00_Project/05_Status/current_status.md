@@ -236,6 +236,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-S05B 当前无已知阻塞项。设计、实施计划和实现均已完成，当前进入 Verification Role；板级 YMODEM/Tera Term 实传、Fault capture、S04 Reset/Power-cycle 专项和第二工程板测仍需按验证条件独立确认。
+S05B 当前无已知阻塞项。设计、实施计划和实现均已完成，当前进入 Verification Role；真实 YMODEM/Tera Term 实传已通过，Fault capture、S04 Reset/Power-cycle 专项和第二工程板测仍需按验证条件独立确认。
 
 下一步：Verification Role 独立复核 `04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md` 及全部实现提交，确认 Host/Contract 与板级证据，再决定是否进入 `READY_FOR_REVIEW`；不得直接关闭 S05B。

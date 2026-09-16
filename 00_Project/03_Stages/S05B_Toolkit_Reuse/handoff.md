@@ -156,6 +156,14 @@ toolkit.bat snapshot resume PASS
 
 串口/Tera Term/YMODEM 的顺序约束保持为：先打开监听工具并等待 `C`，再执行可能产生早期启动信息的烧录/复位；否则可能漏掉启动信息。RTT Logger 属于 J-Link 客户端，必须在 Flash/GDB 释放 Probe 后启动，不能与其他 J-Link owner 并发。
 
+### Real YMODEM / Tera Term Transfer
+
+按用户要求完成一次真实 YMODEM/Tera Term 测试。临时启用 `04_Test/Board/S05_UART_Ymodem` 中已有的板测入口和 `PROJECT_ENABLE_S05_YMODEM_BOARD_TEST=1`，测试结束后恢复 Keil 工程定义、IncludePath 和源文件引用；随后正常 Application 已重新 Build、Flash，RTT 启动正常。
+
+实际检测到 CH340 为 `COM9`。先启动 Tera Term `ttermpro`/`ttpmacro` 并进入等待，再执行 `flash run` 复位目标板。Tera Term 宏真实退出码为 `0`，发送 `OTA_APP_s04_v1.1.0.img`，文件长度 `55884` bytes。
+
+RTT 记录了 `YMODEM_READY` 以及 `16384/55884`、`32768/55884`、`49152/55884`、`55884/55884` 全部进度。随后用 GDB 独立确认测试固件状态：`receiver_state=6 (FINISHED)`、`receiver_error=0`、`received_size=55884`、`expected_size=55884`、`payload_written=55820`、`header_committed=1`、`file_started=0`、`packets_received/accepted=57/57`、`retries=0`。结论：真实传输、Slot B Payload/Header 提交和 Receiver 完成均 PASS。
+
 ### Second Project Reuse
 
 复用源：`E:\my_project_2026\Git_test\stm32f4_DMA_UART_ring_RTOS`。通过临时副本调整 `project.defaults.bat` 后，发现并复用了：
@@ -173,7 +181,6 @@ Output: Objects\RTT_elog_DMA_UART_ring_project.axf
 
 ## Pending Verification Items
 
-- `PENDING`：真实 YMODEM/Tera Term 串口传输闭环；需先开监听并等待 `C`，再烧录/复位。
 - `PENDING`：S04 Reset / Power-cycle Persistence 专项板测；需要对应 S04 测试镜像和验收数据。
 - `PENDING`：Fault `trigger/capture` 专项板测；需要按受控 Fault 条件执行并回读 RTT/GDB 证据。
 - `PENDING`：第二工程真实板级 Flash/RTT；当前只完成本地临时副本 build 复用证明。
