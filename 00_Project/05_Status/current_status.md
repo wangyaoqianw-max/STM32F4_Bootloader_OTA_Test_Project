@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Status: `CLOSED`
+- Active Stage: `S05B_Toolkit_Reuse`
+- Status: `DRAFT`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -18,17 +18,19 @@
 - Verification Commit: `1d092de`
 - Review Commit: `1d092de`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S05_UART_Ymodem`
+- Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S06 Design Role / context handoff`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
+- Current Role: `S05B Design Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
 
-`S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
+`S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。S05A 已关闭；在进入 `S06_RTOS_Runtime` 之前新增 `S05B_Toolkit_Reuse` 小阶段。
 
 当前 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
+
+当前 S05B 处于 `DRAFT`。本阶段先重塑 `05_Tools`，支持同类 `STM32 + Keil + J-Link` 工程复用；采用 Config、Core、Adapter、Workflow、Project Test 分层，保留旧 `Scripts` 兼容入口。设计规格已创建，待 Project Owner 审阅后再创建实施计划。
 
 ## S05 Delivered Capabilities
 
@@ -136,6 +138,14 @@ continue& -> disconnect -> quit                      PASS
 
 - `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
 - `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
+
+## S05B Tools Toolkit Reuse
+
+当前阶段为 `S05B_Toolkit_Reuse`，状态为 `DRAFT`。目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的工具包，先完成 Config、Core、Adapter、Workflow 和 Project Test 的边界设计，再进入实现。
+
+设计规格：`docs/superpowers/specs/2026-09-16-s05b-toolkit-reuse-design.md`。
+
+当前下一步：Project Owner 审阅设计规格；审阅通过后创建 `implementation_plan.md`，在此之前不迁移脚本或删除旧入口。
 
 ## Stable Tooling After S05
 

@@ -77,9 +77,10 @@ S12  增加 OTA 安全机制实验
 | `S01_Application_Foundation` | 建立可继续扩展的 Application 基础工程 | App / Service / Platform / Impl / Vendor / Config；RTT + EasyLogger；基础初始化与错误处理；LED Blink | S00；STM32F411 基础工程与板级资料 | `CLOSED` | Clean Rebuild；LED Blink；RTT/EasyLogger；架构依赖与初始化流程检查通过 |
 | `S02_External_Flash_Driver` | 建立 W25Q64 原始非易失存储能力 | SPI2 Platform/Impl；W25Q64 Read / Program / Erase / JEDEC / BUSY/WEL / 边界；RTT 板测 | S01；W25Q64 / SPI2 资料 | `CLOSED` | JEDEC、Erase、Program、Read Back、跨页、边界、Reset 保持和硬件回归通过 |
 | `S03_EEPROM_Storage` | 建立掉电后可保存的小容量状态存储能力 | Software I2C；AT24C02 Read / Write；8 Byte Page Split；ACK Polling；边界；RTT 板测 | S01；AT24C02 / I2C 资料 | `CLOSED` | 单字节/页内/跨页、越界、Reset/掉电保持和错误诊断通过 |
-| `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 基础模型 | Slot A/B；Firmware Header；Version / Size / CRC；Metadata 双副本；Firmware Storage；PC pack tool | S02；S03 | `CLOSED` | Firmware Contract、Host Test、Keil Build、真实板测和 Review 通过；Persistence 延期回归保留到 S07 前 |
+| `S04_Firmware_Image_Storage` | 建立 Firmware Image、A/B Slot 和 Metadata 基础模型 | Slot A/B；Firmware Header；Version / Size / CRC；Metadata 双副本；Firmware Storage；PC pack tool | S02；S03 | `CLOSED` | Firmware Contract、Host Test、Keil Build、真实板测、Persistence 补充回归和 Review 通过 |
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | Tera Term Reference Sender；UART DMA/RingBuffer；Ymodem Parser / Receiver / Sink；Block 0；CRC-16；Timeout / Cancel / Retry；Firmware Storage Header/Payload 写入；RTT 板测 | S02；S04；现有通信 UART；Ymodem 高可信参考 | `CLOSED` | Tera Term 发送 S04 `.img`；MCU 完整接收并按 Slot 合同写入；`firmware_storage_validate_image()` VALID；中止后不提交 Header，重新传输可恢复 |
-| `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过；S04 Persistence 延期回归保留到 S07 前 |
+| `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过 |
+| `S05B_Toolkit_Reuse` | 将 PC 工具重塑为可复制到同类 STM32 + Keil + J-Link 工程的工具包 | Config 分离；Core 公共辅助；STM32_Keil_JLink Adapter；Application/Debug/Test Workflows；兼容入口；README 与契约验证 | S05；S05A；现有 05_Tools | `DRAFT` | 当前工程工具链验证通过；只改本地配置即可完成第二同类工程复用演练；旧入口可用；无机器绝对路径和临时板测代码；Review 通过 |
 | `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06；补齐 S04 persistence regression | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image；Persistence 补测通过 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
@@ -237,15 +238,15 @@ S05 正式入口：
 当前活动阶段：
 
 ```text
-S05A_Debug_Crash_Diagnostics
-Roadmap State: CLOSED
+S05B_Toolkit_Reuse
+Roadmap State: DRAFT
 Branch: main
-Baseline Commit: ec6119f64306d027c86208329823cf42b77ceebf
-Scope: GDB automation, CmBacktrace, controlled Fault capture and real-board verification
-Next action: start S06 Design Discussion
+Baseline Commit: 9208cfd
+Scope: reusable STM32 + Keil + J-Link PC toolkit and configuration-driven workflows
+Next action: Project Owner reviews S05B design specification
 ```
 
-S05A 当前已完成 GDB 手工兼容性与控制能力板测，包括 Breakpoint、Continue、Next、Step、Backtrace、Memory Read、Variable Read；GDB Runtime Snapshot 的 resume/halt 自动化、CmBacktrace 接入、三类受控 Fault 和 GDB/CmBacktrace 现场交叉核对也已通过真实板测。S04 Reset / Power-cycle Persistence 继续作为 S07 前的延期回归。
+S05A 当前已完成 GDB 手工兼容性与控制能力板测，包括 Breakpoint、Continue、Next、Step、Backtrace、Memory Read、Variable Read；GDB Runtime Snapshot 的 resume/halt 自动化、CmBacktrace 接入、三类受控 Fault 和 GDB/CmBacktrace 现场交叉核对也已通过真实板测。S04 Reset / Power-cycle Persistence 补充回归已完成。
 
 S05A 交接入口：
 
@@ -255,7 +256,15 @@ S05A 交接入口：
 - `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
 - `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
 
-下一阶段：
+S05B 交接入口：
+
+- `docs/superpowers/specs/2026-09-16-s05b-toolkit-reuse-design.md`
+- `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+- `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
+- `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
+- `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md`
+
+后续阶段：
 
 ```text
 S06_RTOS_Runtime
@@ -263,4 +272,4 @@ Roadmap State: PLANNED
 Next action: Design Discussion
 ```
 
-S06 尚未创建正式 Stage 文档；S05A 关闭前不直接施工 S06。
+S05B 尚未进入实施；设计规格审阅通过后才创建正式实施计划。S06 在 S05B 关闭后继续。

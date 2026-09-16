@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05A_Debug_Crash_Diagnostics`
-- Active Stage Status: `CLOSED`
+- Active Stage: `S05B_Toolkit_Reuse`
+- Active Stage Status: `DRAFT`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -20,17 +20,19 @@
 - S05 Verification Commit: `1d092de`
 - S05 Review Commit: `1d092de`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S05_UART_Ymodem`
+- Last Closed Stage: `S05A_Debug_Crash_Diagnostics`
 - S05 Final Result: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05A)
-- Current Role: `S06 Design Role / context handoff`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
+- Current Role: `S05B Design Role`
 - Updated At: `2026-09-16`
 
 ## Current Goal
 
-S05 已正式关闭并合并到 `main`。在进入 `S06_RTOS_Runtime` 之前新增 `S05A_Debug_Crash_Diagnostics` 小阶段。
+S05 已正式关闭并合并到 `main`。S05A 已关闭后，在进入 `S06_RTOS_Runtime` 之前新增 `S05B_Toolkit_Reuse` 小阶段。
 
 S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、CmBacktrace Keil/FreeRTOS/RTT 接入，以及三类受控 Fault 的 GDB/RTT 现场采集和交叉核对，并通过 Review 正式关闭。S04 Reset / Power-cycle Persistence 已作为补充回归完成真实板测。
+
+当前 S05B 处于 Design Role / `DRAFT`：目标是将 `05_Tools` 重塑为可复制到同类 `STM32 + Keil + J-Link` 工程的配置驱动工具包。当前只冻结设计和交接入口，尚未迁移工具实现；设计规格经 Project Owner 审阅通过后再进入实施计划。
 
 ## Required Reading For S06 Design
 
@@ -57,6 +59,21 @@ S05A 已完成 GDB 自动化、失败清理、Runtime Snapshot 真实板测、Cm
 19. current `service_ymodem`
 20. current `service_firmware`
 21. current Platform RTOS abstraction
+
+## Required Reading For S05B Toolkit Reuse
+
+1. `AGENTS.md`
+2. `README.md`
+3. `PROJECT_CONTEXT.md`
+4. `00_Project/WORKFLOW.md`
+5. `00_Project/02_Roadmap/development_roadmap.md`
+6. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
+7. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
+8. `05_Tools/README.md`
+9. `05_Tools/Scripts/README.md`
+10. `docs/superpowers/specs/2026-09-16-s05b-toolkit-reuse-design.md`
+11. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
+12. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
 
 ## Stable S04 Storage / Firmware Contract
 
@@ -161,7 +178,7 @@ Python Sender：
 
 Python Sender 定位为 Host Test、Agent 自动化和协议诊断辅助，不替代 S05 默认 Tera Term 板级验收入口。
 
-Application 稳定工具链：
+Application 稳定工具链（S05B 重塑前的兼容入口）：
 
 ```text
 05_Tools/Scripts/build_app.bat
@@ -337,6 +354,6 @@ Power-cycle Persistence PASS
 
 ## Next Action
 
-S05A Review 已通过，S04 Persistence 补充回归也已完成；下一步开启 `S06_RTOS_Runtime` 设计讨论。
+S05A Review 已通过，S04 Persistence 补充回归也已完成；当前先执行 `S05B_Toolkit_Reuse` 设计规格审阅。
 
-S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计；不要直接进入实现。
+S05B 设计规格审阅通过后再创建实施计划；S06 仍需先读取仓库当前 RTOS 和任务现状，讨论设计，不直接进入实现。
