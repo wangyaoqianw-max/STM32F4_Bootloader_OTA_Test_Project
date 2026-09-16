@@ -11,6 +11,7 @@ Export-ModuleMember -Function @(
     "Assert-ToolkitRequiredValue",
     "New-ToolkitLogDirectory",
     "Write-ToolkitLog",
+    "Write-ToolkitProcessResultLog",
     "Invoke-ToolkitProcess",
     "Stop-ToolkitOwnedProcess",
     "Test-ToolkitTcpPort",

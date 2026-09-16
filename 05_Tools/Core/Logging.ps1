@@ -32,3 +32,29 @@ function Write-ToolkitLog {
     New-ToolkitLogDirectory -Path $directory | Out-Null
     Add-Content -LiteralPath $Path -Value $Message -Encoding UTF8
 }
+
+function Write-ToolkitProcessResultLog {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [object]$Result
+    )
+
+    New-ToolkitLogDirectory -Path (Split-Path -Parent ([System.IO.Path]::GetFullPath($Path))) | Out-Null
+    $lines = @(
+        "ExitCode=$($Result.ExitCode)",
+        "TimedOut=$($Result.TimedOut)",
+        "ProcessId=$($Result.ProcessId)"
+    )
+    if (-not [string]::IsNullOrEmpty([string]$Result.Stdout)) {
+        $lines += "[stdout]"
+        $lines += [string]$Result.Stdout
+    }
+    if (-not [string]::IsNullOrEmpty([string]$Result.Stderr)) {
+        $lines += "[stderr]"
+        $lines += [string]$Result.Stderr
+    }
+    [System.IO.File]::WriteAllText($Path, ($lines -join [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+}

@@ -89,9 +89,17 @@ function Invoke-ToolkitProcess {
         throw "Process timeout must be positive: $TimeoutMilliseconds"
     }
 
+    $processFilePath = $FilePath
+    $processArguments = $Arguments
+    $extension = [System.IO.Path]::GetExtension($FilePath)
+    if ($extension -eq ".bat" -or $extension -eq ".cmd") {
+        $processFilePath = if ($env:ComSpec) { $env:ComSpec } else { "cmd.exe" }
+        $processArguments = @("/d", "/c", "call", $FilePath) + $Arguments
+    }
+
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $FilePath
-    $startInfo.Arguments = ConvertTo-ToolkitProcessArgumentString -Arguments $Arguments
+    $startInfo.FileName = $processFilePath
+    $startInfo.Arguments = ConvertTo-ToolkitProcessArgumentString -Arguments $processArguments
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     $startInfo.RedirectStandardOutput = $true
