@@ -103,13 +103,13 @@
 - Produces: V2 `firmware_metadata_t`
 - Preserves: 128 Byte copies, sequence, CRC32, commit marker last
 
-- [ ] Step 1: 从当前源码确认 V1 精确 raw offsets、字段校验和 CRC body，不凭计划猜测布局。
-- [ ] Step 2: 冻结 V2 raw layout，优先保留现有稳定 offset，从 reserved 区加入 `pendingSlot` / `upgradeState`；禁止直接 memcpy C struct 到 EEPROM。
-- [ ] Step 3: 实现 V2 encode/decode 和 cross-field validation；稳定态 `pendingSlot=NONE`、`upgradeState=NONE`。
-- [ ] Step 4: 实现 V1 decode compatibility：读取旧字段后默认 `pendingSlot=NONE`、`upgradeState=NONE`，不在 read 时主动迁移。
-- [ ] Step 5: 修改 metadata commit，使下一次正常写入自然编码为 V2，并保证旧/new valid record 原子语义不变。
-- [ ] Step 6: 更新所有 `activeSlot` 使用点，按真实语义改为 `confirmedSlot` / runtime internal state / 删除；禁止机械重命名掩盖语义差异。
-- [ ] Step 7: 测试 V1/V2、reserved bytes、CRC、commit marker、sequence wrap/latest-copy、write failure old-or-new record；Build 通过后提交并记录 Commit。
+- [x] Step 1: 从当前源码确认 V1 精确 raw offsets、字段校验和 CRC body，不凭计划猜测布局。
+- [x] Step 2: 冻结 V2 raw layout，优先保留现有稳定 offset，从 reserved 区加入 `pendingSlot` / `upgradeState`；禁止直接 memcpy C struct 到 EEPROM。
+- [x] Step 3: 实现 V2 encode/decode 和 cross-field validation；稳定态 `pendingSlot=NONE`、`upgradeState=NONE`。
+- [x] Step 4: 实现 V1 decode compatibility：读取旧字段后默认 `pendingSlot=NONE`、`upgradeState=NONE`，不在 read 时主动迁移。
+- [x] Step 5: 修改 metadata commit，使下一次正常写入自然编码为 V2，并保证旧/new valid record 原子语义不变。
+- [x] Step 6: 更新所有 `activeSlot` 使用点，按真实语义改为 `confirmedSlot` / runtime internal state / 删除；禁止机械重命名掩盖语义差异。
+- [x] Step 7: 测试 V1/V2、reserved bytes、CRC、commit marker、sequence wrap/latest-copy、write failure old-or-new record；Build 通过后提交并记录 Commit。
 
 ## Task 4: Production OTA Firmware Sink
 
