@@ -281,10 +281,10 @@ Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成
 - Create/Modify: cross-stage ADR in `00_Project/04_Decisions/` if not already recorded
 - Later Review: `00_Project/03_Stages/S07_OTA_Service_V1/review.md`
 
-- [ ] Step 1: 在 ADR/长期决策中记录：External A/B 是 Firmware Image Slots、Internal Flash 是执行区、Metadata 删除 `activeSlot`。
-- [ ] Step 2: 更新 handoff 的 Completed Work、Changed Files、真实 Commit、偏差、验证结果、Known Issues 和 Review Focus。
-- [ ] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；没有真实硬件 PASS，继续保持 `IN_PROGRESS`。
-- [ ] Step 4: 明确 S08/S09/S10 的交接边界：S07 已产生 durable PENDING，但 Installation / Trial / Confirm / Rollback execution 尚未实现。
+- [x] Step 1: 在 ADR/长期决策中记录：External A/B 是 Firmware Image Slots、Internal Flash 是执行区、Metadata 删除 `activeSlot`。
+- [x] Step 2: 更新 handoff 的 Completed Work、Changed Files、真实 Commit、偏差、验证结果、Known Issues 和 Review Focus。
+- [x] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；没有真实硬件 PASS，继续保持 `IN_PROGRESS`。
+- [x] Step 4: 明确 S08/S09/S10 的交接边界：S07 已产生 durable PENDING，但 Installation / Trial / Confirm / Rollback execution 尚未实现。
 - [ ] Step 5: `git diff --check`、确认工作区只含预期正式变更，提交文档并推送 `main`。
 
 ## Final Verification

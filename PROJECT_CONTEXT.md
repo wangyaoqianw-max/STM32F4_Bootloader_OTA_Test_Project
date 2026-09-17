@@ -59,6 +59,12 @@ otaWorker   → displayTask   : Queue
 
 S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失败 OTA 路径、Slot B Validation、任务阻塞状态和 Toolkit 回归。S07 Task 0 已恢复 CubeMX 生成造成的 heap、CmBacktrace 和 FreeRTOS task introspection 回归，代码提交为 `9adba52`；随后在该 Runtime Contract 上实施正式 OTA Service/session control。
 
+## S07 OTA Service V1 Current Status
+
+S07 已完成 Task 0–9 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已获得 COM9 YMODEM 传输、GDB 模拟按键和 EEPROM durable `PENDING` 回读证据。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，Task 11 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
+
+当前结论：代码验证 `PASS`，硬件验证 `PARTIAL / PENDING`。真实 PA0 按键、LCD 全流程观察、中途复位、interrupted transfer、bad CRC 和重复 KEY 尚未完成，阶段保持 `IN_PROGRESS`，不得标记 `CLOSED / PASS`。当前设备 EEPROM 保留 `pendingSlot=B`、`upgradeState=PENDING`，S07 不消费该状态；后续板测需先按安全 provisioning 流程恢复 baseline。
+
 ## Stable Toolkit Architecture
 
 S05B 已将 PC 工具重构为：
@@ -366,6 +372,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-继续按 `00_Project/03_Stages/S07_OTA_Service_V1/implementation_plan.md` 执行 Task 1–11；保持 `otaWorker` 单一 RTOS execution shell，不实现 S09/S10 安装、Trial、Confirm 或 Rollback。
+下一步是后续板测：使用 COM9 完成真实 PA0 start/confirm 和失败路径验收；保持 `otaWorker` 单一 RTOS execution shell，不实现 S09/S10 安装、Trial、Confirm 或 Rollback。
 
-Task 0 验证证据：Keil Build 0 errors/0 warnings、Flash PASS、RTT baseline PASS。后续每个 Task 必须独立验证、提交并将实际 Commit 写回 S07 handoff。
+Task 0 验证证据：Keil Build 0 errors、Flash PASS、RTT baseline PASS；本轮 clean rebuild 的正式日志为 0 errors/13 warnings，已在 S07 verification 中区分记录。S07 Verification Commit 为 `e60273f`，Review 文档已创建但阶段尚未关闭。

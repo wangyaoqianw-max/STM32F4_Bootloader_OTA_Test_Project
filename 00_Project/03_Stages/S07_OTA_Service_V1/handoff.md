@@ -9,7 +9,7 @@
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
 - Implementation Commit: `2ab34f1` (Task 10 production fix; Task 8: `23ac3db`; Task 7: `a8045d297442fe7b97bc318a37b53b05b4a4b968`; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
-- Verification Commit: `Not created yet`
+- Verification Commit: `e60273f`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
 
@@ -404,6 +404,8 @@ Hardware Verification
 
 Task 0 completed the CubeMX regeneration recovery before S07 production implementation. S06 heap sizing, CmBacktrace HardFault ownership and FreeRTOS task introspection exports were restored; PA0 Falling EXTI configuration and S06 UART/DMA/LCD runtime baseline were verified.
 
+Tasks 1–7 completed the Platform IRQ/Key layering, Metadata V2, production dynamic sink, `service_ota`, RTOS execution-shell refactor and Display interaction contract. Tasks 8–9 completed safe Factory baseline provisioning and full Host/Toolkit/code regression. Task 10 completed the available COM9 transfer and durable PENDING evidence, fixed the terminal-progress queue flood, and recorded the remaining physical acceptance work. Task 11 synchronizes the ADR, verification, review, project context and current status without closing the stage.
+
 ### Changed Files
 
 Current S07 implementation changes:
@@ -454,6 +456,10 @@ Current S07 implementation changes:
 04_Test/Board/S07_OTA_Service/app_s07_provision_test.h
 04_Test/Board/S07_OTA_Service/app_s07_provision_test.c
 04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md
+00_Project/04_Decisions/ADR-0001-external-firmware-slots-and-metadata-lifecycle.md
+00_Project/03_Stages/S07_OTA_Service_V1/review.md
+PROJECT_CONTEXT.md
+00_Project/05_Status/current_status.md
 ```
 
 ### Deviations From Plan
@@ -503,6 +509,8 @@ Task 8 board verification: existing Toolkit composition was investigated. The cu
 Task 9 verification: all S07 Host tests passed with `gcc -std=c99 -Wall -Wextra -Werror`: IRQ, BSP Key, Display/Worker contracts, Metadata V1/V2, production sink and Service state machine. Existing S04/S05 regression passed: Firmware image format, current Firmware Storage, storage write, YMODEM parser/receiver and historical S05 sink tests. Python/toolkit regression passed: Firmware pack (2 tests), Python YMODEM (24 tests), S04 persistence (15 tests), legacy/transport compatibility, Application workflow, Toolkit Core, Debug, S04 isolation and Logic Analyzer contracts. `05_Tools\\toolkit.bat build` completed with 0 errors and 0 warnings. Production dependency scan found no `s05_ymodem_flash_sink` or `04_Test/Board/S05_UART_Ymodem` reference under `03_Firmware/Application/OTA_APP`. `git diff --check` passed. No S07 production code was changed during this regression.
 
 Task 10 verification: `05_Tools\\toolkit.bat flash run` and `05_Tools\\toolkit.bat rtt 5` both returned PASS after restoring the formal Application. The clean formal Keil rebuild produced `OTA_APP.build_log.htm` with `0 Error(s), 13 Warning(s)`; the Toolkit maps warnings to exit code `1`, so the warning result is recorded as Build-with-warnings rather than silently called warning-free. The warnings are existing GPIO/UART/FreeRTOS boundary checks outside the S07 change set. Full evidence, including the distinction between GDB-simulated key forwarding and physical PA0 acceptance, is in `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`.
+
+Task 11 documentation sync: ADR-0001 records the External Firmware Slot / Internal Flash boundary and the removal of Metadata `activeSlot`. `PROJECT_CONTEXT.md`, `current_status.md`, this handoff and `review.md` now keep the real status as `IN_PROGRESS / HARDWARE_ACCEPTANCE_PENDING`; S07/S09/S10 boundaries remain explicit. The review decision is code/architecture/regression PASS with physical board acceptance still pending.
 
 ### Known Issues
 
@@ -589,4 +597,10 @@ a8045d297442fe7b97bc318a37b53b05b4a4b968
 
 ```text
 2ab34f1
+```
+
+### Task 10 Verification Commit
+
+```text
+e60273f
 ```

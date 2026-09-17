@@ -64,6 +64,12 @@ otaWorker   → displayTask : Queue
 
 已完成的核心验收包括 LCD IDLE/RECEIVING/VERIFYING/SUCCESS/FAILED 显示、OTA 过程中 LED 前台行为持续、Slot B Validation PASS、中途终止/Timeout 不提交 Header、任务阻塞状态、Stack/Heap 证据和现有 Toolkit 全量回归。
 
+## S07 OTA Service V1 Current State
+
+S07 已完成 Task 0–9 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在 CH340 `COM9` 上完成了 1.1.0 YMODEM 传输、GDB 模拟 KEY 路径和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
+
+真实 PA0 按键、LCD 全流程观察、READY 前复位、interrupted transfer、bad CRC/invalid image、重复 KEY 和最终 Project Owner 确认留待下一次板测。当前设备保留 `pendingSlot=B / upgradeState=PENDING`，后续开始新会话前必须先恢复安全 baseline；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。
+
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
 S05B 已完成设计冻结、正式实施计划和 Task 1–8 实施；Review 发现的通用 J-Link ownership 与 Unified Exit Code 两项问题已在 `2140117` 修复并完成回归，最终复核通过并关闭。阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
@@ -369,6 +375,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无实现阻塞。S06 代码、板级验证、Toolkit 回归和 Review 已完成；无复位重启会话因 S06 没有公开 START 控制接口记为 NOT_APPLICABLE，不新增 S07 API。
+当前无新增代码实现阻塞；S07 阶段关闭受真实硬件证据阻塞。不得将 COM9 传输、GDB 模拟按键、EEPROM 回读、Build 或 RTT 冒烟描述为完整物理验收 PASS。
 
-S07 Task 0 已完成 CubeMX regeneration recovery，提交 `9adba52`；Keil Build、Flash 和 RTT baseline smoke 均通过。下一步按 S07 implementation plan 执行 Task 1–11，每个 Task 独立验证、提交并回写 handoff。
+S07 Task 0 已完成 CubeMX regeneration recovery，Task 10 验证提交为 `e60273f`；Review 已形成但阶段保持 `IN_PROGRESS`。下一步按 S07 verification/handoff 中的待验收项继续板测。
