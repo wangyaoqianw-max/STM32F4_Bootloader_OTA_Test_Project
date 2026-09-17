@@ -19,6 +19,7 @@
 - Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - S05B Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`, `2140117`
 - S05C Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
+- S05C Verification Commit: `8781326`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - Previous Verification Commit: `98efc77`
 - Verification Commit: `33a1dfe`
