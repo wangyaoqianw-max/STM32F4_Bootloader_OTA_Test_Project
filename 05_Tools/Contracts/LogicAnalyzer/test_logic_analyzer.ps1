@@ -309,6 +309,20 @@ finally {
     Remove-Item -LiteralPath $workflowTempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+$routerPath = Join-Path $repoRoot "05_Tools\toolkit.ps1"
+$routerText = Get-Content -LiteralPath $routerPath -Raw -Encoding UTF8
+Assert-True ($routerText -match '"logic"') "Toolkit Router should expose the logic command family"
+Assert-True ($routerText -match 'Workflows\\LogicAnalyzer\\logic\.ps1') "Toolkit Router should delegate logic commands to the Logic Analyzer workflow"
+foreach ($subcommand in @("doctor", "scan", "spi", "i2c", "decode")) {
+    Assert-True ($routerText -match [regex]::Escape($subcommand)) "Toolkit Router should expose logic $subcommand"
+}
+Assert-True ($routerText -notmatch 'MOSI|MISO|SCL|SDA|protocol-decoders') "Toolkit Router must not duplicate Sigrok protocol logic"
+
+$invalidLogicOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $routerPath logic unsupported 2>&1
+$invalidLogicExitCode = $LASTEXITCODE
+Assert-Equal $invalidLogicExitCode 10 "Invalid logic subcommand should map to CONFIG_ERROR"
+Assert-True (($invalidLogicOutput -join [Environment]::NewLine) -match '(?i)logic') "Invalid logic subcommand should identify the logic command family"
+
 if ($failures.Count -gt 0) {
     $failures | ForEach-Object { "[LogicAnalyzer][FAIL] $_" }
     exit 1

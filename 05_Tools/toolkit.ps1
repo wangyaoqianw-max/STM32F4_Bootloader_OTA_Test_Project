@@ -53,6 +53,7 @@ function ConvertTo-ToolkitExitCode {
         "run" { return 30 }
         "snapshot" { return 40 }
         "fault" { return 40 }
+        "logic" { return 30 }
     }
     return 10
 }
@@ -158,6 +159,31 @@ function New-WorkflowArguments {
     return @("-ToolsRoot", $toolsRoot) + $WorkflowArguments
 }
 
+function New-LogicWorkflowArguments {
+    param(
+        [string[]]$LogicArguments = @()
+    )
+
+    if ($LogicArguments.Count -lt 1) {
+        throw "logic requires one subcommand: doctor, scan, spi, i2c or decode"
+    }
+    $action = $LogicArguments[0].ToLowerInvariant()
+    if ($action -notin @("doctor", "scan", "spi", "i2c", "decode")) {
+        throw "logic subcommand must be one of: doctor, scan, spi, i2c or decode"
+    }
+
+    $remaining = @($LogicArguments | Select-Object -Skip 1)
+    if ($action -in @("doctor", "scan") -and $remaining.Count -gt 0) {
+        throw "logic $action does not accept arguments"
+    }
+    $workflowArguments = @("-Action", $action)
+    if ($action -eq "decode" -and $remaining.Count -gt 0 -and -not $remaining[0].StartsWith("-")) {
+        $workflowArguments += @("-CapturePath", $remaining[0])
+        $remaining = @($remaining | Select-Object -Skip 1)
+    }
+    return $workflowArguments + $remaining
+}
+
 try {
     $workflowPath = $null
     $workflowArguments = @()
@@ -211,6 +237,10 @@ try {
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Debug\fault_capture.ps1"
             $workflowArguments = @("-Mode", $mode)
+        }
+        "logic" {
+            $workflowPath = Join-Path $toolsRoot "Workflows\LogicAnalyzer\logic.ps1"
+            $workflowArguments = New-LogicWorkflowArguments -LogicArguments $Arguments
         }
         "firmware" {
             if ($Arguments.Count -lt 1 -or $Arguments[0].ToLowerInvariant() -ne "pack") {

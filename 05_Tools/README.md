@@ -210,6 +210,33 @@ S04_PERSISTENCE_CAPTURE_SECONDS  S04 电源循环监听时长，默认 90 秒
 `20 BUILD_ERROR`、`30 PROBE_ERROR`、`40 DEBUG_ERROR`、`50 TRANSFER_ERROR`、`60 TEST_ERROR`。
 Firmware/YMODEM 的外部工具非零退出码统一映射为 `50 TRANSFER_ERROR`，不能透传原始 `1`。
 
+## Logic Analyzer
+
+S05C 通过 `sigrok-cli` 提供 SPI / I2C 外部总线证据，统一入口为：
+
+```bat
+05_Tools\toolkit.bat logic doctor
+05_Tools\toolkit.bat logic scan
+05_Tools\toolkit.bat logic spi -Profile spi2_flash
+05_Tools\toolkit.bat logic i2c -Profile i2c_eeprom
+05_Tools\toolkit.bat logic decode 06_Output\LogicAnalyzer\<run>\capture.sr -Protocol spi -Profile spi2_flash
+```
+
+机器配置模板中的 `SIGROK_CLI_EXE` 需要填写本机 `sigrok-cli` 路径；该路径只保存在未提交的
+`Config\toolchain.local.bat`。默认通道映射保存在已提交的
+`Config\logic_analyzer.profiles.json`，每次采集的实际配置会保存到
+`06_Output\LogicAnalyzer\<run>\effective_config.json`。
+
+通道覆盖只影响当前运行，例如：
+
+```bat
+05_Tools\toolkit.bat logic i2c -Profile i2c_eeprom -SclChannel D0 -SdaChannel D1
+```
+
+该命令不会修改默认 profile；只有明确要求固定新接线时才更新 profile。每次运行还会保存
+`capture.sr`、`decode.json` 和 `result.json`，已有 `.sr` 可以直接重新 Decode。通用 Logic Workflow
+的状态为 `SUCCESS / ERROR / INCONCLUSIVE`，无总线活动或空解码不会直接判定项目功能 FAIL。
+
 不要求把 GDB 或 ARM GCC 加入全局 `PATH`；填写 `ARM_GDB` 的完整路径即可，避免影响现有 Keil 编译链。
 
 J-Link 同一时刻只能由一个工具占用。Flash、RTT、GDB、Run 和 Fault 公共 Workflow 会共同获取
