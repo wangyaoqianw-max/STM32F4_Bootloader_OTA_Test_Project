@@ -14,7 +14,9 @@
 //******************************** Includes *********************************//
 #include "app_system.h"
 
+#include "app_display_task.h"
 #include "app_main.h"
+#include "app_ota_worker.h"
 #include "platform_os.h"
 //******************************** Includes *********************************//
 
