@@ -157,10 +157,11 @@ static int test_metadata_copy_selection(void)
     uint8_t copyB[FIRMWARE_METADATA_COPY_SIZE];
 
     metadata.sequence = 10UL;
-    metadata.activeSlot = FIRMWARE_SLOT_B;
     metadata.confirmedSlot = FIRMWARE_SLOT_A;
+    metadata.pendingSlot = FIRMWARE_SLOT_NONE;
     metadata.slotAState = FIRMWARE_SLOT_STATE_VALID;
     metadata.slotBState = FIRMWARE_SLOT_STATE_VALID;
+    metadata.upgradeState = FIRMWARE_UPGRADE_STATE_NONE;
     metadata.confirmedVersion.major = 1U;
     metadata.confirmedVersion.minor = 2U;
     metadata.confirmedVersion.patch = 3U;
@@ -171,7 +172,7 @@ static int test_metadata_copy_selection(void)
 
     if ((copyA[0x00U] != 0x46U) || (copyA[0x01U] != 0x57U) ||
         (copyA[0x02U] != 0x4DU) || (copyA[0x03U] != 0x44U) ||
-        (copyA[0x0CU] != FIRMWARE_SLOT_B) || (copyA[0x0DU] != FIRMWARE_SLOT_A) ||
+        (copyA[0x0CU] != 0U) || (copyA[0x0DU] != FIRMWARE_SLOT_A) ||
         (copyA[0x7CU] != 0xFFU)) {
         return 1;
     }
@@ -211,10 +212,11 @@ static int test_metadata_wrap_and_invalid_copy(void)
     uint8_t copyA[FIRMWARE_METADATA_COPY_SIZE];
     uint8_t copyB[FIRMWARE_METADATA_COPY_SIZE];
 
-    metadata.activeSlot = FIRMWARE_SLOT_NONE;
     metadata.confirmedSlot = FIRMWARE_SLOT_NONE;
+    metadata.pendingSlot = FIRMWARE_SLOT_NONE;
     metadata.slotAState = FIRMWARE_SLOT_STATE_EMPTY;
     metadata.slotBState = FIRMWARE_SLOT_STATE_EMPTY;
+    metadata.upgradeState = FIRMWARE_UPGRADE_STATE_NONE;
 
     metadata.sequence = 0xFFFFFFFFUL;
     if (firmware_metadata_encode_uncommitted(&metadata, copyA) != PLATFORM_ERR_OK) {

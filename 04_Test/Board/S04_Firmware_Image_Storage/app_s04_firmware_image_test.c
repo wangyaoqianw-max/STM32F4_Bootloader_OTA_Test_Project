@@ -388,10 +388,11 @@ static platform_error_t s04_firmware_image_test_metadata(
                                             &sourceCopy);
     if (result == PLATFORM_ERR_NOT_FOUND) {
         metadata.sequence = 0U;
-        metadata.activeSlot = FIRMWARE_SLOT_NONE;
         metadata.confirmedSlot = FIRMWARE_SLOT_NONE;
+        metadata.pendingSlot = FIRMWARE_SLOT_NONE;
         metadata.slotAState = FIRMWARE_SLOT_STATE_EMPTY;
         metadata.slotBState = FIRMWARE_SLOT_STATE_VALID;
+        metadata.upgradeState = FIRMWARE_UPGRADE_STATE_NONE;
         metadata.confirmedVersion = header->version;
         SERVICE_LOG_I("[S04] metadata initial state: no valid copy");
     } else if (result == PLATFORM_ERR_OK) {

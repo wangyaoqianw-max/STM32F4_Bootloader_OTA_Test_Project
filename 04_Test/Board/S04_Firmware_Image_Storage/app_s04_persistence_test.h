@@ -29,7 +29,6 @@ typedef struct
     uint32_t metadataBValid;
     uint32_t selectedCopy;
     uint32_t sequence;
-    uint32_t activeSlot;
     uint32_t confirmedSlot;
     uint32_t slotAState;
     uint32_t slotBState;

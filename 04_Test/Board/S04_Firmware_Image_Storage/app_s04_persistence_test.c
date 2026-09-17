@@ -163,7 +163,6 @@ static platform_error_t s04_persistence_test_read_metadata(
         (copyBResult == PLATFORM_ERR_OK) ? 1U : 0U;
     snapshot->selectedCopy = (uint32_t)selectedCopy;
     snapshot->sequence = selectedMetadata.sequence;
-    snapshot->activeSlot = (uint32_t)selectedMetadata.activeSlot;
     snapshot->confirmedSlot = (uint32_t)selectedMetadata.confirmedSlot;
     snapshot->slotAState = (uint32_t)selectedMetadata.slotAState;
     snapshot->slotBState = (uint32_t)selectedMetadata.slotBState;
@@ -203,7 +202,7 @@ static platform_error_t s04_persistence_test_read_snapshot(void)
     SERVICE_LOG_I(
         "[S04-PERSIST] SNAPSHOT image_validation=%lu image_size=%lu "
         "image_crc=0x%08lX metadata_a_valid=%lu metadata_b_valid=%lu "
-        "selected_copy=%lu sequence=%lu active_slot=%lu confirmed_slot=%lu "
+        "selected_copy=%lu sequence=%lu confirmed_slot=%lu "
         "slot_a_state=%lu slot_b_state=%lu confirmed_version=%u.%u.%u",
         (unsigned long)snapshot.imageValidation,
         (unsigned long)snapshot.imageSize,
@@ -212,7 +211,6 @@ static platform_error_t s04_persistence_test_read_snapshot(void)
         (unsigned long)snapshot.metadataBValid,
         (unsigned long)snapshot.selectedCopy,
         (unsigned long)snapshot.sequence,
-        (unsigned long)snapshot.activeSlot,
         (unsigned long)snapshot.confirmedSlot,
         (unsigned long)snapshot.slotAState,
         (unsigned long)snapshot.slotBState,

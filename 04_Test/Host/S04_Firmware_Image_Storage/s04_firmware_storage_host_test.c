@@ -179,10 +179,11 @@ static int test_metadata_commit_recovery(void)
     firmware_metadata_copy_id_t copy;
 
     (void)memset(eeprom.memory, 0xFF, sizeof(eeprom.memory));
-    input.activeSlot = FIRMWARE_SLOT_NONE;
     input.confirmedSlot = FIRMWARE_SLOT_NONE;
+    input.pendingSlot = FIRMWARE_SLOT_NONE;
     input.slotAState = FIRMWARE_SLOT_STATE_EMPTY;
     input.slotBState = FIRMWARE_SLOT_STATE_EMPTY;
+    input.upgradeState = FIRMWARE_UPGRADE_STATE_NONE;
     if ((firmware_storage_init(&storage, &flash, &eeprom) != PLATFORM_ERR_OK) ||
         (firmware_storage_commit_metadata(&storage, &input, &copy) != PLATFORM_ERR_OK) ||
         (copy != FIRMWARE_METADATA_COPY_A) ||
@@ -191,7 +192,7 @@ static int test_metadata_commit_recovery(void)
         return 1;
     }
 
-    input.activeSlot = FIRMWARE_SLOT_B;
+    input.confirmedSlot = FIRMWARE_SLOT_B;
     eeprom.failWriteOnCall = eeprom.writeCount + 3U;
     if ((firmware_storage_commit_metadata(&storage, &input, &copy) != PLATFORM_ERR_IO) ||
         (firmware_storage_load_metadata(&storage, &loaded, &copy) != PLATFORM_ERR_OK) ||

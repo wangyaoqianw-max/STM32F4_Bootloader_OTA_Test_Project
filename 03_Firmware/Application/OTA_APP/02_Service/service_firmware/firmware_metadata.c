@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file firmware_metadata.c
- * @brief Firmware Metadata V1 固定格式实现
+ * @brief Firmware Metadata V1/V2 固定格式实现
  * @author YaoQian Wang
  * @date 2026-09-13
  * @version V1.0
@@ -25,16 +25,41 @@
 #define FIRMWARE_METADATA_OFFSET_FORMAT_VERSION    (0x04U)
 #define FIRMWARE_METADATA_OFFSET_SIZE              (0x06U)
 #define FIRMWARE_METADATA_OFFSET_SEQUENCE          (0x08U)
-#define FIRMWARE_METADATA_OFFSET_ACTIVE_SLOT       (0x0CU)
+#define FIRMWARE_METADATA_OFFSET_V2_RESERVED       (0x0CU)
 #define FIRMWARE_METADATA_OFFSET_CONFIRMED_SLOT    (0x0DU)
 #define FIRMWARE_METADATA_OFFSET_SLOT_A_STATE      (0x0EU)
 #define FIRMWARE_METADATA_OFFSET_SLOT_B_STATE      (0x0FU)
 #define FIRMWARE_METADATA_OFFSET_CONFIRMED_VERSION (0x10U)
+#define FIRMWARE_METADATA_OFFSET_PENDING_SLOT      (0x18U)
+#define FIRMWARE_METADATA_OFFSET_UPGRADE_STATE     (0x19U)
 #define FIRMWARE_METADATA_OFFSET_CRC32             (0x78U)
 #define FIRMWARE_METADATA_OFFSET_COMMIT_MARKER     (0x7CU)
-#define FIRMWARE_METADATA_BODY_SIZE                 (0x78U)
+#define FIRMWARE_METADATA_BODY_SIZE                (0x78U)
+#define FIRMWARE_METADATA_V2_RESERVED_OFFSET       (0x1AU)
+#define FIRMWARE_METADATA_V1_RESERVED_OFFSET       (0x18U)
 //******************************** Defines **********************************//
 
+//******************************** Declaring *******************************//
+static uint16_t firmware_metadata_read_u16_le(const uint8_t *data);
+static uint32_t firmware_metadata_read_u32_le(const uint8_t *data);
+static void firmware_metadata_write_u16_le(uint8_t *data, uint16_t value);
+static void firmware_metadata_write_u32_le(uint8_t *data, uint32_t value);
+static platform_bool_t firmware_metadata_slot_is_valid(firmware_slot_t slot);
+static platform_bool_t firmware_metadata_slot_state_is_valid(firmware_slot_state_t state);
+static platform_bool_t firmware_metadata_upgrade_state_is_valid(
+    firmware_upgrade_state_t state);
+static platform_bool_t firmware_metadata_reserved_is_zero(
+    const uint8_t raw[FIRMWARE_METADATA_COPY_SIZE],
+    uint16_t formatVersion);
+static platform_bool_t firmware_metadata_fields_are_valid(
+    const firmware_metadata_t *metadata);
+static void firmware_metadata_decode_fields(
+    const uint8_t raw[FIRMWARE_METADATA_COPY_SIZE],
+    uint16_t formatVersion,
+    firmware_metadata_t *metadata);
+//******************************** Declaring *******************************//
+
+//******************************** Private Functions ************************//
 static uint16_t firmware_metadata_read_u16_le(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
@@ -73,15 +98,29 @@ static platform_bool_t firmware_metadata_slot_state_is_valid(firmware_slot_state
     return (state <= FIRMWARE_SLOT_STATE_INVALID) ? (platform_bool_t)1U : (platform_bool_t)0U;
 }
 
+static platform_bool_t firmware_metadata_upgrade_state_is_valid(firmware_upgrade_state_t state)
+{
+    return (state <= FIRMWARE_UPGRADE_STATE_ROLLBACK) ? (platform_bool_t)1U : (platform_bool_t)0U;
+}
+
 /**
- * @brief 检查 Metadata V1 保留区是否保持全零
+ * @brief 检查 Metadata 保留区是否保持全零
  * @note 保留区属于 Binary Contract；即使 CRC 正确，非零值也不能被当前版本接受。
  */
-static platform_bool_t firmware_metadata_reserved_is_zero(const uint8_t raw[FIRMWARE_METADATA_COPY_SIZE])
+static platform_bool_t firmware_metadata_reserved_is_zero(
+    const uint8_t raw[FIRMWARE_METADATA_COPY_SIZE],
+    uint16_t formatVersion)
 {
     uint32_t index;
 
-    for (index = 0x18U; index < FIRMWARE_METADATA_OFFSET_CRC32; index++) {
+    if ((formatVersion == FIRMWARE_METADATA_FORMAT_VERSION_V2) &&
+        (raw[FIRMWARE_METADATA_OFFSET_V2_RESERVED] != 0U)) {
+        return (platform_bool_t)0U;
+    }
+
+    index = (formatVersion == FIRMWARE_METADATA_FORMAT_VERSION_V1) ?
+            FIRMWARE_METADATA_V1_RESERVED_OFFSET : FIRMWARE_METADATA_V2_RESERVED_OFFSET;
+    for (; index < FIRMWARE_METADATA_OFFSET_CRC32; index++) {
         if (raw[index] != 0U) {
             return (platform_bool_t)0U;
         }
@@ -100,11 +139,26 @@ static platform_bool_t firmware_metadata_fields_are_valid(const firmware_metadat
         return (platform_bool_t)0U;
     }
 
-    if ((firmware_metadata_slot_is_valid(metadata->activeSlot) == 0U) ||
-        (firmware_metadata_slot_is_valid(metadata->confirmedSlot) == 0U) ||
+    if ((firmware_metadata_slot_is_valid(metadata->confirmedSlot) == 0U) ||
+        (firmware_metadata_slot_is_valid(metadata->pendingSlot) == 0U) ||
         (firmware_metadata_slot_state_is_valid(metadata->slotAState) == 0U) ||
         (firmware_metadata_slot_state_is_valid(metadata->slotBState) == 0U) ||
+        (firmware_metadata_upgrade_state_is_valid(metadata->upgradeState) == 0U) ||
         (firmware_version_is_valid(&metadata->confirmedVersion) == 0U)) {
+        return (platform_bool_t)0U;
+    }
+
+    if (((metadata->upgradeState == FIRMWARE_UPGRADE_STATE_NONE) &&
+         (metadata->pendingSlot != FIRMWARE_SLOT_NONE)) ||
+        ((metadata->upgradeState != FIRMWARE_UPGRADE_STATE_NONE) &&
+         (metadata->pendingSlot == FIRMWARE_SLOT_NONE))) {
+        return (platform_bool_t)0U;
+    }
+
+    if (((metadata->pendingSlot == FIRMWARE_SLOT_A) &&
+         (metadata->slotAState != FIRMWARE_SLOT_STATE_VALID)) ||
+        ((metadata->pendingSlot == FIRMWARE_SLOT_B) &&
+         (metadata->slotBState != FIRMWARE_SLOT_STATE_VALID))) {
         return (platform_bool_t)0U;
     }
 
@@ -117,10 +171,10 @@ static platform_bool_t firmware_metadata_fields_are_valid(const firmware_metadat
  */
 static void firmware_metadata_decode_fields(
     const uint8_t raw[FIRMWARE_METADATA_COPY_SIZE],
+    uint16_t formatVersion,
     firmware_metadata_t *metadata)
 {
     metadata->sequence = firmware_metadata_read_u32_le(&raw[FIRMWARE_METADATA_OFFSET_SEQUENCE]);
-    metadata->activeSlot = (firmware_slot_t)raw[FIRMWARE_METADATA_OFFSET_ACTIVE_SLOT];
     metadata->confirmedSlot = (firmware_slot_t)raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_SLOT];
     metadata->slotAState = (firmware_slot_state_t)raw[FIRMWARE_METADATA_OFFSET_SLOT_A_STATE];
     metadata->slotBState = (firmware_slot_state_t)raw[FIRMWARE_METADATA_OFFSET_SLOT_B_STATE];
@@ -132,8 +186,15 @@ static void firmware_metadata_decode_fields(
         &raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_VERSION + 4U]);
     metadata->confirmedVersion.reserved = firmware_metadata_read_u16_le(
         &raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_VERSION + 6U]);
-}
+    metadata->pendingSlot = FIRMWARE_SLOT_NONE;
+    metadata->upgradeState = FIRMWARE_UPGRADE_STATE_NONE;
 
+    if (formatVersion == FIRMWARE_METADATA_FORMAT_VERSION_V2) {
+        metadata->pendingSlot = (firmware_slot_t)raw[FIRMWARE_METADATA_OFFSET_PENDING_SLOT];
+        metadata->upgradeState = (firmware_upgrade_state_t)raw[FIRMWARE_METADATA_OFFSET_UPGRADE_STATE];
+    }
+}
+//******************************** Public Functions *************************//
 platform_error_t firmware_metadata_encode_uncommitted(
     const firmware_metadata_t *metadata,
     uint8_t raw[FIRMWARE_METADATA_COPY_SIZE])
@@ -150,10 +211,10 @@ platform_error_t firmware_metadata_encode_uncommitted(
 
     (void)memset(raw, 0, FIRMWARE_METADATA_COPY_SIZE);
     firmware_metadata_write_u32_le(&raw[FIRMWARE_METADATA_OFFSET_MAGIC], FIRMWARE_METADATA_MAGIC);
-    firmware_metadata_write_u16_le(&raw[FIRMWARE_METADATA_OFFSET_FORMAT_VERSION], FIRMWARE_METADATA_FORMAT_VERSION);
+    firmware_metadata_write_u16_le(&raw[FIRMWARE_METADATA_OFFSET_FORMAT_VERSION],
+                                   FIRMWARE_METADATA_FORMAT_VERSION_V2);
     firmware_metadata_write_u16_le(&raw[FIRMWARE_METADATA_OFFSET_SIZE], FIRMWARE_METADATA_COPY_SIZE);
     firmware_metadata_write_u32_le(&raw[FIRMWARE_METADATA_OFFSET_SEQUENCE], metadata->sequence);
-    raw[FIRMWARE_METADATA_OFFSET_ACTIVE_SLOT] = (uint8_t)metadata->activeSlot;
     raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_SLOT] = (uint8_t)metadata->confirmedSlot;
     raw[FIRMWARE_METADATA_OFFSET_SLOT_A_STATE] = (uint8_t)metadata->slotAState;
     raw[FIRMWARE_METADATA_OFFSET_SLOT_B_STATE] = (uint8_t)metadata->slotBState;
@@ -165,6 +226,8 @@ platform_error_t firmware_metadata_encode_uncommitted(
         &raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_VERSION + 4U],
         metadata->confirmedVersion.patch);
     firmware_metadata_write_u16_le(&raw[FIRMWARE_METADATA_OFFSET_CONFIRMED_VERSION + 6U], 0U);
+    raw[FIRMWARE_METADATA_OFFSET_PENDING_SLOT] = (uint8_t)metadata->pendingSlot;
+    raw[FIRMWARE_METADATA_OFFSET_UPGRADE_STATE] = (uint8_t)metadata->upgradeState;
     metadataCrc32 = crc32_iso_hdlc_calculate(raw, FIRMWARE_METADATA_BODY_SIZE);
     firmware_metadata_write_u32_le(&raw[FIRMWARE_METADATA_OFFSET_CRC32], metadataCrc32);
     firmware_metadata_write_u32_le(&raw[FIRMWARE_METADATA_OFFSET_COMMIT_MARKER], FIRMWARE_METADATA_INVALID_MARKER);
@@ -177,6 +240,7 @@ platform_error_t firmware_metadata_decode_committed(
     firmware_metadata_t *metadata)
 {
     firmware_metadata_t decodedMetadata;
+    uint16_t formatVersion;
     uint32_t expectedCrc32;
 
     if ((raw == NULL) || (metadata == NULL)) {
@@ -187,8 +251,9 @@ platform_error_t firmware_metadata_decode_committed(
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if (firmware_metadata_read_u16_le(&raw[FIRMWARE_METADATA_OFFSET_FORMAT_VERSION]) !=
-        FIRMWARE_METADATA_FORMAT_VERSION) {
+    formatVersion = firmware_metadata_read_u16_le(&raw[FIRMWARE_METADATA_OFFSET_FORMAT_VERSION]);
+    if ((formatVersion != FIRMWARE_METADATA_FORMAT_VERSION_V1) &&
+        (formatVersion != FIRMWARE_METADATA_FORMAT_VERSION_V2)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
@@ -201,11 +266,13 @@ platform_error_t firmware_metadata_decode_committed(
         return PLATFORM_ERR_INVALID_STATE;
     }
 
-    if (firmware_metadata_reserved_is_zero(raw) == 0U) {
+    if (firmware_metadata_reserved_is_zero(
+            raw, formatVersion) == 0U) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    firmware_metadata_decode_fields(raw, &decodedMetadata);
+    firmware_metadata_decode_fields(
+        raw, formatVersion, &decodedMetadata);
     if (firmware_metadata_fields_are_valid(&decodedMetadata) == 0U) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
