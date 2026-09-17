@@ -43,9 +43,9 @@
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B 和 S05C 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。
+`S05_UART_Ymodem`、S05A、S05B、S05C 和 S06 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 的目标不是再次集成 FreeRTOS，而是在现有 Application Runtime 上建立稳定的三线程并发模型，并把现有 ST7789 显示能力适配进来。
+当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
 冻结 Runtime：
 
@@ -62,7 +62,7 @@ UART ISR/RX → otaWorker   : Task Notification
 otaWorker   → displayTask : Queue
 ```
 
-实施顺序从 LCD/ST7789 Board Adaptation 开始，然后进行 Runtime 重构、OTA Worker 迁移、Display Queue 集成和端到端并发板测。
+已完成的核心验收包括 LCD IDLE/RECEIVING/VERIFYING/SUCCESS/FAILED 显示、OTA 过程中 LED 前台行为持续、Slot B Validation PASS、中途终止/Timeout 不提交 Header、任务阻塞状态、Stack/Heap 证据和现有 Toolkit 全量回归。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
@@ -288,20 +288,22 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Runtime / Concurrency Plan
+## S06 Runtime / Concurrency Closure
 
-S06 正式设计和计划：
+S06 正式入口：
 
 ```text
 00_Project/03_Stages/S06_RTOS_Runtime/design.md
 00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md
+00_Project/03_Stages/S06_RTOS_Runtime/handoff.md
+00_Project/03_Stages/S06_RTOS_Runtime/review.md
+04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md
 ```
 
-设计状态：
+阶段状态：
 
 ```text
-DESIGN_APPROVED
-IMPLEMENTATION_PLANNED
+CLOSED / PASS
 ```
 
 冻结三线程：
@@ -339,7 +341,7 @@ UART ISR/RX → otaWorker   : Notification
 otaWorker   → displayTask : Queue
 ```
 
-第一项实施任务：LCD/ST7789 Board Adaptation。已确认硬件 binding 为：
+LCD/ST7789 Board Adaptation 已完成，硬件 binding 为：
 
 ```text
 PB10 → LCD_RST
@@ -350,7 +352,9 @@ PA6  → LCD_DC
 PA7  → SPI1_MOSI
 ```
 
-LCD 第一版不引入 LVGL；采用现有 Graphics 字符绘制。S06 不要求 SPI1 Logic Analyzer 波形，LCD 用 Visual Inspection + RTT 验收；逻辑分析仪继续保持 SPI2/W25Q64 + I2C/AT24C02 接线。
+LCD 第一版不引入 LVGL，继续使用现有 Graphics 字符绘制。Visual Inspection + RTT 已通过；S06 不要求 SPI1 Logic Analyzer 波形，逻辑分析仪保持 SPI2/W25Q64 + I2C/AT24C02 接线。
+
+正式板测已验证成功 OTA、重启后重复传输、中途终止和 Timeout；失败路径保持 `header_commit=0`，前台 LED 持续运行，LCD 能显示失败状态。S06 不公开 OTA START/session control，不实现 `PENDING`、Reset、Trial、Confirmed 或 Rollback。
 
 ## Deferred Regression
 
@@ -367,4 +371,4 @@ Power-cycle Persistence PASS
 
 当前无实现阻塞。S06 代码、板级验证、Toolkit 回归和 Review 已完成；无复位重启会话因 S06 没有公开 START 控制接口记为 NOT_APPLICABLE，不新增 S07 API。
 
-下一步：进入 S07 `OTA_Service_V1`；S06 不新增 OTA Service、PENDING、Reset、Trial、Confirmed 或 Rollback 功能。
+下一步：进入 S07 `OTA_Service_V1` Design Discussion；优先读取 S06 Handoff / Review / Verification，在已冻结 Runtime Contract 上设计正式 OTA Service facade、session control、`PENDING` Metadata 提交和 Reset Request。

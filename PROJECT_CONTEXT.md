@@ -40,7 +40,7 @@
 
 S05、S05A、S05B、S05C 和 S06 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。`S06_RTOS_Runtime` 已完成实现、板级验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。
 
-S06 不再是“移植 FreeRTOS”。Application 已经运行 FreeRTOS，本阶段正式目标是建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供清晰的任务、资源所有权和并发基础。
+S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
 冻结 Runtime：
 
@@ -57,7 +57,7 @@ UART ISR/RX → otaWorker     : Task Notification
 otaWorker   → displayTask   : Queue
 ```
 
-实施第一项：完成 LCD/ST7789 Board Adaptation，再进入三线程 Runtime 重构。
+S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失败 OTA 路径、Slot B Validation、任务阻塞状态和 Toolkit 回归。下一阶段进入 `S07_OTA_Service_V1`，在该 Runtime Contract 上建立正式 OTA Service/session control。
 
 ## Stable Toolkit Architecture
 
@@ -290,13 +290,16 @@ running state
 
 Legacy Scripts 只允许做兼容薄包装，不建立第二套核心实现。
 
-## S06 Approved Runtime Contract
+## S06 Closed Runtime Contract
 
 正式入口：
 
 ```text
 00_Project/03_Stages/S06_RTOS_Runtime/design.md
 00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md
+00_Project/03_Stages/S06_RTOS_Runtime/handoff.md
+00_Project/03_Stages/S06_RTOS_Runtime/review.md
+04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md
 ```
 
 冻结三线程拓扑：
@@ -320,7 +323,7 @@ displayTask
 └─ ST7789 / SPI1
 ```
 
-初始优先级：
+冻结优先级：
 
 ```text
 otaWorker   ABOVE_NORMAL
@@ -336,7 +339,7 @@ Ymodem/Firmware Download          → otaWorker
 ST7789/Graphics/SPI1 usage        → displayTask
 ```
 
-S06 第一项实施任务为 LCD/ST7789 Board Adaptation。当前硬件 binding：
+LCD/ST7789 Board Adaptation 已完成。硬件 binding：
 
 ```text
 PB10 → LCD_RST
@@ -347,9 +350,9 @@ PA6  → LCD_DC
 PA7  → SPI1_MOSI
 ```
 
-LCD 第一版使用现有 Graphics 字符绘制，不引入 LVGL。LCD 验收采用 Visual Inspection + RTT；Logic Analyzer 保持接在 SPI2/W25Q64 与 Software I2C/AT24C02，不要求 S06 采集 SPI1 波形。
+LCD 第一版继续使用现有 Graphics 字符绘制，不引入 LVGL。Visual Inspection + RTT 已完成；Logic Analyzer 保持接在 SPI2/W25Q64 与 Software I2C/AT24C02，S06 未要求 SPI1 波形。
 
-核心并发验收：
+并发板测已验证：
 
 ```text
 v1.0 LED Blink continues
@@ -359,10 +362,10 @@ Background Ymodem/Firmware Storage
 LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 ```
 
-S06 结束后必须给 S07 提供稳定 Runtime / Concurrency Contract，而不是提前实现 OTA Service 的 `PENDING / Reset` 业务逻辑。
+成功传输、重复重启传输、中途终止、Timeout、Slot B Validation、任务阻塞与 Stack/Heap 证据均记录于 S06 Verification。S06 未交付公开 OTA START/session control、`PENDING`、Reset Request、Trial、Confirmed 或 Rollback，这些继续属于 S07 及后续阶段。
 
 ## Next Action
 
-执行 `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md`。
+进入 `S07_OTA_Service_V1` Design Discussion。
 
-从 Task 1 开始：完成 LCD/ST7789 Board Adaptation，使用现有 Toolkit 完成 Build / Flash / RTT 和真实屏幕 Visual Acceptance；通过后再实施三线程 Runtime 重构。
+优先读取 S06 `handoff.md`、`review.md` 和 `verification.md`，在已冻结的三线程 Runtime 上设计正式 OTA Service facade、session control、Inactive Slot/Validation、EEPROM Metadata `PENDING` 提交和 Reset Request；不要把 S06 内部保留的 START notification flag 当作已经交付的公开接口。
