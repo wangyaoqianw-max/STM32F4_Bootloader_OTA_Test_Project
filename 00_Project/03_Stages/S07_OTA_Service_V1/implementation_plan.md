@@ -164,6 +164,7 @@
 **Files:**
 
 - Modify: `app_ota_worker.c/.h` 实际路径
+- Create: `app_ota_runtime.c/.h`，承接已有 Storage/UART 资源绑定
 - Modify: appSystem wiring only as needed
 - Modify: display event mapping
 
@@ -172,12 +173,12 @@
 - Consumes: UART notification, KEY notification, `service_ota`
 - Produces: Display Queue events, Platform reset call
 
-- [ ] Step 1: 保持 `otaWorker` 任务创建、priority 和 S06 owner contract 不变，移出 storage/sink/metadata business decisions。
-- [ ] Step 2: 将 UART RX notification 转换为对 `service_ota`/Ymodem 的驱动，不改变 `service_uart` single-consumer ownership。
-- [ ] Step 3: 将 KEY event 在任务上下文 debounce 后按 Service 当前状态映射为 `start` 或 `confirm`；其他状态忽略。
-- [ ] Step 4: 将 Service state/business event 映射到现有 `app_display_event_t` / Display Queue，保持 `displayTask` sole LCD owner。
-- [ ] Step 5: Service 输出 `REBOOT_REQUIRED` 后由 worker 调用 Platform MCU Reset abstraction；Service 自身不得直接 reset。
-- [ ] Step 6: 检查 `app_ota_worker.c` 依赖明显收敛，Build + S06 runtime regression 后提交并记录 Commit。
+- [x] Step 1: 保持 `otaWorker` 任务创建、priority 和 S06 owner contract 不变，移出 storage/sink/metadata business decisions。
+- [x] Step 2: 将 UART RX notification 转换为对 `service_ota`/Ymodem 的驱动，不改变 `service_uart` single-consumer ownership。
+- [x] Step 3: 将 KEY event 在任务上下文 debounce 后按 Service 当前状态映射为 `start` 或 `confirm`；其他状态忽略。
+- [x] Step 4: 将 Service state/business event 映射到现有 `app_display_event_t` / Display Queue，保持 `displayTask` sole LCD owner。
+- [x] Step 5: Service 输出 `REBOOT_REQUIRED` 后由 worker 调用 Platform MCU Reset abstraction；Service 自身不得直接 reset。
+- [x] Step 6: 检查 `app_ota_worker.c` 依赖明显收敛，Build + S06 runtime regression 后提交并记录 Commit。
 
 ## Task 7: Display and User Interaction Completion
 
