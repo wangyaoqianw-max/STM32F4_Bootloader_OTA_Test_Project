@@ -59,11 +59,11 @@
 - Produces: IRQ enable / disable / set-priority / clear-pending 最小 API
 - Consumes: CMSIS NVIC API
 
-- [ ] Step 1: 调查现有 Platform MCU 能力、错误码、命名规范，确定最小 public type 和 API，不引入 callback manager。
-- [ ] Step 2: 为已实际使用的 IRQ 建立枚举/映射，至少覆盖 KEY EXTI0 与当前 UART/DMA 需要；避免把 STM32 `IRQn_Type` 直接泄漏到上层。
-- [ ] Step 3: 使用 CMSIS `NVIC_EnableIRQ` / `NVIC_DisableIRQ` / `NVIC_SetPriority` / `NVIC_ClearPendingIRQ` 完成 Impl。
-- [ ] Step 4: 增加或固化 FreeRTOS priority guard/documentation，保证会调用 `...FromISR()` 的 IRQ 不违反 `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY`。
-- [ ] Step 5: Build + 相关 Host Test，提交并记录 Commit。
+- [x] Step 1: 调查现有 Platform MCU 能力、错误码、命名规范，确定最小 public type 和 API，不引入 callback manager。
+- [x] Step 2: 为已实际使用的 IRQ 建立枚举/映射，至少覆盖 KEY EXTI0 与当前 UART/DMA 需要；避免把 STM32 `IRQn_Type` 直接泄漏到上层。
+- [x] Step 3: 使用 CMSIS `NVIC_EnableIRQ` / `NVIC_DisableIRQ` / `NVIC_SetPriority` / `NVIC_ClearPendingIRQ` 完成 Impl。
+- [x] Step 4: 增加或固化 FreeRTOS priority guard/documentation，保证会调用 `...FromISR()` 的 IRQ 不违反 `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY`。
+- [x] Step 5: Build + 相关 Host Test，提交并记录 Commit。
 
 ## Task 2: Platform Key and KEY_1 Event Forwarding
 
