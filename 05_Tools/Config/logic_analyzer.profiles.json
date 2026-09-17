@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "spi2_flash": {
+      "protocol": "spi",
+      "signals": {
+        "cs": {"mcu_pin": "PB12", "logic_channel": "D0"},
+        "clk": {"mcu_pin": "PB13", "logic_channel": "D1"},
+        "miso": {"mcu_pin": "PB14", "logic_channel": "D3"},
+        "mosi": {"mcu_pin": "PB15", "logic_channel": "D5"}
+      }
+    },
+    "i2c_eeprom": {
+      "protocol": "i2c",
+      "signals": {
+        "scl": {"mcu_pin": "PB6", "logic_channel": "D2"},
+        "sda": {"mcu_pin": "PB7", "logic_channel": "D4"}
+      }
+    }
+  }
+}
