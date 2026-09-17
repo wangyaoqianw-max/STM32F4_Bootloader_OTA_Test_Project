@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05C_Logic_Analyzer`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage: `S06_RTOS_Runtime`
+- Active Stage Status: `PLANNED`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
@@ -20,20 +20,39 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - S05C Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
 - S05C Verification Commit: `8781326`
+- S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
-- Last Closed Stage: `S05B_Toolkit_Reuse`
+- S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
+- Last Closed Stage: `S05C_Logic_Analyzer`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05C)
-- Current Role: `Review Role`
+- Next Planned Stage: `S06_RTOS_Runtime`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-S05、S05A 和 S05B 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。S05C Logic Analyzer 已完成实现和验证，目前等待 Review；审核通过后进入 `S06_RTOS_Runtime`。
+S05、S05A、S05B 和 S05C 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S06_RTOS_Runtime` Design Discussion。
 
-S05B 的目标不是简单整理目录，而是把已经验证过的 PC 工具从“当前工程专用脚本集合”重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。S05C 在该框架内增加了 `sigrok-cli` 驱动的 SPI / I2C Logic Analyzer 外部总线证据能力。
+S06 不再是“移植 FreeRTOS”。Application 已经运行 FreeRTOS，当前目标是正式冻结 Application Runtime / Concurrency Model，为 S07 OTA Service V1 提供清晰的任务、资源所有权和并发基础。
 
-冻结架构：
+重点讨论：
+
+```text
+Task Topology
+Task Lifecycle
+UART Consumer Ownership
+OTA/Ymodem Task Ownership
+IPC Selection
+Flash/Storage Serialization
+Blocking / Timeout Policy
+Error Recovery
+Business vs OTA Concurrency
+Logging Resource Boundary
+```
+
+## Stable Toolkit Architecture
+
+S05B 已将 PC 工具重构为：
 
 ```text
 Human / Agent
@@ -44,79 +63,40 @@ Workflows
       ↓
 Core + Adapters
       ↓
-Keil / J-Link / GDB
+External Tools
 ```
 
-正式设计与实施计划：
-
-```text
-00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
-00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
-00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
-```
-
-Task 1–8 和 Verification 已完成；Review 发现的通用 J-Link ownership 与 Unified Exit Code 两项问题已在 `2140117` 修复并完成回归，当前等待重新 Review。配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已落地。全量回归、当前工程板级 smoke、Fault、S04 Reset/Power-cycle 以及第二工程真实板测记录于：
-
-```text
-04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md
-```
-
-## Required Reading For S05B Implementation
-
-按顺序读取：
-
-1. `AGENTS.md`
-2. `README.md`
-3. `PROJECT_CONTEXT.md`
-4. `00_Project/WORKFLOW.md`
-5. `00_Project/02_Roadmap/development_roadmap.md`
-6. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
-7. `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
-8. `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
-9. `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
-10. `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
-11. `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
-12. `05_Tools/README.md`
-13. `05_Tools/Scripts/README.md`
-14. 当前 `05_Tools/Scripts/*.bat` / `*.ps1`
-15. 当前 `05_Tools/Debug/GDB`、`Debug/CmBacktrace`、`Firmware`、`Ymodem`
-
-## S05B Frozen Design
-
-### Architecture
+稳定目录职责：
 
 ```text
 Config
 + Core
 + Adapters
 + Workflows
++ Contracts
 + Project Tests
 + Legacy Wrappers
 ```
 
-Adapter 按变化轴拆分：
+Adapter 当前变化轴：
 
 ```text
 Adapters/Build/Keil
 Adapters/Probe/JLink
 Adapters/Debug/GDB
+Adapters/LogicAnalyzer/Sigrok
 ```
 
-不使用 `STM32_Keil_JLink` 组合式 Adapter，避免以后增加 GCC/CMake 或其他 Probe 时产生组合爆炸。
-
-### Configuration Model
+配置模型：
 
 ```text
 toolchain.local.bat   machine tool paths, ignored
 project.defaults.bat  repository project facts, committed
 project.local.bat     machine-specific project overrides, ignored
+logic_analyzer.profiles.json project logic-analyzer wiring profiles, committed
 ```
 
-工程 Target、Keil project 相对路径、AXF/HEX/BIN 相对路径和 MCU 型号属于工程事实；Keil/J-Link/GDB 安装位置属于机器事实；COM、GDB Port、J-Link Speed 等允许由 local override 覆盖。
-
-### Unified Entry
-
-目标稳定入口：
+统一入口当前覆盖：
 
 ```text
 toolkit.bat build
@@ -127,11 +107,10 @@ toolkit.bat snapshot halt|resume
 toolkit.bat fault capture|trigger
 toolkit.bat firmware pack ...
 toolkit.bat ymodem ...
+toolkit.bat logic doctor|scan|spi|i2c|decode ...
 ```
 
-旧 `05_Tools/Scripts/*.bat` 继续存在，但完成迁移后只允许做薄包装，不保留第二套核心实现。
-
-### Stable Exit Classes
+稳定 Exit Classes：
 
 ```text
 0   SUCCESS
@@ -144,44 +123,27 @@ toolkit.bat ymodem ...
 60  TEST_ERROR
 ```
 
-### Project Test Boundary
-
-S04 Persistence 属于当前项目专用 Test Extension：
-
-```text
-05_Tools/Tests/S04_Persistence/
-```
-
-S04 专用 AXF、symbol、解析规则和 runner 不得进入通用 Core/Adapter/Workflow；GDB lifecycle、RTT capture、lock、timeout、logging 等仍由公共能力提供。
-
-## S05B Implementation Order
-
-实施计划共 8 个 Task：
-
-```text
-Task 1  三层配置 + Config/Path/Logging Core
-Task 2  Process / Lock / Cleanup Core
-Task 3  Build/Probe Adapter + Application Workflows
-Task 4  GDB Adapter + Debug Workflows
-Task 5  toolkit Router + Legacy Wrappers
-Task 6  S04 Persistence Project Test Extension
-Task 7  Firmware/Ymodem Router + README/占位目录清理
-Task 8  Full Regression + Cross-project Reuse + Verification Handoff
-```
-
-每个 Task 必须先写/运行合同测试，再迁移实现，并独立提交。任一回归 FAIL 时停在当前 Task。
-
-第二工程复用首选：
-
-```text
-wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS
-```
-
-演练使用本地仓库的临时副本，只替换 Toolkit 配置，不修改第二工程生产代码，也不得为了适配第二工程编辑通用 Core / Adapter / Workflow。该工程没有 CmBacktrace，CmBacktrace 集成不属于该复用目标的验收范围。
-
 ## S05C Logic Analyzer Checkpoint
 
-S05C 已完成设计范围内的 SPI / I2C Logic Analyzer Workflow，当前状态为 `READY_FOR_REVIEW`。实现保持 `Config + Core + Adapters + Workflows + Project Tests + Router` 边界：sigrok Executor / Parser 不包含 W25Q64 或 AT24C02 语义，项目级判断位于 `05_Tools/Tests/S05C_LogicAnalyzer/`。
+S05C 已完成并以 `CLOSED / PASS` 关闭。第一版范围为 SPI / I2C，UART 与 GPIO Timing 延期。
+
+架构：
+
+```text
+Human / Agent
+      ↓
+toolkit.bat logic ...
+      ↓
+Workflows/LogicAnalyzer
+      ↓
+Adapters/LogicAnalyzer/Sigrok
+      ├─ Executor
+      └─ Parser
+      ↓
+sigrok-cli
+      ↓
+USB Logic Analyzer
+```
 
 已验证：
 
@@ -194,18 +156,24 @@ AT24C02 address 0x50 transaction     PASS
 Host / Toolkit regression            PASS
 Application build / flash / RTT      PASS
 GDB snapshot resume                   PASS
+Review                               PASS
 ```
 
-板测采集使用较宽时间窗口：SPI `24MHz / 20s`，I2C `1MHz / 20s`。两次均严格先启动 sigrok capture，再由独立 J-Link 客户端复位运行；同一 J-Link Probe 仍只允许一个客户端。工具规则已写入根 `AGENTS.md` 和 `05_Tools/README.md`：只在共享客户端、设备、端口、输出文件/目录或构建输出时互斥，独立资源允许并行。
+板测采集使用较宽时间窗口：SPI `24MHz / 20s`，I2C `1MHz / 20s`。两次均先启动 sigrok capture，再由独立 J-Link 客户端复位运行；同一 J-Link Probe 仍只允许一个客户端。
 
-正式证据：
+工具共享资源规则：只有共享客户端、设备、端口、输出文件/目录或构建输出时互斥；独立资源允许并行。
+
+正式入口：
 
 ```text
-04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
+00_Project/03_Stages/S05C_Logic_Analyzer/design.md
+00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
 00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+00_Project/03_Stages/S05C_Logic_Analyzer/review.md
+04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
 ```
 
-UART 与 GPIO Timing 明确延期；S05C 尚未直接关闭，等待 Review Role 审核。
+非阻塞 Follow-up：当前 I2C Parser 将一次 capture 内 annotations 聚合为一个逻辑 transaction。未来支持多设备或长窗口分析时，建议按 START/STOP 边界拆分 transactions。
 
 ## Stable S04 Storage / Firmware Contract
 
@@ -290,15 +258,14 @@ running state
 
 - GDB 自动化不得执行 `load`；
 - Resume 不使用 `-batch`；
-- `continue&` 后不得再执行 `detach`；触发型 Fault GDB 会话使用阻塞 `continue` 等待 `diagnostics_fault_capture_stop`，运行态 Snapshot 仍使用 `continue&`；
+- `continue&` 后不得再执行 `detach`；
+- 触发型 Fault GDB 会话使用阻塞 `continue` 等待 `diagnostics_fault_capture_stop`；运行态 Snapshot 仍使用 `continue&`；
 - GDB/RTT/J-Link Commander 同一时刻不能并发占用同一 Probe；
 - 只清理当前工具自己创建的进程。
 
-S05B 只能抽取配置与生命周期公共能力，不得改变上述调试语义。
+## Stable Tooling
 
-## Current Tooling Before S05B Implementation
-
-当前兼容入口：
+兼容入口继续存在：
 
 ```text
 05_Tools/Scripts/build_app.bat
@@ -312,28 +279,49 @@ S05B 只能抽取配置与生命周期公共能力，不得改变上述调试语
 05_Tools/Firmware/pack_firmware.py
 ```
 
-当前已知重复能力包括 GDB PowerShell 脚本中的 process start/capture、TCP readiness、stdout/stderr merge、timeout、owned process cleanup 等；这些应在 Task 2 收敛到 Core，而不是复制到新目录。
+Legacy Scripts 只允许做兼容薄包装，不建立第二套核心实现。
 
-## Verification Gate
+## S06 Design Entry
 
-Implementation Role 完成 Task 8 后状态只能进入 `READY_FOR_VERIFICATION`；Verification Role 完成证据核验后进入 `READY_FOR_REVIEW`，不能直接关闭 S05B。
+S06 名称：
 
-Verification Role 需要独立记录：
+```text
+S06_RTOS_Runtime
+```
 
-- Core/Application/Debug/Compatibility 合同测试；
-- Firmware/Ymodem/S04 Host Test；
-- 当前工程 Build / Flash / RTT / GDB；
-- Legacy Entry compatibility；
-- 第二同类工程只改配置的复用证据；
-- 本机绝对路径、临时代码、缓存没有提交；
-- 无法执行的硬件项明确为 `PENDING`，不能用 Host PASS 替代。
+S06 设计时必须优先读取：
 
-## Current RTOS Reality Before S06
+```text
+AGENTS.md
+PROJECT_CONTEXT.md
+00_Project/WORKFLOW.md
+00_Project/02_Roadmap/development_roadmap.md
+00_Project/05_Status/current_status.md
+00_Project/03_Stages/S05_UART_Ymodem/handoff.md
+00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md
+00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
+00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+00_Project/03_Stages/S05C_Logic_Analyzer/review.md
+03_Firmware/Application 当前 App/Service/Platform/Impl/Config/RTOS 代码
+```
 
-FreeRTOS 已经存在并正常运行，S06 不再是“移植 FreeRTOS”，而是正式化 Application Runtime / Concurrency Model。
+S06 设计必须基于当前真实 Application，而不是早期“未来再集成 RTOS”的假设。
 
-S06 在 S05C Review 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage Serialization、Blocking API、Timeout/Cancel/Error Recovery、正常业务与后台 OTA 并发、日志资源竞争。
+需要明确：
+
+```text
+哪些 Task 永久存在？
+谁消费 UART RingBuffer？
+Ymodem Receiver 由谁启动/停止？
+OTA 下载期间正常业务是否继续？
+Flash / EEPROM / Logging 谁拥有互斥？
+ISR / DMA / Task 的责任边界是什么？
+哪些 API 可以阻塞？最大阻塞多久？
+Timeout / Cancel / Reset 如何跨 Task 传播？
+```
+
+S06 结束后应给 S07 提供稳定的 Runtime / Concurrency Contract，而不是直接提前实现 OTA Service 业务状态机。
 
 ## Next Action
 
-S05B 已完成最终复核并以 `CLOSED / PASS` 关闭；S05C 已完成实现和验证，当前等待 Review Role 审核。审核通过后进入 `S06_RTOS_Runtime` Design。
+进入 `S06_RTOS_Runtime` Design Discussion。先读取当前 Application 的 RTOS / UART / Ymodem / Storage 实现，讨论并冻结 Task Topology、Lifecycle、Ownership、IPC、Blocking 和 Recovery，再生成正式 `design.md` 与 `implementation_plan.md`。
