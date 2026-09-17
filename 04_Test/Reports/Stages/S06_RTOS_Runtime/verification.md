@@ -3,13 +3,13 @@
 ## Metadata
 
 - Stage: `S06_RTOS_Runtime`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `c99730e`
 - Design Commit: `eb57291`
 - Implementation Plan Commit: `9f304c7`
 - Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
-- Verification Commit: `Not created yet`
+- Verification Commit: `8c67ad2`
 - Verification Date: `2026-09-17`
 - Coding Standard Review: `PASS`
 
@@ -79,4 +79,4 @@ Task 8 曾进行过一次临时高水位诊断代码实验，目标进入早期 
 硬件验证：NOT_APPLICABLE（破坏性 Display Fault 注入、无公开接口的无复位重启会话）
 ```
 
-本报告提交 Review Role 审核；本报告不自行将阶段标记为 `CLOSED`。
+本报告已提交 Review Role 审核，并作为 S06 阶段关闭的正式验证证据。

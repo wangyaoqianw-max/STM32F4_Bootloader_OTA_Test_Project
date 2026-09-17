@@ -3,14 +3,14 @@
 ## Context Metadata
 
 - Active Stage: `S06_RTOS_Runtime`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
 - S06 Verification Report: `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
 - S06 Handoff: `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
-- S06 Verification Commit: `Not created yet`
-- S06 Review Commit: `Not created yet`
+- S06 Verification Commit: `8c67ad2`
+- S06 Review Commit: `Pending final review commit`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -35,17 +35,17 @@
 - Previous Review Commit: `ec90dbb`
 - Review Commit: `b19c80d`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S05C_Logic_Analyzer`
+- Last Closed Stage: `S06_RTOS_Runtime`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Review Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
 `S05_UART_Ymodem`、S05A、S05B 和 S05C 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
-当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证和 Toolkit 回归，Verification 与 Handoff 已落盘，下一步进行 Review Role 最终审核。S06 的目标不是再次集成 FreeRTOS，而是在现有 Application Runtime 上建立稳定的三线程并发模型，并把现有 ST7789 显示能力适配进来。
+当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 的目标不是再次集成 FreeRTOS，而是在现有 Application Runtime 上建立稳定的三线程并发模型，并把现有 ST7789 显示能力适配进来。
 
 冻结 Runtime：
 
@@ -365,6 +365,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无实现阻塞。S06 代码、板级验证和 Toolkit 回归已完成；无复位重启会话因 S06 没有公开 START 控制接口记为 NOT_APPLICABLE，不新增 S07 API。
+当前无实现阻塞。S06 代码、板级验证、Toolkit 回归和 Review 已完成；无复位重启会话因 S06 没有公开 START 控制接口记为 NOT_APPLICABLE，不新增 S07 API。
 
-下一步：完成 S06 Review；审核通过后将状态更新为 `CLOSED / PASS`，并把 S07 `OTA_Service_V1` 设为下一阶段。
+下一步：进入 S07 `OTA_Service_V1`；S06 不新增 OTA Service、PENDING、Reset、Trial、Confirmed 或 Rollback 功能。

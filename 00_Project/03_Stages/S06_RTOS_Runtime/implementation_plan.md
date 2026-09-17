@@ -363,25 +363,25 @@ I2C / AT24C02
 S06 cannot close until all applicable items pass:
 
 ```text
-[ ] LCD/ST7789 board adaptation works visually
-[ ] appSystem / otaWorker / displayTask created as designed
-[ ] defaultTask remains bootstrap-only
-[ ] otaWorker idle state is blocked, no busy loop
-[ ] displayTask idle state is blocked
-[ ] UART DMA/RingBuffer retains one consumer
-[ ] Ymodem S05 protocol behavior remains valid
-[ ] Slot B image still validates after transfer
-[ ] v1.0 LED continues blinking during background OTA
-[ ] LCD shows IDLE/RECEIVING/VERIFYING/SUCCESS or FAILED
-[ ] Display update does not block OTA critical path indefinitely
-[ ] Ymodem cancel/timeout recovers without killing foreground Application
-[ ] Display failure is degraded, not fatal
-[ ] Stack/heap evidence collected and no obvious leak found
-[ ] Existing Build/Flash/RTT/GDB/Ymodem Toolkit regression passes
-[ ] No mandatory SPI1 logic analyzer requirement introduced
-[ ] No PENDING/Reset/Bootloader/Trial/Confirm/Rollback scope creep
-[ ] Verification report complete
-[ ] Review passes
+[x] LCD/ST7789 board adaptation works visually
+[x] appSystem / otaWorker / displayTask created as designed
+[x] defaultTask remains bootstrap-only
+[x] otaWorker idle state is blocked, no busy loop
+[x] displayTask idle state is blocked
+[x] UART DMA/RingBuffer retains one consumer
+[x] Ymodem S05 protocol behavior remains valid
+[x] Slot B image still validates after transfer
+[x] v1.0 LED continues blinking during background OTA
+[x] LCD shows IDLE/RECEIVING/VERIFYING/SUCCESS or FAILED
+[x] Display update does not block OTA critical path indefinitely
+[x] Ymodem cancel/timeout recovers without killing foreground Application
+[x] Display failure is degraded, not fatal
+[x] Stack/heap evidence collected and no obvious leak found
+[x] Existing Build/Flash/RTT/GDB/Ymodem Toolkit regression passes
+[x] No mandatory SPI1 logic analyzer requirement introduced
+[x] No PENDING/Reset/Bootloader/Trial/Confirm/Rollback scope creep
+[x] Verification report complete
+[x] Review passes
 ```
 
 ## Implementation Order Summary

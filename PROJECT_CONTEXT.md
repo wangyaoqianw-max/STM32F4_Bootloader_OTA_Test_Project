@@ -5,15 +5,15 @@
 ## Context Metadata
 
 - Active Stage: `S06_RTOS_Runtime`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED / PASS`
 - Branch: `main`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
 - S06 Verification Report: `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
 - S06 Handoff: `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
-- S06 Verification Commit: `Not created yet`
-- S06 Review Commit: `Not created yet`
+- S06 Verification Commit: `8c67ad2`
+- S06 Review Commit: `Pending final review commit`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
@@ -30,15 +30,15 @@
 - S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- Last Closed Stage: `S05C_Logic_Analyzer`
+- Last Closed Stage: `S06_RTOS_Runtime`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Review Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-S05、S05A、S05B 和 S05C 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 `S06_RTOS_Runtime` 已完成实现和验证，正在等待 Review Role 最终审核；`design.md`、`implementation_plan.md`、Verification 和 Handoff 已形成正式记录。
+S05、S05A、S05B、S05C 和 S06 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。`S06_RTOS_Runtime` 已完成实现、板级验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。
 
 S06 不再是“移植 FreeRTOS”。Application 已经运行 FreeRTOS，本阶段正式目标是建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供清晰的任务、资源所有权和并发基础。
 
