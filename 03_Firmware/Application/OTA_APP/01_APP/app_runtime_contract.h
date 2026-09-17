@@ -61,6 +61,7 @@ typedef enum
 typedef struct
 {
     app_display_event_type_t type;
+    app_display_target_slot_t targetSlot;
     uint32_t progress;
     uint32_t imageSize;
     platform_error_t errorCode;

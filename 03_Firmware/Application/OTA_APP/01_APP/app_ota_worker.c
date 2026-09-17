@@ -23,6 +23,7 @@
 #include "platform_types.h"
 #include "platform_time.h"
 #include "service_log.h"
+#include "service_ota.h"
 #include "ymodem_config.h"
 
 #include <stddef.h>
@@ -44,8 +45,11 @@ static platform_error_t app_ota_worker_init_key(void);
 static platform_error_t app_ota_worker_process_session(void);
 static platform_error_t app_ota_worker_abort_session(
     platform_error_t error);
+static app_display_target_slot_t app_ota_worker_map_target_slot(
+    firmware_slot_t slot);
 static platform_error_t app_ota_worker_post_display_event(
     app_display_event_type_t type,
+    app_display_target_slot_t targetSlot,
     uint32_t progress,
     uint32_t imageSize,
     platform_error_t errorCode);
@@ -113,17 +117,34 @@ static platform_bool_t app_ota_worker_accept_key_event(void)
     return PLATFORM_TRUE;
 }
 
+static app_display_target_slot_t app_ota_worker_map_target_slot(
+    firmware_slot_t slot)
+{
+    switch (slot) {
+        case FIRMWARE_SLOT_A:
+            return APP_DISPLAY_TARGET_SLOT_A;
+
+        case FIRMWARE_SLOT_B:
+            return APP_DISPLAY_TARGET_SLOT_B;
+
+        default:
+            return APP_DISPLAY_TARGET_SLOT_UNKNOWN;
+    }
+}
+
 static platform_error_t app_ota_worker_post_display_event(
     app_display_event_type_t type,
+    app_display_target_slot_t targetSlot,
     uint32_t progress,
     uint32_t imageSize,
     platform_error_t errorCode)
 {
     app_display_event_t event = {
-        type,
-        progress,
-        imageSize,
-        errorCode
+        .type = type,
+        .targetSlot = targetSlot,
+        .progress = progress,
+        .imageSize = imageSize,
+        .errorCode = errorCode
     };
     uint32_t timeoutMs = PLATFORM_OS_NO_WAIT;
     platform_error_t result;
@@ -157,6 +178,7 @@ static platform_error_t app_ota_worker_publish_service_event(
     service_ota_t *service;
     service_ota_status_t status;
     app_display_event_type_t displayType;
+    app_display_target_slot_t targetSlot;
     platform_error_t result;
 
     if (resetRequired == NULL) {
@@ -202,8 +224,11 @@ static platform_error_t app_ota_worker_publish_service_event(
             return PLATFORM_ERR_OK;
     }
 
+    targetSlot = app_ota_worker_map_target_slot(status.targetSlot);
+
     result = app_ota_worker_post_display_event(
         displayType,
+        targetSlot,
         status.progressPercent,
         status.expectedBytes,
         status.lastError);

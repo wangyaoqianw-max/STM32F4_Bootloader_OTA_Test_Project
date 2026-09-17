@@ -31,6 +31,13 @@
 #define APP_DISPLAY_TEXT_BUFFER_SIZE   (32U)
 #define APP_DISPLAY_LINE_HEIGHT        (16U)
 #define APP_DISPLAY_TEXT_X             (8U)
+#define APP_DISPLAY_FIRMWARE_Y         (16U)
+#define APP_DISPLAY_SYSTEM_Y           (40U)
+#define APP_DISPLAY_STATE_Y            (64U)
+#define APP_DISPLAY_TARGET_Y           (88U)
+#define APP_DISPLAY_PROGRESS_Y         (112U)
+#define APP_DISPLAY_RESULT_Y           (136U)
+#define APP_DISPLAY_ACTION_Y           (152U)
 //******************************** Defines **********************************//
 
 //******************************** Private Functions *************************//
@@ -87,7 +94,7 @@ static void app_display_model_initialize(display_model_t *model)
 
     model->otaState = APP_DISPLAY_EVENT_OTA_IDLE;
     model->otaProgress = 0U;
-    model->targetSlot = APP_DISPLAY_TARGET_SLOT_B;
+    model->targetSlot = APP_DISPLAY_TARGET_SLOT_UNKNOWN;
     model->lastError = PLATFORM_ERR_OK;
 }
 
@@ -104,6 +111,10 @@ static const char_t *app_display_state_text(app_display_event_type_t state)
         return "SUCCESS";
     case APP_DISPLAY_EVENT_OTA_FAILED:
         return "FAILED";
+    case APP_DISPLAY_EVENT_OTA_READY_TO_INSTALL:
+        return "READY INSTALL";
+    case APP_DISPLAY_EVENT_OTA_RESET_REQUIRED:
+        return "REBOOT REQUIRED";
     default:
         return "UNKNOWN";
     }
@@ -213,7 +224,7 @@ static platform_error_t app_display_render_initial(
                    sizeof(line),
                    "FW VERSION : %s",
                    model->firmwareVersion);
-    result = app_display_render_line(16U, line);
+    result = app_display_render_line(APP_DISPLAY_FIRMWARE_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -222,7 +233,7 @@ static platform_error_t app_display_render_initial(
                    sizeof(line),
                    "SYSTEM     : %s",
                    model->systemState);
-    result = app_display_render_line(40U, line);
+    result = app_display_render_line(APP_DISPLAY_SYSTEM_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -231,7 +242,7 @@ static platform_error_t app_display_render_initial(
                    sizeof(line),
                    "OTA STATE  : %s",
                    app_display_state_text(model->otaState));
-    result = app_display_render_line(64U, line);
+    result = app_display_render_line(APP_DISPLAY_STATE_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -240,7 +251,7 @@ static platform_error_t app_display_render_initial(
                    sizeof(line),
                    "TARGET     : %s",
                    app_display_target_slot_text(model->targetSlot));
-    result = app_display_render_line(88U, line);
+    result = app_display_render_line(APP_DISPLAY_TARGET_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -249,25 +260,40 @@ static platform_error_t app_display_render_initial(
                    sizeof(line),
                    "PROGRESS   : %lu%%",
                    (unsigned long)model->otaProgress);
-    result = app_display_render_line(112U, line);
+    result = app_display_render_line(APP_DISPLAY_PROGRESS_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
 
-    return app_display_render_line(136U, "RESULT     : NONE");
+    result = app_display_render_line(APP_DISPLAY_RESULT_Y, "RESULT     : NONE");
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return app_display_render_line(APP_DISPLAY_ACTION_Y, "ACTION     : NONE");
 }
 
 static platform_error_t app_display_render_event(
     const display_model_t *model)
 {
     char_t line[APP_DISPLAY_TEXT_BUFFER_SIZE];
+    const char_t *actionText = "ACTION     : NONE";
     platform_error_t result;
 
     (void)snprintf(line,
                    sizeof(line),
                    "OTA STATE  : %s",
                    app_display_state_text(model->otaState));
-    result = app_display_render_line(64U, line);
+    result = app_display_render_line(APP_DISPLAY_STATE_Y, line);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    (void)snprintf(line,
+                   sizeof(line),
+                   "TARGET     : %s",
+                   app_display_target_slot_text(model->targetSlot));
+    result = app_display_render_line(APP_DISPLAY_TARGET_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
@@ -276,22 +302,34 @@ static platform_error_t app_display_render_event(
                    sizeof(line),
                    "PROGRESS   : %lu%%",
                    (unsigned long)model->otaProgress);
-    result = app_display_render_line(112U, line);
+    result = app_display_render_line(APP_DISPLAY_PROGRESS_Y, line);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
 
-    if (model->otaState == APP_DISPLAY_EVENT_OTA_SUCCESS) {
-        return app_display_render_line(136U, "RESULT     : SUCCESS");
-    }
     if (model->otaState == APP_DISPLAY_EVENT_OTA_FAILED) {
         (void)snprintf(line,
                        sizeof(line),
                        "RESULT     : ERR %d",
                        (int)model->lastError);
-        return app_display_render_line(136U, line);
+    } else if (model->otaState == APP_DISPLAY_EVENT_OTA_SUCCESS) {
+        (void)snprintf(line, sizeof(line), "RESULT     : SUCCESS");
+    } else if (model->otaState == APP_DISPLAY_EVENT_OTA_READY_TO_INSTALL) {
+        (void)snprintf(line, sizeof(line), "RESULT     : VERIFIED");
+        actionText = "PRESS KEY  : INSTALL";
+    } else if (model->otaState == APP_DISPLAY_EVENT_OTA_RESET_REQUIRED) {
+        (void)snprintf(line, sizeof(line), "RESULT     : PENDING OK");
+        actionText = "ACTION     : RESETTING";
+    } else {
+        (void)snprintf(line, sizeof(line), "RESULT     : NONE");
     }
-    return app_display_render_line(136U, "RESULT     : NONE");
+
+    result = app_display_render_line(APP_DISPLAY_RESULT_Y, line);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return app_display_render_line(APP_DISPLAY_ACTION_Y, actionText);
 }
 
 static platform_error_t app_display_update_model(
@@ -304,9 +342,13 @@ static platform_error_t app_display_update_model(
     if (event->type >= APP_DISPLAY_EVENT_MAX) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
+    if (event->targetSlot >= APP_DISPLAY_TARGET_SLOT_MAX) {
+        return PLATFORM_ERR_INVALID_PARAM;
+    }
 
     model->otaState = event->type;
     model->otaProgress = event->progress;
+    model->targetSlot = event->targetSlot;
     model->lastError = (event->type == APP_DISPLAY_EVENT_OTA_FAILED) ?
                        event->errorCode : PLATFORM_ERR_OK;
     return PLATFORM_ERR_OK;
