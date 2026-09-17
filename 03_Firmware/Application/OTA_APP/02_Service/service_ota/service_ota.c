@@ -155,6 +155,11 @@ static void service_ota_update_progress(
     }
     service->context.progressPercent = progressPercent;
 
+    if ((progressPercent == 100U) &&
+        (service->context.lastProgressPercent == 100U)) {
+        return;
+    }
+
     if ((progressPercent >= service->context.lastProgressPercent) &&
         ((progressPercent - service->context.lastProgressPercent) <
          SERVICE_OTA_PROGRESS_STEP_PERCENT) &&
