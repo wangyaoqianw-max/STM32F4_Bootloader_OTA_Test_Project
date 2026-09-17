@@ -126,11 +126,11 @@
 - Consumes: `ymodem_sink` interface + Firmware Storage selected Slot
 - Produces: begin/write/end/abort implementation with Header-last commit
 
-- [ ] Step 1: 提取 S05 sink 已验证的 compact `.img` → Slot mapping 和 Header buffering 规则，不复制 Board Test 全局状态。
-- [ ] Step 2: 增加 target Slot/session context，使同一 sink 可写 Slot A 或 B。
-- [ ] Step 3: 保持 Header-last：接收前 64B Header、先写 Payload、完整 session 成功后才 commit Header。
-- [ ] Step 4: 确认 abort/timeout/short-file/oversize/error 路径不提交 Header。
-- [ ] Step 5: 迁移 production wiring，搜索并确保 production 不再 include/link `s05_ymodem_flash_sink`；Host Test + Build 后提交并记录 Commit。
+- [x] Step 1: 提取 S05 sink 已验证的 compact `.img` → Slot mapping 和 Header buffering 规则，不复制 Board Test 全局状态。
+- [x] Step 2: 增加 target Slot/session context，使同一 sink 可写 Slot A 或 B。
+- [x] Step 3: 保持 Header-last：接收前 64B Header、先写 Payload、完整 session 成功后才 commit Header。
+- [x] Step 4: 确认 abort/timeout/short-file/oversize/error 路径不提交 Header。
+- [x] Step 5: 迁移 production wiring，搜索并确保 production 不再 include/link `s05_ymodem_flash_sink`；Host Test + Build 后提交并记录 Commit。
 
 ## Task 5: service_ota State Machine and Persistence Rules
 

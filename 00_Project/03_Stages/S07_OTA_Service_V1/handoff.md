@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `7536cf06f6af539284dcaa4fc0396834ea7362fb` (Task 3 Storage Host test correction; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2` (Task 4 XML correction; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -435,6 +435,11 @@ Current S07 implementation changes:
 04_Test/Board/S04_Firmware_Image_Storage/app_s04_firmware_image_test.c
 04_Test/Board/S04_Firmware_Image_Storage/app_s04_persistence_test.c
 04_Test/Board/S04_Firmware_Image_Storage/app_s04_persistence_test.h
+03_Firmware/Application/OTA_APP/02_Service/service_firmware/ota_firmware_sink.h
+03_Firmware/Application/OTA_APP/02_Service/service_firmware/ota_firmware_sink.c
+04_Test/Host/S07_OTA_Service/s07_ota_firmware_sink_host_test.c
+03_Firmware/Application/OTA_APP/01_APP/app_ota_worker.c
+03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx
 ```
 
 ### Deviations From Plan
@@ -449,6 +454,8 @@ Task 2 review correction: the first implementation placed the board-specific Key
 
 Task 3 confirmed the existing V1 raw contract from `firmware_metadata.c`: magic `0x00`, format `0x04`, size `0x06`, sequence `0x08`, legacy active/confirmed/health bytes `0x0C..0x0F`, confirmed version `0x10..0x17`, CRC body `0x00..0x77`, CRC `0x78..0x7B`, and commit marker `0x7C..0x7F`. V2 keeps confirmed/health/version offsets, reserves `0x0C`, adds `pendingSlot` at `0x18` and `upgradeState` at `0x19`, and keeps `0x1A..0x77` zero. Metadata V1 reads default the new lifecycle fields to `NONE`; normal commit encoding is V2. `activeSlot` was removed from production and test Metadata consumers.
 
+Task 4 added production `ota_firmware_sink` under `02_Service/service_firmware`. It keeps target Slot in caller-owned session context, buffers and validates the 64 Byte Image Header before erasing, writes Payload first, and commits the Header only after the complete file length and Payload length are satisfied. `app_ota_worker` now binds this production sink to the existing YMODEM receiver; the worker still uses Slot B until Task 5 moves target selection into `service_ota`. The Keil project no longer includes or links the S05 Board Test sink.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
@@ -459,10 +466,12 @@ Task 2 code verification: after the layering and style correction, the IRQ and P
 
 Task 3 code verification: `s07_metadata_host_test.c` passed V2 round-trip, V1 backward-compatible decode, natural V2 migration encoding, cross-field validation, reserved-byte rejection and CRC rejection; existing S04 format and sequence/latest-copy tests passed; the adapted S04 Storage Host test passed image validation, Metadata V2 commit, write-failure old-copy retention and next-copy recovery. `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Hardware verification: PENDING; no real-board Metadata V2 persistence or S07 OTA acceptance was claimed.
 
+Task 4 code verification: `s07_ota_firmware_sink_host_test.c` passed dynamic Slot A/B mapping, split Header buffering, Header-last ordering, short-file, oversize, abort, erase/payload/header failure paths; project XML parse confirmed the production source and absence of the S05 sink; production search found no `s05_ymodem_flash_sink` reference under `03_Firmware/Application/OTA_APP`; `05_Tools\\toolkit.bat build` PASS; `git diff --check` PASS. Hardware verification: PENDING; no real-board dynamic Slot OTA transfer was claimed.
+
 ### Known Issues
 
 - Full S07 Metadata, Service, sink, key/IRQ, provisioning and board acceptance work remains pending.
-- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 must create the production OTA firmware sink.
+- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 must create the formal OTA Service state machine.
 - Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
 
@@ -502,4 +511,11 @@ power-loss behavior
 ```text
 bb0f96b643da137805b586eb817347a92dc0f140
 7536cf06f6af539284dcaa4fc0396834ea7362fb
+```
+
+### Task 4 Commits
+
+```text
+29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534
+e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2
 ```
