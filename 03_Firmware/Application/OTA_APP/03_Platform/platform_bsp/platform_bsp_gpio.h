@@ -29,6 +29,42 @@ platform_error_t platform_bsp_gpio_construct_status_led(
     platform_gpio_t *gpio);
 
 /**
+ * @brief 构造并绑定逻辑 LCD 片选 GPIO
+ * @param[in,out] gpio : 调用者拥有的 Platform GPIO 对象存储
+ * @return platform_error_t : 构造与绑定结果
+ * @note 本函数只执行对象构造和板级物理资源绑定，不配置硬件。
+ */
+platform_error_t platform_bsp_gpio_construct_lcd_cs(
+    platform_gpio_t *gpio);
+
+/**
+ * @brief 构造并绑定逻辑 LCD 数据/命令 GPIO
+ * @param[in,out] gpio : 调用者拥有的 Platform GPIO 对象存储
+ * @return platform_error_t : 构造与绑定结果
+ * @note 本函数只执行对象构造和板级物理资源绑定，不配置硬件。
+ */
+platform_error_t platform_bsp_gpio_construct_lcd_dc(
+    platform_gpio_t *gpio);
+
+/**
+ * @brief 构造并绑定逻辑 LCD 复位 GPIO
+ * @param[in,out] gpio : 调用者拥有的 Platform GPIO 对象存储
+ * @return platform_error_t : 构造与绑定结果
+ * @note 本函数只执行对象构造和板级物理资源绑定，不配置硬件。
+ */
+platform_error_t platform_bsp_gpio_construct_lcd_reset(
+    platform_gpio_t *gpio);
+
+/**
+ * @brief 构造并绑定逻辑 LCD 背光 GPIO
+ * @param[in,out] gpio : 调用者拥有的 Platform GPIO 对象存储
+ * @return platform_error_t : 构造与绑定结果
+ * @note 本函数只执行对象构造和板级物理资源绑定，不配置硬件。
+ */
+platform_error_t platform_bsp_gpio_construct_lcd_backlight(
+    platform_gpio_t *gpio);
+
+/**
  * @brief 构造并绑定逻辑 Software I2C SCL GPIO
  * @param[in,out] gpio : 调用者拥有的 Platform GPIO 对象存储
  * @return platform_error_t : 构造与绑定结果

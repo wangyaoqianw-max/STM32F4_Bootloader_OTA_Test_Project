@@ -29,6 +29,14 @@
 #define PROJECT_STATUS_LED_BLINK_ON_MS        (500U)
 #define PROJECT_STATUS_LED_BLINK_OFF_MS       (500U)
 
+/* 当前 ST7789 面板的逻辑几何、显存偏移和 SPI 时钟配置。 */
+#define PROJECT_DISPLAY_WIDTH                 (240U)
+#define PROJECT_DISPLAY_HEIGHT                (280U)
+#define PROJECT_DISPLAY_X_OFFSET              (0U)
+#define PROJECT_DISPLAY_Y_OFFSET              (20U)
+#define PROJECT_DISPLAY_MADCTL                (0x00U)
+#define PROJECT_DISPLAY_SPI_MAX_CLOCK_HZ      (12500000U)
+
 /* W25Q64 Platform 校验上限。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
 
