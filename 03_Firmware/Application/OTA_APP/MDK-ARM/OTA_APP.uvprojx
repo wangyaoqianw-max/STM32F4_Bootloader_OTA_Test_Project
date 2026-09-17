@@ -691,6 +691,11 @@
               <FileType>1</FileType>
               <FilePath>../02_Service/service_firmware/firmware_storage.c</FilePath>
             </File>
+            <File>
+              <FileName>ota_firmware_sink.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../02_Service/service_firmware/ota_firmware_sink.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -895,16 +900,6 @@
         </Group>
         <Group>
           <GroupName>Application/06_Test/S02 External Flash Driver</GroupName>
-        </Group>
-        <Group>
-          <GroupName>Application/06_Test/S05 UART Ymodem</GroupName>
-          <Files>
-            <File>
-              <FileName>s05_ymodem_flash_sink.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../04_Test/Board/S05_UART_Ymodem/s05_ymodem_flash_sink.c</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>Application/05_Vendors/EasyLogger</GroupName>

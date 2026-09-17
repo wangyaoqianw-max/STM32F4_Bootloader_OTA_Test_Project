@@ -31,7 +31,7 @@
 #include "project_config.h"
 #include "service_log.h"
 #include "service_uart.h"
-#include "s05_ymodem_flash_sink.h"
+#include "ota_firmware_sink.h"
 #include "ymodem_config.h"
 #include "ymodem_receiver.h"
 
@@ -74,8 +74,7 @@ static service_uart_t g_otaUartService = SERVICE_UART_INITIALIZER;
 static uint8_t g_otaUartDmaBuffer[APP_OTA_WORKER_UART_DMA_BUFFER_SIZE] = {0U};
 static uint8_t g_otaUartRingBuffer[APP_OTA_WORKER_UART_RING_BUFFER_SIZE] = {0U};
 
-static s05_ymodem_flash_sink_t g_otaFlashSink =
-    S05_YMODEM_FLASH_SINK_INITIALIZER;
+static ota_firmware_sink_t g_otaFlashSink = OTA_FIRMWARE_SINK_INITIALIZER;
 static ymodem_receiver_t g_otaReceiver = YMODEM_RECEIVER_INITIALIZER;
 static ymodem_receiver_config_t g_otaReceiverConfig = {0};
 //******************************** Variables ********************************//
@@ -242,14 +241,20 @@ static platform_error_t app_ota_worker_init_receiver(void)
     ymodem_sink_t sinkContract = {0};
     platform_error_t result;
 
-    result = s05_ymodem_flash_sink_init(&g_otaFlashSink,
-                                        &g_otaFirmwareStorage);
+    result = ota_firmware_sink_init(&g_otaFlashSink,
+                                    &g_otaFirmwareStorage);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
 
-    result = s05_ymodem_flash_sink_get_contract(&g_otaFlashSink,
-                                                &sinkContract);
+    result = ota_firmware_sink_set_target_slot(&g_otaFlashSink,
+                                               FIRMWARE_SLOT_B);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = ota_firmware_sink_get_contract(&g_otaFlashSink,
+                                            &sinkContract);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
