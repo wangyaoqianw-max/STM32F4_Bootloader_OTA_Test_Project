@@ -130,6 +130,78 @@ foreach ($status in $validStatuses) {
 Assert-True ("PASS" -notin $validStatuses) "Generic Logic Workflow must not use project PASS as a result status"
 Assert-True ("FAIL" -notin $validStatuses) "Generic Logic Workflow must not use project FAIL as a result status"
 
+$executorPath = Join-Path $repoRoot "05_Tools\Adapters\LogicAnalyzer\Sigrok\sigrok_exec.ps1"
+Assert-True (Test-Path -LiteralPath $executorPath -PathType Leaf) "Sigrok executor is missing"
+
+$executorTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("logic-analyzer-executor-" + [Guid]::NewGuid().ToString("N"))
+$fakeSigrokPath = Join-Path $executorTempRoot "fake-sigrok.cmd"
+$executorConfiguration = [PSCustomObject]@{
+    SIGROK_CLI_EXE = $fakeSigrokPath
+    PROJECT_ROOT = $executorTempRoot
+}
+
+try {
+    New-Item -ItemType Directory -Path $executorTempRoot -Force | Out-Null
+    @'
+@echo off
+if /I "%~1"=="--version" echo sigrok-cli fixture 0.8.0 & exit /b 0
+if /I "%~1"=="--fail" echo fixture failure 1>&2 & exit /b 7
+if /I "%~1"=="--sleep" powershell.exe -NoProfile -Command "Start-Sleep -Seconds 30" & exit /b 0
+if /I "%~1"=="--scan" goto scan
+echo fixture stdout
+echo fixture stderr 1>&2
+exit /b 0
+:scan
+if /I "%FAKE_SIGROK_SCAN_MODE%"=="none" exit /b 0
+if /I "%FAKE_SIGROK_SCAN_MODE%"=="multiple" (
+  echo fx2lafw:conn=4.7 - Saleae Logic 8 channels
+  echo fx2lafw:conn=5.1 - Saleae Logic 8 channels
+  exit /b 0
+)
+echo fx2lafw:conn=4.7 - Saleae Logic 8 channels
+exit /b 0
+'@ | Set-Content -LiteralPath $fakeSigrokPath -Encoding ASCII
+
+    if (Test-Path -LiteralPath $executorPath -PathType Leaf) {
+        . $executorPath
+
+        $versionResult = Invoke-SigrokCli -Configuration $executorConfiguration -Arguments @("--version") -TimeoutMilliseconds 5000
+        Assert-Equal $versionResult.ExitCode 0 "Sigrok version command should succeed"
+        Assert-True ($versionResult.Stdout.Contains("sigrok-cli fixture")) "Sigrok executor should capture stdout"
+
+        $failureResult = Invoke-SigrokCli -Configuration $executorConfiguration -Arguments @("--fail") -TimeoutMilliseconds 5000
+        Assert-Equal $failureResult.ExitCode 7 "Sigrok executor should preserve non-zero exit code"
+        Assert-True ($failureResult.Stderr.Contains("fixture failure")) "Sigrok executor should capture stderr"
+
+        $timeoutResult = Invoke-SigrokCli -Configuration $executorConfiguration -Arguments @("--sleep") -TimeoutMilliseconds 250
+        Assert-True $timeoutResult.TimedOut "Sigrok executor should report timeout"
+        Start-Sleep -Milliseconds 100
+        Assert-True ($null -eq (Get-Process -Id $timeoutResult.ProcessId -ErrorAction SilentlyContinue)) "Sigrok timeout should clean up the owned process"
+
+        $env:FAKE_SIGROK_SCAN_MODE = "none"
+        $notFound = Invoke-SigrokScan -Configuration $executorConfiguration -Driver "fx2lafw"
+        Assert-Equal $notFound.ErrorClass "DEVICE_NOT_FOUND" "No matching Sigrok device should be classified as DEVICE_NOT_FOUND"
+
+        $env:FAKE_SIGROK_SCAN_MODE = "single"
+        $single = Invoke-SigrokScan -Configuration $executorConfiguration -Driver "fx2lafw"
+        Assert-Equal $single.SelectedDevice "fx2lafw:conn=4.7" "One matching Sigrok device should be selected automatically"
+
+        $env:FAKE_SIGROK_SCAN_MODE = "multiple"
+        $ambiguous = Invoke-SigrokScan -Configuration $executorConfiguration -Driver "fx2lafw"
+        Assert-Equal $ambiguous.ErrorClass "AMBIGUOUS_DEVICE" "Multiple matching Sigrok devices should be classified as AMBIGUOUS_DEVICE"
+
+        $selected = Invoke-SigrokScan -Configuration $executorConfiguration -Driver "fx2lafw" -Selector "fx2lafw:conn=5.1"
+        Assert-Equal $selected.SelectedDevice "fx2lafw:conn=5.1" "An explicit local selector should resolve multiple devices"
+    }
+}
+catch {
+    $failures.Add("Sigrok executor contract raised an unexpected error: $($_.Exception.Message)")
+}
+finally {
+    Remove-Item Env:FAKE_SIGROK_SCAN_MODE -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $executorTempRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 if ($failures.Count -gt 0) {
     $failures | ForEach-Object { "[LogicAnalyzer][FAIL] $_" }
     exit 1
