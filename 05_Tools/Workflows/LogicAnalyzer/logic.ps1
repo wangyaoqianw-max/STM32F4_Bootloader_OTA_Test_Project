@@ -19,6 +19,8 @@ param(
 
     [int]$Samples = 500000,
 
+    [int]$CaptureTimeMilliseconds = 0,
+
     [int]$TimeoutSeconds = 60,
 
     [string]$CsChannel = "",
@@ -253,7 +255,9 @@ function New-LogicEffectiveConfig {
         [Parameter(Mandatory = $true)]
         [string]$RunDirectory,
 
-        [string]$SelectedDevice = ""
+        [string]$SelectedDevice = "",
+
+        [int]$CaptureTimeMilliseconds = 0
     )
 
     return [PSCustomObject][ordered]@{
@@ -261,6 +265,7 @@ function New-LogicEffectiveConfig {
         profile = $Context.Name
         sample_rate = $SampleRate
         samples = $Samples
+        capture_time_ms = if ($CaptureTimeMilliseconds -gt 0) { $CaptureTimeMilliseconds } else { $null }
         device = [ordered]@{
             driver = "fx2lafw"
             selector = if ([string]::IsNullOrWhiteSpace($SelectedDevice)) { $null } else { $SelectedDevice }
@@ -352,7 +357,7 @@ function Invoke-LogicCaptureAction {
     $decoder = Get-LogicDecoderSpec -Protocol $Context.Protocol -Mapping $Mapping -Override $DecoderSpec
     $scan = Invoke-SigrokScan -Configuration $Configuration -Driver "fx2lafw" -Selector $DeviceSelector -TimeoutMilliseconds ($TimeoutSeconds * 1000)
     $selectedDevice = [string]$scan.SelectedDevice
-    $effectiveConfig = New-LogicEffectiveConfig -Context $Context -Mapping $Mapping -Decoder $decoder -RunDirectory $RunDirectory -SelectedDevice $selectedDevice
+    $effectiveConfig = New-LogicEffectiveConfig -Context $Context -Mapping $Mapping -Decoder $decoder -RunDirectory $RunDirectory -SelectedDevice $selectedDevice -CaptureTimeMilliseconds $CaptureTimeMilliseconds
     $effectiveConfigPath = $effectiveConfig.artifacts.effective_config
     Write-LogicJson -Value $effectiveConfig -Path $effectiveConfigPath
     Write-Host ("Protocol : {0}" -f $Context.Protocol)
@@ -366,7 +371,7 @@ function Invoke-LogicCaptureAction {
         return [PSCustomObject]@{ Result = $result; EffectiveConfig = $effectiveConfig }
     }
 
-    $captureProcess = Invoke-SigrokCapture -Configuration $Configuration -OutputPath $effectiveConfig.artifacts.capture -Driver "fx2lafw" -DeviceSelector $selectedDevice -SampleRate $SampleRate -Samples $Samples -TimeoutMilliseconds ($TimeoutSeconds * 1000)
+    $captureProcess = Invoke-SigrokCapture -Configuration $Configuration -OutputPath $effectiveConfig.artifacts.capture -Driver "fx2lafw" -DeviceSelector $selectedDevice -SampleRate $SampleRate -Samples $Samples -CaptureTimeMilliseconds $CaptureTimeMilliseconds -TimeoutMilliseconds ($TimeoutSeconds * 1000)
     if ($captureProcess.TimedOut -or $captureProcess.ExitCode -ne 0) {
         $errorClass = if ($captureProcess.TimedOut) { "CAPTURE_TIMEOUT" } else { "CAPTURE_FAILED" }
         $result = New-LogicWorkflowResult -Status "ERROR" -Operation ("{0}_CAPTURE" -f $Context.Protocol.ToUpperInvariant()) -Context $Context -Mapping $Mapping -ErrorClass $errorClass -SelectedDevice $selectedDevice -Capture ([ordered]@{ exit_code = $captureProcess.ExitCode; timed_out = $captureProcess.TimedOut }) -Artifacts $effectiveConfig.artifacts
@@ -379,7 +384,7 @@ function Invoke-LogicCaptureAction {
         return [PSCustomObject]@{ Result = $result; EffectiveConfig = $effectiveConfig }
     }
 
-    $result = New-LogicWorkflowResult -Status "SUCCESS" -Operation ("{0}_CAPTURE" -f $Context.Protocol.ToUpperInvariant()) -Context $Context -Mapping $Mapping -SelectedDevice $selectedDevice -Capture ([ordered]@{ sample_rate = $SampleRate; samples = $Samples; artifact = $effectiveConfig.artifacts.capture }) -Artifacts $effectiveConfig.artifacts
+    $result = New-LogicWorkflowResult -Status "SUCCESS" -Operation ("{0}_CAPTURE" -f $Context.Protocol.ToUpperInvariant()) -Context $Context -Mapping $Mapping -SelectedDevice $selectedDevice -Capture ([ordered]@{ sample_rate = $SampleRate; samples = $Samples; capture_time_ms = if ($CaptureTimeMilliseconds -gt 0) { $CaptureTimeMilliseconds } else { $null }; artifact = $effectiveConfig.artifacts.capture }) -Artifacts $effectiveConfig.artifacts
     Write-LogicJson -Value $result -Path $effectiveConfig.artifacts.result
     return [PSCustomObject]@{ Result = $result; EffectiveConfig = $effectiveConfig }
 }
@@ -401,27 +406,44 @@ function Invoke-LogicDecodeAction {
         [Parameter(Mandatory = $true)]
         [string]$InputCapturePath,
 
-        [string]$SelectedDevice = ""
+        [string]$SelectedDevice = "",
+
+        [int]$CaptureTimeMilliseconds = 0
     )
 
     $resolvedCapturePath = (Resolve-Path -LiteralPath $InputCapturePath -ErrorAction Stop).Path
     $decoder = Get-LogicDecoderSpec -Protocol $Context.Protocol -Mapping $Mapping -Override $DecoderSpec
-    $effectiveConfig = New-LogicEffectiveConfig -Context $Context -Mapping $Mapping -Decoder $decoder -RunDirectory $RunDirectory -SelectedDevice $SelectedDevice
+    $effectiveConfig = New-LogicEffectiveConfig -Context $Context -Mapping $Mapping -Decoder $decoder -RunDirectory $RunDirectory -SelectedDevice $SelectedDevice -CaptureTimeMilliseconds $CaptureTimeMilliseconds
     $artifactCapturePath = $effectiveConfig.artifacts.capture
     if ($resolvedCapturePath -ne $artifactCapturePath) {
         Copy-Item -LiteralPath $resolvedCapturePath -Destination $artifactCapturePath -Force
     }
     $effectiveConfig.capture_input = $resolvedCapturePath
     Write-LogicJson -Value $effectiveConfig -Path $effectiveConfig.artifacts.effective_config
-    $decodeProcess = Invoke-SigrokDecode -Configuration $Configuration -CapturePath $resolvedCapturePath -DecoderSpec $decoder -TimeoutMilliseconds ($TimeoutSeconds * 1000)
-    if ($decodeProcess.TimedOut -or $decodeProcess.ExitCode -ne 0) {
-        $errorClass = if ($decodeProcess.TimedOut) { "DECODE_TIMEOUT" } else { "DECODE_FAILED" }
+    $decodeProcesses = if ($Context.Protocol -eq "spi") {
+        @(
+            (Invoke-SigrokDecode -Configuration $Configuration -CapturePath $resolvedCapturePath -DecoderSpec $decoder -Annotation "spi=mosi-data" -TimeoutMilliseconds ($TimeoutSeconds * 1000)),
+            (Invoke-SigrokDecode -Configuration $Configuration -CapturePath $resolvedCapturePath -DecoderSpec $decoder -Annotation "spi=miso-data" -TimeoutMilliseconds ($TimeoutSeconds * 1000))
+        )
+    }
+    else {
+        @(Invoke-SigrokDecode -Configuration $Configuration -CapturePath $resolvedCapturePath -DecoderSpec $decoder -Annotation "i2c" -TimeoutMilliseconds ($TimeoutSeconds * 1000))
+    }
+    $failedDecode = $decodeProcesses | Where-Object { $_.TimedOut -or $_.ExitCode -ne 0 } | Select-Object -First 1
+    if ($null -ne $failedDecode) {
+        $errorClass = if ($failedDecode.TimedOut) { "DECODE_TIMEOUT" } else { "DECODE_FAILED" }
         $result = New-LogicWorkflowResult -Status "ERROR" -Operation ("{0}_DECODE" -f $Context.Protocol.ToUpperInvariant()) -Context $Context -Mapping $Mapping -ErrorClass $errorClass -SelectedDevice $SelectedDevice -Capture ([ordered]@{ artifact = $artifactCapturePath }) -Artifacts $effectiveConfig.artifacts
         Write-LogicJson -Value $result -Path $effectiveConfig.artifacts.result
         return $result
     }
 
-    $parsed = ConvertFrom-SigrokDecodeOutput -Protocol $Context.Protocol -Output $decodeProcess.Stdout
+    $decodeOutput = if ($Context.Protocol -eq "spi") {
+        "[MOSI]`r`n$($decodeProcesses[0].Stdout)`r`n[MISO]`r`n$($decodeProcesses[1].Stdout)"
+    }
+    else {
+        $decodeProcesses[0].Stdout
+    }
+    $parsed = ConvertFrom-SigrokDecodeOutput -Protocol $Context.Protocol -Output $decodeOutput
     $parsed.device = [ordered]@{ driver = "fx2lafw"; selector = if ([string]::IsNullOrWhiteSpace($SelectedDevice)) { $null } else { $SelectedDevice } }
     $parsed.capture = [ordered]@{ artifact = $artifactCapturePath }
     $parsed.mapping = $Mapping
@@ -461,20 +483,22 @@ try {
     if ($normalizedAction -notin @("doctor", "scan", "capture", "decode", "spi", "i2c")) {
         throw "Logic Analyzer action must be one of: doctor, scan, capture, decode, spi, i2c"
     }
-    if ($Samples -lt 1 -or $TimeoutSeconds -lt 1) {
-        throw "Logic Analyzer samples and timeout must be positive"
+    if ($Samples -lt 1 -or $CaptureTimeMilliseconds -lt 0 -or $TimeoutSeconds -lt 1) {
+        throw "Logic Analyzer samples, capture time and timeout must be valid"
     }
 
     $configuration = Import-ToolkitConfiguration -ToolsRoot $ToolsRoot
     if ($normalizedAction -eq "doctor") {
         $result = Invoke-LogicDoctorAction -Configuration $configuration
         $result | ConvertTo-Json -Depth 12
-        exit (if ($result.status -eq "SUCCESS") { 0 } else { 10 })
+        $exitCode = if ($result.status -eq "SUCCESS") { 0 } else { 10 }
+        exit $exitCode
     }
     if ($normalizedAction -eq "scan") {
         $result = Invoke-LogicScanAction -Configuration $configuration
         $result | ConvertTo-Json -Depth 12
-        exit (if ([string]::IsNullOrWhiteSpace([string]$result.ErrorClass)) { 0 } else { 30 })
+        $exitCode = if ([string]::IsNullOrWhiteSpace([string]$result.ErrorClass)) { 0 } else { 30 }
+        exit $exitCode
     }
 
     $effectiveProtocol = if ($normalizedAction -in @("spi", "i2c")) { $normalizedAction } else { $Protocol.ToLowerInvariant() }
@@ -487,7 +511,7 @@ try {
         if ([string]::IsNullOrWhiteSpace($CapturePath)) {
             throw "Decode action requires -CapturePath"
         }
-        $execution = Invoke-LogicDecodeAction -Configuration $configuration -Context $context -Mapping $mapping -RunDirectory $runDirectory -InputCapturePath $CapturePath
+        $execution = Invoke-LogicDecodeAction -Configuration $configuration -Context $context -Mapping $mapping -RunDirectory $runDirectory -InputCapturePath $CapturePath -SelectedDevice $DeviceSelector -CaptureTimeMilliseconds $CaptureTimeMilliseconds
     }
     elseif ($normalizedAction -eq "capture") {
         $execution = Invoke-LogicCaptureAction -Configuration $configuration -Context $context -Mapping $mapping -RunDirectory $runDirectory
@@ -498,7 +522,7 @@ try {
             $execution = $captureExecution
         }
         else {
-            $execution = Invoke-LogicDecodeAction -Configuration $configuration -Context $context -Mapping $mapping -RunDirectory $runDirectory -InputCapturePath $captureExecution.EffectiveConfig.artifacts.capture -SelectedDevice $captureExecution.Result.device.selector
+            $execution = Invoke-LogicDecodeAction -Configuration $configuration -Context $context -Mapping $mapping -RunDirectory $runDirectory -InputCapturePath $captureExecution.EffectiveConfig.artifacts.capture -SelectedDevice $captureExecution.Result.device.selector -CaptureTimeMilliseconds $CaptureTimeMilliseconds
         }
     }
 

@@ -49,6 +49,14 @@ if (Test-Path -LiteralPath $parserPath -PathType Leaf) {
         Assert-Equal $spi.Transactions[2].Miso[0] "0x17" "SPI MISO last response byte should be parsed"
         Assert-True ($spi.PSObject.Properties.Name -contains "error_class") "Structured result must expose error_class"
 
+        $sigrokSpiText = Get-Content -LiteralPath (Join-Path $fixtureRoot "spi_sigrok_annotations.txt") -Raw -Encoding UTF8
+        $sigrokSpi = ConvertFrom-SigrokDecodeOutput -Protocol "spi" -Output $sigrokSpiText
+        Assert-Equal $sigrokSpi.Status "SUCCESS" "Real Sigrok SPI annotations should parse successfully"
+        Assert-Equal $sigrokSpi.Transactions.Count 4 "Real Sigrok SPI annotations should pair MOSI and MISO bytes"
+        Assert-Equal $sigrokSpi.Transactions[0].Mosi[0] "0x9F" "Real Sigrok MOSI annotation should be parsed"
+        Assert-Equal $sigrokSpi.Transactions[0].Miso[0] "0xEF" "Real Sigrok MISO annotation should be parsed"
+        Assert-Equal $sigrokSpi.Transactions[2].Miso[0] "0x17" "Real Sigrok MISO response should be parsed"
+
         $i2cText = Get-Content -LiteralPath (Join-Path $fixtureRoot "i2c_decode.txt") -Raw -Encoding UTF8
         $i2c = ConvertFrom-SigrokDecodeOutput -Protocol "i2c" -Output $i2cText
         Assert-Equal $i2c.Status "SUCCESS" "I2C fixture should parse successfully"

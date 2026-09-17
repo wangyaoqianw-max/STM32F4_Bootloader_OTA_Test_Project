@@ -1,0 +1,10 @@
+[MOSI]
+spi-1: 9F
+spi-1: 00
+spi-1: 00
+spi-1: 00
+[MISO]
+spi-1: EF
+spi-1: 40
+spi-1: 17
+spi-1: FF

@@ -73,6 +73,65 @@ function ConvertFrom-SigrokSpiOutput {
         [string]$Output
     )
 
+    if ($Output -match '(?im)^\s*\[(?:MOSI|MISO)\]\s*$') {
+        $mosiBytes = [System.Collections.Generic.List[string]]::new()
+        $misoBytes = [System.Collections.Generic.List[string]]::new()
+        $direction = ""
+
+        foreach ($line in ($Output -split "`r?`n")) {
+            $trimmed = $line.Trim()
+            if ($trimmed -match '(?i)^\[MOSI\]$') {
+                $direction = "mosi"
+                continue
+            }
+            if ($trimmed -match '(?i)^\[MISO\]$') {
+                $direction = "miso"
+                continue
+            }
+            if ([string]::IsNullOrWhiteSpace($direction)) {
+                continue
+            }
+
+            $dataMatch = [regex]::Match($trimmed, '(?i)^spi-\d+\s*:\s*(?<value>(?:[0-9a-f]{2})(?:\s+[0-9a-f]{2})*)$')
+            if (-not $dataMatch.Success) {
+                continue
+            }
+            $bytes = ConvertTo-SigrokByteArray -Value $dataMatch.Groups["value"].Value
+            foreach ($byte in $bytes) {
+                if ($direction -eq "mosi") {
+                    $mosiBytes.Add($byte)
+                }
+                else {
+                    $misoBytes.Add($byte)
+                }
+            }
+        }
+
+        $transactions = [System.Collections.Generic.List[object]]::new()
+        $transactionCount = [Math]::Max($mosiBytes.Count, $misoBytes.Count)
+        for ($index = 0; $index -lt $transactionCount; $index++) {
+            $mosi = [System.Collections.Generic.List[string]]::new()
+            $miso = [System.Collections.Generic.List[string]]::new()
+            if ($index -lt $mosiBytes.Count) {
+                $mosi.Add($mosiBytes[$index])
+            }
+            if ($index -lt $misoBytes.Count) {
+                $miso.Add($misoBytes[$index])
+            }
+            $transactions.Add([PSCustomObject][ordered]@{
+                index = $index
+                mosi = $mosi
+                miso = $miso
+                annotation = ("MOSI={0} MISO={1}" -f ($mosi -join " "), ($miso -join " "))
+            })
+        }
+
+        if ($transactions.Count -eq 0) {
+            return New-SigrokStructuredResult -Status "INCONCLUSIVE" -Operation "SPI_DECODE" -Transactions @() -ErrorClass "DECODE_EMPTY"
+        }
+        return New-SigrokStructuredResult -Status "SUCCESS" -Operation "SPI_DECODE" -Transactions @($transactions)
+    }
+
     $transactions = [System.Collections.Generic.List[object]]::new()
     foreach ($line in ($Output -split "`r?`n")) {
         $mosiMatch = [regex]::Match($line, '(?i)\bMOSI\s*[:=]\s*(?<value>(?:(?:0x)?[0-9a-f]{1,2})(?:\s+(?:(?:0x)?[0-9a-f]{1,2}))*)')
@@ -111,7 +170,8 @@ function ConvertFrom-SigrokI2cOutput {
 
     foreach ($line in ($Output -split "`r?`n")) {
         $trimmed = $line.Trim()
-        if ($trimmed -match '(?i)\bREPEATED\s+START\b') {
+        if (($trimmed -match '(?i)\bREPEATED\s+START\b') -or
+            ($trimmed -match '(?i)\bSTART\s+REPEAT\b')) {
             $events.Add([PSCustomObject][ordered]@{ type = "REPEATED_START"; raw = $trimmed })
         }
         elseif ($trimmed -match '(?i)\bSTART\b') {
@@ -122,7 +182,7 @@ function ConvertFrom-SigrokI2cOutput {
             $events.Add([PSCustomObject][ordered]@{ type = "STOP"; raw = $trimmed })
         }
 
-        $addressMatch = [regex]::Match($trimmed, '(?i)\b(?:ADDRESS|ADDR)\s*[:=]?\s*(?:0x)?(?<value>[0-9a-f]{1,2})')
+        $addressMatch = [regex]::Match($trimmed, '(?i)\bADDRESS(?:\s+(?:READ|WRITE))?\s*[:=]\s*(?:0x)?(?<value>[0-9a-f]{1,2})')
         if ($addressMatch.Success) {
             $address = "0x{0:X2}" -f [Convert]::ToInt32($addressMatch.Groups["value"].Value, 16)
             $events.Add([PSCustomObject][ordered]@{ type = "ADDRESS"; value = $address; raw = $trimmed })

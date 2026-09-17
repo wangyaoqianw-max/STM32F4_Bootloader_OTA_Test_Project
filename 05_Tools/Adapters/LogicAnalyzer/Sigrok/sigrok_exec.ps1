@@ -58,13 +58,20 @@ function Get-SigrokDeviceSelectors {
     )
 
     $driverPattern = [regex]::Escape($Driver)
-    $selectors = foreach ($line in ($Output -split "`r?`n")) {
+    $selectors = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ($Output -split "`r?`n")) {
         if ($line -match ("(?i)^\s*(?<selector>{0}:[^\s]+)" -f $driverPattern)) {
-            $matches.selector
+            $selector = $matches.selector
+            if (-not $selectors.Contains($selector)) {
+                $selectors.Add($selector)
+            }
+        }
+        elseif ($line -match ("(?i)^\s*{0}(?:\s+-|\s*$)" -f $driverPattern)) {
+            $selectors.Add($Driver)
         }
     }
 
-    return @($selectors | Select-Object -Unique)
+    return @($selectors)
 }
 
 function Invoke-SigrokScan {
@@ -136,10 +143,12 @@ function Invoke-SigrokCapture {
 
         [int]$Samples = 500000,
 
+        [int]$CaptureTimeMilliseconds = 0,
+
         [int]$TimeoutMilliseconds = 60000
     )
 
-    if ($Samples -lt 1) {
+    if ($Samples -lt 1 -or $CaptureTimeMilliseconds -lt 0) {
         throw "Sigrok sample count must be positive: $Samples"
     }
     $outputDirectory = Split-Path -Parent $OutputPath
@@ -151,11 +160,17 @@ function Invoke-SigrokCapture {
     if (-not [string]::IsNullOrWhiteSpace($DeviceSelector)) {
         $driverValue = $DeviceSelector
     }
+    $acquisitionArguments = if ($CaptureTimeMilliseconds -gt 0) {
+        @("--time", [string]$CaptureTimeMilliseconds)
+    }
+    else {
+        @("--samples", [string]$Samples)
+    }
     $arguments = @(
         "--driver", $driverValue,
-        "--config", ("samplerate={0}" -f $SampleRate),
-        "--samples", [string]$Samples,
-        "--output-format", "sr",
+        "--config", ("samplerate={0}" -f $SampleRate)
+    ) + $acquisitionArguments + @(
+        "--output-format", "srzip",
         "--output-file", $OutputPath
     )
     return Invoke-SigrokCli -Configuration $Configuration -Arguments $arguments -TimeoutMilliseconds $TimeoutMilliseconds
@@ -172,6 +187,8 @@ function Invoke-SigrokDecode {
         [Parameter(Mandatory = $true)]
         [string]$DecoderSpec,
 
+        [string]$Annotation = "",
+
         [int]$TimeoutMilliseconds = 60000
     )
 
@@ -182,5 +199,8 @@ function Invoke-SigrokDecode {
         "--input-file", $CapturePath,
         "--protocol-decoders", $DecoderSpec
     )
+    if (-not [string]::IsNullOrWhiteSpace($Annotation)) {
+        $arguments += @("--protocol-decoder-annotations", $Annotation)
+    }
     return Invoke-SigrokCli -Configuration $Configuration -Arguments $arguments -TimeoutMilliseconds $TimeoutMilliseconds
 }

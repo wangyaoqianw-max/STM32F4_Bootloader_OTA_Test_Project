@@ -48,7 +48,7 @@ function Test-W25Q64JedecResult {
     }
 
     $observed = [System.Collections.Generic.List[string]]::new()
-    for ($index = $commandIndex; $index -lt ($commandIndex + 3) -and $index -lt $miso.Count; $index++) {
+    for ($index = $commandIndex + 1; $index -lt ($commandIndex + 4) -and $index -lt $miso.Count; $index++) {
         $observed.Add($miso[$index].ToUpperInvariant())
     }
     $expected = @("0XEF", "0X40", "0X17")

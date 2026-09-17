@@ -144,6 +144,7 @@ try {
     New-Item -ItemType Directory -Path $executorTempRoot -Force | Out-Null
     @'
 @echo off
+if defined FAKE_SIGROK_ARGS_LOG >>"%FAKE_SIGROK_ARGS_LOG%" echo %*
 if /I "%~1"=="--version" echo sigrok-cli fixture 0.8.0 & exit /b 0
 if /I "%~1"=="--fail" echo fixture failure 1>&2 & exit /b 7
 if /I "%~1"=="--sleep" powershell.exe -NoProfile -Command "Start-Sleep -Seconds 30" & exit /b 0
@@ -192,6 +193,21 @@ exit /b 0
 
         $selected = Invoke-SigrokScan -Configuration $executorConfiguration -Driver "fx2lafw" -Selector "fx2lafw:conn=5.1"
         Assert-Equal $selected.SelectedDevice "fx2lafw:conn=5.1" "An explicit local selector should resolve multiple devices"
+
+        $executorCapturePath = Join-Path $executorTempRoot "fixture.sr"
+        Set-Content -LiteralPath $executorCapturePath -Value "fixture" -Encoding ASCII
+        $executorDecodeArgsLog = Join-Path $executorTempRoot "decode-args.log"
+        $env:FAKE_SIGROK_ARGS_LOG = $executorDecodeArgsLog
+        $decodeResult = Invoke-SigrokDecode -Configuration $executorConfiguration -CapturePath $executorCapturePath -DecoderSpec "spi:clk=D1:cs=D0:mosi=D5:miso=D3" -Annotation "spi=mosi-data"
+        Assert-Equal $decodeResult.ExitCode 0 "Sigrok decode with annotation selection should succeed"
+        if (Test-Path -LiteralPath $executorDecodeArgsLog -PathType Leaf) {
+            $decodeArgs = Get-Content -LiteralPath $executorDecodeArgsLog -Raw -Encoding UTF8
+            Assert-True ($decodeArgs -match '--protocol-decoder-annotations spi=mosi-data') "Sigrok decode should pass the selected annotation to the CLI"
+        }
+        else {
+            $failures.Add("Sigrok decode argument log is missing")
+        }
+        Remove-Item Env:FAKE_SIGROK_ARGS_LOG -ErrorAction SilentlyContinue
     }
 }
 catch {
@@ -199,6 +215,7 @@ catch {
 }
 finally {
     Remove-Item Env:FAKE_SIGROK_SCAN_MODE -ErrorAction SilentlyContinue
+    Remove-Item Env:FAKE_SIGROK_ARGS_LOG -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $executorTempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
@@ -223,6 +240,7 @@ set "SIGROK_CLI_EXE=$workflowFakeSigrokPath"
 "@ | Set-Content -LiteralPath (Join-Path $workflowConfigRoot "toolchain.local.bat") -Encoding ASCII
     @'
 @echo off
+if defined FAKE_SIGROK_ARGS_LOG >>"%FAKE_SIGROK_ARGS_LOG%" echo %*
 if /I "%~1"=="--scan" (
   echo fx2lafw:conn=4.7 - Saleae Logic fixture
   exit /b 0
@@ -271,6 +289,25 @@ exit /b 0
                 Assert-Equal $effectiveConfig.mapping.cs.logic_channel "D0" "Effective Config should preserve the selected profile mapping"
             }
 
+            $durationArgsLog = Join-Path $workflowTempRoot "sigrok-duration-args.log"
+            $env:FAKE_SIGROK_ARGS_LOG = $durationArgsLog
+            $durationOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action capture -Protocol spi -Profile spi2_flash -OutputRoot $workflowOutputRoot -SampleRate "24MHz" -Samples 100 -CaptureTimeMilliseconds 5000 2>&1
+            $durationExitCode = $LASTEXITCODE
+            Assert-Equal $durationExitCode 0 "Logic capture workflow should accept a longer capture time"
+            $durationRun = Get-ChildItem -LiteralPath $workflowOutputRoot -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
+            if ($null -ne $durationRun) {
+                $durationConfig = Get-Content -LiteralPath (Join-Path $durationRun.FullName "effective_config.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+                Assert-Equal $durationConfig.capture_time_ms 5000 "Effective Config should record the requested capture time"
+            }
+            if (Test-Path -LiteralPath $durationArgsLog -PathType Leaf) {
+                $durationArgs = Get-Content -LiteralPath $durationArgsLog -Raw -Encoding UTF8
+                Assert-True ($durationArgs -match '--time 5000') "Sigrok capture should use the requested time window"
+            }
+            else {
+                $failures.Add("Sigrok capture argument log is missing for the longer capture test")
+            }
+            Remove-Item Env:FAKE_SIGROK_ARGS_LOG -ErrorAction SilentlyContinue
+
             $overrideOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action capture -Protocol spi -Profile spi2_flash -OutputRoot $workflowOutputRoot -CsChannel D6 -Samples 100 2>&1
             $overrideExitCode = $LASTEXITCODE
             Assert-Equal $overrideExitCode 0 "Logic capture workflow should accept a temporary channel override"
@@ -306,6 +343,7 @@ catch {
 }
 finally {
     Remove-Item Env:FAKE_SIGROK_CAPTURE_FAIL -ErrorAction SilentlyContinue
+    Remove-Item Env:FAKE_SIGROK_ARGS_LOG -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $workflowTempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
