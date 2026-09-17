@@ -14,10 +14,13 @@
 //******************************** Includes *********************************//
 #include "app_system.h"
 
+#define LOG_TAG "app_system"
+
 #include "app_display_task.h"
 #include "app_main.h"
 #include "app_ota_worker.h"
 #include "platform_os.h"
+#include "service_log.h"
 //******************************** Includes *********************************//
 
 //******************************** Defines *********************************//
@@ -31,6 +34,7 @@ static void app_system_task(void *argument);
 //******************************** Variables ********************************//
 static platform_bool_t g_appSystemStarted = 0U;
 static platform_thread_t g_appSystemThread = PLATFORM_OS_OBJECT_INITIALIZER;
+static platform_queue_t g_displayQueue = PLATFORM_OS_OBJECT_INITIALIZER;
 
 static const platform_thread_config_t s_app_system_thread_config = {
     .name = "appSystem",
@@ -48,7 +52,15 @@ static const platform_thread_config_t s_app_system_thread_config = {
  */
 static void app_system_task(void *argument)
 {
+    platform_error_t result;
+
     (void)argument;
+
+    result = app_display_task_start(&g_displayQueue);
+    SERVICE_LOG_I("displayTask start result: %d", result);
+
+    result = app_ota_worker_start(&g_displayQueue);
+    SERVICE_LOG_I("otaWorker start result: %d", result);
 
     app_main();
 }

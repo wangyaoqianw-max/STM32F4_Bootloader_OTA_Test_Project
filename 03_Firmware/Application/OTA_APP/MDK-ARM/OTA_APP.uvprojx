@@ -637,6 +637,16 @@
               <FilePath>../01_APP/app_main.c</FilePath>
             </File>
             <File>
+              <FileName>app_display_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/app_display_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_ota_worker.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/app_ota_worker.c</FilePath>
+            </File>
+            <File>
               <FileName>app_system.c</FileName>
               <FileType>1</FileType>
               <FilePath>../01_APP/app_system.c</FilePath>
@@ -830,6 +840,11 @@
               <FileName>impl_freertos_thread.c</FileName>
               <FileType>1</FileType>
               <FilePath>../04_Impl/impl_os/freertos/impl_freertos_thread.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_freertos_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_os/freertos/impl_freertos_queue.c</FilePath>
             </File>
             <File>
               <FileName>impl_platform_bsp_uart.c</FileName>
