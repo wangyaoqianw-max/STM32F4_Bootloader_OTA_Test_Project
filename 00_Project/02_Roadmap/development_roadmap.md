@@ -85,6 +85,7 @@ S12  增加 OTA 安全机制实验
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | Tera Term Reference Sender；UART DMA/RingBuffer；Ymodem Parser / Receiver / Sink；Block 0；CRC-16；Timeout / Cancel / Retry；Firmware Storage Header/Payload 写入；RTT 板测 | S02；S04；现有通信 UART；Ymodem 高可信参考 | `CLOSED` | Tera Term 发送 S04 `.img`；MCU 完整接收并按 Slot 合同写入；`firmware_storage_validate_image()` VALID；中止后不提交 Header，重新传输可恢复 |
 | `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过 |
 | `S05B_Toolkit_Reuse` | 将 PC 工具重构为便于扩展、升级和跨工程复用的嵌入式开发工具框架 | 三层 Config；Core 公共能力；Build/Probe/Debug Adapters；Application/Debug Workflows；`toolkit.bat` 统一入口；Legacy Scripts 兼容；Project Test 隔离；结果合同 | S05；S05A；现有 `05_Tools` | `CLOSED` | 当前稳定能力回归通过；通用实现无项目/机器硬编码；Legacy 入口不双轨；第二同类工程只改配置即可复用；Review 通过 |
+| `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `ACTIVE` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归和文档交接通过；UART/GPIO 延期；当前等待 Review |
 | `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；S05B；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
@@ -127,7 +128,7 @@ PENDING
 Reset
 ```
 
-S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S06 解决正式并发运行模型；S07 才组合业务状态和升级请求。
+S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S05C 增加 SPI / I2C 外部总线证据并冻结工具共享资源运行规则；S06 解决正式并发运行模型；S07 才组合业务状态和升级请求。
 
 ### S08 - S10: Bootloader & Reliability
 
@@ -240,13 +241,14 @@ S05 正式入口：
 当前活动阶段：
 
 ```text
-S05B_Toolkit_Reuse
+S05C_Logic_Analyzer
 Roadmap State: ACTIVE
-Workflow Status: DESIGN_APPROVED
+Workflow Status: READY_FOR_REVIEW
 Branch: main
-Baseline Commit: 9208cfd
-Scope: extensible, upgradable and reusable embedded PC toolkit
-Next action: create implementation_plan.md
+Baseline Commit: 31456f0
+Implementation Commits: bfdffef, ce73ebf, 505f058, 0efb687, 7969958, 57e9cf5, 5971bf6
+Scope: sigrok-cli SPI / I2C external bus evidence and shared-resource tool runtime rules
+Next action: Review S05C verification evidence and decide stage closure
 ```
 
 S05A 已完成 GDB 手工兼容性与控制能力板测，包括 Breakpoint、Continue、Next、Step、Backtrace、Memory Read、Variable Read；GDB Runtime Snapshot 的 resume/halt 自动化、CmBacktrace 接入、三类受控 Fault 和 GDB/CmBacktrace 现场交叉核对也已通过真实板测。S04 Reset / Power-cycle Persistence 补充回归已完成。
@@ -266,12 +268,19 @@ S05B 交接入口：
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md`
 
+S05C 交接入口：
+
+- `00_Project/03_Stages/S05C_Logic_Analyzer/design.md`
+- `00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md`
+- `00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md`
+- `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
+
 后续阶段：
 
 ```text
 S06_RTOS_Runtime
 Roadmap State: PLANNED
-Next action: Design Discussion after S05B closes
+Next action: Design Discussion after S05C closes
 ```
 
-S05B 尚未进入实施；正式实施计划完成并审阅后才进入 `READY_FOR_IMPLEMENTATION`。S06 在 S05B 关闭后继续。
+S05B 已关闭；S05C 已完成实现和验证，当前等待 Review Role。S06 在 S05C 关闭后继续。

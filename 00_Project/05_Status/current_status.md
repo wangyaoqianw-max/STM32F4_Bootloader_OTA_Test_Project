@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05B_Toolkit_Reuse`
-- Status: `CLOSED`
+- Active Stage: `S05C_Logic_Analyzer`
+- Status: `READY_FOR_REVIEW`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -18,6 +18,8 @@
 - Implementation Plan Commit: `a5417e47dc86546176ec87dff5f6c58ddfb14260`
 - Design Approval Commit: `b62bdad9d1279158d4925a417ab5a0e1b4668db3`
 - S05B Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`, `2140117`
+- S05C Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
+- S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - Previous Verification Commit: `98efc77`
 - Verification Commit: `33a1dfe`
 - Previous Review Commit: `ec90dbb`
@@ -25,17 +27,19 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05B_Toolkit_Reuse`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `Project Owner`
-- Updated At: `2026-09-16`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05C)
+- Current Role: `Review Role`
+- Updated At: `2026-09-17`
 
 ## Current Goal
 
-`S05_UART_Ymodem` 已完成 Design、Implementation、Verification、Review，并已通过 PR #7 合并到 `main`。S05A 已关闭；在进入 `S06_RTOS_Runtime` 之前新增 `S05B_Toolkit_Reuse` 小阶段。
+`S05_UART_Ymodem`、S05A 和 S05B 已完成并关闭。S05C Logic Analyzer 已完成实现与验证，目前处于 `READY_FOR_REVIEW`，审核通过后再进入 `S06_RTOS_Runtime`。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
 S05B 已完成设计冻结、正式实施计划和 Task 1–8 实施；Review 发现的通用 J-Link ownership 与 Unified Exit Code 两项问题已在 `2140117` 修复并完成回归，最终复核通过并关闭。阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
+
+S05C 已完成 sigrok-cli 驱动的 SPI / I2C Logic Analyzer Workflow。Executor / Parser、Capture / Decode、Effective Config、Structured Result、自动设备选择、20 秒时间窗口、项目级 W25Q64 / AT24C02 只读断言和真实板级证据均已落地。Host / Toolkit 回归和真实板测均通过；UART 与 GPIO Timing 保持延期。
 
 正式设计与实施计划：
 
@@ -193,6 +197,40 @@ Keil / J-Link / GDB
 
 第二工程复用首选：`wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS`，已使用本地仓库做临时副本演练，仅修改副本配置；通用 Core/Adapter/Workflow/Router 未改动，第二工程源仓库未修改。该工程没有 CmBacktrace，故 CmBacktrace 集成不属于本次复用验收范围。
 
+## S05C Logic Analyzer
+
+当前阶段为 `S05C_Logic_Analyzer`，工作流状态为 `READY_FOR_REVIEW`，Roadmap 状态为 `ACTIVE`，当前角色为 `Review Role`。
+
+正式设计、计划、交接和验证报告：
+
+```text
+00_Project/03_Stages/S05C_Logic_Analyzer/design.md
+00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
+00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
+```
+
+S05C 已交付：
+
+- `sigrok-cli` doctor / scan / capture / decode 统一入口；
+- SPI2 / W25Q64 和 Software I2C / AT24C02 默认 profile；
+- Capture / Decode 分离、已有 `.sr` 重解码和 Structured Result；
+- `SUCCESS / ERROR / INCONCLUSIVE` 通用状态与项目级 PASS/FAIL/ERROR 断言；
+- 基于 `-CaptureTimeMilliseconds` 的长时间采样窗口；
+- 真实板级 SPI / I2C 只读证据和有效配置记录；
+- 工具按共享资源互斥，独立设备/客户端/输出允许并行；J-Link 保持单客户端所有权。
+
+板级证据目录：
+
+```text
+SPI Capture: 06_Output/LogicAnalyzer/20260917_115303_141_0c352bfc
+SPI Decode : 06_Output/LogicAnalyzer/20260917_120504_005_f1fbb543
+I2C Capture: 06_Output/LogicAnalyzer/20260917_115645_477_b13fea3d
+I2C Decode : 06_Output/LogicAnalyzer/20260917_120516_662_0f5a9f26
+```
+
+SPI `0x9F → EF 40 17` 和 I2C `0x50` 事务断言均 PASS。临时固件板测代码已移除，正式 Application 已重新编译、烧录并完成 RTT 冒烟。UART 与 GPIO Timing 为 `DEFERRED`。
+
 ## Stable Tooling After S05
 
 Application 工具链：
@@ -219,11 +257,11 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Design Entry After S05B
+## S06 Design Entry After S05C Review
 
 S06 名称保持 `S06_RTOS_Runtime`，但早期“集成 FreeRTOS”的前提已过时。当前 Application 已具备 RTOS Kernel 和任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
 
-S06 在 S05B 关闭后重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
+S06 在 S05C Review 关闭后重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
 
 ## Deferred Regression
 
@@ -238,6 +276,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-S05B 的设计、实施计划、Host/Contract 回归、真实 YMODEM/Tera Term 实传、Fault trigger/capture、S04 Reset/Power-cycle 专项和第二工程真实板测均已通过；Review 返工项已在 `2140117` 完成，锁冲突、退出码映射、语法、Host/Contract 和当前板卡公共入口均已重新验证，最终审核结论为 `CLOSED / PASS`。
+当前无已知阻塞。S05B 的设计、实施计划、Host/Contract 回归、真实 YMODEM/Tera Term 实传、Fault trigger/capture、S04 Reset/Power-cycle 专项和第二工程真实板测均已通过；S05C 的 Logic Analyzer Host / Toolkit 回归、SPI / I2C 真实板级只读证据、项目断言和正式 Application 恢复验证均已通过，等待 Review Role 审核。
 
-下一步：S05B 已关闭；进入 `S06_RTOS_Runtime` Design。
+下一步：完成 S05C Review；通过后进入 `S06_RTOS_Runtime` Design。

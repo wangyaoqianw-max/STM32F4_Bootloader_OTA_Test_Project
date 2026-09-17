@@ -1,6 +1,6 @@
 # S05C Logic Analyzer Agent Workflow Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 在现有 `05_Tools` Toolkit 中增加基于 `sigrok-cli` 的 SPI / I2C Logic Analyzer Agent Workflow，输出可复现、机器可读的硬件总线证据，并完成 W25Q64 与 AT24C02 真实板级只读验收。
 
@@ -78,10 +78,10 @@
 
 **Produces:** committed channel profiles, machine path contract, normalized workflow result schema.
 
-- [ ] **Step 1: Write failing contract tests** for missing `SIGROK_CLI_EXE`, profile load, CLI override priority, invalid channel names and result status enum.
-- [ ] **Step 2: Run contract test and confirm FAIL** because S05C config support does not exist yet.
-- [ ] **Step 3: Add `SIGROK_CLI_EXE` to `toolchain.local.example.bat`** only; do not commit a machine path.
-- [ ] **Step 4: Create `logic_analyzer.profiles.json`** with current verified profiles:
+- [x] **Step 1: Write failing contract tests** for missing `SIGROK_CLI_EXE`, profile load, CLI override priority, invalid channel names and result status enum.
+- [x] **Step 2: Run contract test and confirm FAIL** because S05C config support does not exist yet.
+- [x] **Step 3: Add `SIGROK_CLI_EXE` to `toolchain.local.example.bat`** only; do not commit a machine path.
+- [x] **Step 4: Create `logic_analyzer.profiles.json`** with current verified profiles:
 
 ```json
 {
@@ -106,9 +106,9 @@
 }
 ```
 
-- [ ] **Step 5: Define normalized result fields** at minimum: `status`, `operation`, `device`, `capture`, `mapping`, `transactions`, `error_class`, `artifacts`.
-- [ ] **Step 6: Re-run contract test, Expected PASS.**
-- [ ] **Step 7: Commit** `feat(tools): add logic analyzer configuration contract`.
+- [x] **Step 5: Define normalized result fields** at minimum: `status`, `operation`, `device`, `capture`, `mapping`, `transactions`, `error_class`, `artifacts`.
+- [x] **Step 6: Re-run contract test, Expected PASS.**
+- [x] **Step 7: Commit** `feat(tools): add logic analyzer configuration contract`.
 
 ## Task 2: Implement Sigrok Executor
 
@@ -118,13 +118,13 @@
 
 **Produces:** stable process wrapper for version, scan, capture and decode commands.
 
-- [ ] **Step 1: Add fake-executable Host Tests** covering version, scan, non-zero exit, timeout, stdout/stderr capture and owned-process cleanup.
-- [ ] **Step 2: Confirm tests FAIL.**
-- [ ] **Step 3: Implement Executor using existing Toolkit Core process primitives**, not a second process/timeout framework.
-- [ ] **Step 4: Add runtime scan logic**: zero match -> `DEVICE_NOT_FOUND`; one match -> auto select; multiple matches -> `AMBIGUOUS_DEVICE` unless explicit local selector exists.
-- [ ] **Step 5: Ensure Executor contains no W25Q64/AT24C02 assertions and no permanent `conn=` value.**
-- [ ] **Step 6: Re-run Host Tests, Expected PASS.**
-- [ ] **Step 7: Commit** `feat(tools): add sigrok logic analyzer executor`.
+- [x] **Step 1: Add fake-executable Host Tests** covering version, scan, non-zero exit, timeout, stdout/stderr capture and owned-process cleanup.
+- [x] **Step 2: Confirm tests FAIL.**
+- [x] **Step 3: Implement Executor using existing Toolkit Core process primitives**, not a second process/timeout framework.
+- [x] **Step 4: Add runtime scan logic**: zero match -> `DEVICE_NOT_FOUND`; one match -> auto select; multiple matches -> `AMBIGUOUS_DEVICE` unless explicit local selector exists.
+- [x] **Step 5: Ensure Executor contains no W25Q64/AT24C02 assertions and no permanent `conn=` value.**
+- [x] **Step 6: Re-run Host Tests, Expected PASS.**
+- [x] **Step 7: Commit** `feat(tools): add sigrok logic analyzer executor`.
 
 ## Task 3: Implement Parser With Golden Fixtures
 
@@ -135,13 +135,13 @@
 
 **Produces:** deterministic structured parsing independent of real hardware.
 
-- [ ] **Step 1: Capture minimal real sigrok-cli fixture text** from existing verified SPI/I2C/device-scan outputs; remove machine absolute paths and transient USB topology where unnecessary.
-- [ ] **Step 2: Write parser tests** for device scan, SPI annotations, I2C annotations and empty decode.
-- [ ] **Step 3: Confirm parser tests FAIL.**
-- [ ] **Step 4: Implement parser** converting sigrok text to stable PowerShell objects / JSON records.
-- [ ] **Step 5: Map empty protocol evidence to `INCONCLUSIVE`, not FAIL.**
-- [ ] **Step 6: Run parser tests repeatedly without USB hardware, Expected PASS.**
-- [ ] **Step 7: Commit** `feat(tools): add structured sigrok parser fixtures`.
+- [x] **Step 1: Capture minimal real sigrok-cli fixture text** from existing verified SPI/I2C/device-scan outputs; remove machine absolute paths and transient USB topology where unnecessary.
+- [x] **Step 2: Write parser tests** for device scan, SPI annotations, I2C annotations and empty decode.
+- [x] **Step 3: Confirm parser tests FAIL.**
+- [x] **Step 4: Implement parser** converting sigrok text to stable PowerShell objects / JSON records.
+- [x] **Step 5: Map empty protocol evidence to `INCONCLUSIVE`, not FAIL.**
+- [x] **Step 6: Run parser tests repeatedly without USB hardware, Expected PASS.**
+- [x] **Step 7: Commit** `feat(tools): add structured sigrok parser fixtures`.
 
 ## Task 4: Implement Capture / Decode Workflow
 
@@ -151,9 +151,9 @@
 
 **Produces:** generic Capture, Decode, SPI and I2C workflow actions.
 
-- [ ] **Step 1: Write Workflow contract tests** proving config load, profile resolution, CLI override, effective config generation and artifact path creation.
-- [ ] **Step 2: Confirm FAIL.**
-- [ ] **Step 3: Implement internal actions**:
+- [x] **Step 1: Write Workflow contract tests** proving config load, profile resolution, CLI override, effective config generation and artifact path creation.
+- [x] **Step 2: Confirm FAIL.**
+- [x] **Step 3: Implement internal actions**:
 
 ```text
 scan
@@ -163,11 +163,11 @@ spi = capture + decode
 i2c = capture + decode
 ```
 
-- [ ] **Step 4: Preserve standalone decode** so an existing `.sr` can be decoded again with different channel mapping/options.
-- [ ] **Step 5: Before capture, print and persist Effective Config.**
-- [ ] **Step 6: Write artifacts to `06_Output/LogicAnalyzer/<run>/`.**
-- [ ] **Step 7: Re-run Workflow contract tests, Expected PASS.**
-- [ ] **Step 8: Commit** `feat(tools): add logic analyzer capture decode workflow`.
+- [x] **Step 4: Preserve standalone decode** so an existing `.sr` can be decoded again with different channel mapping/options.
+- [x] **Step 5: Before capture, print and persist Effective Config.**
+- [x] **Step 6: Write artifacts to `06_Output/LogicAnalyzer/<run>/`.**
+- [x] **Step 7: Re-run Workflow contract tests, Expected PASS.**
+- [x] **Step 8: Commit** `feat(tools): add logic analyzer capture decode workflow`.
 
 ## Task 5: Add Unified Toolkit Router Commands
 
@@ -188,12 +188,12 @@ toolkit.bat logic decode <capture.sr> ...
 
 Exact PowerShell parameter shape may follow current Router conventions, but external command family must remain `toolkit logic ...`.
 
-- [ ] **Step 1: Add Router contract tests** for valid/invalid subcommands and exit mapping.
-- [ ] **Step 2: Confirm FAIL.**
-- [ ] **Step 3: Add only routing/argument validation to `toolkit.ps1`; do not duplicate sigrok logic in Router.**
-- [ ] **Step 4: Update `05_Tools/README.md`** with Agent examples and temporary wiring override semantics.
-- [ ] **Step 5: Run Router/legacy regression and ensure existing commands remain unchanged.**
-- [ ] **Step 6: Commit** `feat(tools): expose logic analyzer toolkit commands`.
+- [x] **Step 1: Add Router contract tests** for valid/invalid subcommands and exit mapping.
+- [x] **Step 2: Confirm FAIL.**
+- [x] **Step 3: Add only routing/argument validation to `toolkit.ps1`; do not duplicate sigrok logic in Router.**
+- [x] **Step 4: Update `05_Tools/README.md`** with Agent examples and temporary wiring override semantics.
+- [x] **Step 5: Run Router/legacy regression and ensure existing commands remain unchanged.**
+- [x] **Step 6: Commit** `feat(tools): expose logic analyzer toolkit commands`.
 
 ## Task 6: Add Project-Specific SPI / I2C Assertions
 
@@ -203,18 +203,18 @@ Exact PowerShell parameter shape may follow current Router conventions, but exte
 
 **Produces:** Project Test verdicts independent of generic Logic Workflow.
 
-- [ ] **Step 1: Implement W25Q64 assertion** against a decoded JEDEC transaction:
+- [x] **Step 1: Implement W25Q64 assertion** against a decoded JEDEC transaction:
 
 ```text
 command  = 0x9F
 expected = EF 40 17
 ```
 
-- [ ] **Step 2: Implement AT24C02 assertion** for address `0x50`, START / repeated START / STOP and ACK/NACK transaction structure.
-- [ ] **Step 3: Do not permanently assert EEPROM payload bytes** unless the test explicitly owns known fixture contents.
-- [ ] **Step 4: Run assertions against Golden Fixtures, Expected PASS.**
-- [ ] **Step 5: Verify generic Adapter/Workflow contains zero device-specific matches.**
-- [ ] **Step 6: Commit** `test(s05c): add spi and i2c project assertions`.
+- [x] **Step 2: Implement AT24C02 assertion** for address `0x50`, START / repeated START / STOP and ACK/NACK transaction structure.
+- [x] **Step 3: Do not permanently assert EEPROM payload bytes** unless the test explicitly owns known fixture contents.
+- [x] **Step 4: Run assertions against Golden Fixtures, Expected PASS.**
+- [x] **Step 5: Verify generic Adapter/Workflow contains zero device-specific matches.**
+- [x] **Step 6: Commit** `test(s05c): add spi and i2c project assertions`.
 
 ## Task 7: Real-Board SPI Acceptance
 
@@ -229,14 +229,14 @@ D3 → PB14 → SPI2 MISO
 D5 → PB15 → SPI2 MOSI
 ```
 
-- [ ] **Step 1: Run `toolkit logic doctor/scan` and verify analyzer discovery.**
-- [ ] **Step 2: Start SPI capture before triggering/allowing target transaction.**
-- [ ] **Step 3: Capture W25Q64 read-only traffic.**
-- [ ] **Step 4: Confirm `.sr`, effective config, decode JSON and result JSON exist.**
-- [ ] **Step 5: Decode expected SPI transaction and run W25Q64 project assertion.**
-- [ ] **Step 6: Expected Project Verdict: PASS.**
-- [ ] **Step 7: Confirm no Flash erase/program was introduced for S05C.**
-- [ ] **Step 8: Preserve evidence for final Verification report.**
+- [x] **Step 1: Run `toolkit logic doctor/scan` and verify analyzer discovery.**
+- [x] **Step 2: Start SPI capture before triggering/allowing target transaction.**
+- [x] **Step 3: Capture W25Q64 read-only traffic.**
+- [x] **Step 4: Confirm `.sr`, effective config, decode JSON and result JSON exist.**
+- [x] **Step 5: Decode expected SPI transaction and run W25Q64 project assertion.**
+- [x] **Step 6: Expected Project Verdict: PASS.**
+- [x] **Step 7: Confirm no Flash erase/program was introduced for S05C.**
+- [x] **Step 8: Preserve evidence for final Verification report.**
 
 ## Task 8: Real-Board I2C Acceptance
 
@@ -247,13 +247,13 @@ D2 → PB6 → I2C SCL
 D4 → PB7 → I2C SDA
 ```
 
-- [ ] **Step 1: Start I2C capture before target access.**
-- [ ] **Step 2: Capture AT24C02 read-only transaction.**
-- [ ] **Step 3: Confirm address `0x50`, START/repeated START/STOP, R/W direction and ACK/NACK annotations.**
-- [ ] **Step 4: Confirm `.sr`, effective config, decode JSON and result JSON exist.**
-- [ ] **Step 5: Run project assertion, Expected PASS.**
-- [ ] **Step 6: Confirm no arbitrary EEPROM write was introduced.**
-- [ ] **Step 7: Preserve evidence for final Verification report.**
+- [x] **Step 1: Start I2C capture before target access.**
+- [x] **Step 2: Capture AT24C02 read-only transaction.**
+- [x] **Step 3: Confirm address `0x50`, START/repeated START/STOP, R/W direction and ACK/NACK annotations.**
+- [x] **Step 4: Confirm `.sr`, effective config, decode JSON and result JSON exist.**
+- [x] **Step 5: Run project assertion, Expected PASS.**
+- [x] **Step 6: Confirm no arbitrary EEPROM write was introduced.**
+- [x] **Step 7: Preserve evidence for final Verification report.**
 
 ## Task 9: Full Regression, Verification And Handoff
 
@@ -264,14 +264,14 @@ D4 → PB7 → I2C SDA
 - Update: `PROJECT_CONTEXT.md`
 - Update: `00_Project/02_Roadmap/development_roadmap.md`
 
-- [ ] **Step 1: Run all S05C Host/Contract/Fixture tests.**
-- [ ] **Step 2: Run existing Toolkit regression:** build, flash run, RTT, snapshot resume and existing contract suites.
-- [ ] **Step 3: Confirm no J-Link/sigrok owned process or lock remains after runs.**
-- [ ] **Step 4: Record SPI/I2C real-board evidence and failure-path observations.**
-- [ ] **Step 5: Explicitly record UART/GPIO as DEFERRED, not failed.**
-- [ ] **Step 6: Create final Verification report.**
-- [ ] **Step 7: Update handoff/status/context/roadmap only after verification evidence is complete.**
-- [ ] **Step 8: Commit** `docs(s05c): verify and hand off logic analyzer workflow`.
+- [x] **Step 1: Run all S05C Host/Contract/Fixture tests.**
+- [x] **Step 2: Run existing Toolkit regression:** build, flash run, RTT, snapshot resume and existing contract suites.
+- [x] **Step 3: Confirm no J-Link/sigrok owned process or lock remains after runs.**
+- [x] **Step 4: Record SPI/I2C real-board evidence and failure-path observations.**
+- [x] **Step 5: Explicitly record UART/GPIO as DEFERRED, not failed.**
+- [x] **Step 6: Create final Verification report.**
+- [x] **Step 7: Update handoff/status/context/roadmap only after verification evidence is complete.**
+- [x] **Step 8: Commit** `docs(s05c): verify and hand off logic analyzer workflow`.
 
 ## Verification Matrix
 

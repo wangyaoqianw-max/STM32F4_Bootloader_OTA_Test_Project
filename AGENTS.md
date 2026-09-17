@@ -131,10 +131,13 @@ Keil Build
 3. 新环境从 `toolchain.local.example.bat` 复制本地配置后再调整路径；
 4. 脚本报告本地配置缺失或无效时，才允许调查本机工具安装位置；
 5. 编译日志、烧录日志和 RTT 日志统一输出到 `06_Output/Logs`；
-6. J-Link 同一时刻只应由一个工具占用；自动烧录或采集前关闭可能占用 Probe 的 Keil Debug、RTT Viewer 等程序；
-7. `run_app_cycle.bat` 成功只表示 Build / Flash / RTT Capture 工具链动作成功，不等价于阶段级硬件验证 PASS；
-8. 板级功能结论仍必须依据当前 Stage 的验收条件、真实数据检查和验证报告；
-9. 云端、容器或无 USB 透传的 Agent 环境不得把脚本存在视为具备真实 J-Link/串口访问能力。
+6. 工具运行按共享资源划分：不共享同一客户端、设备、端口、输出文件或构建输出的工具允许并行使用；不得为了不存在的资源竞争而全局串行化；
+7. J-Link 同一时刻只应由一个客户端占用；自动烧录或采集前关闭可能占用 Probe 的 Keil Debug、RTT Viewer、RTT Logger、GDB Server 等程序；
+8. sigrok 逻辑分析仪与 J-Link/Keil/RTT 客户端使用独立设备，满足输出路径和设备实例不冲突时允许并行；同一逻辑分析仪实例、同一串口或同一输出文件/目录仍须串行；
+9. Build、Flash、RTT、GDB、Logic Analyzer、Host Test 等 Workflow 可以跨资源并行，但共享工程源码、构建输出、J-Link Probe、逻辑分析仪、串口或目标输出目录时必须遵守对应资源的互斥约束；
+10. `run_app_cycle.bat` 成功只表示 Build / Flash / RTT Capture 工具链动作成功，不等价于阶段级硬件验证 PASS；
+11. 板级功能结论仍必须依据当前 Stage 的验收条件、真实数据检查和验证报告；
+12. 云端、容器或无 USB 透传的 Agent 环境不得把脚本存在视为具备真实 J-Link/串口访问能力。
 
 后续增加串口、Host Test、打包、崩溃分析等自动化时，继续通过 `05_Tools` 提供统一入口，不把机器相关路径写入生产代码或阶段设计。
 

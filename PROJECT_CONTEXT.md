@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05B_Toolkit_Reuse`
-- Active Stage Status: `CLOSED`
+- Active Stage: `S05C_Logic_Analyzer`
+- Active Stage Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
@@ -18,17 +18,19 @@
 - S05A Review Commit: `32f3368`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
+- S05C Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
+- S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - Last Closed Stage: `S05B_Toolkit_Reuse`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05B)
-- Current Role: `Project Owner`
-- Updated At: `2026-09-16`
+- Next Planned Stage: `S06_RTOS_Runtime` (after S05C)
+- Current Role: `Review Role`
+- Updated At: `2026-09-17`
 
 ## Current Goal
 
-S05、S05A 和 S05B 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。下一阶段为 `S06_RTOS_Runtime`。
+S05、S05A 和 S05B 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。S05C Logic Analyzer 已完成实现和验证，目前等待 Review；审核通过后进入 `S06_RTOS_Runtime`。
 
-S05B 的目标不是简单整理目录，而是把已经验证过的 PC 工具从“当前工程专用脚本集合”重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。
+S05B 的目标不是简单整理目录，而是把已经验证过的 PC 工具从“当前工程专用脚本集合”重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。S05C 在该框架内增加了 `sigrok-cli` 驱动的 SPI / I2C Logic Analyzer 外部总线证据能力。
 
 冻结架构：
 
@@ -176,6 +178,34 @@ wangyaoqianw-max/stm32f4_DMA_UART_ring_RTOS
 
 演练使用本地仓库的临时副本，只替换 Toolkit 配置，不修改第二工程生产代码，也不得为了适配第二工程编辑通用 Core / Adapter / Workflow。该工程没有 CmBacktrace，CmBacktrace 集成不属于该复用目标的验收范围。
 
+## S05C Logic Analyzer Checkpoint
+
+S05C 已完成设计范围内的 SPI / I2C Logic Analyzer Workflow，当前状态为 `READY_FOR_REVIEW`。实现保持 `Config + Core + Adapters + Workflows + Project Tests + Router` 边界：sigrok Executor / Parser 不包含 W25Q64 或 AT24C02 语义，项目级判断位于 `05_Tools/Tests/S05C_LogicAnalyzer/`。
+
+已验证：
+
+```text
+sigrok doctor / scan                 PASS
+SPI capture / decode                 PASS
+W25Q64 JEDEC 0x9F → EF 40 17         PASS
+I2C capture / decode                 PASS
+AT24C02 address 0x50 transaction     PASS
+Host / Toolkit regression            PASS
+Application build / flash / RTT      PASS
+GDB snapshot resume                   PASS
+```
+
+板测采集使用较宽时间窗口：SPI `24MHz / 20s`，I2C `1MHz / 20s`。两次均严格先启动 sigrok capture，再由独立 J-Link 客户端复位运行；同一 J-Link Probe 仍只允许一个客户端。工具规则已写入根 `AGENTS.md` 和 `05_Tools/README.md`：只在共享客户端、设备、端口、输出文件/目录或构建输出时互斥，独立资源允许并行。
+
+正式证据：
+
+```text
+04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
+00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+```
+
+UART 与 GPIO Timing 明确延期；S05C 尚未直接关闭，等待 Review Role 审核。
+
 ## Stable S04 Storage / Firmware Contract
 
 External Flash：
@@ -301,8 +331,8 @@ Verification Role 需要独立记录：
 
 FreeRTOS 已经存在并正常运行，S06 不再是“移植 FreeRTOS”，而是正式化 Application Runtime / Concurrency Model。
 
-S06 在 S05B 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage Serialization、Blocking API、Timeout/Cancel/Error Recovery、正常业务与后台 OTA 并发、日志资源竞争。
+S06 在 S05C Review 关闭后重点讨论：Task Topology / Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage Serialization、Blocking API、Timeout/Cancel/Error Recovery、正常业务与后台 OTA 并发、日志资源竞争。
 
 ## Next Action
 
-S05B 已完成最终复核并以 `CLOSED / PASS` 关闭；下一步进入 `S06_RTOS_Runtime` Design。
+S05B 已完成最终复核并以 `CLOSED / PASS` 关闭；S05C 已完成实现和验证，当前等待 Review Role 审核。审核通过后进入 `S06_RTOS_Runtime` Design。

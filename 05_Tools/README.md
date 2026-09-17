@@ -175,6 +175,8 @@ Python Sender 主要用于 Host Test、Agent 自动化和协议诊断；S05 默�
 
 RTT Logger 是 J-Link 客户端，受单 Probe 所有权限制，不能与 J-Link Commander、GDB Server 或 RTT Viewer 并行连接。Fault 流程因此严格执行 `GDB detach/quit → 释放 J-Link → RTT Logger`；串口监听器不占用 J-Link，可提前打开。
 
+工具只在共享资源上互斥：不共享同一客户端、设备、端口或输出文件/目录的 Workflow 可以并行运行。sigrok 逻辑分析仪与 J-Link、Keil、RTT 客户端使用独立设备，可以在输出路径不冲突时并行；同一逻辑分析仪实例、同一串口和同一 J-Link Probe 仍必须串行。
+
 ## 配置与依赖
 
 首次使用：
@@ -217,7 +219,7 @@ S05C 通过 `sigrok-cli` 提供 SPI / I2C 外部总线证据，统一入口为�
 ```bat
 05_Tools\toolkit.bat logic doctor
 05_Tools\toolkit.bat logic scan
-05_Tools\toolkit.bat logic spi -Profile spi2_flash
+05_Tools\toolkit.bat logic spi -Profile spi2_flash -CaptureTimeMilliseconds 20000
 05_Tools\toolkit.bat logic i2c -Profile i2c_eeprom
 05_Tools\toolkit.bat logic decode 06_Output\LogicAnalyzer\<run>\capture.sr -Protocol spi -Profile spi2_flash
 ```
@@ -237,11 +239,13 @@ S05C 通过 `sigrok-cli` 提供 SPI / I2C 外部总线证据，统一入口为�
 `capture.sr`、`decode.json` 和 `result.json`，已有 `.sr` 可以直接重新 Decode。通用 Logic Workflow
 的状态为 `SUCCESS / ERROR / INCONCLUSIVE`，无总线活动或空解码不会直接判定项目功能 FAIL。
 
+采集既可以使用 `-Samples`，也可以使用 `-CaptureTimeMilliseconds` 指定时间窗口；后者适合启动后事务时机不固定的板测，前后保留较长空白区不会影响后续 Decode。
+
 不要求把 GDB 或 ARM GCC 加入全局 `PATH`；填写 `ARM_GDB` 的完整路径即可，避免影响现有 Keil 编译链。
 
-J-Link 同一时刻只能由一个工具占用。Flash、RTT、GDB、Run 和 Fault 公共 Workflow 会共同获取
+J-Link 同一时刻只能由一个客户端占用。Flash、RTT、GDB、Run 和 Fault 公共 Workflow 会共同获取
 `PROJECT_LOG_DIR/toolkit_jlink.lock`，并在成功或失败时释放；锁冲突返回 `30 PROBE_ERROR`，不会启动第二个
-J-Link owner。执行工具前仍应关闭 Keil Debug、RTT Viewer、RTT Logger 和其他外部 J-Link 客户端。
+J-Link owner。执行 J-Link 相关 Workflow 前仍应关闭 Keil Debug、RTT Viewer、RTT Logger 和其他外部 J-Link 客户端；不占用 J-Link 的 sigrok、串口或 Host Test 不需要为此全局等待。
 
 ## 测试入口
 

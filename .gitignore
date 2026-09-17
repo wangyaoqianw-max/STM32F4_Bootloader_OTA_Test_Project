@@ -23,6 +23,7 @@
 03_Firmware/**/Release/
 
 # Generated outputs
+06_Output/LogicAnalyzer/*
 06_Output/Firmware/*
 !06_Output/Firmware/README.md
 06_Output/Packages/*
