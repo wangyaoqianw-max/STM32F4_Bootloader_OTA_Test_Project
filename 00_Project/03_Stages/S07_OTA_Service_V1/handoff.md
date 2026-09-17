@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `13d67efcecfa1e99b14eb0781e77aed3749bda2c` (Task 1; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3` (Task 2 correction; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -416,10 +416,17 @@ Current S07 implementation changes:
 03_Firmware/Application/OTA_APP/Core/Src/stm32f4xx_it.c
 03_Firmware/Application/OTA_APP/Middlewares/Third_Party/FreeRTOS/Source/tasks.c
 03_Firmware/Application/OTA_APP/03_Platform/platform_mcu/irq/platform_mcu_irq.h
-03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_mcu_irq.h
 03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_mcu_irq.c
 04_Test/Host/S07_OTA_Service/s07_irq_host_test.c
 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx
+03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/key/platform_key.h
+03_Firmware/Application/OTA_APP/03_Platform/platform_bsp/key/platform_key.c
+03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_key.h
+03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_key.c
+03_Firmware/Application/OTA_APP/01_APP/app_runtime_contract.h
+03_Firmware/Application/OTA_APP/01_APP/app_ota_worker.c
+03_Firmware/Application/OTA_APP/Core/Src/main.c
+04_Test/Host/S07_OTA_Service/s07_key_host_test.c
 ```
 
 ### Deviations From Plan
@@ -428,16 +435,22 @@ Task 0 found and recovered CubeMX regeneration regressions: `configTOTAL_HEAP_SI
 
 Task 1 added the minimal Platform MCU IRQ abstraction. The public interface exposes only project IRQ IDs and enable/disable/set-priority/clear-pending operations; the STM32 implementation maps KEY EXTI0, USART1 and the two USART1 DMA streams to CMSIS NVIC APIs. Priority values below `PLATFORM_MCU_IRQ_FREERTOS_SAFE_PRIORITY` (5) are rejected for the IRQs that may call FreeRTOS ISR APIs. No callback manager or STM32 IRQ type is exposed above Impl.
 
+Task 2 added the thin Platform BSP Key path. `HAL_GPIO_EXTI_Callback` only passes the pin to `impl_platform_bsp_key`; the BSP mapping converts `KEY_1` into a Platform Key event and the worker callback sets the independent `APP_OTA_NOTIFY_KEY_1` Thread Flag through the existing ISR-safe adapter. The worker applies a 40 ms task-context debounce and clears key flags when stopping a transfer, so key presses during the current transfer are not replayed as a new session. No Key Task was added.
+
+Task 2 review correction: the first implementation placed the board-specific Key files under MCU capability directories and used a reduced file format. Before continuing, the files were moved to `platform_bsp/key` and `impl_bsp`, while the generic IRQ implementation remains under `platform_mcu/irq` and `impl_mcu`. The new files now follow the repository C format, include contract comments, and keep board pin mapping out of MCU capability code.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
 
 Task 1 code verification: the test-first Host contract test initially failed because the new public header was absent, then passed with `gcc -std=c99 -Wall -Wextra -Werror`; `05_Tools\\toolkit.bat build` PASS with the Keil build log reporting 0 errors and 0 warnings; project XML parse confirmed the new Impl source is included; `git diff --check` PASS. Hardware verification: NOT APPLICABLE for the abstraction contract; no new board behavior was claimed.
 
+Task 2 code verification: after the layering and style correction, the IRQ and Platform Key Host contract tests passed with `gcc -std=c99 -Wall -Wextra -Werror`; the project XML parse confirmed the BSP Key and MCU IRQ source paths; `05_Tools\\toolkit.bat build` PASS; `git diff --check` PASS. Hardware verification: PENDING; the PA0 physical press and ISR-to-worker trace still require board evidence.
+
 ### Known Issues
 
 - Full S07 Metadata, Service, sink, key/IRQ, provisioning and board acceptance work remains pending.
-- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 must wire the PA0 EXTI event to the existing `otaWorker` notification path without adding a task.
+- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 must migrate Metadata V2 before the Service can own the OTA transaction.
 - Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
 
@@ -464,4 +477,10 @@ power-loss behavior
 
 ```text
 9adba52aa75ddaff906e42aa8bae433b654ae761
+```
+
+### Task 2 Correction Commit
+
+```text
+6ac6a49756a87079f1bc2b95d190fc44d82f64c3
 ```

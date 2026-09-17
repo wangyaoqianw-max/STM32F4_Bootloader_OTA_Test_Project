@@ -81,11 +81,11 @@
 - Produces: generic KEY_1 press/event signal
 - Consumes: EXTI callback + `xTaskNotifyFromISR()`
 
-- [ ] Step 1: 按项目 Platform/Impl 现有风格定义最小 Key abstraction，只暴露 key/input event，不暴露 OTA 语义。
-- [ ] Step 2: 将 PA0 Falling Edge 从 HAL callback 转发到 Key Impl/Platform 层；ISR 路径只识别来源并发送 lightweight notification。
-- [ ] Step 3: 给 `otaWorker` 分配 KEY notification bit，与现有 UART RX notification bit 明确分离。
-- [ ] Step 4: 在 `otaWorker` 任务上下文实现 30~50 ms debounce，确认 `RECEIVING/VERIFYING/COMMITTING` 中重复 KEY 不产生重入。
-- [ ] Step 5: Build + IRQ/notification smoke，提交并记录 Commit。
+- [x] Step 1: 按项目 Platform/Impl 现有风格定义最小 Key abstraction，只暴露 key/input event，不暴露 OTA 语义。
+- [x] Step 2: 将 PA0 Falling Edge 从 HAL callback 转发到 Key Impl/Platform 层；ISR 路径只识别来源并发送 lightweight notification。
+- [x] Step 3: 给 `otaWorker` 分配 KEY notification bit，与现有 UART RX notification bit 明确分离。
+- [x] Step 4: 在 `otaWorker` 任务上下文实现 30~50 ms debounce，确认 `RECEIVING/VERIFYING/COMMITTING` 中重复 KEY 不产生重入。
+- [x] Step 5: Build + IRQ/notification smoke，提交并记录 Commit。
 
 ## Task 3: Firmware Metadata V2
 
