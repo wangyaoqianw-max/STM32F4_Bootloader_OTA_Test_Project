@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `23ac3db` (Task 8; Task 7: `a8045d297442fe7b97bc318a37b53b05b4a4b968`; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `2ab34f1` (Task 10 production fix; Task 8: `23ac3db`; Task 7: `a8045d297442fe7b97bc318a37b53b05b4a4b968`; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -439,6 +439,8 @@ Current S07 implementation changes:
 03_Firmware/Application/OTA_APP/02_Service/service_firmware/ota_firmware_sink.h
 03_Firmware/Application/OTA_APP/02_Service/service_firmware/ota_firmware_sink.c
 04_Test/Host/S07_OTA_Service/s07_ota_firmware_sink_host_test.c
+03_Firmware/Application/OTA_APP/02_Service/service_ota/service_ota.h
+03_Firmware/Application/OTA_APP/02_Service/service_ota/service_ota.c
 03_Firmware/Application/OTA_APP/01_APP/app_ota_worker.c
 03_Firmware/Application/OTA_APP/01_APP/app_ota_runtime.h
 03_Firmware/Application/OTA_APP/01_APP/app_ota_runtime.c
@@ -451,6 +453,7 @@ Current S07 implementation changes:
 04_Test/Board/S07_OTA_Service/README.md
 04_Test/Board/S07_OTA_Service/app_s07_provision_test.h
 04_Test/Board/S07_OTA_Service/app_s07_provision_test.c
+04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md
 ```
 
 ### Deviations From Plan
@@ -475,6 +478,8 @@ Task 7 completed the Display/User Interaction bridge. Existing S06 display state
 
 Task 8 established the Factory baseline through a temporary board test under `04_Test/Board/S07_OTA_Service`. The test reuses the production Firmware Storage, Metadata, `ota_firmware_sink` and YMODEM Receiver; it accepts only an empty device or the explicitly approved S04 residual state, writes the new image to Slot A, validates it, clears the approved legacy Slot B when applicable, and commits Metadata V2 with `confirmedSlot=A`, `pendingSlot=NONE` and `upgradeState=NONE`. No `toolkit provision` command or production startup dependency was added. The actual CH340 sender port is `COM9`.
 
+Task 10 completed the available non-physical acceptance work. A real COM9 YMODEM session transferred the packed `1.1.0` image (`77456` bytes, `76` blocks, sender exit `0`, retries `2`) and RTT reached `READY_TO_INSTALL` for Slot B with `dropped=0` and `errors=0`. A second KEY action was exercised through the public BSP EXTI forwarding function under GDB; the Service committed durable `PENDING` and requested reset. A temporary read-only S04 persistence test recovered the EEPROM record and reported both copies valid, `sequence=6`, `confirmedSlot=A`, `pendingSlot=B`, both slots VALID and `upgradeState=PENDING`; the temporary modifications were restored exactly. During this test a terminal-progress queue-flooding defect was found and fixed in `2ab34f1`; the Service Host Test, Keil link and subsequent COM9 session passed. Physical PA0 KEY, visual LCD full-flow and failure-path acceptance remain pending by explicit user decision.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
@@ -497,14 +502,18 @@ Task 8 board verification: existing Toolkit composition was investigated. The cu
 
 Task 9 verification: all S07 Host tests passed with `gcc -std=c99 -Wall -Wextra -Werror`: IRQ, BSP Key, Display/Worker contracts, Metadata V1/V2, production sink and Service state machine. Existing S04/S05 regression passed: Firmware image format, current Firmware Storage, storage write, YMODEM parser/receiver and historical S05 sink tests. Python/toolkit regression passed: Firmware pack (2 tests), Python YMODEM (24 tests), S04 persistence (15 tests), legacy/transport compatibility, Application workflow, Toolkit Core, Debug, S04 isolation and Logic Analyzer contracts. `05_Tools\\toolkit.bat build` completed with 0 errors and 0 warnings. Production dependency scan found no `s05_ymodem_flash_sink` or `04_Test/Board/S05_UART_Ymodem` reference under `03_Firmware/Application/OTA_APP`. `git diff --check` passed. No S07 production code was changed during this regression.
 
+Task 10 verification: `05_Tools\\toolkit.bat flash run` and `05_Tools\\toolkit.bat rtt 5` both returned PASS after restoring the formal Application. The clean formal Keil rebuild produced `OTA_APP.build_log.htm` with `0 Error(s), 13 Warning(s)`; the Toolkit maps warnings to exit code `1`, so the warning result is recorded as Build-with-warnings rather than silently called warning-free. The warnings are existing GPIO/UART/FreeRTOS boundary checks outside the S07 change set. Full evidence, including the distinction between GDB-simulated key forwarding and physical PA0 acceptance, is in `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`.
+
 ### Known Issues
 
-- Full S07 OTA transfer and complete board acceptance work remains pending.
+- Full S07 OTA transfer has a COM9/GDB-simulated success and durable Metadata PENDING evidence, but complete physical board acceptance remains pending.
 - Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 implementation is recorded in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`.
 - Factory baseline provisioning is complete for the tested device through the temporary board test in `23ac3db`; the test is intentionally not part of the production startup path. The configured build artifact still does not emit `OTA_APP.bin`, so repeatable pack steps must continue to use the documented temporary `fromelf` conversion until the project/toolkit artifact contract is separately addressed.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
 - Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`; Task 7 display rendering is committed in `a8045d297442fe7b97bc318a37b53b05b4a4b968`.
 - Task 8 safe Factory baseline board test and usage documentation are committed in `23ac3db`. Full regression and complete S07 board acceptance remain pending.
+- Physical `KEY_1` PA0 start/confirm, full LCD visual flow, interrupted transfer, bad CRC/invalid image, duplicate KEY handling and final Project Owner hardware acceptance are explicitly pending for the next board session. The current device contains a durable S07 PENDING record; S07 does not consume it.
+- `service_ota_init()` intentionally only initializes the RAM Service object; Metadata is loaded when `service_ota_start()` is requested. The durable EEPROM result was verified by a temporary read-only board test, while Bootloader consumption remains outside S07.
 
 ### Review Focus
 
@@ -574,4 +583,10 @@ a8045d297442fe7b97bc318a37b53b05b4a4b968
 
 ```text
 23ac3db
+```
+
+### Task 10 Production Fix Commit
+
+```text
+2ab34f1
 ```

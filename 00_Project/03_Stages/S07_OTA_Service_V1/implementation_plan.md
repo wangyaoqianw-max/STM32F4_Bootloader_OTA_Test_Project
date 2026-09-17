@@ -253,8 +253,8 @@ upgradeState   = NONE
 05_Tools\toolkit.bat logic ...   # only when waveform evidence is useful
 ```
 
-- [ ] Step 1: 完成 Factory baseline，确认 Internal v1.0 + Slot A v1.0 VALID + Metadata confirmed A。
-- [ ] Step 2: Reset 后确认正常 foreground Application、LCD、RTT 和任务运行无 S06 回归。
+- [x] Step 1: 完成 Factory baseline，确认 Internal v1.0 + Slot A v1.0 VALID + Metadata confirmed A。已在 Task 8 的独立临时板测中完成；当前设备随后进入 S07 PENDING 测试状态。
+- [x] Step 2: Reset 后确认正常 foreground Application、LCD、RTT 和任务运行无 S06 回归。已完成正式 Application 恢复、Flash/RTT 冒烟；完整显示交互仍按后续步骤单独验收。
 - [ ] Step 3: 按 KEY_1，确认进入 OTA READY / Ymodem handshake；Sender 等 `'C'` 后传输新 `.img`。
 - [ ] Step 4: 确认 foreground behavior 持续，LCD RECEIVING progress → VERIFYING → READY_TO_INSTALL，target 为 non-confirmed Slot。
 - [ ] Step 5: READY_TO_INSTALL 前复位一次，确认新 image 可保持 VALID 但 Metadata 无 PENDING，旧 APP 正常继续。
@@ -264,7 +264,9 @@ upgradeState   = NONE
 - [ ] Step 9: 验证 bad CRC / invalid image：不得进入 READY_TO_INSTALL，不得写 PENDING。
 - [ ] Step 10: RECEIVING / VERIFYING / COMMITTING 中重复按 KEY，确认被忽略且 session 不损坏。
 - [ ] Step 11: 如需要确认 SPI/I2C 实际事务，复用 `toolkit logic` 采集，不建立临时平行工具。
-- [ ] Step 12: 将完整硬件证据写入 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，提交验证证据并记录 Commit。
+- [x] Step 12: 已将当前代码验证、COM9 传输、GDB 模拟按键和 Metadata 持久化证据写入 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`；未完成的物理验收项保持 PENDING。
+
+Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成可重复的代码、工具链、COM9 YMODEM 传输和 Metadata 持久化证据；真实 PA0 按键、LCD 全流程观察、中断传输、坏 CRC、重复按键和最终物理验收留待后续板测。不得据此将 S07 标记为 `CLOSED / PASS`。
 
 ## Task 11: Documentation, Handoff and Review Readiness
 
@@ -281,7 +283,7 @@ upgradeState   = NONE
 
 - [ ] Step 1: 在 ADR/长期决策中记录：External A/B 是 Firmware Image Slots、Internal Flash 是执行区、Metadata 删除 `activeSlot`。
 - [ ] Step 2: 更新 handoff 的 Completed Work、Changed Files、真实 Commit、偏差、验证结果、Known Issues 和 Review Focus。
-- [ ] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；没有真实硬件 PASS 时不得声明 `CLOSED / PASS`。
+- [ ] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；没有真实硬件 PASS，继续保持 `IN_PROGRESS`。
 - [ ] Step 4: 明确 S08/S09/S10 的交接边界：S07 已产生 durable PENDING，但 Installation / Trial / Confirm / Rollback execution 尚未实现。
 - [ ] Step 5: `git diff --check`、确认工作区只含预期正式变更，提交文档并推送 `main`。
 
