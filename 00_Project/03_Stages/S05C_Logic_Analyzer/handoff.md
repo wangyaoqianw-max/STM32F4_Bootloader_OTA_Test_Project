@@ -3,15 +3,17 @@
 ## Metadata
 
 - Stage: `S05C_Logic_Analyzer`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `31456f0e7020d79f31cb7dbcf006afe6fc687286`
 - Design Commit: `e98ebe6a0dbdde52cc7d802e45ee88b1e1b485a0`
 - Implementation Plan Commit: `a096f7ecf04d30c7bd718b1d92c1603b15ed6805`
 - Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
 - Verification Commit: `8781326`
+- Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
-- Current Role: `Review Role`
+- Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
+- Current Role: `Project Owner`
 - Owner: Project Owner
 - Updated At: `2026-09-17`
 
@@ -51,14 +53,12 @@ Overall Feasibility                 PASS
 
 ## Frozen Scope
 
-S05C 第一版只交付：
+S05C 第一版交付：
 
 ```text
 SPI
 I2C
 ```
-
-当前硬件连线已经完成，因此第一轮实施不要求重新接线。
 
 当前验证接线：
 
@@ -97,7 +97,7 @@ GPIO Timing
 00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
 ```
 
-本方案已参考并吸收成熟 Logic Analyzer Agent 项目的关键设计，但不整体移植其 MCP/GUI/Runtime：
+本方案参考并吸收成熟 Logic Analyzer Agent 项目的关键设计，但不整体移植其 MCP/GUI/Runtime：
 
 ```text
 sigrok-cli as sole backend
@@ -245,17 +245,21 @@ ERROR
 └─ result.json
 ```
 
-正式 Verification 最终放：
+正式 Verification：
 
 ```text
 04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
 ```
 
+正式 Review：
+
+```text
+00_Project/03_Stages/S05C_Logic_Analyzer/review.md
+```
+
 ## SPI Acceptance
 
 第一项板测使用 W25Q64 只读证据。
-
-优先目标：
 
 ```text
 JEDEC command  = 0x9F
@@ -264,13 +268,13 @@ Expected ID    = EF 40 17
 
 通用 Workflow 只负责输出 SPI transaction；项目 Test 负责确认该 transaction 是否符合 W25Q64 预期。
 
-不得为了本阶段验证执行额外 Flash erase/program。
+本阶段未执行额外 Flash erase/program。
 
 ## I2C Acceptance
 
 第二项板测使用 AT24C02 只读 transaction。
 
-验证重点：
+验证：
 
 ```text
 Address = 0x50
@@ -282,11 +286,11 @@ STOP
 Data annotations
 ```
 
-EEPROM payload 不作为永久 expected value，除非测试明确拥有固定内容。
+EEPROM payload 不作为永久 expected value。本阶段未执行任意 EEPROM 写入。
 
-不得为了本阶段验证执行任意 EEPROM 写入。
+## Implementation Output
 
-## Implementation Order
+实施顺序：
 
 ```text
 Task 1  Config + Result Contract
@@ -300,37 +304,7 @@ Task 8  Real-board I2C Acceptance
 Task 9  Full Regression + Verification + Handoff
 ```
 
-实施必须按 `implementation_plan.md` 执行；每个 Task 先测试再实现，失败时停止推进。
-
-## Required Reading Before Implementation
-
-```text
-AGENTS.md
-PROJECT_CONTEXT.md
-00_Project/WORKFLOW.md
-00_Project/02_Roadmap/development_roadmap.md
-00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
-00_Project/03_Stages/S05C_Logic_Analyzer/design.md
-00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
-04_Test/Reports/Tools/Sigrok_CLI_Logic_Analyzer_2026-09-16.md
-05_Tools/README.md
-05_Tools/toolkit.ps1
-05_Tools/Core/Toolkit.Core.psm1
-```
-
-## Safety Boundary
-
-本阶段主要是外部被动观测能力。
-
-禁止为了方便测试：
-
-- 修改 Flash/EEPROM 正式数据布局；
-- 引入不必要的生产固件功能；
-- 修改系统 PATH；
-- 提交本机工具绝对路径；
-- 对 `conn=4.7` 等临时 USB 枚举值形成依赖；
-- 为 UART/GPIO 扩大当前 Stage 范围；
-- 建立第二套与现有 Toolkit 并行的 Agent 调用框架。
+Task 1–9 已完成。
 
 ## Stage Close Gate
 
@@ -378,8 +352,29 @@ SPI 使用 `24MHz / 20s`，I2C 使用 `1MHz / 20s`；两次均先启动 sigrok c
 
 临时 Application 板测代码和临时 SPI 分频修改均已移除；正式 Application 已重新编译、烧录并完成 RTT 冒烟。工具运行规则已同步到根 `AGENTS.md` 和 `05_Tools/README.md`：仅共享客户端、设备、端口、输出或构建资源时互斥，独立资源允许并行；J-Link 保持单客户端所有权。
 
+## Review Output
+
+Review 对当前 `main` 的 S05C 实现与 Verification 进行轻量静态审核，未发现 Blocking / Important 问题，结论为：
+
+```text
+Implementation: PASS
+Verification:   PASS
+Architecture:   PASS
+Regression:     PASS
+Review:         PASS
+Stage:          CLOSED
+```
+
+非阻塞 Follow-up：当前 I2C Parser 将一次 capture 内 annotations 聚合为单个逻辑 transaction。当前 AT24C02 专项验收足够；未来支持多设备或长窗口分析时建议按 START/STOP 边界切分 transactions。
+
 ## Next Action
 
-由 Review Role 对照 `design.md`、`implementation_plan.md`、本 handoff、代码差异和 `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md` 执行最终审核；审核通过后再将阶段状态改为 `CLOSED`，不得在缺少 review 结论时直接关闭。
+S05C 已关闭。下一阶段进入：
 
-在 S05C SPI/I2C 验证关闭前，不进入 UART/GPIO 实现，也不提前进入 S06。
+```text
+S06_RTOS_Runtime
+Status: PLANNED
+Next action: Design Discussion
+```
+
+S06 不重新“移植 FreeRTOS”，而是正式化 Application Runtime / Concurrency Model，重点讨论 Task Topology、Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking/Timeout/Error Recovery 和日志资源边界。
