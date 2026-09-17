@@ -21,7 +21,7 @@ Roadmap State：
 3. Application 与 Bootloader 分开设计，Bootloader 不机械复制 Application 的完整分层与 RTOS 架构；
 4. UART/Ymodem、Flash/EEPROM Raw Driver 等基础模块只解决各自职责，不提前承载 OTA 业务语义；
 5. Firmware Image、Slot、Metadata 等跨模块契约在传输和 Bootloader 安装前明确；
-6. LCD、CK02AT 和其他非核心扩展不阻塞 V1 OTA 主链；
+6. LCD 基础 Runtime/OTA 状态显示前移到 S06，用于并发验收和工程展示，但 UI 故障不得阻塞 V1 OTA 主链；完整诊断 UI 仍在 S11 扩展；
 7. 真实资料不足时按阶段补充，不把非阻塞开放项提前冻结；
 8. Device Manager、Storage Device 等大型统一架构不为单一阶段强行引入。
 
@@ -60,7 +60,7 @@ S05B PC 工具形成可扩展、可升级、可复用框架
  ↓
 S05C 增加 Agent 可调用的 SPI / I2C 外部总线证据能力
  ↓
-S06  Application 形成正式 RTOS Runtime / Concurrency Model
+S06  Application 形成正式 RTOS Runtime / Concurrency Model，并接入基础 LCD 状态显示
  ↓
 S07  Application OTA 下载链完成
  ↓
@@ -70,7 +70,7 @@ S09  Bootloader 能安装 Pending Firmware
  ↓
 S10  OTA 具备 Trial / Confirm / Rollback 可靠性闭环
  ↓
-S11  增加可视化诊断与展示
+S11  扩展完整可视化诊断与展示
  ↓
 S12  增加 OTA 安全机制实验
 ```
@@ -88,12 +88,12 @@ S12  增加 OTA 安全机制实验
 | `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过 |
 | `S05B_Toolkit_Reuse` | 将 PC 工具重构为便于扩展、升级和跨工程复用的嵌入式开发工具框架 | 三层 Config；Core 公共能力；Build/Probe/Debug Adapters；Application/Debug Workflows；`toolkit.bat` 统一入口；Legacy Scripts 兼容；Project Test 隔离；结果合同 | S05；S05A；现有 `05_Tools` | `CLOSED` | 当前稳定能力回归通过；通用实现无项目/机器硬编码；Legacy 入口不双轨；第二同类工程只改配置即可复用；Review 通过 |
 | `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `CLOSED` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归、Verification 和 Review 通过；UART/GPIO 延期 |
-| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
+| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `ACTIVE` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
 | `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `TRIAL / CONFIRMED / ROLLBACK`；`firmware_confirm()`；IWDG；Reset Cause；Failure Counter；Previous Confirmed Image | S09 | `PLANNED` | 正常 Trial 可 Confirm；故障/未 Confirm 可检测；达到阈值可自动回滚 |
-| `S11_Diagnostics_UI` | 增加 OTA 状态可视化诊断与演示能力 | LCD/Display；Version、Slot、Progress、CRC、Boot State、Trial/Confirmed/Rollback/Error | S10；LCD/CTP 资料 | `PLANNED` | 不依赖 RTT 即可观察主要 OTA 状态；UI 故障不影响 OTA 核心逻辑 |
+| `S11_Diagnostics_UI` | 在完整 OTA/Bootloader 可靠性闭环上扩展高级诊断与演示 UI | 复用 S06 Display Runtime；增加 Version、Slot、CRC、Boot State、Trial/Confirmed/Rollback、Reset Cause、Error History；可选 CTP/LVGL | S10；S06 Display Runtime；必要的 LCD/CTP 资料 | `PLANNED` | 不依赖 RTT 即可观察完整 OTA/Bootloader 关键状态；UI 故障不影响 OTA 核心逻辑；不重复实现底层 LCD Driver |
 | `S12_Security_Extension` | 在可靠 OTA 基础上学习和验证安全升级机制 | SHA-256、AES、HMAC / Digital Signature、CK02AT API、STM32 RDP | S10；安全资料 | `PLANNED` | 每项安全机制有独立设计、边界和验证证据；不破坏可靠 OTA 主链 |
 
 ## 4. Stage Boundaries
@@ -130,7 +130,7 @@ PENDING
 Reset
 ```
 
-S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S05C 增加 SPI / I2C 外部总线证据并冻结工具共享资源运行规则；S06 解决正式并发运行模型；S07 才组合业务状态和升级请求。
+S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S05C 增加 SPI / I2C 外部总线证据并冻结工具共享资源运行规则；S06 解决正式并发运行模型并接入基础 LCD Runtime；S07 才组合业务状态和升级请求。
 
 ### S08 - S10: Bootloader & Reliability
 
@@ -154,7 +154,7 @@ TRIAL
 
 ### S11 - S12: Diagnostics & Security Extension
 
-不再改变 V1 OTA 的核心职责，在可靠闭环之上增加可视化诊断和安全实验。
+S11 不重新建立 LCD 基础驱动，而是在 S06 Display Runtime 上补全 Bootloader/可靠性闭环的诊断信息；S12 再增加安全实验。二者都不改变 V1 OTA 核心职责。
 
 ## 5. S06 Planning Correction
 
@@ -162,20 +162,22 @@ TRIAL
 
 当前 Application 已经运行 FreeRTOS；S05 板测还验证过独立 `s05Ymodem` Thread、`service_uart` ownerThread 和 RingBuffer 单 Consumer 模型。
 
-因此 S06 不再把“移植/启动 FreeRTOS”作为主要任务，而聚焦：
+S06 正式设计已经冻结，不再把“移植/启动 FreeRTOS”作为主要任务。当前 Runtime Contract：
 
 ```text
-Task Topology
-Task Lifecycle
-UART Consumer Ownership
-OTA/Ymodem Task Ownership
-IPC Selection
-Shared Resource Protection
-Flash/Storage Serialization
-Blocking / Timeout Policy
-Error Recovery
-Business vs OTA Concurrency
+appSystem      NORMAL       → foreground Application / LED Demo
+otaWorker      ABOVE_NORMAL → UART/Ymodem/Firmware Storage/Validation
+displayTask    BELOW_NORMAL → Display Queue/Model/ST7789
 ```
+
+IPC：
+
+```text
+UART ISR/RX → otaWorker   : Task Notification
+otaWorker   → displayTask : Queue
+```
+
+S06 第一项实施任务为 ST7789/LCD Board Adaptation；LCD 第一版只用于 Runtime/OTA 状态显示，不引入 LVGL/CTP。
 
 S05 测试线程只作为实证输入，不自动成为正式 Application Task 架构。
 
@@ -184,7 +186,7 @@ S05 测试线程只作为实证输入，不自动成为正式 Application Task �
 按阶段补充：
 
 - CK02AT Datasheet / API：S12；
-- LCD / CTP 详细资料：最晚 S11；
+- CTP 详细资料及 LVGL 是否引入：S11 按需；
 - HC-05 参数：只有决定增加 Bluetooth OTA Transport 时进入正式 Stage；
 - SHA / AES / HMAC / Digital Signature 具体方案：S12。
 
@@ -253,12 +255,17 @@ S05B 交接入口：
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md`
 
-当前进入：
+当前阶段：
 
 ```text
 S06_RTOS_Runtime
-Roadmap State: PLANNED
-Next action: Design Discussion
+Roadmap State: ACTIVE
+Workflow Status: DESIGN_APPROVED / IMPLEMENTATION_PLANNED
 ```
 
-S06 先冻结 Runtime / Concurrency Model，不提前实现 S07 OTA Service 状态机。
+S06 正式入口：
+
+- `00_Project/03_Stages/S06_RTOS_Runtime/design.md`
+- `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md`
+
+下一步：执行 S06 implementation plan Task 1，完成 LCD/ST7789 Board Adaptation，再进入三线程 Runtime 重构。
