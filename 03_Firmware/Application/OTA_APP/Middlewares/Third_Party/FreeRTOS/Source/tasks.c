@@ -3981,27 +3981,6 @@ TCB_t *pxTCB;
 #endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
 /*-----------------------------------------------------------*/
 
-#if defined( CMB_USER_CFG )
-
-	/* CmBacktrace needs the current FreeRTOS task stack and name. */
-	uint32_t *vTaskStackAddr( void )
-	{
-		return ( uint32_t * ) pxCurrentTCB->pxStack;
-	}
-
-	uint32_t vTaskStackSize( void )
-	{
-		return ( uint32_t ) ( pxCurrentTCB->pxEndOfStack - pxCurrentTCB->pxStack + 1 );
-	}
-
-	char *vTaskName( void )
-	{
-		return &( pxCurrentTCB->pcTaskName[ 0 ] );
-	}
-
-#endif /* defined( CMB_USER_CFG ) */
-/*-----------------------------------------------------------*/
-
 #if ( ( INCLUDE_xTaskGetSchedulerState == 1 ) || ( configUSE_TIMERS == 1 ) )
 
 	BaseType_t xTaskGetSchedulerState( void )
