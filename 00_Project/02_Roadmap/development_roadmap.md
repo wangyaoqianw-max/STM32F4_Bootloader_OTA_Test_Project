@@ -88,7 +88,7 @@ S12  增加 OTA 安全机制实验
 | `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过 |
 | `S05B_Toolkit_Reuse` | 将 PC 工具重构为便于扩展、升级和跨工程复用的嵌入式开发工具框架 | 三层 Config；Core 公共能力；Build/Probe/Debug Adapters；Application/Debug Workflows；`toolkit.bat` 统一入口；Legacy Scripts 兼容；Project Test 隔离；结果合同 | S05；S05A；现有 `05_Tools` | `CLOSED` | 当前稳定能力回归通过；通用实现无项目/机器硬编码；Legacy 入口不双轨；第二同类工程只改配置即可复用；Review 通过 |
 | `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `CLOSED` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归、Verification 和 Review 通过；UART/GPIO 延期 |
-| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `ACTIVE` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
+| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `CLOSED` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；成功/失败路径与 Toolkit 回归通过 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
@@ -156,13 +156,11 @@ TRIAL
 
 S11 不重新建立 LCD 基础驱动，而是在 S06 Display Runtime 上补全 Bootloader/可靠性闭环的诊断信息；S12 再增加安全实验。二者都不改变 V1 OTA 核心职责。
 
-## 5. S06 Planning Correction
+## 5. S06 Closure / Runtime Contract
 
-早期 Roadmap 中“集成 FreeRTOS”的描述已经过时。
+早期 Roadmap 中“集成 FreeRTOS”的描述已经过时。S06 已在现有 FreeRTOS Application 上正式建立并验证 Runtime / Concurrency Contract，阶段状态为 `CLOSED / PASS`。
 
-当前 Application 已经运行 FreeRTOS；S05 板测还验证过独立 `s05Ymodem` Thread、`service_uart` ownerThread 和 RingBuffer 单 Consumer 模型。
-
-S06 正式设计已经冻结，不再把“移植/启动 FreeRTOS”作为主要任务。当前 Runtime Contract：
+冻结 Runtime：
 
 ```text
 appSystem      NORMAL       → foreground Application / LED Demo
@@ -177,9 +175,7 @@ UART ISR/RX → otaWorker   : Task Notification
 otaWorker   → displayTask : Queue
 ```
 
-S06 第一项实施任务为 ST7789/LCD Board Adaptation；LCD 第一版只用于 Runtime/OTA 状态显示，不引入 LVGL/CTP。
-
-S05 测试线程只作为实证输入，不自动成为正式 Application Task 架构。
+S06 已完成 ST7789/LCD Board Adaptation、三线程 Runtime、OTA→Display Queue、阻塞/资源所有权审查、Stack/Heap 诊断以及成功/失败 OTA 并发板测。S05 测试线程仅作为历史实证输入，正式 Runtime 以 S06 Handoff 为准。
 
 ## 6. Deferred / On-demand Inputs
 
@@ -211,61 +207,38 @@ Power-cycle Persistence PASS
 最近关闭阶段：
 
 ```text
-S05C_Logic_Analyzer
+S06_RTOS_Runtime
 Roadmap State: CLOSED
 Workflow Status: CLOSED / PASS
 Review: PASS
-```
-
-S05C 正式入口：
-
-- `00_Project/03_Stages/S05C_Logic_Analyzer/design.md`
-- `00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md`
-- `00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md`
-- `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
-
-S05C 已交付：
-
-1. sigrok-cli doctor / scan / capture / decode；
-2. SPI / I2C 默认 Profile 与 Agent 临时 Channel Override；
-3. Executor / Parser 分离；
-4. Capture / Decode 分离与 `.sr` 重解码；
-5. Effective Config 与 Structured Result；
-6. Golden Fixtures / Host Contract；
-7. W25Q64 `0x9F → EF 40 17` 只读板测；
-8. AT24C02 `0x50` 随机读事务只读板测；
-9. Toolkit 全量回归和正式 Application 恢复；
-10. Verification / Review PASS。
-
-非阻塞 Follow-up：当前 I2C Parser 将一次 capture 内 annotations 聚合成单个逻辑 transaction；未来多设备/长窗口分析时建议按 START/STOP 边界拆分。
-
-S05A 交接入口：
-
-- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/design.md`
-- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/implementation_plan.md`
-- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
-- `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/review.md`
-- `04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`
-
-S05B 交接入口：
-
-- `00_Project/03_Stages/S05B_Toolkit_Reuse/design.md`
-- `00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md`
-- `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
-- `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md`
-
-当前阶段：
-
-```text
-S06_RTOS_Runtime
-Roadmap State: ACTIVE
-Workflow Status: DESIGN_APPROVED / IMPLEMENTATION_PLANNED
 ```
 
 S06 正式入口：
 
 - `00_Project/03_Stages/S06_RTOS_Runtime/design.md`
 - `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md`
+- `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
+- `00_Project/03_Stages/S06_RTOS_Runtime/review.md`
+- `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
 
-下一步：执行 S06 implementation plan Task 1，完成 LCD/ST7789 Board Adaptation，再进入三线程 Runtime 重构。
+S06 已交付：
+
+1. ST7789/LCD Board Adaptation 与基础状态显示；
+2. `appSystem + otaWorker + displayTask` 三线程 Runtime；
+3. UART RX → otaWorker Task Notification；
+4. otaWorker → displayTask Queue；
+5. 前台 LED 与后台 Ymodem/Firmware Storage 并发；
+6. SUCCESS / FAILED / Timeout / mid-transfer abort 板测；
+7. Slot B Validation、Stack/Heap、阻塞与 Ownership 证据；
+8. Build / Flash / RTT / GDB / Ymodem / Host / Toolkit 回归；
+9. Verification / Handoff / Review PASS。
+
+下一阶段：
+
+```text
+S07_OTA_Service_V1
+Roadmap State: PLANNED
+Next action: Design Discussion
+```
+
+S07 应优先读取 S06 Handoff / Review / Verification，在已冻结 Runtime Contract 上设计正式 OTA Service facade、session control、Inactive Slot / Validation、EEPROM Metadata `PENDING` 提交和 Reset Request；不要把 S06 内部保留的 START notification flag 当作公开接口。
