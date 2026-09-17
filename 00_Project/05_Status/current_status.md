@@ -10,7 +10,7 @@
 - S06 Verification Report: `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
 - S06 Handoff: `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
 - S06 Verification Commit: `8c67ad2`
-- S06 Review Commit: `Pending final review commit`
+- S06 Review Commit: `b2c8ba0`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`

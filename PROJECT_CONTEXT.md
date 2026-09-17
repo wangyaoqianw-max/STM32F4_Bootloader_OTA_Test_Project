@@ -13,7 +13,7 @@
 - S06 Verification Report: `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
 - S06 Handoff: `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
 - S06 Verification Commit: `8c67ad2`
-- S06 Review Commit: `Pending final review commit`
+- S06 Review Commit: `b2c8ba0`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
