@@ -13,6 +13,9 @@
 
 # Common generated build directories
 **/build/
+# `05_Tools/Adapters/Build` is a source directory, not generated output.
+!05_Tools/Adapters/Build/
+!05_Tools/Adapters/Build/**
 03_Firmware/**/MDK-ARM/Objects/
 03_Firmware/**/MDK-ARM/Listings/
 03_Firmware/**/MDK-ARM/JLinkLog.txt
