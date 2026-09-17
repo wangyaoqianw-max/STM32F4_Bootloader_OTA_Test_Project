@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "cmbacktrace_port.h"
 #include "diagnostics_fault.h"
+#include "impl_platform_key.h"
 
 /* USER CODE END Includes */
 
@@ -167,6 +168,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  impl_platform_key_exti_from_isr(GPIO_Pin);
+}
 
 /* USER CODE END 4 */
 

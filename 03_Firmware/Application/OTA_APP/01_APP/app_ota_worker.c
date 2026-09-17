@@ -23,6 +23,7 @@
 #include "platform_bsp_uart.h"
 #include "platform_bsp_w25q64.h"
 #include "platform_i2c.h"
+#include "platform_key.h"
 #include "platform_os.h"
 #include "platform_time.h"
 #include "platform_uart.h"
@@ -47,13 +48,16 @@
 #define APP_OTA_WORKER_DISPLAY_PROGRESS_STEP    (5U)
 #define APP_OTA_WORKER_DISPLAY_PROGRESS_PERIOD_MS (200U)
 #define APP_OTA_WORKER_DISPLAY_TERMINAL_TIMEOUT_MS (20U)
+#define APP_OTA_WORKER_KEY_DEBOUNCE_MS          (40U)
 #define APP_OTA_WORKER_NOTIFY_FLAGS             \
     (APP_OTA_NOTIFY_START | APP_OTA_NOTIFY_CANCEL | \
-     APP_OTA_NOTIFY_SHUTDOWN)
+     APP_OTA_NOTIFY_SHUTDOWN | APP_OTA_NOTIFY_KEY_1)
 //******************************** Defines **********************************//
 
 //******************************** Variables ********************************//
 static platform_bool_t g_otaWorkerStarted = PLATFORM_FALSE;
+static platform_bool_t g_otaKeyTimestampValid = PLATFORM_FALSE;
+static uint32_t g_otaLastKeyTimestampMs = 0U;
 static platform_thread_t g_otaWorkerThread = PLATFORM_OS_OBJECT_INITIALIZER;
 static platform_queue_t *g_otaDisplayQueue = NULL;
 
@@ -81,6 +85,7 @@ static void app_ota_worker_entry(void *argument);
 static platform_error_t app_ota_worker_init_storage(void);
 static platform_error_t app_ota_worker_init_uart(void);
 static platform_error_t app_ota_worker_init_receiver(void);
+static platform_error_t app_ota_worker_init_key(void);
 static platform_error_t app_ota_worker_start_session(void);
 static platform_error_t app_ota_worker_process_session(void);
 static platform_error_t app_ota_worker_finish_session(void);
@@ -102,6 +107,9 @@ static platform_error_t app_ota_worker_update_display_progress(
     platform_bool_t force);
 static void app_ota_worker_log_session(void);
 static void app_ota_worker_wait_for_command(void);
+static void app_ota_worker_key_event_callback(platform_key_id_t key,
+                                              void *context);
+static platform_bool_t app_ota_worker_accept_key_event(void);
 
 static const platform_thread_config_t s_ota_worker_thread_config = {
     .name = "otaWorker",
@@ -251,6 +259,40 @@ static platform_error_t app_ota_worker_init_receiver(void)
 
     return ymodem_receiver_init(&g_otaReceiver,
                                 &g_otaReceiverConfig);
+}
+
+static void app_ota_worker_key_event_callback(platform_key_id_t key,
+                                              void *context)
+{
+    (void)context;
+
+    if (key == PLATFORM_KEY_ID_1) {
+        (void)platform_notify_set_from_isr(&g_otaWorkerThread,
+                                           APP_OTA_NOTIFY_KEY_1);
+    }
+}
+
+static platform_error_t app_ota_worker_init_key(void)
+{
+    return platform_key_init(app_ota_worker_key_event_callback, (void *)0);
+}
+
+static platform_bool_t app_ota_worker_accept_key_event(void)
+{
+    uint32_t nowMs;
+
+    if (platform_time_get_ms(&nowMs) != PLATFORM_ERR_OK) {
+        return PLATFORM_FALSE;
+    }
+
+    if ((g_otaKeyTimestampValid == PLATFORM_TRUE) &&
+        ((nowMs - g_otaLastKeyTimestampMs) < APP_OTA_WORKER_KEY_DEBOUNCE_MS)) {
+        return PLATFORM_FALSE;
+    }
+
+    g_otaLastKeyTimestampMs = nowMs;
+    g_otaKeyTimestampValid = PLATFORM_TRUE;
+    return PLATFORM_TRUE;
 }
 
 static platform_error_t app_ota_worker_start_session(void)
@@ -648,7 +690,12 @@ static platform_error_t app_ota_worker_stop_uart(void)
         return result;
     }
 
-    return platform_notify_clear(APP_OTA_NOTIFY_UART_RX, &previousFlags);
+    result = platform_notify_clear(APP_OTA_NOTIFY_UART_RX, &previousFlags);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return platform_notify_clear(APP_OTA_NOTIFY_KEY_1, &previousFlags);
 }
 
 static void app_ota_worker_wait_for_command(void)
@@ -671,7 +718,13 @@ static void app_ota_worker_wait_for_command(void)
             return;
         }
 
-        if ((receivedFlags & APP_OTA_NOTIFY_START) == 0U) {
+        if (((receivedFlags & APP_OTA_NOTIFY_KEY_1) != 0U) &&
+            (app_ota_worker_accept_key_event() == PLATFORM_FALSE)) {
+            receivedFlags &= ~APP_OTA_NOTIFY_KEY_1;
+        }
+
+        if (((receivedFlags & APP_OTA_NOTIFY_START) == 0U) &&
+            ((receivedFlags & APP_OTA_NOTIFY_KEY_1) == 0U)) {
             continue;
         }
 
@@ -720,6 +773,11 @@ static void app_ota_worker_entry(void *argument)
         SERVICE_LOG_E("OTA worker current thread failed: %d", (int)result);
         app_ota_worker_wait_for_command();
         return;
+    }
+
+    result = app_ota_worker_init_key();
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("OTA key init failed: %d", (int)result);
     }
 
     result = app_ota_worker_init_storage();

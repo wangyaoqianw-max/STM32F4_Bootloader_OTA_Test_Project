@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine />
-              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_bsp/st7789;../03_Platform/platform_graphics;../03_Platform/platform_graphics/font;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/irq;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../04_Impl/impl_diagnostics;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../05_Vendors/CmBacktrace;../../../../04_Test/Board/S05_UART_Ymodem;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_bsp/st7789;../03_Platform/platform_graphics;../03_Platform/platform_graphics/font;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/irq;../03_Platform/platform_mcu/key;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../04_Impl/impl_diagnostics;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../05_Vendors/CmBacktrace;../../../../04_Test/Board/S05_UART_Ymodem;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -757,6 +757,11 @@
               <FilePath>../03_Platform/platform_mcu/irq/platform_mcu_irq.h</FilePath>
             </File>
             <File>
+              <FileName>platform_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../03_Platform/platform_mcu/key/platform_key.c</FilePath>
+            </File>
+            <File>
               <FileName>platform_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>../03_Platform/platform_mcu/i2c/platform_i2c.c</FilePath>
@@ -870,6 +875,11 @@
               <FileName>impl_platform_mcu_irq.c</FileName>
               <FileType>1</FileType>
               <FilePath>../04_Impl/impl_mcu/impl_platform_mcu_irq.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_platform_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_mcu/impl_platform_key.c</FilePath>
             </File>
             <File>
               <FileName>impl_freertos_notify.c</FileName>
