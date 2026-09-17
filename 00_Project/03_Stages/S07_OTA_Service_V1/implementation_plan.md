@@ -217,11 +217,11 @@ pendingSlot    = NONE
 upgradeState   = NONE
 ```
 
-- [ ] Step 1: 调查现有 `toolkit firmware pack`、`toolkit ymodem`、Firmware Storage test 能否组合完成 provisioning，优先复用而不是新建命令。
-- [ ] Step 2: 如确有必要新增 `toolkit provision`，仅作为现有 Core/Adapter/Workflow 的组合 workflow，不复制 J-Link/Serial/Firmware 实现。
-- [ ] Step 3: 建立 Metadata V2 baseline 初始化方式，并防止对非空/未知设备状态无条件破坏性初始化。
-- [ ] Step 4: 验证 Slot A header/payload、版本、CRC、Metadata confirmed baseline；记录可重复操作步骤。
-- [ ] Step 5: Host/Toolkit regression 后提交并记录 Commit。
+- [x] Step 1: 调查现有 `toolkit firmware pack`、`toolkit ymodem`、Firmware Storage test 能否组合完成 provisioning，优先复用而不是新建命令。
+- [x] Step 2: 现有 `firmware pack` + `ymodem` 组合已满足传输需求，不新增 `toolkit provision`，也未复制 J-Link/Serial/Firmware 实现。
+- [x] Step 3: 通过临时板测建立 Metadata V2 baseline，并仅允许空白设备或已确认的 S04 残留状态，防止对未知非空设备无条件擦除。
+- [x] Step 4: 实板验证 Slot A Header/Payload、版本、CRC 和 Metadata confirmed baseline，并记录可重复操作步骤。
+- [x] Step 5: Host/Toolkit regression、正式 Build/Flash/RTT 冒烟完成，提交并记录 Commit。
 
 ## Task 9: Host, Static, Build Regression
 
@@ -232,11 +232,11 @@ upgradeState   = NONE
 - Modify/Create: relevant Host Tests / project tests
 - Verify: production build
 
-- [ ] Step 1: 执行 Metadata V1/V2、dual-copy fault injection、OTA state machine、sink、target selection、key semantic tests。
-- [ ] Step 2: 执行现有 S04/S05/S05B/S06 相关 Host/Toolkit regression，确认没有破坏 Ymodem/Firmware/Toolkit 合同。
-- [ ] Step 3: 执行 `05_Tools\toolkit.bat build`，记录 exit code 和 Build log。
-- [ ] Step 4: 执行 `git diff --check` 并检查 production source 不依赖 Board Test sink。
-- [ ] Step 5: 修复失败项，全部重新运行后提交测试/修复 Commit，并记录到 `handoff.md`。
+- [x] Step 1: 执行 Metadata V1/V2、dual-copy fault injection、OTA state machine、sink、target selection、key semantic tests。
+- [x] Step 2: 执行现有 S04/S05/S05B/S06 相关 Host/Toolkit regression，确认没有破坏 Ymodem/Firmware/Toolkit 合同。
+- [x] Step 3: 执行 `05_Tools\toolkit.bat build`，记录 exit code 和 Build log。
+- [x] Step 4: 执行 `git diff --check` 并检查 production source 不依赖 Board Test sink。
+- [x] Step 5: 无代码失败项；回归证据和实际结果已写入 `handoff.md`，并提交 Task 9 验证文档。
 
 ## Task 10: Real-board Acceptance
 

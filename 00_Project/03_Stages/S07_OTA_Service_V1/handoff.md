@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `a8045d297442fe7b97bc318a37b53b05b4a4b968` (Task 7; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `23ac3db` (Task 8; Task 7: `a8045d297442fe7b97bc318a37b53b05b4a4b968`; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -448,6 +448,9 @@ Current S07 implementation changes:
 04_Test/Host/S07_OTA_Service/s07_display_contract_host_test.c
 04_Test/Host/S07_OTA_Service/s07_service_ota_host_test.c
 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx
+04_Test/Board/S07_OTA_Service/README.md
+04_Test/Board/S07_OTA_Service/app_s07_provision_test.h
+04_Test/Board/S07_OTA_Service/app_s07_provision_test.c
 ```
 
 ### Deviations From Plan
@@ -470,6 +473,8 @@ Task 6 reduced `app_ota_worker` to the S06 RTOS execution shell. Storage/UART ha
 
 Task 7 completed the Display/User Interaction bridge. Existing S06 display states remain available; `READY_TO_INSTALL` now renders the target Slot, verified result and second-key action, while `REBOOT_REQUIRED` renders the committed-PENDING/reset indication. Display event payloads now carry the mapped target Slot, and `displayTask` remains the sole LCD owner. The existing Display Model firmware-version line is retained because the frozen Service status contract does not expose a separate target-image version field. No initialization binding or Service ownership was expanded.
 
+Task 8 established the Factory baseline through a temporary board test under `04_Test/Board/S07_OTA_Service`. The test reuses the production Firmware Storage, Metadata, `ota_firmware_sink` and YMODEM Receiver; it accepts only an empty device or the explicitly approved S04 residual state, writes the new image to Slot A, validates it, clears the approved legacy Slot B when applicable, and commits Metadata V2 with `confirmedSlot=A`, `pendingSlot=NONE` and `upgradeState=NONE`. No `toolkit provision` command or production startup dependency was added. The actual CH340 sender port is `COM9`.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
@@ -488,13 +493,18 @@ Task 6 code verification: `s07_worker_contract_host_test.c`, `s07_service_ota_ho
 
 Task 7 code verification: `s07_display_contract_host_test.c` and the existing `s07_worker_contract_host_test.c` passed with `gcc -std=c99 -Wall -Wextra -Werror`; the Service progress throttle remains `5%` or `200 ms`; `05_Tools\\toolkit.bat build` passed with 0 errors and 0 warnings; `git diff --check` passed. Board smoke verification: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed `displayTask` startup, Display SPI initialization and Display init result `0`. This is startup/display smoke only; full S07 READY/RESET interaction remains hardware PENDING.
 
+Task 8 board verification: existing Toolkit composition was investigated. The current Keil build exposes `OTA_APP.axf` but not the configured `OTA_APP.bin`, so the already confirmed repository toolchain `fromelf.exe` was used only to create a temporary ignored BIN before `toolkit firmware pack`; no production or Toolkit implementation was changed. `toolkit ymodem python devices --json` identified `USB-SERIAL CH340 (COM9)`. With the sender started before reset, the temporary board test completed on COM9: `blocks_sent=67`, `bytes_sent=67664`, `exit_code=0`, `retries=2`. RTT reported `baseline PASS copy=2 sequence=1 Slot A=1.0.0`; the final target state was validated by the test after Slot A image validation and Metadata reload. The safety guard also refused unapproved non-empty states before erase/write. The temporary test integration was removed, the formal application was rebuilt, flashed and restarted; final production RTT showed only `appSystem`, `otaWorker` and `displayTask` startup plus Display initialization. This proves Factory baseline provisioning and formal-app restoration, but does not prove the complete S07 OTA acceptance flow. Full Host/Toolkit regression remains Task 9.
+
+Task 9 verification: all S07 Host tests passed with `gcc -std=c99 -Wall -Wextra -Werror`: IRQ, BSP Key, Display/Worker contracts, Metadata V1/V2, production sink and Service state machine. Existing S04/S05 regression passed: Firmware image format, current Firmware Storage, storage write, YMODEM parser/receiver and historical S05 sink tests. Python/toolkit regression passed: Firmware pack (2 tests), Python YMODEM (24 tests), S04 persistence (15 tests), legacy/transport compatibility, Application workflow, Toolkit Core, Debug, S04 isolation and Logic Analyzer contracts. `05_Tools\\toolkit.bat build` completed with 0 errors and 0 warnings. Production dependency scan found no `s05_ymodem_flash_sink` or `04_Test/Board/S05_UART_Ymodem` reference under `03_Firmware/Application/OTA_APP`. `git diff --check` passed. No S07 production code was changed during this regression.
+
 ### Known Issues
 
-- Full S07 provisioning, regression and board acceptance work remains pending.
+- Full S07 OTA transfer and complete board acceptance work remains pending.
 - Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 implementation is recorded in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`.
-- Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
+- Factory baseline provisioning is complete for the tested device through the temporary board test in `23ac3db`; the test is intentionally not part of the production startup path. The configured build artifact still does not emit `OTA_APP.bin`, so repeatable pack steps must continue to use the documented temporary `fromelf` conversion until the project/toolkit artifact contract is separately addressed.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
-- Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`; Task 7 display rendering is committed in `a8045d297442fe7b97bc318a37b53b05b4a4b968`. Task 8 provisioning, full regression and board acceptance remain pending.
+- Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`; Task 7 display rendering is committed in `a8045d297442fe7b97bc318a37b53b05b4a4b968`.
+- Task 8 safe Factory baseline board test and usage documentation are committed in `23ac3db`. Full regression and complete S07 board acceptance remain pending.
 
 ### Review Focus
 
@@ -558,4 +568,10 @@ ae264974de810272a83314c4c3fcddb4d9ef6991
 
 ```text
 a8045d297442fe7b97bc318a37b53b05b4a4b968
+```
+
+### Task 8 Commit
+
+```text
+23ac3db
 ```
