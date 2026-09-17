@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2` (Task 4 XML correction; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b` (Task 5; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -456,6 +456,8 @@ Task 3 confirmed the existing V1 raw contract from `firmware_metadata.c`: magic 
 
 Task 4 added production `ota_firmware_sink` under `02_Service/service_firmware`. It keeps target Slot in caller-owned session context, buffers and validates the 64 Byte Image Header before erasing, writes Payload first, and commits the Header only after the complete file length and Payload length are satisfied. `app_ota_worker` now binds this production sink to the existing YMODEM receiver; the worker still uses Slot B until Task 5 moves target selection into `service_ota`. The Keil project no longer includes or links the S05 Board Test sink.
 
+Task 5 added `service_ota` under `02_Service/service_ota`. It owns stable Metadata preconditions, opposite confirmed-Slot selection, pre-erase `INVALID` persistence, YMODEM/production-sink coordination, throttled progress, image validation, `READY_TO_INSTALL`, and the second-confirm `PENDING` transaction. It reports `REBOOT_REQUIRED` only and does not call a reset implementation. The public header exposes Service/Platform contracts only; no FreeRTOS notification, HAL, or display type is included.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
@@ -468,12 +470,15 @@ Task 3 code verification: `s07_metadata_host_test.c` passed V2 round-trip, V1 ba
 
 Task 4 code verification: `s07_ota_firmware_sink_host_test.c` passed dynamic Slot A/B mapping, split Header buffering, Header-last ordering, short-file, oversize, abort, erase/payload/header failure paths; project XML parse confirmed the production source and absence of the S05 sink; production search found no `s05_ymodem_flash_sink` reference under `03_Firmware/Application/OTA_APP`; `05_Tools\\toolkit.bat build` PASS; `git diff --check` PASS. Hardware verification: PENDING; no real-board dynamic Slot OTA transfer was claimed.
 
+Task 5 code verification: `s07_service_ota_host_test.c` passed opposite target selection, pre-erase `INVALID` commit, YMODEM/production sink flow, image validation failure retention, `READY_TO_INSTALL` without PENDING, second-confirm PENDING commit, cancel/retry, Metadata write failure retry, invalid transitions, duplicate confirm, and restart with persisted PENDING. Host compilation passed with `gcc -std=c99 -Wall -Wextra -Werror`; `OTA_APP.uvprojx` XML parse PASS; `05_Tools\\toolkit.bat build` final PASS with no errors or warnings; `git diff --check` PASS. Hardware verification: PENDING; no real-board Service state-machine or PENDING persistence acceptance was claimed.
+
 ### Known Issues
 
-- Full S07 Metadata, Service, sink, key/IRQ, provisioning and board acceptance work remains pending.
-- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 must create the formal OTA Service state machine.
+- Full S07 provisioning, worker/display integration, regression and board acceptance work remains pending.
+- Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 implementation is recorded in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`.
 - Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
+- Task 5 Service is implemented and committed in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 must move worker execution and KEY/UART ownership to this Service without adding an OTA Task.
 
 ### Review Focus
 
@@ -518,4 +523,10 @@ bb0f96b643da137805b586eb817347a92dc0f140
 ```text
 29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534
 e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2
+```
+
+### Task 5 Commit
+
+```text
+b9c619801b5913b25c52b1e57fe9cffbbb21d41b
 ```

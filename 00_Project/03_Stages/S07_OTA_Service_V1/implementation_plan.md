@@ -148,14 +148,14 @@
 - Public behavior: start / process or poll / confirm install / query state/event
 - Output: reset-required indication, not direct reset call
 
-- [ ] Step 1: 定义 state/event/error public contract，避免把 FreeRTOS notification、HAL 或 display type 暴露给 Service。
-- [ ] Step 2: 实现 start preconditions：只允许 stable metadata、无 pending lifecycle、confirmed baseline 合法时开始。
-- [ ] Step 3: 实现 target selection：稳定态 `opposite(confirmedSlot)`；在任何 erase 前先 commit `targetSlot.state=INVALID`。
-- [ ] Step 4: 连接 Ymodem receiver + production sink，进入 `RECEIVING`，并输出节流后的业务 progress event。
-- [ ] Step 5: session 完成后进入 `VERIFYING`，调用 `firmware_storage_validate_image()`；失败保持 target INVALID 且不得创建 PENDING。
-- [ ] Step 6: validate PASS 后 commit `targetSlot.state=VALID`，保持 `pendingSlot=NONE`、`upgradeState=NONE`，进入 `READY_TO_INSTALL`。
-- [ ] Step 7: 实现 second-confirm transaction：进入 `COMMITTING`，写 `pendingSlot=target` + `upgradeState=PENDING`；commit 成功后进入 `REBOOT_REQUIRED`。
-- [ ] Step 8: 为 power-loss/retry/invalid transition/duplicate key/metadata write failure 编写 Host Test，Build 后提交并记录 Commit。
+- [x] Step 1: 定义 state/event/error public contract，避免把 FreeRTOS notification、HAL 或 display type 暴露给 Service。
+- [x] Step 2: 实现 start preconditions：只允许 stable metadata、无 pending lifecycle、confirmed baseline 合法时开始。
+- [x] Step 3: 实现 target selection：稳定态 `opposite(confirmedSlot)`；在任何 erase 前先 commit `targetSlot.state=INVALID`。
+- [x] Step 4: 连接 Ymodem receiver + production sink，进入 `RECEIVING`，并输出节流后的业务 progress event。
+- [x] Step 5: session 完成后进入 `VERIFYING`，调用 `firmware_storage_validate_image()`；失败保持 target INVALID 且不得创建 PENDING。
+- [x] Step 6: validate PASS 后 commit `targetSlot.state=VALID`，保持 `pendingSlot=NONE`、`upgradeState=NONE`，进入 `READY_TO_INSTALL`。
+- [x] Step 7: 实现 second-confirm transaction：进入 `COMMITTING`，写 `pendingSlot=target` + `upgradeState=PENDING`；commit 成功后进入 `REBOOT_REQUIRED`。
+- [x] Step 8: 为 power-loss/retry/invalid transition/duplicate key/metadata write failure 编写 Host Test，Build 后提交并记录 Commit。
 
 ## Task 6: Refactor otaWorker into RTOS Execution Shell
 
