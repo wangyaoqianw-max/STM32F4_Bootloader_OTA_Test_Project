@@ -187,12 +187,13 @@
 **Files:**
 
 - Modify: Display Model / OTA display event mapping / displayTask rendering files
+- Create: `04_Test/Host/S07_OTA_Service/s07_display_contract_host_test.c`
 
-- [ ] Step 1: 保留 S06 IDLE/RECEIVING/VERIFYING/SUCCESS/FAILED 基础能力，并根据新 Service state 重新命名/映射需要的显示状态。
-- [ ] Step 2: 增加 `READY_TO_INSTALL` 显示：version、target Slot、verified、`Press KEY to install/reboot`。
-- [ ] Step 3: 增加 `REBOOT_REQUIRED` 短暂状态或日志提示，避免在 Metadata commit 前显示“will install”。
-- [ ] Step 4: 检查 progress throttle 仍满足 S06 5% 或 200ms 约束或当前冻结等价值，避免显示队列洪泛。
-- [ ] Step 5: Build + display model tests/board smoke 后提交并记录 Commit。
+- [x] Step 1: 保留 S06 IDLE/RECEIVING/VERIFYING/SUCCESS/FAILED 基础能力，并根据新 Service state 重新命名/映射需要的显示状态。
+- [x] Step 2: 增加 `READY_TO_INSTALL` 显示：version、target Slot、verified、`Press KEY to install/reboot`。
+- [x] Step 3: 增加 `REBOOT_REQUIRED` 短暂状态或日志提示，避免在 Metadata commit 前显示“will install”。
+- [x] Step 4: 检查 progress throttle 仍满足 S06 5% 或 200ms 约束或当前冻结等价值，避免显示队列洪泛。
+- [x] Step 5: Build + display model tests/board smoke 后提交并记录 Commit。
 
 ## Task 8: Factory / Initial Provisioning Support
 

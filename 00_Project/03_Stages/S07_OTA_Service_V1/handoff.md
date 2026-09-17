@@ -8,7 +8,7 @@
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `ae264974de810272a83314c4c3fcddb4d9ef6991` (Task 6; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
+- Implementation Commit: `a8045d297442fe7b97bc318a37b53b05b4a4b968` (Task 7; Task 6: `ae264974de810272a83314c4c3fcddb4d9ef6991`; interface style correction: `4e5a8e5`; Task 5: `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 4 XML correction: `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 4 main: `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534`; Task 3 Storage Host test correction: `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 3 main: `bb0f96b643da137805b586eb817347a92dc0f140`; Task 2 correction: `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 2 initial: `b4a94245f09be9dac40ad8e3135302722504ca5b`; Task 1: `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 0: `9adba52aa75ddaff906e42aa8bae433b654ae761`)
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -425,6 +425,7 @@ Current S07 implementation changes:
 03_Firmware/Application/OTA_APP/04_Impl/impl_bsp/impl_platform_bsp_key.c
 03_Firmware/Application/OTA_APP/01_APP/app_runtime_contract.h
 03_Firmware/Application/OTA_APP/01_APP/app_ota_worker.c
+03_Firmware/Application/OTA_APP/01_APP/app_display_task.c
 03_Firmware/Application/OTA_APP/Core/Src/main.c
 04_Test/Host/S07_OTA_Service/s07_key_host_test.c
 03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_metadata.h
@@ -444,6 +445,7 @@ Current S07 implementation changes:
 03_Firmware/Application/OTA_APP/03_Platform/platform_mcu/reset/platform_mcu_reset.h
 03_Firmware/Application/OTA_APP/04_Impl/impl_mcu/impl_platform_mcu_reset.c
 04_Test/Host/S07_OTA_Service/s07_worker_contract_host_test.c
+04_Test/Host/S07_OTA_Service/s07_display_contract_host_test.c
 04_Test/Host/S07_OTA_Service/s07_service_ota_host_test.c
 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx
 ```
@@ -466,6 +468,8 @@ Task 5 added `service_ota` under `02_Service/service_ota`. It owns stable Metada
 
 Task 6 reduced `app_ota_worker` to the S06 RTOS execution shell. Storage/UART hardware binding is isolated in `app_ota_runtime`; the worker now only consumes UART/KEY notifications, drives `service_ota`, maps Service events to Display Queue events, and hands `REBOOT_REQUIRED` to the Platform MCU reset abstraction. A Service abort API was added for UART/runtime cancellation paths so failed sessions enter `FAILED` and can be retried without creating `PENDING`. No additional OTA Task was introduced.
 
+Task 7 completed the Display/User Interaction bridge. Existing S06 display states remain available; `READY_TO_INSTALL` now renders the target Slot, verified result and second-key action, while `REBOOT_REQUIRED` renders the committed-PENDING/reset indication. Display event payloads now carry the mapped target Slot, and `displayTask` remains the sole LCD owner. The existing Display Model firmware-version line is retained because the frozen Service status contract does not expose a separate target-image version field. No initialization binding or Service ownership was expanded.
+
 ### Verification Results
 
 Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
@@ -482,13 +486,15 @@ Task 5 code verification: `s07_service_ota_host_test.c` passed opposite target s
 
 Task 6 code verification: `s07_worker_contract_host_test.c`, `s07_service_ota_host_test.c`, `s07_ota_firmware_sink_host_test.c`, `s07_metadata_host_test.c`, `s07_key_host_test.c` and `s07_irq_host_test.c` passed with `gcc -std=c99 -Wall -Wextra -Werror`; the Service Host regression also covered runtime abort entering `FAILED` and retry. Production dependency scan confirmed `app_ota_worker.c` no longer directly includes or calls Firmware Storage, production Sink, YMODEM Receiver or Metadata operations; XML parse passed; `05_Tools\\toolkit.bat build` passed with 0 errors and 0 warnings; `git diff --check` passed. Hardware verification: PENDING; no real-board KEY/UART/Display/Reset acceptance was claimed.
 
+Task 7 code verification: `s07_display_contract_host_test.c` and the existing `s07_worker_contract_host_test.c` passed with `gcc -std=c99 -Wall -Wextra -Werror`; the Service progress throttle remains `5%` or `200 ms`; `05_Tools\\toolkit.bat build` passed with 0 errors and 0 warnings; `git diff --check` passed. Board smoke verification: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed `displayTask` startup, Display SPI initialization and Display init result `0`. This is startup/display smoke only; full S07 READY/RESET interaction remains hardware PENDING.
+
 ### Known Issues
 
-- Full S07 provisioning, worker/display integration, regression and board acceptance work remains pending.
+- Full S07 provisioning, regression and board acceptance work remains pending.
 - Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 implementation is recorded in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`.
 - Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
-- Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`. Task 7 display rendering, Task 8 provisioning, full regression and board acceptance remain pending.
+- Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`; Task 7 display rendering is committed in `a8045d297442fe7b97bc318a37b53b05b4a4b968`. Task 8 provisioning, full regression and board acceptance remain pending.
 
 ### Review Focus
 
@@ -546,4 +552,10 @@ b9c619801b5913b25c52b1e57fe9cffbbb21d41b
 ```text
 4e5a8e5
 ae264974de810272a83314c4c3fcddb4d9ef6991
+```
+
+### Task 7 Commit
+
+```text
+a8045d297442fe7b97bc318a37b53b05b4a4b968
 ```
