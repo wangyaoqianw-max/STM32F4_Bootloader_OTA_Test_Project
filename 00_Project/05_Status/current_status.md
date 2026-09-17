@@ -3,7 +3,9 @@
 ## Context Metadata
 
 - Active Stage: `S06_RTOS_Runtime`
-- Status: `PLANNED`
+- Status: `DESIGN_APPROVED / IMPLEMENTATION_PLANNED`
+- S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
+- S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -30,13 +32,32 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S05C_Logic_Analyzer`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime`
+- Next Planned Stage: `S07_OTA_Service_V1`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B 和 S05C 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S06_RTOS_Runtime` 设计讨论。
+`S05_UART_Ymodem`、S05A、S05B 和 S05C 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。
+
+当前 `S06_RTOS_Runtime` 已完成设计讨论并正式冻结 `design.md` 与 `implementation_plan.md`，下一步进入实施。S06 的目标不是再次集成 FreeRTOS，而是在现有 Application Runtime 上建立稳定的三线程并发模型，并把现有 ST7789 显示能力适配进来。
+
+冻结 Runtime：
+
+```text
+appSystem      → 前台 Application / Demo behavior
+otaWorker      → 后台 Ymodem / Firmware Storage / Validation
+displayTask    → ST7789 / Graphics / Display Model
+```
+
+冻结 IPC：
+
+```text
+UART ISR/RX → otaWorker   : Task Notification
+otaWorker   → displayTask : Queue
+```
+
+实施顺序从 LCD/ST7789 Board Adaptation 开始，然后进行 Runtime 重构、OTA Worker 迁移、Display Queue 集成和端到端并发板测。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
@@ -262,11 +283,69 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Design Entry
+## S06 Runtime / Concurrency Plan
 
-S06 名称保持 `S06_RTOS_Runtime`，但早期“集成 FreeRTOS”的前提已过时。当前 Application 已具备 RTOS Kernel 和任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
+S06 正式设计和计划：
 
-S06 当前进入 Design Discussion，重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
+```text
+00_Project/03_Stages/S06_RTOS_Runtime/design.md
+00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md
+```
+
+设计状态：
+
+```text
+DESIGN_APPROVED
+IMPLEMENTATION_PLANNED
+```
+
+冻结三线程：
+
+```text
+appSystem      NORMAL
+otaWorker      ABOVE_NORMAL
+displayTask    BELOW_NORMAL
+```
+
+冻结职责：
+
+```text
+appSystem
+→ Application lifecycle
+→ foreground work
+→ v1.0 LED Blink / v1.1 PWM Breath
+
+otaWorker
+→ USART1/Ymodem runtime
+→ Firmware receive
+→ Slot B write
+→ Image validation
+
+displayTask
+→ Display Queue
+→ Display Model
+→ ST7789 / Graphics / SPI1
+```
+
+冻结 IPC：
+
+```text
+UART ISR/RX → otaWorker   : Notification
+otaWorker   → displayTask : Queue
+```
+
+第一项实施任务：LCD/ST7789 Board Adaptation。已确认硬件 binding 为：
+
+```text
+PB10 → LCD_RST
+PA1  → LCD_BL
+PA4  → LCD_CS
+PA5  → SPI1_SCK
+PA6  → LCD_DC
+PA7  → SPI1_MOSI
+```
+
+LCD 第一版不引入 LVGL；采用现有 Graphics 字符绘制。S06 不要求 SPI1 Logic Analyzer 波形，LCD 用 Visual Inspection + RTT 验收；逻辑分析仪继续保持 SPI2/W25Q64 + I2C/AT24C02 接线。
 
 ## Deferred Regression
 
@@ -281,6 +360,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无已知阻塞。S05C 已完成 Verification / Review 并以 `CLOSED / PASS` 关闭。
+当前无已知阻塞。S06 已完成设计和实施计划，尚未开始正式代码实施。
 
-下一步：进入 `S06_RTOS_Runtime` Design Discussion，先冻结 Runtime / Concurrency Model，再形成正式 design.md 与 implementation_plan.md。
+下一步：执行 `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md` Task 1，完成 LCD/ST7789 Board Adaptation，并使用现有 Toolkit 做 Build / Flash / RTT + 真实屏幕 Visual Acceptance。
