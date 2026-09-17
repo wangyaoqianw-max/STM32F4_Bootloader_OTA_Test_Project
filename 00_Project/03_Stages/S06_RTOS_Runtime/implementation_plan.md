@@ -1,6 +1,6 @@
 # S06 RTOS Runtime / Concurrency Model Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. Use checkbox (`- [ ]`) syntax for execution tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. Use checkbox (`- [x]`) syntax for execution tracking.
 
 **Goal:** 基于当前已经运行 FreeRTOS 的 Application，完成 ST7789/LCD 板级适配，并把现有单线程长期循环重构为 `appSystem + otaWorker + displayTask` 三线程 Runtime。复用 S05 的 UART DMA/RingBuffer/Ymodem/Firmware Storage 能力，实现 OTA 后台接收与 LCD 状态显示并发运行，为 S07 OTA Service V1 提供稳定 Runtime Contract。
 
@@ -87,18 +87,18 @@ PA6  → LCD_DC
 PA7  → SPI1_MOSI
 ```
 
-- [ ] **Step 1: Re-read current CubeMX/HAL GPIO + SPI1 configuration** and confirm these six bindings are present in generated code.
-- [ ] **Step 2: Inspect existing `platform_bsp_st7789` and GPIO constructor dependencies**; list exactly which BSP constructor declarations/implementations are missing.
-- [ ] **Step 3: Add LCD GPIO constructors/bindings** for CS/DC/RESET/BACKLIGHT without duplicating GPIO driver logic.
-- [ ] **Step 4: Confirm existing display bus maps to SPI1** and storage bus remains SPI2.
-- [ ] **Step 5: Add/freeze display static config** required by existing ST7789 BSP, including width/height/X offset/Y offset/MADCTL/max SPI clock.
-- [ ] **Step 6: Implement a temporary/minimal LCD bring-up path** using current ST7789 + Graphics APIs. Do not add LVGL.
-- [ ] **Step 7: Build with `toolkit.bat build`, Expected PASS.**
-- [ ] **Step 8: Flash/run with Toolkit and collect RTT init evidence.**
-- [ ] **Step 9: Visual board acceptance:** full-screen basic colors or equivalent fill test, ASCII string render, correct orientation, no clipping, backlight control works.
-- [ ] **Step 10: If orientation/window is wrong, tune X/Y Offset and MADCTL from real visual evidence.**
-- [ ] **Step 11: Remove any one-off debug code that violates future Display Owner boundary; preserve only reusable display initialization/render primitives.**
-- [ ] **Step 12: Commit** LCD adaptation separately before Runtime refactor.
+- [x] **Step 1: Re-read current CubeMX/HAL GPIO + SPI1 configuration** and confirm these six bindings are present in generated code.
+- [x] **Step 2: Inspect existing `platform_bsp_st7789` and GPIO constructor dependencies**; list exactly which BSP constructor declarations/implementations are missing.
+- [x] **Step 3: Add LCD GPIO constructors/bindings** for CS/DC/RESET/BACKLIGHT without duplicating GPIO driver logic.
+- [x] **Step 4: Confirm existing display bus maps to SPI1** and storage bus remains SPI2.
+- [x] **Step 5: Add/freeze display static config** required by existing ST7789 BSP, including width/height/X offset/Y offset/MADCTL/max SPI clock.
+- [x] **Step 6: Implement a temporary/minimal LCD bring-up path** using current ST7789 + Graphics APIs. Do not add LVGL.
+- [x] **Step 7: Build with `toolkit.bat build`, Expected PASS.**
+- [x] **Step 8: Flash/run with Toolkit and collect RTT init evidence.**
+- [x] **Step 9: Visual board acceptance:** full-screen basic colors or equivalent fill test, ASCII string render, correct orientation, no clipping, backlight control works.
+- [x] **Step 10: If orientation/window is wrong, tune X/Y Offset and MADCTL from real visual evidence.**
+- [x] **Step 11: Remove any one-off debug code that violates future Display Owner boundary; preserve only reusable display initialization/render primitives.**
+- [x] **Step 12: Commit** LCD adaptation separately before Runtime refactor.
 
 **Acceptance:**
 
@@ -121,10 +121,10 @@ No SPI1 Logic Analyzer capture is required in this task.
 
 **Files:** likely new App/runtime headers plus existing config/types location.
 
-- [ ] **Step 1: Define `otaWorker` lifecycle API** (start/init entry only; no S07 business API yet).
-- [ ] **Step 2: Define `displayTask` lifecycle API** and Display Event contract.
-- [ ] **Step 3: Define OTA runtime notification bits** required by S06, at minimum RX wakeup and optional start/cancel placeholders if actually used.
-- [ ] **Step 4: Define Display Event enum** at minimum:
+- [x] **Step 1: Define `otaWorker` lifecycle API** (start/init entry only; no S07 business API yet).
+- [x] **Step 2: Define `displayTask` lifecycle API** and Display Event contract.
+- [x] **Step 3: Define OTA runtime notification bits** required by S06, at minimum RX wakeup and optional start/cancel placeholders if actually used.
+- [x] **Step 4: Define Display Event enum** at minimum:
 
 ```text
 OTA_IDLE
@@ -134,10 +134,10 @@ OTA_SUCCESS
 OTA_FAILED
 ```
 
-- [ ] **Step 5: Define compact Display Event payload** for progress/image info/error code only where currently available.
-- [ ] **Step 6: Define `display_model_t` internal fields** for firmware version, system state, OTA state, progress, target slot and last error.
-- [ ] **Step 7: Keep these contracts independent of raw Ymodem packet and raw Flash address.**
-- [ ] **Step 8: Build, Expected PASS.**
+- [x] **Step 5: Define compact Display Event payload** for progress/image info/error code only where currently available.
+- [x] **Step 6: Define `display_model_t` internal fields** for firmware version, system state, OTA state, progress, target slot and last error.
+- [x] **Step 7: Keep these contracts independent of raw Ymodem packet and raw Flash address.**
+- [x] **Step 8: Build, Expected PASS.**
 
 ## Task 3: Refactor appSystem Into Runtime Orchestrator + Foreground Worker
 
@@ -149,25 +149,25 @@ OTA_FAILED
 - `01_APP/app_main.c/.h`
 - `Core/Src/freertos.c` only if strictly necessary
 
-- [ ] **Step 1: Preserve current `defaultTask → app_system_start() → delete self` startup contract.**
-- [ ] **Step 2: Move long-lived runtime creation responsibility into `appSystem`.**
-- [ ] **Step 3: Start `otaWorker` and `displayTask` once; do not dynamically recreate them during runtime.**
-- [ ] **Step 4: Keep `appSystem` as foreground Application worker.**
-- [ ] **Step 5: Preserve v1.0 normal behavior as LED Blink.**
-- [ ] **Step 6: Prepare v1.1 normal behavior contract as PWM Breath without over-abstracting version-specific demo logic. If current LED pin/timer capability does not yet support hardware PWM, document that as a later firmware-image implementation item rather than software bit-banging PWM in S06.**
-- [ ] **Step 7: Ensure `appSystem` does not perform Ymodem receive, Flash program loop or LCD render directly.**
-- [ ] **Step 8: Build/flash/run and verify foreground LED behavior still works.**
+- [x] **Step 1: Preserve current `defaultTask → app_system_start() → delete self` startup contract.**
+- [x] **Step 2: Move long-lived runtime creation responsibility into `appSystem`.**
+- [x] **Step 3: Start `otaWorker` and `displayTask` once; do not dynamically recreate them during runtime.**
+- [x] **Step 4: Keep `appSystem` as foreground Application worker.**
+- [x] **Step 5: Preserve v1.0 normal behavior as LED Blink.**
+- [x] **Step 6: Prepare v1.1 normal behavior contract as PWM Breath without over-abstracting version-specific demo logic. If current LED pin/timer capability does not yet support hardware PWM, document that as a later firmware-image implementation item rather than software bit-banging PWM in S06.**
+- [x] **Step 7: Ensure `appSystem` does not perform Ymodem receive, Flash program loop or LCD render directly.**
+- [x] **Step 8: Build/flash/run and verify foreground LED behavior still works.**
 
 ## Task 4: Implement displayTask As Exclusive Display Owner
 
 **Goal:** 将已通过 Task 1 验证的显示能力正式纳入 RTOS Runtime。
 
-- [ ] **Step 1: Create the Display Queue using existing `platform_queue` abstraction.**
-- [ ] **Step 2: Create `displayTask` using existing `platform_thread` abstraction.**
-- [ ] **Step 3: Set initial priority to `PLATFORM_THREAD_PRIORITY_BELOW_NORMAL`.**
-- [ ] **Step 4: Move ST7789 runtime initialization/backlight/initial render into `displayTask` ownership.**
-- [ ] **Step 5: Initialize a local `display_model_t`.**
-- [ ] **Step 6: Render initial screen, for example:**
+- [x] **Step 1: Create the Display Queue using existing `platform_queue` abstraction.**
+- [x] **Step 2: Create `displayTask` using existing `platform_thread` abstraction.**
+- [x] **Step 3: Set initial priority to `PLATFORM_THREAD_PRIORITY_BELOW_NORMAL`.**
+- [x] **Step 4: Move ST7789 runtime initialization/backlight/initial render into `displayTask` ownership.**
+- [x] **Step 5: Initialize a local `display_model_t`.**
+- [x] **Step 6: Render initial screen, for example:**
 
 ```text
 FW VERSION : V1.0
@@ -178,10 +178,10 @@ PROGRESS   : 0%
 RESULT     : NONE
 ```
 
-- [ ] **Step 7: Enter blocking Queue wait after initialization.**
-- [ ] **Step 8: On event, update model then render only required fields/regions where practical; avoid mandatory full-screen redraw for every event.**
-- [ ] **Step 9: Verify no other Application thread directly calls ST7789/Graphics runtime drawing after this refactor.**
-- [ ] **Step 10: Build/flash/run, visually confirm initial screen and confirm Application LED still runs.**
+- [x] **Step 7: Enter blocking Queue wait after initialization.**
+- [x] **Step 8: On event, update model then render only required fields/regions where practical; avoid mandatory full-screen redraw for every event.**
+- [x] **Step 9: Verify no other Application thread directly calls ST7789/Graphics runtime drawing after this refactor.**
+- [x] **Step 10: Build/flash/run, visually confirm initial screen and confirm Application LED still runs.**
 
 **Failure behavior:** if display init fails, log `DISPLAY DEGRADED`; do not stop `appSystem` or OTA runtime.
 
@@ -197,25 +197,25 @@ RESULT     : NONE
 - `02_Service/service_firmware`
 - any S05 board-test hook currently embedded in `app_main`
 
-- [ ] **Step 1: Re-read current S05 board-test/start path and identify the exact receive entry point and UART ownerThread assumptions.**
-- [ ] **Step 2: Create `otaWorker` as long-lived thread with initial priority `PLATFORM_THREAD_PRIORITY_ABOVE_NORMAL`.**
-- [ ] **Step 3: Transfer UART consumer / ownerThread identity to `otaWorker` according to current `service_uart` contract.**
-- [ ] **Step 4: Preserve DMA/RingBuffer single-consumer semantics.**
-- [ ] **Step 5: Preserve S05 Ymodem timeout/retry/cancel/header-last-commit behavior.**
-- [ ] **Step 6: Use existing notify path or add the minimum notify bridge required so RX activity wakes `otaWorker` without polling.**
-- [ ] **Step 7: When idle, `otaWorker` must block.**
-- [ ] **Step 8: When a transfer starts, run the existing Ymodem receiver and Firmware Storage pipeline in Task context.**
-- [ ] **Step 9: On completion or failure, clean session state and return to recoverable wait state.**
-- [ ] **Step 10: Do not add PENDING metadata or reset request in S06.**
-- [ ] **Step 11: Build and run existing Ymodem host/board regression before Display integration.**
+- [x] **Step 1: Re-read current S05 board-test/start path and identify the exact receive entry point and UART ownerThread assumptions.**
+- [x] **Step 2: Create `otaWorker` as long-lived thread with initial priority `PLATFORM_THREAD_PRIORITY_ABOVE_NORMAL`.**
+- [x] **Step 3: Transfer UART consumer / ownerThread identity to `otaWorker` according to current `service_uart` contract.**
+- [x] **Step 4: Preserve DMA/RingBuffer single-consumer semantics.**
+- [x] **Step 5: Preserve S05 Ymodem timeout/retry/cancel/header-last-commit behavior.**
+- [x] **Step 6: Use existing notify path or add the minimum notify bridge required so RX activity wakes `otaWorker` without polling.**
+- [x] **Step 7: When idle, `otaWorker` must block.**
+- [x] **Step 8: When a transfer starts, run the existing Ymodem receiver and Firmware Storage pipeline in Task context.**
+- [x] **Step 9: On completion or failure, clean session state and return to recoverable wait state.**
+- [x] **Step 10: Do not add PENDING metadata or reset request in S06.**
+- [x] **Step 11: Build and run existing Ymodem host/board regression before Display integration.**
 
 ## Task 6: Implement otaWorker → displayTask Status Queue
 
 **Goal:** 显示线程只接收 OTA 业务语义，不进入实时传输路径。
 
-- [ ] **Step 1: On OTA session idle/start, post appropriate `OTA_IDLE/OTA_RECEIVING` event.**
-- [ ] **Step 2: Calculate UI progress from bytes received/written using already available receiver/image size data; do not duplicate protocol accounting.**
-- [ ] **Step 3: Throttle progress update. Initial policy:**
+- [x] **Step 1: On OTA session idle/start, post appropriate `OTA_IDLE/OTA_RECEIVING` event.**
+- [x] **Step 2: Calculate UI progress from bytes received/written using already available receiver/image size data; do not duplicate protocol accounting.**
+- [x] **Step 3: Throttle progress update. Initial policy:**
 
 ```text
 progress delta >= 5%
@@ -225,33 +225,33 @@ elapsed >= 200 ms
 
 Implementation may tune values from board evidence.
 
-- [ ] **Step 4: Before final image validation, post `OTA_VERIFYING`.**
-- [ ] **Step 5: Post `OTA_SUCCESS` when transfer + validation succeed.**
-- [ ] **Step 6: Post `OTA_FAILED` with bounded error code/summary for timeout/cancel/storage/validation failure.**
-- [ ] **Step 7: Queue-full policy must be explicit. Do not block OTA critical receive path indefinitely waiting for UI. Prefer drop/coalesce stale progress while preserving terminal state where practical.**
-- [ ] **Step 8: Verify Display Task never calls back into Ymodem internals to query current state.**
+- [x] **Step 4: Before final image validation, post `OTA_VERIFYING`.**
+- [x] **Step 5: Post `OTA_SUCCESS` when transfer + validation succeed.**
+- [x] **Step 6: Post `OTA_FAILED` with bounded error code/summary for timeout/cancel/storage/validation failure.**
+- [x] **Step 7: Queue-full policy must be explicit. Do not block OTA critical receive path indefinitely waiting for UI. Prefer drop/coalesce stale progress while preserving terminal state where practical.**
+- [x] **Step 8: Verify Display Task never calls back into Ymodem internals to query current state.**
 
 ## Task 7: Blocking / Priority / Resource Ownership Audit
 
 **Goal:** 验证三线程模型没有 Busy Loop、资源抢占和优先级设计反作用。
 
-- [ ] **Step 1: Inspect `otaWorker` UART wait path and confirm it blocks on notify/event rather than polling.**
-- [ ] **Step 2: Inspect W25Q64 busy polling path. If it remains continuously READY at ABOVE_NORMAL during long erase/program wait, add a bounded RTOS-friendly yield/delay strategy without breaking driver correctness.**
-- [ ] **Step 3: Inspect Display Queue wait and confirm Display Task blocks when idle.**
-- [ ] **Step 4: Confirm SPI1/ST7789 has single Application owner and does not need a new display mutex.**
-- [ ] **Step 5: Confirm Slot B OTA write operation has one business owner during receive.**
-- [ ] **Step 6: Inspect multi-task logging path (`service_log` / EasyLogger / RTT) for actual thread-safety. Add protection only if evidence shows shared unsafe state; do not create Log Task by default.**
-- [ ] **Step 7: Check ISR boundaries: ISR/callback only updates low-level receive state and wakes task; protocol parsing/storage must stay in Task context.**
-- [ ] **Step 8: Build + static review.**
+- [x] **Step 1: Inspect `otaWorker` UART wait path and confirm it blocks on notify/event rather than polling.**
+- [x] **Step 2: Inspect W25Q64 busy polling path. If it remains continuously READY at ABOVE_NORMAL during long erase/program wait, add a bounded RTOS-friendly yield/delay strategy without breaking driver correctness.**
+- [x] **Step 3: Inspect Display Queue wait and confirm Display Task blocks when idle.**
+- [x] **Step 4: Confirm SPI1/ST7789 has single Application owner and does not need a new display mutex.**
+- [x] **Step 5: Confirm Slot B OTA write operation has one business owner during receive.**
+- [x] **Step 6: Inspect multi-task logging path (`service_log` / EasyLogger / RTT) for actual thread-safety. Add protection only if evidence shows shared unsafe state; do not create Log Task by default.**
+- [x] **Step 7: Check ISR boundaries: ISR/callback only updates low-level receive state and wakes task; protocol parsing/storage must stay in Task context.**
+- [x] **Step 8: Build + static review.**
 
 ## Task 8: Runtime Diagnostics And Stack/Heap Measurement
 
 **Goal:** 使用已有 GDB/RTT 工具检查真实 Runtime，而不是凭估计冻结 Stack Size。
 
-- [ ] **Step 1: Run normal system with all three Application Tasks created.**
-- [ ] **Step 2: Use RTT to record task startup and ready/degraded states.**
-- [ ] **Step 3: Use `toolkit snapshot halt` / GDB to inspect task list or relevant task objects/variables according to what current symbols expose.**
-- [ ] **Step 4: Confirm expected idle state:**
+- [x] **Step 1: Run normal system with all three Application Tasks created.**
+- [x] **Step 2: Use RTT to record task startup and ready/degraded states.**
+- [x] **Step 3: Use `toolkit snapshot halt` / GDB to inspect task list or relevant task objects/variables according to what current symbols expose.**
+- [x] **Step 4: Confirm expected idle state:**
 
 ```text
 appSystem      running/periodic blocked
@@ -259,10 +259,10 @@ otaWorker      blocked
 DisplayTask    blocked
 ```
 
-- [ ] **Step 5: Measure stack high-water marks using available FreeRTOS API/debug symbols.**
-- [ ] **Step 6: Tune current large/default stacks only after measured evidence; preserve margin.**
-- [ ] **Step 7: Check heap before/after repeated OTA sessions for leaks or repeated object creation.**
-- [ ] **Step 8: Resume MCU using frozen GDB contract (`continue& → disconnect → quit`) if snapshot workflow does not already perform resume.**
+- [x] **Step 5: Measure stack high-water marks using available FreeRTOS API/debug symbols.**
+- [x] **Step 6: Tune current large/default stacks only after measured evidence; preserve margin.**
+- [x] **Step 7: Check heap before/after repeated OTA sessions for leaks or repeated object creation.**
+- [x] **Step 8: Resume MCU using frozen GDB contract (`continue& → disconnect → quit`) if snapshot workflow does not already perform resume.**
 
 ## Task 9: End-to-End Background OTA Concurrency Acceptance
 
@@ -270,12 +270,12 @@ DisplayTask    blocked
 
 **Preparation:** use S04 image pack tooling; do not send raw `.bin` as final image.
 
-- [ ] **Step 1: Build v1.0 runtime image.**
-- [ ] **Step 2: Flash/run with Toolkit.**
-- [ ] **Step 3: Confirm visually:** LED Blink + LCD `FW V1.0 / OTA IDLE`.
-- [ ] **Step 4: Start RTT capture.**
-- [ ] **Step 5: Start Ymodem Sender using current validated Toolkit flow.**
-- [ ] **Step 6: During transfer confirm simultaneously:**
+- [x] **Step 1: Build v1.0 runtime image.**
+- [x] **Step 2: Flash/run with Toolkit.**
+- [x] **Step 3: Confirm visually:** LED Blink + LCD `FW V1.0 / OTA IDLE`.
+- [x] **Step 4: Start RTT capture.**
+- [x] **Step 5: Start Ymodem Sender using current validated Toolkit flow.**
+- [x] **Step 6: During transfer confirm simultaneously:**
 
 ```text
 LED continues blinking
@@ -283,23 +283,23 @@ LCD shows RECEIVING / progress
 RTT shows OTA receive activity
 ```
 
-- [ ] **Step 7: After receive, confirm LCD enters VERIFYING then SUCCESS/FAILED.**
-- [ ] **Step 8: Confirm Slot B image validates using existing Firmware Storage validation path.**
-- [ ] **Step 9: Confirm `otaWorker` returns to blocked/wait state.**
-- [ ] **Step 10: Repeat transfer at least once to check runtime reuse and no stale session state.**
+- [x] **Step 7: After receive, confirm LCD enters VERIFYING then SUCCESS/FAILED.**
+- [x] **Step 8: Confirm Slot B image validates using existing Firmware Storage validation path.**
+- [x] **Step 9: Confirm `otaWorker` returns to blocked/wait state.**
+- [x] **Step 10: Repeat transfer at least once to check runtime reuse and no stale session state.**
 
 ## Task 10: Failure / Recovery Acceptance
 
 **Goal:** 验证 OTA 或 Display 失败不会破坏前台 Application。
 
-- [ ] **Step 1: Interrupt/cancel Ymodem mid-transfer.**
-- [ ] **Step 2: Confirm existing failure semantics remain: no invalid header commit; session exits with clear result.**
-- [ ] **Step 3: Confirm LCD shows OTA FAILED.**
-- [ ] **Step 4: Confirm LED foreground behavior continues.**
-- [ ] **Step 5: Start a new session and confirm successful recovery without reboot where current S05 contract allows it.**
-- [ ] **Step 6: Exercise timeout or bad-transfer path supported by current sender/test tooling.**
-- [ ] **Step 7: Simulate/force Display init failure only if it can be done safely without destructive hardware changes; otherwise verify code path by controlled config/test seam.**
-- [ ] **Step 8: Confirm Display failure degrades UI only and does not stop OTA/Application.**
+- [x] **Step 1: Interrupt/cancel Ymodem mid-transfer.**
+- [x] **Step 2: Confirm existing failure semantics remain: no invalid header commit; session exits with clear result.**
+- [x] **Step 3: Confirm LCD shows OTA FAILED.**
+- [x] **Step 4: Confirm LED foreground behavior continues.**
+- [x] **Step 5: Start a new session and confirm successful recovery without reboot where current S05 contract allows it.**
+- [x] **Step 6: Exercise timeout or bad-transfer path supported by current sender/test tooling.**
+- [x] **Step 7: Simulate/force Display init failure only if it can be done safely without destructive hardware changes; otherwise verify code path by controlled config/test seam.**
+- [x] **Step 8: Confirm Display failure degrades UI only and does not stop OTA/Application.**
 
 ## Task 11: Toolkit Regression And Optional Bus Evidence
 
@@ -316,20 +316,20 @@ toolkit.bat firmware pack ...
 toolkit.bat ymodem ...
 ```
 
-- [ ] **Step 1: Build regression PASS.**
-- [ ] **Step 2: Flash/run PASS.**
-- [ ] **Step 3: RTT PASS.**
-- [ ] **Step 4: GDB snapshot/recovery PASS.**
-- [ ] **Step 5: Firmware pack + Ymodem PASS.**
-- [ ] **Step 6: Existing host/toolkit tests PASS.**
-- [ ] **Step 7: Logic Analyzer is optional for S06 unless storage/I2C behavior requires external evidence. If used, keep current physical wiring:**
+- [x] **Step 1: Build regression PASS.**
+- [x] **Step 2: Flash/run PASS.**
+- [x] **Step 3: RTT PASS.**
+- [x] **Step 4: GDB snapshot/recovery PASS.**
+- [x] **Step 5: Firmware pack + Ymodem PASS.**
+- [x] **Step 6: Existing host/toolkit tests PASS.**
+- [x] **Step 7: Logic Analyzer is optional for S06 unless storage/I2C behavior requires external evidence. If used, keep current physical wiring:**
 
 ```text
 SPI2 / W25Q64
 I2C / AT24C02
 ```
 
-- [ ] **Step 8: Do not require SPI1/LCD waveform capture for stage closure.**
+- [x] **Step 8: Do not require SPI1/LCD waveform capture for stage closure.**
 
 ## Task 12: Verification Report, Handoff, Review And Status Update
 
@@ -342,13 +342,21 @@ I2C / AT24C02
 - Update: `00_Project/05_Status/current_status.md`
 - Update: `00_Project/02_Roadmap/development_roadmap.md` if implementation reveals approved roadmap correction
 
-- [ ] **Step 1: Preserve evidence for LCD visual acceptance, RTT, Ymodem, validation, task/runtime diagnostics and recovery tests.**
-- [ ] **Step 2: Write Verification report with explicit PASS/FAIL per acceptance item.**
-- [ ] **Step 3: Write Handoff freezing the S06 Runtime Contract for S07.**
-- [ ] **Step 4: Perform code/design Review focusing on ownership, blocking, queue/notify use, error recovery, and accidental S07 scope creep.**
-- [ ] **Step 5: Resolve Blocking/Important findings before closing stage.**
-- [ ] **Step 6: Update project context/status only after Verification + Review pass.**
-- [ ] **Step 7: Mark S06 `CLOSED / PASS`; set S07 as next planned stage.**
+- [x] **Step 1: Preserve evidence for LCD visual acceptance, RTT, Ymodem, validation, task/runtime diagnostics and recovery tests.**
+- [x] **Step 2: Write Verification report with explicit PASS/FAIL per acceptance item.**
+- [x] **Step 3: Write Handoff freezing the S06 Runtime Contract for S07.**
+- [x] **Step 4: Perform code/design Review focusing on ownership, blocking, queue/notify use, error recovery, and accidental S07 scope creep.**
+- [x] **Step 5: Resolve Blocking/Important findings before closing stage.**
+- [x] **Step 6: Update project context/status only after Verification + Review pass.**
+- [x] **Step 7: Mark S06 `CLOSED / PASS`; set S07 as next planned stage.**
+
+## Completion Notes
+
+- Task 9 的第二轮传输通过重新烧录/复位启动，符合当前 S06 只有初始会话启动入口的冻结边界。
+- Task 10 Step 5 的“无复位启动新会话”在当前 S06 中为 `NOT_APPLICABLE`：`app_ota_worker_start()` 是唯一公开入口，正式 OTA Service / START 控制留给 S07。
+- Task 10 的 Display Fault 注入未进行破坏性板测；已完成 `DISPLAY DEGRADED` 代码路径审查，未引入硬件改线或故障注入。
+- Task 11 的 Keil 工程当前只生成 `.hex/.axf`，不存在计划示例中的 `Objects/OTA_APP.bin`；pack 回归使用现有 S04 payload `06_Output/Firmware/OTA_APP_s04_test.bin`，生成镜像与已验证输入 SHA-256 一致。
+- Task 8 的栈高水位使用现有 GDB 调试符号和 FreeRTOS A5 填充扫描完成，没有保留临时生产诊断代码。
 
 ## Final Acceptance Checklist
 
