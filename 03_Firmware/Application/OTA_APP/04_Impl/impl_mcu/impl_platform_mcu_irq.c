@@ -1,6 +1,8 @@
 /******************************************************************************
  * Copyright (C) 2026 YaoQian Wang
  *
+ * All Rights Reserved.
+ *
  * @file impl_platform_mcu_irq.c
  * @brief STM32 CMSIS NVIC Platform MCU IRQ Impl
  * @author YaoQian Wang

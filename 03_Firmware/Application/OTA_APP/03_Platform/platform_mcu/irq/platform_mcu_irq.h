@@ -1,6 +1,8 @@
 /******************************************************************************
  * Copyright (C) 2026 YaoQian Wang
  *
+ * All Rights Reserved.
+ *
  * @file platform_mcu_irq.h
  * @brief Platform MCU 通用 IRQ 控制接口
  * @author YaoQian Wang

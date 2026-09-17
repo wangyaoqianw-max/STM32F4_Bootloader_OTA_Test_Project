@@ -15,6 +15,8 @@
 #define OTA_FIRMWARE_SINK_H
 
 //******************************** Includes *********************************//
+#include "platform_error.h"
+#include "platform_types.h"
 #include "firmware_storage.h"
 #include "ymodem_config.h"
 #include "ymodem_sink.h"
