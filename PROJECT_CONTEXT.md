@@ -5,8 +5,10 @@
 ## Context Metadata
 
 - Active Stage: `S06_RTOS_Runtime`
-- Active Stage Status: `PLANNED`
+- Active Stage Status: `DESIGN_APPROVED / IMPLEMENTATION_PLANNED`
 - Branch: `main`
+- S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
+- S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S05B Initial Design Commit: `9d6b037`
 - S05B Design Approval Commit: `5622b63a7cb3d532aab55de73eaf88d823b9acb9`
 - S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
@@ -25,30 +27,32 @@
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
 - Last Closed Stage: `S05C_Logic_Analyzer`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime`
+- Next Planned Stage: `S07_OTA_Service_V1`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-S05、S05A、S05B 和 S05C 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S06_RTOS_Runtime` Design Discussion。
+S05、S05A、S05B 和 S05C 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 `S06_RTOS_Runtime` 已完成设计收束并形成正式 `design.md` 与 `implementation_plan.md`，下一步进入实施。
 
-S06 不再是“移植 FreeRTOS”。Application 已经运行 FreeRTOS，当前目标是正式冻结 Application Runtime / Concurrency Model，为 S07 OTA Service V1 提供清晰的任务、资源所有权和并发基础。
+S06 不再是“移植 FreeRTOS”。Application 已经运行 FreeRTOS，本阶段正式目标是建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供清晰的任务、资源所有权和并发基础。
 
-重点讨论：
+冻结 Runtime：
 
 ```text
-Task Topology
-Task Lifecycle
-UART Consumer Ownership
-OTA/Ymodem Task Ownership
-IPC Selection
-Flash/Storage Serialization
-Blocking / Timeout Policy
-Error Recovery
-Business vs OTA Concurrency
-Logging Resource Boundary
+appSystem      → 前台 Application / v1.0 Blink / v1.1 Breath
+otaWorker      → 后台 Ymodem / Firmware Storage / Validation
+displayTask    → ST7789 / Graphics / Display Model
 ```
+
+冻结 IPC：
+
+```text
+UART ISR/RX → otaWorker     : Task Notification
+otaWorker   → displayTask   : Queue
+```
+
+实施第一项：完成 LCD/ST7789 Board Adaptation，再进入三线程 Runtime 重构。
 
 ## Stable Toolkit Architecture
 
@@ -281,47 +285,79 @@ running state
 
 Legacy Scripts 只允许做兼容薄包装，不建立第二套核心实现。
 
-## S06 Design Entry
+## S06 Approved Runtime Contract
 
-S06 名称：
-
-```text
-S06_RTOS_Runtime
-```
-
-S06 设计时必须优先读取：
+正式入口：
 
 ```text
-AGENTS.md
-PROJECT_CONTEXT.md
-00_Project/WORKFLOW.md
-00_Project/02_Roadmap/development_roadmap.md
-00_Project/05_Status/current_status.md
-00_Project/03_Stages/S05_UART_Ymodem/handoff.md
-00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md
-00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md
-00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
-00_Project/03_Stages/S05C_Logic_Analyzer/review.md
-03_Firmware/Application 当前 App/Service/Platform/Impl/Config/RTOS 代码
+00_Project/03_Stages/S06_RTOS_Runtime/design.md
+00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md
 ```
 
-S06 设计必须基于当前真实 Application，而不是早期“未来再集成 RTOS”的假设。
-
-需要明确：
+冻结三线程拓扑：
 
 ```text
-哪些 Task 永久存在？
-谁消费 UART RingBuffer？
-Ymodem Receiver 由谁启动/停止？
-OTA 下载期间正常业务是否继续？
-Flash / EEPROM / Logging 谁拥有互斥？
-ISR / DMA / Task 的责任边界是什么？
-哪些 API 可以阻塞？最大阻塞多久？
-Timeout / Cancel / Reset 如何跨 Task 传播？
+appSystem
+├─ Application lifecycle
+├─ Foreground work
+└─ v1.0 Blink / v1.1 Breath
+
+otaWorker
+├─ UART/Ymodem session
+├─ Firmware receive
+├─ Slot B write
+└─ Image validation
+
+displayTask
+├─ Display Queue
+├─ Display Model
+├─ platform_graphics
+└─ ST7789 / SPI1
 ```
 
-S06 结束后应给 S07 提供稳定的 Runtime / Concurrency Contract，而不是直接提前实现 OTA Service 业务状态机。
+初始优先级：
+
+```text
+otaWorker   ABOVE_NORMAL
+appSystem   NORMAL
+displayTask BELOW_NORMAL
+```
+
+资源 Ownership：
+
+```text
+Application lifecycle / LED Demo → appSystem
+Ymodem/Firmware Download          → otaWorker
+ST7789/Graphics/SPI1 usage        → displayTask
+```
+
+S06 第一项实施任务为 LCD/ST7789 Board Adaptation。当前硬件 binding：
+
+```text
+PB10 → LCD_RST
+PA1  → LCD_BL
+PA4  → LCD_CS
+PA5  → SPI1_SCK
+PA6  → LCD_DC
+PA7  → SPI1_MOSI
+```
+
+LCD 第一版使用现有 Graphics 字符绘制，不引入 LVGL。LCD 验收采用 Visual Inspection + RTT；Logic Analyzer 保持接在 SPI2/W25Q64 与 Software I2C/AT24C02，不要求 S06 采集 SPI1 波形。
+
+核心并发验收：
+
+```text
+v1.0 LED Blink continues
++
+Background Ymodem/Firmware Storage
++
+LCD RECEIVING / VERIFYING / SUCCESS|FAILED
+```
+
+S06 结束后必须给 S07 提供稳定 Runtime / Concurrency Contract，而不是提前实现 OTA Service 的 `PENDING / Reset` 业务逻辑。
 
 ## Next Action
 
-进入 `S06_RTOS_Runtime` Design Discussion。先读取当前 Application 的 RTOS / UART / Ymodem / Storage 实现，讨论并冻结 Task Topology、Lifecycle、Ownership、IPC、Blocking 和 Recovery，再生成正式 `design.md` 与 `implementation_plan.md`。
+执行 `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md`。
+
+从 Task 1 开始：完成 LCD/ST7789 Board Adaptation，使用现有 Toolkit 完成 Build / Flash / RTT 和真实屏幕 Visual Acceptance；通过后再实施三线程 Runtime 重构。
