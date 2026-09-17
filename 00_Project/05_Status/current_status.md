@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S05C_Logic_Analyzer`
-- Status: `READY_FOR_REVIEW`
+- Active Stage: `S06_RTOS_Runtime`
+- Status: `PLANNED`
 - S05A Implementation / Verification Commit: `bd8883d`
 - S05A CmBacktrace Integration Commit: `1c27c8e`
 - S05A Review Commit: `32f3368`
@@ -20,36 +20,39 @@
 - S05B Implementation Commits: `499df29`, `00cfbc7`, `ab4da98`, `ac1cc4b`, `e34e005`, `0719f83`, `92cf50a`, `2140117`
 - S05C Implementation Commits: `bfdffef`, `ce73ebf`, `505f058`, `0efb687`, `7969958`, `57e9cf5`, `5971bf6`
 - S05C Verification Commit: `8781326`
+- S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
+- S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
 - Previous Verification Commit: `98efc77`
 - Verification Commit: `33a1dfe`
 - Previous Review Commit: `ec90dbb`
 - Review Commit: `b19c80d`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S05B_Toolkit_Reuse`
+- Last Closed Stage: `S05C_Logic_Analyzer`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S06_RTOS_Runtime` (after S05C)
-- Current Role: `Review Role`
+- Next Planned Stage: `S06_RTOS_Runtime`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A 和 S05B 已完成并关闭。S05C Logic Analyzer 已完成实现与验证，目前处于 `READY_FOR_REVIEW`，审核通过后再进入 `S06_RTOS_Runtime`。
+`S05_UART_Ymodem`、S05A、S05B 和 S05C 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S06_RTOS_Runtime` 设计讨论。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
 S05B 已完成设计冻结、正式实施计划和 Task 1–8 实施；Review 发现的通用 J-Link ownership 与 Unified Exit Code 两项问题已在 `2140117` 修复并完成回归，最终复核通过并关闭。阶段目标不是简单整理目录，而是把已经验证的 PC 工具重构为便于后续扩展、升级和跨工程复用的配置驱动工具框架。冻结架构为 `Config + Core + Adapters + Workflows + Project Tests + Legacy Wrappers`；Adapter 按 Build / Probe / Debug 变化轴拆分；配置采用 `toolchain.local + project.defaults + project.local` 三层模型；增加统一 `toolkit.bat` Router，同时保留旧 `Scripts` 兼容入口。
 
-S05C 已完成 sigrok-cli 驱动的 SPI / I2C Logic Analyzer Workflow。Executor / Parser、Capture / Decode、Effective Config、Structured Result、自动设备选择、20 秒时间窗口、项目级 W25Q64 / AT24C02 只读断言和真实板级证据均已落地。Host / Toolkit 回归和真实板测均通过；UART 与 GPIO Timing 保持延期。
+S05C 已完成 sigrok-cli 驱动的 SPI / I2C Logic Analyzer Workflow。Executor / Parser、Capture / Decode、Effective Config、Structured Result、自动设备选择、20 秒时间窗口、项目级 W25Q64 / AT24C02 只读断言和真实板级证据均已落地。Host / Toolkit 回归和真实板测均通过；Review 未发现 Blocking / Important 问题，阶段已关闭。UART 与 GPIO Timing 保持延期。
 
-正式设计与实施计划：
+S05C 正式入口：
 
 ```text
-00_Project/03_Stages/S05B_Toolkit_Reuse/design.md
-00_Project/03_Stages/S05B_Toolkit_Reuse/implementation_plan.md
+00_Project/03_Stages/S05C_Logic_Analyzer/design.md
+00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
+00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+00_Project/03_Stages/S05C_Logic_Analyzer/review.md
+04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
 ```
-
-配置、Core、Adapters、Workflows、统一 Router、Legacy 兼容入口、S04 项目测试扩展、Firmware/Ymodem 路由和文档均已完成。全量回归、当前工程板级 smoke、Fault、S04 Reset/Power-cycle 以及第二工程真实板测记录于 `04_Test/Reports/Stages/S05B_Toolkit_Reuse/verification.md`。
 
 ## S05 Delivered Capabilities
 
@@ -84,7 +87,7 @@ firmware_storage_validate_image() == VALID
 - compact `.img = [64B Header][Payload]` 到 Slot `Header @ +0x0000 / Payload @ +0x1000` 的映射；
 - Header-last commit；
 - Tera Term 5 自动化 Sender；
-- Python Ymodem Sender 作为 Host/Agent/诊断辅助工具；
+- Python Ymodem Sender 作为 Host Test、Agent 自动化、协议诊断辅助工具；
 - Host Test、Keil Build、J-Link/RTT、真实 CH340 板测闭环。
 
 ## S05 Verification Summary
@@ -151,8 +154,6 @@ continue& -> disconnect -> quit                      PASS
 
 正式证据：`04_Test/Reports/Stages/S05A_Debug_Crash_Diagnostics/verification.md`。
 
-当前 S05A 已覆盖 GDB Runtime Snapshot、resume/halt 生命周期、失败清理、板测证据、CmBacktrace 的 Keil/FreeRTOS/RTT 工程接入，以及三类受控 Fault 注入、现场采集和 GDB/CmBacktrace 交叉验证。Review 已通过并关闭 S05A；S04 Reset/Power-cycle Persistence 已在补充回归中完成。
-
 正式交接：
 
 - `00_Project/03_Stages/S05A_Debug_Crash_Diagnostics/handoff.md`
@@ -200,14 +201,15 @@ Keil / J-Link / GDB
 
 ## S05C Logic Analyzer
 
-当前阶段为 `S05C_Logic_Analyzer`，工作流状态为 `READY_FOR_REVIEW`，Roadmap 状态为 `ACTIVE`，当前角色为 `Review Role`。
+当前阶段为 `S05C_Logic_Analyzer`，工作流状态为 `CLOSED / PASS`，Roadmap 状态为 `CLOSED`。
 
-正式设计、计划、交接和验证报告：
+正式设计、计划、交接、Review 和验证报告：
 
 ```text
 00_Project/03_Stages/S05C_Logic_Analyzer/design.md
 00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md
 00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md
+00_Project/03_Stages/S05C_Logic_Analyzer/review.md
 04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md
 ```
 
@@ -231,6 +233,8 @@ I2C Decode : 06_Output/LogicAnalyzer/20260917_120516_662_0f5a9f26
 ```
 
 SPI `0x9F → EF 40 17` 和 I2C `0x50` 事务断言均 PASS。临时固件板测代码已移除，正式 Application 已重新编译、烧录并完成 RTT 冒烟。UART 与 GPIO Timing 为 `DEFERRED`。
+
+Review 非阻塞 Follow-up：当前 I2C Parser 将一次 capture 内 annotations 聚合为单个逻辑 transaction；未来支持多设备或长窗口分析时建议按 START/STOP 边界拆分 transactions。
 
 ## Stable Tooling After S05
 
@@ -258,11 +262,11 @@ Ymodem 板测必须发送 S04 `.img`，不能把原始 Application `.bin` 当作
 → Firmware validation
 ```
 
-## S06 Design Entry After S05C Review
+## S06 Design Entry
 
 S06 名称保持 `S06_RTOS_Runtime`，但早期“集成 FreeRTOS”的前提已过时。当前 Application 已具备 RTOS Kernel 和任务基础；S05 板测也曾使用独立 `s05Ymodem` Thread，并验证 `service_uart` 的单 Consumer / ownerThread 约束。
 
-S06 在 S05C Review 关闭后重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
+S06 当前进入 Design Discussion，重点讨论 Task Topology/Lifecycle、UART Consumer Ownership、OTA/Ymodem Task Ownership、IPC、Flash/Storage 并发、Blocking API、Timeout/Cancel/Error Recovery、业务与 OTA 并发以及日志资源竞争。S06 尚未进入正式实现。
 
 ## Deferred Regression
 
@@ -277,6 +281,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无已知阻塞。S05B 的设计、实施计划、Host/Contract 回归、真实 YMODEM/Tera Term 实传、Fault trigger/capture、S04 Reset/Power-cycle 专项和第二工程真实板测均已通过；S05C 的 Logic Analyzer Host / Toolkit 回归、SPI / I2C 真实板级只读证据、项目断言和正式 Application 恢复验证均已通过，等待 Review Role 审核。
+当前无已知阻塞。S05C 已完成 Verification / Review 并以 `CLOSED / PASS` 关闭。
 
-下一步：完成 S05C Review；通过后进入 `S06_RTOS_Runtime` Design。
+下一步：进入 `S06_RTOS_Runtime` Design Discussion，先冻结 Runtime / Concurrency Model，再形成正式 design.md 与 implementation_plan.md。
