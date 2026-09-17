@@ -1,0 +1,1 @@
+0.000000000 logic analyzer capture contains no protocol annotations

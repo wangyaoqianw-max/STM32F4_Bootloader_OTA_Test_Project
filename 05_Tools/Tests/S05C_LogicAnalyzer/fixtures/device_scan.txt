@@ -1,0 +1,2 @@
+The following devices were found:
+fx2lafw:conn=4.7 - Saleae Logic with 8 channels
