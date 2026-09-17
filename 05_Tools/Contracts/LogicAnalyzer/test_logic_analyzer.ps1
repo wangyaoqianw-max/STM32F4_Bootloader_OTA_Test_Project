@@ -202,6 +202,113 @@ finally {
     Remove-Item -LiteralPath $executorTempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+$workflowPath = Join-Path $repoRoot "05_Tools\Workflows\LogicAnalyzer\logic.ps1"
+Assert-True (Test-Path -LiteralPath $workflowPath -PathType Leaf) "Logic analyzer workflow is missing"
+
+$workflowTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("logic-analyzer-workflow-" + [Guid]::NewGuid().ToString("N"))
+$workflowToolsRoot = Join-Path $workflowTempRoot "05_Tools"
+$workflowConfigRoot = Join-Path $workflowToolsRoot "Config"
+$workflowOutputRoot = Join-Path $workflowTempRoot "06_Output\LogicAnalyzer"
+$workflowFakeSigrokPath = Join-Path $workflowTempRoot "fake-sigrok.cmd"
+$workflowDefaultsPath = Join-Path $repoRoot "05_Tools\Config\project.defaults.bat"
+$workflowProfilePath = Join-Path $repoRoot "05_Tools\Config\logic_analyzer.profiles.json"
+
+try {
+    New-Item -ItemType Directory -Path $workflowConfigRoot -Force | Out-Null
+    Copy-Item -LiteralPath $workflowDefaultsPath -Destination (Join-Path $workflowConfigRoot "project.defaults.bat")
+    Copy-Item -LiteralPath $workflowProfilePath -Destination (Join-Path $workflowConfigRoot "logic_analyzer.profiles.json")
+    @"
+@echo off
+set "SIGROK_CLI_EXE=$workflowFakeSigrokPath"
+"@ | Set-Content -LiteralPath (Join-Path $workflowConfigRoot "toolchain.local.bat") -Encoding ASCII
+    @'
+@echo off
+if /I "%~1"=="--scan" (
+  echo fx2lafw:conn=4.7 - Saleae Logic fixture
+  exit /b 0
+)
+set "OUTPUT_FILE="
+set "INPUT_FILE="
+:parse
+if "%~1"=="" goto execute
+if /I "%~1"=="--output-file" set "OUTPUT_FILE=%~2"
+if /I "%~1"=="--input-file" set "INPUT_FILE=%~2"
+shift
+goto parse
+:execute
+if defined FAKE_SIGROK_CAPTURE_FAIL (
+  echo fixture capture failure 1>&2
+  exit /b 9
+)
+if defined OUTPUT_FILE (
+  >"%OUTPUT_FILE%" echo raw sigrok capture fixture
+  exit /b 0
+)
+if defined INPUT_FILE (
+  echo 0.000001000 SPI DATA MOSI=0x9F MISO=0xEF
+  echo 0.000002000 SPI DATA MOSI=0xFF MISO=0x40
+  echo 0.000003000 SPI DATA MOSI=0xFF MISO=0x17
+  exit /b 0
+)
+exit /b 0
+'@ | Set-Content -LiteralPath $workflowFakeSigrokPath -Encoding ASCII
+
+    if (Test-Path -LiteralPath $workflowPath -PathType Leaf) {
+        $captureOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action capture -Protocol spi -Profile spi2_flash -OutputRoot $workflowOutputRoot -SampleRate "48MHz" -Samples 100 2>&1
+        $captureExitCode = $LASTEXITCODE
+        Assert-Equal $captureExitCode 0 "Logic capture workflow should succeed with fake Sigrok"
+        $captureRun = Get-ChildItem -LiteralPath $workflowOutputRoot -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+        Assert-True ($null -ne $captureRun) "Logic capture workflow should create a run directory"
+        if ($null -ne $captureRun) {
+            $effectiveConfigPath = Join-Path $captureRun.FullName "effective_config.json"
+            $capturePath = Join-Path $captureRun.FullName "capture.sr"
+            $resultPath = Join-Path $captureRun.FullName "result.json"
+            Assert-True (Test-Path -LiteralPath $effectiveConfigPath -PathType Leaf) "Capture workflow should save effective_config.json"
+            Assert-True (Test-Path -LiteralPath $capturePath -PathType Leaf) "Capture workflow should save capture.sr"
+            Assert-True (Test-Path -LiteralPath $resultPath -PathType Leaf) "Capture workflow should save result.json"
+            if (Test-Path -LiteralPath $effectiveConfigPath -PathType Leaf) {
+                $effectiveConfig = Get-Content -LiteralPath $effectiveConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                Assert-Equal $effectiveConfig.mapping.cs.logic_channel "D0" "Effective Config should preserve the selected profile mapping"
+            }
+
+            $overrideOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action capture -Protocol spi -Profile spi2_flash -OutputRoot $workflowOutputRoot -CsChannel D6 -Samples 100 2>&1
+            $overrideExitCode = $LASTEXITCODE
+            Assert-Equal $overrideExitCode 0 "Logic capture workflow should accept a temporary channel override"
+            $overrideRun = Get-ChildItem -LiteralPath $workflowOutputRoot -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
+            if ($null -ne $overrideRun) {
+                $overrideConfig = Get-Content -LiteralPath (Join-Path $overrideRun.FullName "effective_config.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+                Assert-Equal $overrideConfig.mapping.cs.logic_channel "D6" "Temporary CLI channel override should win over the profile"
+            }
+
+            $decodeOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action decode -Protocol spi -Profile spi2_flash -CapturePath $capturePath -OutputRoot $workflowOutputRoot 2>&1
+            $decodeExitCode = $LASTEXITCODE
+            Assert-Equal $decodeExitCode 0 "Standalone decode workflow should decode an existing capture"
+            if ($decodeExitCode -ne 0) {
+                $failures.Add("Standalone decode output: $($decodeOutput -join [Environment]::NewLine)")
+            }
+            $decodeRun = Get-ChildItem -LiteralPath $workflowOutputRoot -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
+            if ($null -ne $decodeRun) {
+                Assert-True (Test-Path -LiteralPath (Join-Path $decodeRun.FullName "decode.json") -PathType Leaf) "Decode workflow should save decode.json"
+                Assert-True (Test-Path -LiteralPath (Join-Path $decodeRun.FullName "result.json") -PathType Leaf) "Decode workflow should save result.json"
+            }
+
+            $env:FAKE_SIGROK_CAPTURE_FAIL = "1"
+            $captureFailureOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workflowPath -ToolsRoot $workflowToolsRoot -Action spi -Profile spi2_flash -OutputRoot $workflowOutputRoot -Samples 100 2>&1
+            $captureFailureExitCode = $LASTEXITCODE
+            Assert-Equal $captureFailureExitCode 10 "Capture/decode workflow should report an error when capture fails"
+            Assert-True (($captureFailureOutput -join [Environment]::NewLine) -match '"status"\s*:\s*"ERROR"') "Capture failure should still emit a structured ERROR result"
+            Remove-Item Env:FAKE_SIGROK_CAPTURE_FAIL -ErrorAction SilentlyContinue
+        }
+    }
+}
+catch {
+    $failures.Add("Logic analyzer workflow contract raised an unexpected error: $($_.Exception.Message)")
+}
+finally {
+    Remove-Item Env:FAKE_SIGROK_CAPTURE_FAIL -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $workflowTempRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 if ($failures.Count -gt 0) {
     $failures | ForEach-Object { "[LogicAnalyzer][FAIL] $_" }
     exit 1
