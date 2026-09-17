@@ -15,8 +15,8 @@
 #define SERVICE_OTA_H
 
 //******************************** Includes *********************************//
-#include <stdint.h>
-
+#include "platform_error.h"
+#include "platform_types.h"
 #include "firmware_storage.h"
 #include "ota_firmware_sink.h"
 #include "service_uart.h"
@@ -151,6 +151,17 @@ platform_error_t service_ota_process(
     const uint8_t *data,
     uint32_t dataLength,
     uint32_t nowMs);
+
+/**
+ * @brief 终止当前接收 Session 并进入 FAILED
+ * @param[in,out] service : 正在 RECEIVING 的 OTA Service
+ * @param[in] error : 终止原因；传入 PLATFORM_ERR_OK 时转换为状态错误
+ * @return platform_error_t : 终止结果
+ * @note 本函数不产生 PENDING；Service 会先放弃 YMODEM Sink，再发布 FAILED 事件。
+ */
+platform_error_t service_ota_abort(
+    service_ota_t *service,
+    platform_error_t error);
 
 /**
  * @brief 确认安装已验证镜像并提交 PENDING Metadata

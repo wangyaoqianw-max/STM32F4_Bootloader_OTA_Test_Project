@@ -397,6 +397,22 @@ platform_error_t service_ota_process(
     return PLATFORM_ERR_OK;
 }
 
+platform_error_t service_ota_abort(
+    service_ota_t *service,
+    platform_error_t error)
+{
+    if (service == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (service->context.state != SERVICE_OTA_STATE_RECEIVING) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    (void)ymodem_receiver_cancel(&service->receiver);
+    return service_ota_fail(service, error);
+}
+
 platform_error_t service_ota_confirm_install(service_ota_t *service)
 {
     platform_error_t result;

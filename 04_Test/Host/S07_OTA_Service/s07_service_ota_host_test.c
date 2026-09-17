@@ -332,6 +332,26 @@ static int test_invalid_transitions_and_power_loss_state(void)
 
     return 0;
 }
+
+static int test_runtime_abort_enters_failed(void)
+{
+    firmware_storage_t storage;
+    service_uart_t uart;
+    service_ota_t service;
+
+    test_storage_reset();
+    if ((test_prepare_service(&service, &storage, &uart) != 0) ||
+        (service_ota_start(&service) != PLATFORM_ERR_OK) ||
+        (service_ota_abort(&service, PLATFORM_ERR_IO) != PLATFORM_ERR_IO) ||
+        (service.context.state != SERVICE_OTA_STATE_FAILED) ||
+        (service.context.event != SERVICE_OTA_EVENT_FAILED) ||
+        (g_storageContext.metadata.pendingSlot != FIRMWARE_SLOT_NONE) ||
+        (service_ota_start(&service) != PLATFORM_ERR_OK)) {
+        return 1;
+    }
+
+    return 0;
+}
 //******************************** Private Functions ************************//
 
 //******************************** Public Functions *************************//
@@ -475,6 +495,10 @@ int main(void)
         return 1;
     }
     if (test_invalid_transitions_and_power_loss_state() != 0) {
+        (void)printf("S07 OTA Service host test failed.\n");
+        return 1;
+    }
+    if (test_runtime_abort_enters_failed() != 0) {
         (void)printf("S07 OTA Service host test failed.\n");
         return 1;
     }

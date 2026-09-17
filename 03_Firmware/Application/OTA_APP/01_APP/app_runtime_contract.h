@@ -15,6 +15,8 @@
 #define APP_RUNTIME_CONTRACT_H
 
 //******************************** Includes *********************************//
+#include "platform_error.h"
+#include "platform_types.h"
 #include "platform_os.h"
 //******************************** Includes *********************************//
 
@@ -38,6 +40,8 @@ typedef enum
     APP_DISPLAY_EVENT_OTA_VERIFYING,
     APP_DISPLAY_EVENT_OTA_SUCCESS,
     APP_DISPLAY_EVENT_OTA_FAILED,
+    APP_DISPLAY_EVENT_OTA_READY_TO_INSTALL,
+    APP_DISPLAY_EVENT_OTA_RESET_REQUIRED,
     APP_DISPLAY_EVENT_MAX
 } app_display_event_type_t;
 
