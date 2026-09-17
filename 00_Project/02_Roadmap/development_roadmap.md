@@ -58,6 +58,8 @@ S05A 建立 Agent 可调用的 GDB / Fault 诊断能力
  ↓
 S05B PC 工具形成可扩展、可升级、可复用框架
  ↓
+S05C 增加 Agent 可调用的 SPI / I2C 外部总线证据能力
+ ↓
 S06  Application 形成正式 RTOS Runtime / Concurrency Model
  ↓
 S07  Application OTA 下载链完成
@@ -85,8 +87,8 @@ S12  增加 OTA 安全机制实验
 | `S05_UART_Ymodem` | 建立 Firmware 文件传输通道 | Tera Term Reference Sender；UART DMA/RingBuffer；Ymodem Parser / Receiver / Sink；Block 0；CRC-16；Timeout / Cancel / Retry；Firmware Storage Header/Payload 写入；RTT 板测 | S02；S04；现有通信 UART；Ymodem 高可信参考 | `CLOSED` | Tera Term 发送 S04 `.img`；MCU 完整接收并按 Slot 合同写入；`firmware_storage_validate_image()` VALID；中止后不提交 Header，重新传输可恢复 |
 | `S05A_Debug_Crash_Diagnostics` | 建立 Agent 可调用的 GDB 在线调试、运行态快照和 Fault 诊断能力 | GDB/J-Link 配置；Runtime Snapshot resume/halt 脚本；Cortex-M Fault 上下文；CmBacktrace/RTT；PowerShell/BAT 入口；失败清理；J-Link 释放；真实板测 | S05；Keil AXF；J-Link GDB Server；GNU Arm GDB；STM32F411CE SWD | `CLOSED` | Resume/Halt 快照、三类受控 Fault、GDB/CmBacktrace 交叉核对、`continue& → disconnect → quit` 恢复、halt 保持暂停、无隐式 Flash 编程、失败路径、PID 清理和 J-Link 释放通过 |
 | `S05B_Toolkit_Reuse` | 将 PC 工具重构为便于扩展、升级和跨工程复用的嵌入式开发工具框架 | 三层 Config；Core 公共能力；Build/Probe/Debug Adapters；Application/Debug Workflows；`toolkit.bat` 统一入口；Legacy Scripts 兼容；Project Test 隔离；结果合同 | S05；S05A；现有 `05_Tools` | `CLOSED` | 当前稳定能力回归通过；通用实现无项目/机器硬编码；Legacy 入口不双轨；第二同类工程只改配置即可复用；Review 通过 |
-| `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `ACTIVE` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归和文档交接通过；UART/GPIO 延期；当前等待 Review |
-| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；S05B；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
+| `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `CLOSED` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归、Verification 和 Review 通过；UART/GPIO 延期 |
+| `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型 | 基于现有 FreeRTOS 重新冻结 Task Topology / Lifecycle；UART Consumer Ownership；OTA/Ymodem Task Ownership；Task Notification / Queue / Event / Mutex；Flash/Storage 并发保护；Blocking API Policy；日志与业务并发边界 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `PLANNED` | 正常业务与 Firmware 接收可并发；UART/Flash/日志资源所有权明确；阻塞点有界且可解释；ISR/DMA/Task 边界明确；无明显 Busy Loop、死锁、重复 Consumer 或未受控资源竞争 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `PLANNED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
@@ -108,9 +110,9 @@ Application
 └─ 识别 Firmware Image / Slot / Metadata
 ```
 
-### S05 - S05A - S05B - S07: OTA Download Path and Development Tooling Gate
+### S05 - S05C - S07: OTA Download Path and Development Tooling Gate
 
-建立 Firmware 从 PC 进入设备到 Application 设置升级请求的完整下载链，同时在正式 RTOS/OTA Service 组合前补齐可自动化调试和可复用 PC 工具基础。
+建立 Firmware 从 PC 进入设备到 Application 设置升级请求的完整下载链，同时在正式 RTOS/OTA Service 组合前补齐自动化调试、可复用 PC 工具和外部总线证据能力。
 
 ```text
 PC
@@ -207,51 +209,34 @@ Power-cycle Persistence PASS
 最近关闭阶段：
 
 ```text
-S05A_Debug_Crash_Diagnostics
+S05C_Logic_Analyzer
 Roadmap State: CLOSED
-Workflow Status: CLOSED
+Workflow Status: CLOSED / PASS
 Review: PASS
 ```
 
-S05 已交付：
+S05C 正式入口：
 
-1. Ymodem Receiver-only / Single-file 组件；
-2. Parser / Receiver / Sink 分层；
-3. CRC-16/XMODEM、Block 0、SOH/STX、ACK/NAK、CAN/EOT；
-4. Timeout / Retry / Duplicate / Sequence 处理；
-5. Firmware Storage `write_payload()` / `write_header()`；
-6. compact `.img` → Header Sector + Payload Offset 映射；
-7. Header-last commit；
-8. Tera Term 5 自动化 Sender；
-9. Python Ymodem Sender 辅助工具；
-10. Host Test / Keil Build / J-Link / RTT 自动化；
-11. Tera Term 真实板测；
-12. 中止后不提交 Header、失败后重新传输恢复；
-13. Slot B 最终 Firmware Validation = VALID；
-14. Verification / Review PASS。
+- `00_Project/03_Stages/S05C_Logic_Analyzer/design.md`
+- `00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md`
+- `00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md`
+- `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
+- `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 
-S05 正式入口：
+S05C 已交付：
 
-- `00_Project/03_Stages/S05_UART_Ymodem/design.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/implementation_plan.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/handoff.md`
-- `00_Project/03_Stages/S05_UART_Ymodem/review.md`
-- `04_Test/Reports/Stages/S05_UART_Ymodem/verification.md`
+1. sigrok-cli doctor / scan / capture / decode；
+2. SPI / I2C 默认 Profile 与 Agent 临时 Channel Override；
+3. Executor / Parser 分离；
+4. Capture / Decode 分离与 `.sr` 重解码；
+5. Effective Config 与 Structured Result；
+6. Golden Fixtures / Host Contract；
+7. W25Q64 `0x9F → EF 40 17` 只读板测；
+8. AT24C02 `0x50` 随机读事务只读板测；
+9. Toolkit 全量回归和正式 Application 恢复；
+10. Verification / Review PASS。
 
-当前活动阶段：
-
-```text
-S05C_Logic_Analyzer
-Roadmap State: ACTIVE
-Workflow Status: READY_FOR_REVIEW
-Branch: main
-Baseline Commit: 31456f0
-Implementation Commits: bfdffef, ce73ebf, 505f058, 0efb687, 7969958, 57e9cf5, 5971bf6
-Scope: sigrok-cli SPI / I2C external bus evidence and shared-resource tool runtime rules
-Next action: Review S05C verification evidence and decide stage closure
-```
-
-S05A 已完成 GDB 手工兼容性与控制能力板测，包括 Breakpoint、Continue、Next、Step、Backtrace、Memory Read、Variable Read；GDB Runtime Snapshot 的 resume/halt 自动化、CmBacktrace 接入、三类受控 Fault 和 GDB/CmBacktrace 现场交叉核对也已通过真实板测。S04 Reset / Power-cycle Persistence 补充回归已完成。
+非阻塞 Follow-up：当前 I2C Parser 将一次 capture 内 annotations 聚合成单个逻辑 transaction；未来多设备/长窗口分析时建议按 START/STOP 边界拆分。
 
 S05A 交接入口：
 
@@ -268,19 +253,12 @@ S05B 交接入口：
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/handoff.md`
 - `00_Project/03_Stages/S05B_Toolkit_Reuse/review.md`
 
-S05C 交接入口：
-
-- `00_Project/03_Stages/S05C_Logic_Analyzer/design.md`
-- `00_Project/03_Stages/S05C_Logic_Analyzer/implementation_plan.md`
-- `00_Project/03_Stages/S05C_Logic_Analyzer/handoff.md`
-- `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
-
-后续阶段：
+当前进入：
 
 ```text
 S06_RTOS_Runtime
 Roadmap State: PLANNED
-Next action: Design Discussion after S05C closes
+Next action: Design Discussion
 ```
 
-S05B 已关闭；S05C 已完成实现和验证，当前等待 Review Role。S06 在 S05C 关闭后继续。
+S06 先冻结 Runtime / Concurrency Model，不提前实现 S07 OTA Service 状态机。
