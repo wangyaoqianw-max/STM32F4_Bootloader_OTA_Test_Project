@@ -2,18 +2,36 @@
  * Copyright (C) 2026 YaoQian Wang
  *
  * @file impl_platform_mcu_irq.c
- * @brief STM32 CMSIS NVIC Platform MCU IRQ Impl。
+ * @brief STM32 CMSIS NVIC Platform MCU IRQ Impl
+ * @author YaoQian Wang
+ * @date 2026-09-17
+ * @version V1.0
+ *
  *****************************************************************************/
 
-#include "impl_platform_mcu_irq.h"
+//******************************** Includes *********************************//
+#include "platform_mcu_irq.h"
 
+#include "platform_def.h"
 #include "stm32f4xx_hal.h"
+//******************************** Includes *********************************//
 
+//******************************** Defines **********************************//
+#define STM32_NVIC_PRIORITY_MAX    (15U)
+//******************************** Defines **********************************//
+
+//******************************** Declaring *********************************//
+static platform_error_t impl_platform_mcu_irq_map(
+    platform_mcu_irq_id_t irq,
+    IRQn_Type *irqn);
+//******************************** Declaring *********************************//
+
+//******************************** Private Functions *************************//
 static platform_error_t impl_platform_mcu_irq_map(
     platform_mcu_irq_id_t irq,
     IRQn_Type *irqn)
 {
-    if (irqn == (void *)0) {
+    if (irqn == NULL) {
         return PLATFORM_ERR_NULL_POINTER;
     }
 
@@ -38,13 +56,17 @@ static platform_error_t impl_platform_mcu_irq_map(
             return PLATFORM_ERR_INVALID_PARAM;
     }
 }
+//******************************** Private Functions *************************//
 
+//******************************** Functions *********************************//
 platform_error_t platform_mcu_irq_enable(platform_mcu_irq_id_t irq)
 {
+    platform_error_t result;
     IRQn_Type irqn;
 
-    if (impl_platform_mcu_irq_map(irq, &irqn) != PLATFORM_ERR_OK) {
-        return PLATFORM_ERR_INVALID_PARAM;
+    result = impl_platform_mcu_irq_map(irq, &irqn);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
     }
 
     NVIC_EnableIRQ(irqn);
@@ -53,10 +75,12 @@ platform_error_t platform_mcu_irq_enable(platform_mcu_irq_id_t irq)
 
 platform_error_t platform_mcu_irq_disable(platform_mcu_irq_id_t irq)
 {
+    platform_error_t result;
     IRQn_Type irqn;
 
-    if (impl_platform_mcu_irq_map(irq, &irqn) != PLATFORM_ERR_OK) {
-        return PLATFORM_ERR_INVALID_PARAM;
+    result = impl_platform_mcu_irq_map(irq, &irqn);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
     }
 
     NVIC_DisableIRQ(irqn);
@@ -66,14 +90,16 @@ platform_error_t platform_mcu_irq_disable(platform_mcu_irq_id_t irq)
 platform_error_t platform_mcu_irq_set_priority(platform_mcu_irq_id_t irq,
                                                 uint32_t priority)
 {
+    platform_error_t result;
     IRQn_Type irqn;
 
-    if (impl_platform_mcu_irq_map(irq, &irqn) != PLATFORM_ERR_OK) {
-        return PLATFORM_ERR_INVALID_PARAM;
+    result = impl_platform_mcu_irq_map(irq, &irqn);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
     }
 
     if ((priority < PLATFORM_MCU_IRQ_FREERTOS_SAFE_PRIORITY) ||
-        (priority > 15U)) {
+        (priority > STM32_NVIC_PRIORITY_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
@@ -83,12 +109,15 @@ platform_error_t platform_mcu_irq_set_priority(platform_mcu_irq_id_t irq,
 
 platform_error_t platform_mcu_irq_clear_pending(platform_mcu_irq_id_t irq)
 {
+    platform_error_t result;
     IRQn_Type irqn;
 
-    if (impl_platform_mcu_irq_map(irq, &irqn) != PLATFORM_ERR_OK) {
-        return PLATFORM_ERR_INVALID_PARAM;
+    result = impl_platform_mcu_irq_map(irq, &irqn);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
     }
 
     NVIC_ClearPendingIRQ(irqn);
     return PLATFORM_ERR_OK;
 }
+//******************************** Functions *********************************//

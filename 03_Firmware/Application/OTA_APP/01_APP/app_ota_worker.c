@@ -274,7 +274,7 @@ static void app_ota_worker_key_event_callback(platform_key_id_t key,
 
 static platform_error_t app_ota_worker_init_key(void)
 {
-    return platform_key_init(app_ota_worker_key_event_callback, (void *)0);
+    return platform_key_init(app_ota_worker_key_event_callback, NULL);
 }
 
 static platform_bool_t app_ota_worker_accept_key_event(void)

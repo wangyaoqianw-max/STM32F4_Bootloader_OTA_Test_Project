@@ -1,6 +1,21 @@
+/******************************************************************************
+ * Copyright (C) 2026 YaoQian Wang
+ *
+ * All Rights Reserved.
+ *
+ * @file s07_irq_host_test.c
+ * @brief S07 Platform MCU IRQ Host Contract Test
+ * @author YaoQian Wang
+ * @date 2026-09-17
+ * @version V1.0
+ *
+ *****************************************************************************/
+
+//******************************** Includes *********************************//
 #include <stdio.h>
 
 #include "platform_mcu_irq.h"
+//******************************** Includes *********************************//
 
 static int test_irq_contract(void)
 {
