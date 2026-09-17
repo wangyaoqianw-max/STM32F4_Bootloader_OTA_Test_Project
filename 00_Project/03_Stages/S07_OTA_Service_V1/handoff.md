@@ -3,12 +3,12 @@
 ## Metadata
 
 - Stage: `S07_OTA_Service_V1`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
 - Implementation Plan Commit: `3049034ea3472eb303aec50a196e785b4bd6b84c`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `9adba52aa75ddaff906e42aa8bae433b654ae761`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-17`
@@ -398,34 +398,36 @@ Hardware Verification
 
 ## Implementation Output
 
-- Status: `NOT_COMPLETED`
+- Status: `IN_PROGRESS`
 
 ### Completed Work
 
-Design discussion has been frozen into repository documentation. Production code implementation has not started yet.
+Task 0 completed the CubeMX regeneration recovery before S07 production implementation. S06 heap sizing, CmBacktrace HardFault ownership and FreeRTOS task introspection exports were restored; PA0 Falling EXTI configuration and S06 UART/DMA/LCD runtime baseline were verified.
 
 ### Changed Files
 
-Current S07 design-phase changes:
+Current S07 implementation changes:
 
 ```text
 00_Project/03_Stages/S07_OTA_Service_V1/design.md
 00_Project/03_Stages/S07_OTA_Service_V1/implementation_plan.md
 00_Project/03_Stages/S07_OTA_Service_V1/handoff.md
+03_Firmware/Application/OTA_APP/Core/Inc/FreeRTOSConfig.h
+03_Firmware/Application/OTA_APP/Core/Src/stm32f4xx_it.c
+03_Firmware/Application/OTA_APP/Middlewares/Third_Party/FreeRTOS/Source/tasks.c
 ```
 
 ### Deviations From Plan
 
-None at handoff creation time.
+Task 0 found and recovered CubeMX regeneration regressions: `configTOTAL_HEAP_SIZE` had reverted from the S06 frozen `24576` to `15360`; generated C fault handlers had reintroduced a HardFault ownership conflict with `cmb_fault.S`; and the CmBacktrace FreeRTOS task introspection exports had been removed from `tasks.c`. No S07 design boundary was changed.
 
 ### Verification Results
 
-Design documents only. No S07 code/build/hardware verification has been executed by this handoff.
+Task 0 code verification: `05_Tools\\toolkit.bat build` PASS with 0 errors and 0 warnings; `git diff --check` PASS. Board baseline: `05_Tools\\toolkit.bat flash run` PASS and `05_Tools\\toolkit.bat rtt 5` PASS; RTT confirmed appSystem/otaWorker/displayTask startup, UART/YMODEM_READY and Display initialization. This is S06 baseline smoke only, not full S07 hardware acceptance.
 
 ### Known Issues
 
-- Current `PROJECT_CONTEXT.md` / `00_Project/05_Status/current_status.md` still reflect S06 CLOSED until the implementation agent performs the workflow state transition required by repository rules.
-- PA0 CubeMX generation occurred after S06 closure; Task 0 must verify and recover S06 heap/CmBacktrace/runtime configuration before S07 production implementation.
+- Full S07 Metadata, Service, sink, key/IRQ, provisioning and board acceptance work remains pending.
 - Factory Slot A provisioning capability has not yet been implemented; Task 8 determines whether existing Toolkit composition is sufficient or a thin `provision` workflow is warranted.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
 
@@ -446,4 +448,10 @@ production/test dependency separation
 Header-last preservation
 S06 runtime regression
 power-loss behavior
+```
+
+### Task 0 Commit
+
+```text
+9adba52aa75ddaff906e42aa8bae433b654ae761
 ```

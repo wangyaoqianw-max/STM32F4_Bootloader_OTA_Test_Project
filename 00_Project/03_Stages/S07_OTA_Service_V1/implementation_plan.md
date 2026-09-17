@@ -6,7 +6,7 @@
 - Design: `00_Project/03_Stages/S07_OTA_Service_V1/design.md`
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
-- Status: `NOT_STARTED`
+- Status: `IN_PROGRESS`
 - Branch: `main`
 
 ## Global Constraints

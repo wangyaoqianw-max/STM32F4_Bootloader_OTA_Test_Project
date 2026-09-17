@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S06_RTOS_Runtime`
-- Status: `CLOSED / PASS`
+- Active Stage: `S07_OTA_Service_V1`
+- Status: `IN_PROGRESS`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -38,12 +38,12 @@
 - Last Closed Stage: `S06_RTOS_Runtime`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Project Owner`
+- Current Role: `Implementation Role`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C 和 S06 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。
+`S05_UART_Ymodem`、S05A、S05B、S05C 和 S06 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S07_OTA_Service_V1` 实施，状态为 `IN_PROGRESS`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -371,4 +371,4 @@ Power-cycle Persistence PASS
 
 当前无实现阻塞。S06 代码、板级验证、Toolkit 回归和 Review 已完成；无复位重启会话因 S06 没有公开 START 控制接口记为 NOT_APPLICABLE，不新增 S07 API。
 
-下一步：进入 S07 `OTA_Service_V1` Design Discussion；优先读取 S06 Handoff / Review / Verification，在已冻结 Runtime Contract 上设计正式 OTA Service facade、session control、`PENDING` Metadata 提交和 Reset Request。
+S07 Task 0 已完成 CubeMX regeneration recovery，提交 `9adba52`；Keil Build、Flash 和 RTT baseline smoke 均通过。下一步按 S07 implementation plan 执行 Task 1–11，每个 Task 独立验证、提交并回写 handoff。

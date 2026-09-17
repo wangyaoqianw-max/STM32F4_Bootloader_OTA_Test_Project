@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S06_RTOS_Runtime`
-- Active Stage Status: `CLOSED / PASS`
+- Active Stage: `S07_OTA_Service_V1`
+- Active Stage Status: `IN_PROGRESS`
 - Branch: `main`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
@@ -33,12 +33,12 @@
 - Last Closed Stage: `S06_RTOS_Runtime`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Project Owner`
+- Current Role: `Implementation Role`
 - Updated At: `2026-09-17`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C 和 S06 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。`S06_RTOS_Runtime` 已完成实现、板级验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。
+S05、S05A、S05B、S05C 和 S06 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S07_OTA_Service_V1` 实施，状态为 `IN_PROGRESS`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -57,7 +57,7 @@ UART ISR/RX → otaWorker     : Task Notification
 otaWorker   → displayTask   : Queue
 ```
 
-S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失败 OTA 路径、Slot B Validation、任务阻塞状态和 Toolkit 回归。下一阶段进入 `S07_OTA_Service_V1`，在该 Runtime Contract 上建立正式 OTA Service/session control。
+S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失败 OTA 路径、Slot B Validation、任务阻塞状态和 Toolkit 回归。S07 Task 0 已恢复 CubeMX 生成造成的 heap、CmBacktrace 和 FreeRTOS task introspection 回归，代码提交为 `9adba52`；随后在该 Runtime Contract 上实施正式 OTA Service/session control。
 
 ## Stable Toolkit Architecture
 
@@ -366,6 +366,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-进入 `S07_OTA_Service_V1` Design Discussion。
+继续按 `00_Project/03_Stages/S07_OTA_Service_V1/implementation_plan.md` 执行 Task 1–11；保持 `otaWorker` 单一 RTOS execution shell，不实现 S09/S10 安装、Trial、Confirm 或 Rollback。
 
-优先读取 S06 `handoff.md`、`review.md` 和 `verification.md`，在已冻结的三线程 Runtime 上设计正式 OTA Service facade、session control、Inactive Slot/Validation、EEPROM Metadata `PENDING` 提交和 Reset Request；不要把 S06 内部保留的 START notification flag 当作已经交付的公开接口。
+Task 0 验证证据：Keil Build 0 errors/0 warnings、Flash PASS、RTT baseline PASS。后续每个 Task 必须独立验证、提交并将实际 Commit 写回 S07 handoff。
