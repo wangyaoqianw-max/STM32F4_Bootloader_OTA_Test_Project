@@ -6,7 +6,7 @@
 - Design: `00_Project/03_Stages/S07_OTA_Service_V1/design.md`
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 
 ## Global Constraints
@@ -256,17 +256,17 @@ upgradeState   = NONE
 - [x] Step 1: 完成 Factory baseline，确认 Internal v1.0 + Slot A v1.0 VALID + Metadata confirmed A。已在 Task 8 的独立临时板测中完成；当前设备随后进入 S07 PENDING 测试状态。
 - [x] Step 2: Reset 后确认正常 foreground Application、LCD、RTT 和任务运行无 S06 回归。已完成正式 Application 恢复、Flash/RTT 冒烟；完整显示交互仍按后续步骤单独验收。
 - [x] Step 3: 真实 PA0 启动 OTA；COM9 Sender 收到 `'C'` 后完成新 `.img` 传输。
-- [ ] Step 4: foreground/Service/GDB 已确认持续运行、target 为 non-confirmed Slot，LCD `RECEIVING progress → VERIFYING → READY_TO_INSTALL` 的肉眼全流程确认仍待用户回报。
+- [x] Step 4: foreground/Service/GDB 已确认持续运行、target 为 non-confirmed Slot；Project Owner 已肉眼确认 LCD `RECEIVING progress → VERIFYING → READY_TO_INSTALL` 及失败态。
 - [x] Step 5: READY_TO_INSTALL 前真实复位；复位前 GDB 为 `state=4` 且 `77468/77468`，复位后 RTT 启动正常、GDB 为 `state=0 IDLE`，没有 PENDING。
 - [x] Step 6: 真实 PA0 第二次确认；Metadata PENDING 已回读，随后发生复位请求。
-- [ ] Step 7: Reset 后 OTA_APP startup diagnostics 读取相同 `pendingSlot` / `upgradeState=PENDING` / valid sequence / CRC / commit marker。
+- [x] Step 7: 真实 PA0 确认后复位；随后 Service start 的 GDB 只读回读确认 `pendingSlot=B`、`upgradeState=PENDING`、Slot A/B VALID、sequence `10`。S07 不在 `service_ota_init()` 启动时消费 PENDING，Bootloader consume 保持 S08/S09 边界。
 - [x] Step 8: 真实 interrupted transfer：target B 为 INVALID、未提交新 Header、confirmed Slot A 和 Metadata pending/upgrade 保持安全。
 - [x] Step 9: 真实坏 CRC 镜像：Service 进入 FAILED，不进入 READY_TO_INSTALL，不写 PENDING。
 - [x] Step 10: 真实接收过程中重复按 KEY；完整 session 仍到 READY_TO_INSTALL，未误提交 PENDING。
 - [x] Step 11: 本轮已有 RTT/GDB/EEPROM 状态证据，未发现需要额外 SPI/I2C waveform 的失败定位需求；保持 NOT_REQUIRED_THIS_RUN。
 - [x] Step 12: 已将当前代码验证、真实 PA0/COM9 传输、GDB 状态回读、失败路径和 Metadata 持久化证据写入 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`；LCD 肉眼确认和 Project Owner 验收保持 PENDING。
 
-Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成真实 PA0、COM9 YMODEM、READY 复位、中断、坏 CRC、重复按键和 PENDING 持久化验收；LCD 状态的肉眼全流程确认及最终 Project Owner 确认仍未完成。不得据此将 S07 标记为 `CLOSED / PASS`。
+Task 10 当前状态：`COMPLETE / HARDWARE_ACCEPTANCE_PASS`。真实 PA0、COM9 YMODEM、READY 复位、中断、坏 CRC、重复按键、PENDING 持久化和 LCD 正常/失败全流程均已验收。
 
 ## Task 11: Documentation, Handoff and Review Readiness
 
@@ -283,7 +283,7 @@ Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成
 
 - [x] Step 1: 在 ADR/长期决策中记录：External A/B 是 Firmware Image Slots、Internal Flash 是执行区、Metadata 删除 `activeSlot`。
 - [x] Step 2: 更新 handoff 的 Completed Work、Changed Files、真实 Commit、偏差、验证结果、Known Issues 和 Review Focus。
-- [x] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；没有真实硬件 PASS，继续保持 `IN_PROGRESS`。
+- [x] Step 3: 更新 PROJECT_CONTEXT/current_status 到真实工作流状态；Project Owner 确认真实硬件 PASS 后同步为 `CLOSED / PASS`。
 - [x] Step 4: 明确 S08/S09/S10 的交接边界：S07 已产生 durable PENDING，但 Installation / Trial / Confirm / Rollback execution 尚未实现。
 - [x] Step 5: 已执行 `git diff --check`，确认工作区只含预期正式变更，提交文档并准备推送 `main`。
 
@@ -345,4 +345,4 @@ Rollback Execution          = NOT_IMPLEMENTED
 
 ## Completion Condition
 
-所有计划任务完成、Host/Build/真实板验证证据落盘，`handoff.md` 记录真实 Commit 和未决项，并按仓库工作流将阶段推进到 `READY_FOR_REVIEW`。只有 Review 通过且 Project Owner 确认真实硬件验收后，才允许进入 `CLOSED / PASS`。
+所有计划任务完成、Host/Build/真实板验证证据落盘，`handoff.md` 记录真实 Commit；Review 已通过且 Project Owner 已确认真实硬件验收，阶段推进到 `CLOSED / PASS`。

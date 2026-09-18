@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S07_OTA_Service_V1`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `84f07303d2b6fbf0682e492ad79e32982e2fb17b`
 - Design Commit: `a5c4c1b890cf232e8e884d9ddb72473212892c13`
@@ -398,13 +398,13 @@ Hardware Verification
 
 ## Implementation Output
 
-- Status: `IN_PROGRESS`
+- Status: `CLOSED / PASS`
 
 ### Completed Work
 
 Task 0 completed the CubeMX regeneration recovery before S07 production implementation. S06 heap sizing, CmBacktrace HardFault ownership and FreeRTOS task introspection exports were restored; PA0 Falling EXTI configuration and S06 UART/DMA/LCD runtime baseline were verified.
 
-Tasks 1–7 completed the Platform IRQ/Key layering, Metadata V2, production dynamic sink, `service_ota`, RTOS execution-shell refactor and Display interaction contract. Tasks 8–9 completed safe Factory baseline provisioning and full Host/Toolkit/code regression. Task 10 now has real PA0/COM9 success, READY reset, interrupted, bad CRC and duplicate-key evidence, plus durable PENDING evidence; the terminal-progress queue flood remains fixed in `2ab34f1`. LCD visual full-flow confirmation and final Project Owner acceptance remain open, so Task 11 keeps the stage in progress.
+Tasks 1–7 completed the Platform IRQ/Key layering, Metadata V2, production dynamic sink, `service_ota`, RTOS execution-shell refactor and Display interaction contract. Tasks 8–9 completed safe Factory baseline provisioning and full Host/Toolkit/code regression. Task 10 completed real PA0/COM9 success, READY reset, interrupted, bad CRC, duplicate-key, durable PENDING and LCD full-flow acceptance; the terminal-progress queue flood remains fixed in `2ab34f1`. Project Owner confirmed the physical acceptance, so S07 is closed.
 
 ### Changed Files
 
@@ -486,7 +486,7 @@ Task 8 established the Factory baseline through a temporary board test under `04
 
 Task 10 physical acceptance continuation completed on 2026-09-18. After the approved temporary provisioning reset, the formal Application was rebuilt, flashed and exercised on the real board through CH340 `COM9`. The user pressed PA0 to start a real `1.1.0` transfer: sender completed `77468` bytes / `76` blocks / exit `0` / retries `2`, and GDB reached `READY_TO_INSTALL` on Slot B. The user then pressed PA0 again; after reset, GDB read `confirmedSlot=A`, `pendingSlot=B`, Slot A/B VALID, `upgradeState=PENDING`, sequence `10`. The reset-time key release was sampled again by the new application and left the RAM Service in `FAILED/INVALID_STATE`, but did not change the already committed Metadata.
 
-The same board session also passed: READY reset without second confirmation (`state=4` before reset, normal RTT boot and `state=0 IDLE` afterward); interrupted receive (sender Ctrl+C, `state=2 RECEIVING`, received `0`, Slot B INVALID, pending NONE); bad CRC (payload byte changed only, full COM9 send, `state=7 FAILED`, error `3`, Slot B INVALID, pending NONE); and duplicate PA0 during receiving (final `state=4 READY_TO_INSTALL`, pending NONE, upgrade NONE, both slots VALID). RTT confirmed Application/foreground/displayTask startup and Display initialization for every reset. LCD visual state text remains pending the operator's explicit confirmation.
+The same board session also passed: READY reset without second confirmation (`state=4` before reset, normal RTT boot and `state=0 IDLE` afterward); interrupted receive (sender Ctrl+C, `state=2 RECEIVING`, received `0`, Slot B INVALID, pending NONE); bad CRC (payload byte changed only, full COM9 send, `state=7 FAILED`, error `3`, Slot B INVALID, pending NONE); and duplicate PA0 during receiving (final `state=4 READY_TO_INSTALL`, pending NONE, upgrade NONE, both slots VALID). RTT confirmed Application/foreground/displayTask startup and Display initialization for every reset. Project Owner confirmed the LCD displayed `RECEIVING → VERIFYING → READY_TO_INSTALL` for the normal flow and `FAILED` for bad CRC.
 
 ### Verification Results
 
@@ -510,7 +510,7 @@ Task 8 board verification: existing Toolkit composition was investigated. The cu
 
 Task 9 verification: all S07 Host tests passed with `gcc -std=c99 -Wall -Wextra -Werror`: IRQ, BSP Key, Display/Worker contracts, Metadata V1/V2, production sink and Service state machine. Existing S04/S05 regression passed: Firmware image format, current Firmware Storage, storage write, YMODEM parser/receiver and historical S05 sink tests. Python/toolkit regression passed: Firmware pack (2 tests), Python YMODEM (24 tests), S04 persistence (15 tests), legacy/transport compatibility, Application workflow, Toolkit Core, Debug, S04 isolation and Logic Analyzer contracts. `05_Tools\\toolkit.bat build` completed with 0 errors and 0 warnings. Production dependency scan found no `s05_ymodem_flash_sink` or `04_Test/Board/S05_UART_Ymodem` reference under `03_Firmware/Application/OTA_APP`. `git diff --check` passed. No S07 production code was changed during this regression.
 
-Task 10 verification: the formal Application build produced `OTA_APP.build_log.htm` with `0 Error(s), 13 Warning(s)`; the Toolkit maps warnings to exit code `1`, so this remains Build-with-warnings. `flash run`, RTT captures, COM9 Python YMODEM, Toolkit GDB reset/halt/resume and the final regression suites completed with the results recorded in `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`. The 2026-09-18 physical evidence is separate from code verification: code PASS, hardware PARTIAL because LCD visual full-flow and Project Owner confirmation remain open.
+Task 10 verification: the formal Application build produced `OTA_APP.build_log.htm` with `0 Error(s), 13 Warning(s)`; the Toolkit maps warnings to exit code `1`, so this remains Build-with-warnings. `flash run`, RTT captures, COM9 Python YMODEM, Toolkit GDB reset/halt/resume and the final regression suites completed with the results recorded in `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`. Project Owner confirmed the normal LCD flow and bad-CRC failure display; code and hardware verification are PASS.
 
 Task 10 acceptance evidence summary:
 
@@ -522,19 +522,19 @@ READY reset without confirm:   PASS, state 4 -> reset -> state 0, no PENDING
 Interrupted transfer:           PASS, Slot B INVALID / pending NONE / received 0
 Bad CRC image:                  PASS, FAILED / error 3 / Slot B INVALID / no PENDING
 Duplicate PA0 during receive:  PASS, final READY / no PENDING
-LCD visual full-flow:           PENDING operator confirmation
+LCD visual full-flow:           PASS, Project Owner confirmed normal and bad-CRC screens
 ```
 
-Task 11 documentation sync: ADR-0001 records the External Firmware Slot / Internal Flash boundary and the removal of Metadata `activeSlot`. `PROJECT_CONTEXT.md`, `current_status.md`, this handoff and `review.md` keep the real status as `IN_PROGRESS / HARDWARE_ACCEPTANCE_PENDING`; S07/S09/S10 boundaries remain explicit. The review decision remains code/architecture/regression PASS with LCD visual confirmation and Project Owner hardware acceptance still pending.
+Task 11 documentation sync: ADR-0001 records the External Firmware Slot / Internal Flash boundary and the removal of Metadata `activeSlot`. `PROJECT_CONTEXT.md`, `current_status.md`, this handoff and `review.md` now record `CLOSED / PASS`; S07/S09/S10 boundaries remain explicit. The review decision is code/architecture/regression/hardware PASS.
 
 ### Known Issues
 
-- Full S07 OTA transfer, physical PA0 start/confirm, durable Metadata PENDING, READY reset, interrupted transfer, bad CRC and duplicate-key paths have real-board evidence. Complete physical board acceptance remains pending only for LCD visual full-flow confirmation and Project Owner sign-off.
+- Full S07 OTA transfer, physical PA0 start/confirm, durable Metadata PENDING, READY reset, interrupted transfer, bad CRC, duplicate-key paths and LCD normal/failed screens have real-board evidence. Project Owner acceptance is complete.
 - Task 1 is complete in commit `13d67efcecfa1e99b14eb0781e77aed3749bda2c`; Task 2 initial implementation is recorded in `b4a94245f09be9dac40ad8e3135302722504ca5b` and its layering/style correction is recorded in `6ac6a49756a87079f1bc2b95d190fc44d82f64c3`; Task 3 implementation is recorded in `bb0f96b643da137805b586eb817347a92dc0f140` and its Storage Host fault-injection correction in `7536cf06f6af539284dcaa4fc0396834ea7362fb`; Task 4 implementation is recorded in `29c1f35aa8d8a3330cd8a8280bcfcb08eda7b534` and XML minimal-diff correction in `e0b8b8f58145f2ca73132a0f5a8700b9d36f3cc2`; Task 5 implementation is recorded in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`.
 - Factory baseline provisioning is complete for the tested device through the temporary board test in `23ac3db`; the test is intentionally not part of the production startup path. The configured build artifact still does not emit `OTA_APP.bin`, so repeatable pack steps must continue to use the documented temporary `fromelf` conversion until the project/toolkit artifact contract is separately addressed.
 - Bootloader does not yet consume `PENDING`; S07 persistence testing therefore restarts the current OTA Application and inspects Metadata only.
 - Task 5 Service is implemented in `b9c619801b5913b25c52b1e57fe9cffbbb21d41b`; Task 6 execution-shell refactor is committed in `ae264974de810272a83314c4c3fcddb4d9ef6991`; Task 7 display rendering is committed in `a8045d297442fe7b97bc318a37b53b05b4a4b968`.
-- Task 8 safe Factory baseline board test and usage documentation are committed in `23ac3db`. The 2026-09-18 full applicable Host/Toolkit regression passed; LCD visual confirmation and final Project Owner hardware acceptance remain pending.
+- Task 8 safe Factory baseline board test and usage documentation are committed in `23ac3db`. The 2026-09-18 full applicable Host/Toolkit regression and final physical acceptance passed.
 - The current device is left running at `READY_TO_INSTALL` after the duplicate-key pass with `pendingSlot=NONE` and `upgradeState=NONE`; no S09/S10 installation or consume path was executed.
 - `service_ota_init()` intentionally only initializes the RAM Service object; Metadata is loaded when `service_ota_start()` is requested. The durable EEPROM result was verified by a temporary read-only board test, while Bootloader consumption remains outside S07.
 

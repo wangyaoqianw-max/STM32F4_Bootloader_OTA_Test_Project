@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S07_OTA_Service_V1`
-- Status: `IN_PROGRESS`
+- Status: `CLOSED / PASS`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -35,15 +35,15 @@
 - Previous Review Commit: `ec90dbb`
 - Review Commit: `b19c80d`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S06_RTOS_Runtime`
+- Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Implementation Role`
+- Next Planned Stage: `S08_Bootloader_Foundation`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C 和 S06 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S07_OTA_Service_V1` 实施，状态为 `IN_PROGRESS`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06 和 S07 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前下一计划阶段为尚未启动的 `S08_Bootloader_Foundation`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -66,9 +66,9 @@ otaWorker   → displayTask : Queue
 
 ## S07 OTA Service V1 Current State
 
-S07 已完成 Task 0–9 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在真实 CH340 `COM9` 上完成了 PA0 启动/确认、1.1.0 YMODEM 传输、READY 复位、中断、bad CRC/invalid image、重复 KEY 和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
+S07 已完成 Task 0–10 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在真实 CH340 `COM9` 上完成了 PA0 启动/确认、1.1.0 YMODEM 传输、READY 复位、中断、bad CRC/invalid image、重复 KEY、LCD 正常/失败画面和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证和硬件验证均为 `PASS`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
 
-当前仍待确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼全流程和最终 Project Owner 硬件签字。设备当前保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE / upgradeState=NONE`；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。
+Project Owner 已确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼全流程和最终硬件验收。设备当前保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE / upgradeState=NONE`；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。下一阶段为尚未启动的 `S08_Bootloader_Foundation`。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
@@ -375,6 +375,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无新增代码实现阻塞；S07 阶段关闭受真实硬件证据阻塞。不得将 COM9 传输、GDB 模拟按键、EEPROM 回读、Build 或 RTT 冒烟描述为完整物理验收 PASS。
+当前无新增代码或硬件验收阻塞；S07 已完成真实硬件验收并关闭。S08 Bootloader Foundation 尚未启动，S09/S10 安装与可靠性闭环仍保持路线图边界。
 
-S07 Task 0 已完成 CubeMX regeneration recovery，Task 10 验证提交为 `e60273f`；Review 已形成但阶段保持 `IN_PROGRESS`。下一步按 S07 verification/handoff 中的待验收项继续板测。
+S07 Task 0 已完成 CubeMX regeneration recovery，最终验证与 Review 记录见 S07 handoff/review；阶段已为 `CLOSED / PASS`。下一步如启动新工作，应先为 S08 Bootloader Foundation 建立正式设计和实施计划。

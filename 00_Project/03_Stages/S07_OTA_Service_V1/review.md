@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S07_OTA_Service_V1`
-- Status: `IN_PROGRESS / HARDWARE_ACCEPTANCE_PENDING`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Design Commit: `a5c4c1b`
 - Implementation Head Reviewed: `37a0d09`
@@ -20,10 +20,7 @@
 
 ### Blocking for Stage Closure
 
-1. LCD `RECEIVING → VERIFYING → READY/FAILED` 全流程仍缺少操作者肉眼确认记录。
-2. 最终 Project Owner 硬件验收/签字尚未完成。
-
-这些是验收证据缺失，不是通过修改代码或文档可以消除的实现问题。因此阶段不得进入 `CLOSED / PASS`。
+无。Project Owner 已确认 LCD 正常流 `RECEIVING → VERIFYING → READY_TO_INSTALL` 和坏 CRC 失败流 `FAILED`，并确认真实硬件验收结果。
 
 ### Important Findings
 
@@ -48,8 +45,8 @@
 | Host / Toolkit / Keil regression | PASS | verification.md；Keil 0 errors |
 | COM9 transfer / durable PENDING | PASS | 真实 PA0 启动/确认、COM9 传输和 Metadata PENDING 回读均有证据 |
 | READY reset / interrupted / bad CRC / duplicate KEY | PASS | 真实板 GDB 状态回读分别证明安全复位、Slot B INVALID、FAILED/no PENDING 和重复键忽略 |
-| Physical LCD full-flow observation | PENDING | RTT/Display 初始化通过，RECEIVING/VERIFYING/READY/FAILED 肉眼记录待补 |
-| Physical board acceptance | PENDING | 等 Project Owner 确认 |
+| Physical LCD full-flow observation | PASS | Project Owner 确认正常接收/验证/READY 和坏 CRC/FAILED 画面 |
+| Physical board acceptance | PASS | Project Owner 已确认 |
 | S09/S10 boundary | PASS | 未实现 Internal Flash Installation、Trial、Confirm、Rollback execution |
 
 ## Decision
@@ -59,9 +56,9 @@ Implementation: PASS
 Code Verification: PASS
 Architecture: PASS
 Regression: PASS
-Hardware Verification: PARTIAL / PENDING
-Stage: IN_PROGRESS
-Closure: BLOCKED until the listed physical board evidence is completed
+Hardware Verification: PASS
+Stage: CLOSED / PASS
+Closure: APPROVED
 ```
 
-S07 代码和文档具备后续板测条件，但当前不能关闭阶段，也不能声明 `CLOSED / PASS`。
+S07 冻结设计范围内的代码、回归、真实板和 LCD 验收均已通过。S09/S10 的安装、Trial、Confirm、Rollback execution 仍保持未实现边界。

@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S07_OTA_Service_V1`
-- Status: `IN_PROGRESS / HARDWARE_ACCEPTANCE_PENDING`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Design Commit: `a5c4c1b`
 - Implementation Commits: `9adba52`, `13d67ef`, `6ac6a49`, `bb0f96b`, `7536cf0`, `29c1f35`, `e0b8b8f`, `b9c6198`, `4e5a8e5`, `ae26497`, `a8045d2`, `23ac3db`, `2ab34f1`
@@ -13,7 +13,7 @@
 
 ## Scope
 
-本报告覆盖 S07 已完成的代码、Host、Toolkit、Keil Build、正式 Application 恢复，以及 2026-09-18 在 CH340 `COM9` 上完成的真实 PA0、YMODEM、Metadata 和失败路径板级证据。LCD 文案是否按验收条件被肉眼完整确认，仍单独保留为待确认项，不用 RTT 或代码状态替代视觉验收。
+本报告覆盖 S07 已完成的代码、Host、Toolkit、Keil Build、正式 Application 恢复，以及 2026-09-18 在 CH340 `COM9` 上完成的真实 PA0、YMODEM、Metadata、LCD 和失败路径板级证据。Project Owner 已确认 LCD 正常/失败全流程画面。
 
 S07 仍严格止于：
 
@@ -49,13 +49,13 @@ Internal Flash Installation、Trial、Confirm 和 Rollback execution 不属于�
 | CH340 YMODEM transfer on COM9 | PASS | 真实 PA0 启动；Python sender 在 `COM9/115200` 完成 `77468` bytes / `76` blocks / exit `0` / retries `2`，RTT/GDB 最终为 Slot B `READY_TO_INSTALL`、`77468/77468` |
 | Second confirm / reset request | PASS | 用户真实按下第二次 PA0；复位后 RTT 为正常 Application/LCD 启动日志，GDB 回读 Metadata `confirmed=0/pending=1/slotA=1/slotB=1/upgrade=1/sequence=10`。复位释放时产生的按键再次被新一轮 Service 采到并显示 `FAILED/INVALID_STATE`，不改变已提交 PENDING |
 | Durable Metadata PENDING | PASS | 第二次真实 PA0 后 GDB 只读回读 `pendingSlot=B`、`upgradeState=PENDING`、Slot A/B VALID、sequence `10`；未执行 Bootloader consume 或 S09/S10 安装 |
-| S06 foreground / LCD full flow | PARTIAL | 多轮 RTT 均确认 foreground/Application、displayTask、Display SPI/init/start、初始渲染和 backlight 成功；LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼确认待用户回报 |
+| S06 foreground / LCD full flow | PASS | RTT 确认 foreground/Application、displayTask、Display SPI/init/start、初始渲染和 backlight；Project Owner 肉眼确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 全流程 |
 | Physical KEY_1 PA0 start/confirm | PASS | 真实 PA0 启动 YMODEM；真实第二次 PA0 触发 PENDING 提交并复位。不是 GDB 模拟按键 |
 | READY reset before PENDING | PASS | 真实传输完成后 GDB 为 `state=4`、`received=expected=77468`；Toolkit GDB `monitor reset → continue` 后 RTT 捕获正常启动，GDB 为 `state=0 IDLE`，没有 PENDING 提交 |
 | Interrupted transfer | PASS | 真实启动后 Ctrl+C 中止发送；GDB 为 `state=2 RECEIVING`、target B、`received=0`，Metadata 为 Slot A VALID / Slot B INVALID / pending NONE / upgrade NONE / sequence `16` |
 | Bad CRC / invalid image | PASS | 临时镜像仅篡改 Payload 字节、Header 保持不变；真实 COM9 完整发送后 GDB 为 `state=7 FAILED`、`error=3`（校验失败映射）、Slot B INVALID、pending NONE、upgrade NONE、sequence `17` |
 | Duplicate KEY during transfer/verify/commit | PASS | 用户在真实接收过程中第二次按 PA0；完整发送后 GDB 仍为 `state=4 READY_TO_INSTALL`，pending NONE、upgrade NONE、Slot A/B VALID、sequence `19`，未误触发 PENDING |
-| SPI/I2C logic capture | NOT_REQUIRED_THIS_RUN | 当前已有代码、RTT 和 EEPROM 结果；后续若失败定位需要，再复用 `toolkit logic` |
+| SPI/I2C logic capture | NOT_REQUIRED_THIS_RUN | 当前已有代码、RTT、GDB 和 EEPROM 结果，未需要额外 waveform 定位 |
 
 ## Evidence Details
 
@@ -86,7 +86,7 @@ Metadata 原始回读：
 
 ```text
 代码验证：PASS
-硬件验证：PARTIAL
-硬件待验收：LCD 全流程肉眼确认、最终 Project Owner 确认
-阶段状态：IN_PROGRESS，不得标记 CLOSED / PASS
+硬件验证：PASS
+硬件待验收：无
+阶段状态：CLOSED / PASS
 ```

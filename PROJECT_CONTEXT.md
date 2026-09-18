@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S07_OTA_Service_V1`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `CLOSED / PASS`
 - Branch: `main`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
@@ -30,15 +30,15 @@
 - S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- Last Closed Stage: `S06_RTOS_Runtime`
+- Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S07_OTA_Service_V1`
-- Current Role: `Implementation Role`
+- Next Planned Stage: `S08_Bootloader_Foundation`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C 和 S06 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前进入 `S07_OTA_Service_V1` 实施，状态为 `IN_PROGRESS`。
+S05、S05A、S05B、S05C、S06 和 S07 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前下一计划阶段为尚未启动的 `S08_Bootloader_Foundation`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -61,9 +61,9 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07 OTA Service V1 Current Status
 
-S07 已完成 Task 0–9 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已在真实板上完成 PA0 启动/确认、COM9 YMODEM、READY 复位、中断、坏 CRC、重复 KEY 和 EEPROM durable `PENDING` 回读。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，Task 11 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
+S07 已完成 Task 0–10 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已在真实板上完成 PA0 启动/确认、COM9 YMODEM、READY 复位、中断、坏 CRC、重复 KEY、LCD 正常/失败画面和 EEPROM durable `PENDING` 回读。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，最终 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
 
-当前结论：代码验证 `PASS`，硬件验证 `PARTIAL / PENDING`。真实 PA0、COM9、失败路径和 Metadata 证据已通过；LCD `RECEIVING → VERIFYING → READY/FAILED` 的肉眼全流程确认及最终 Project Owner 确认仍未完成，阶段保持 `IN_PROGRESS`，不得标记 `CLOSED / PASS`。当前设备在重复 KEY 验收后保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE`、`upgradeState=NONE`；S07 未执行 S09/S10 的安装、Trial、Confirm 或 Rollback。
+当前结论：代码验证 `PASS`，硬件验证 `PASS`，S07 阶段状态为 `CLOSED / PASS`。当前设备在重复 KEY 验收后保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE`、`upgradeState=NONE`；S07 未执行 S09/S10 的安装、Trial、Confirm 或 Rollback。下一阶段为尚未启动的 `S08_Bootloader_Foundation`。
 
 ## Stable Toolkit Architecture
 
