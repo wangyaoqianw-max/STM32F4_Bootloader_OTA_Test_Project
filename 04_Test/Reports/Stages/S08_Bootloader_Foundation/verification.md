@@ -69,18 +69,19 @@
 | Application GDB runtime | PASS | `prvIdleTask`，`MSP=0x2000E670`、`PSP=0x20000C28`、`PRIMASK=0` |
 | SysTick / FreeRTOS tick | PASS | 分离 GDB 会话读取 `uwTick`：`0x00002E42 → 0x00007069`，间隔约 2 秒 |
 | Repeated Reset / Run | PASS | `flash bootloader run` 连续 3/3 成功 |
+| Power-cycle startup | PASS | Project Owner 确认断电再上电后 Bootloader → Application 正常启动 |
+| Application LED | PASS | Project Owner 确认 LED 正常闪烁 |
+| Application LCD | PASS | Project Owner 确认 LCD 正常显示 |
 
 期间发现一次由 GDB 断点采样遗留 FPB comparator 导致的 `HFSR=0x80000000` DEBUGEVT。直接读取确认 comparator 指向 `boot_jump_to_app`；清除 `E0002008`–`E0002024` 和 `DEMCR` 后重跑通过。该现象属于调试器状态残留，不作为生产 Fault 证据；后续 GDB 断点测试必须执行 comparator cleanup。
 
 ## Pending Owner Checks
 
-以下项目属于需要 Project Owner 在目标板上最终确认的硬件验收，不用代码结果替代：
+以下项目仍需 Project Owner 在目标板上最终确认，不用代码结果替代：
 
-- 真实断电再上电后的 Bootloader → Application 稳定启动；
-- Application LED / LCD 基础行为的现场确认；
 - 至少一个 Application 外设中断路径在 Jump 后的现场确认；本轮已确认 SysTick/FreeRTOS tick，不将其冒充外设中断证据。
 
-重复 Reset 已通过统一 J-Link 运行路径完成；本报告暂不把它等同于真实 Power-cycle。
+真实 Power-cycle、LED/LCD 现场行为和重复 Reset 均已确认 PASS。
 
 ## Verification Status
 

@@ -476,4 +476,4 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无设计阻塞。S08 代码验证、双工程 Build、Flash Layout、RTT、CmBacktrace、向量拒绝、合法 Jump、GDB Runtime Snapshot、SysTick 采样和 3 次重复 Reset 已通过；待 Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径后进入 Review。
+当前无设计阻塞。S08 代码验证、双工程 Build、Flash Layout、RTT、CmBacktrace、向量拒绝、合法 Jump、GDB Runtime Snapshot、SysTick 采样、3 次重复 Reset、真实断电上电和 LED/LCD 现场确认均已通过；待 Project Owner 补齐一个 Application 外设中断路径后进入 Review。
