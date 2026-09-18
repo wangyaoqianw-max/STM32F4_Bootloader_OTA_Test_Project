@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `CLOSED / PASS`
+- Active Stage: `S08_Bootloader_Foundation`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -41,13 +41,13 @@
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
 - Last Closed Stage: `S07A_RTOS_Startup_Refactor`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S08_Bootloader_Foundation`
+- Next Planned Stage: `S09_Firmware_Installation`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准，下一计划阶段为 `S08_Bootloader_Foundation`。
+S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计与实施计划冻结，状态为 `READY_FOR_IMPLEMENTATION`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -464,6 +464,51 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 成功传输、重复重启传输、中途终止、Timeout、Slot B Validation、任务阻塞与 Stack/Heap 证据均记录于 S06 Verification。S06 未交付公开 OTA START/session control、`PENDING`、Reset Request、Trial、Confirmed 或 Rollback，这些继续属于 S07 及后续阶段。
 
+## S08 Bootloader Foundation Current State
+
+当前状态：`READY_FOR_IMPLEMENTATION`。
+
+S08 已冻结三个核心目标：
+
+```text
+1. Internal Flash Layout
+2. SEGGER RTT + boot_log + Bare-metal CmBacktrace
+3. APP Vector Validation + reliable jump
+```
+
+冻结 Flash Layout：
+
+```text
+Bootloader  : 0x08000000 / 0x00010000 (64 KiB)
+Application : 0x08010000 / 0x00070000 (448 KiB)
+```
+
+Bootloader 技术栈：
+
+```text
+Bare-metal
+HAL + CMSIS
+No FreeRTOS
+No EasyLogger
+RTT + lightweight boot_log + CmBacktrace
+```
+
+当前独立工程已创建于：
+
+```text
+03_Firmware/Bootloader/OTA_Bootloader/
+```
+
+SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64、AT24C02 或 Firmware Installation。
+
+正式入口：
+
+```text
+00_Project/03_Stages/S08_Bootloader_Foundation/design.md
+00_Project/03_Stages/S08_Bootloader_Foundation/implementation_plan.md
+00_Project/03_Stages/S08_Bootloader_Foundation/handoff.md
+```
+
 ## Next Action
 
-S07A 已 `CLOSED / PASS`。下一步进入 `S08_Bootloader_Foundation` 的设计讨论，基于当前已冻结的 Application Startup Contract、Firmware Image / Metadata Contract 和 S07 PENDING 交接边界设计独立 Bootloader。
+按 S08 implementation plan 从 Task 0 开始实施：先固定双工程 Build 基线，再修改 Bootloader/Application Flash Layout 与 Application VTOR。
