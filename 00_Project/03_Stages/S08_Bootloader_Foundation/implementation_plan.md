@@ -186,8 +186,8 @@ Vendor/
 - [ ] 新建/更新 S08 verification report。
 - [ ] 记录 Bootloader .map/.bin 使用量。
 - [ ] 记录 Implementation Commits。
-- [ ] 状态推进到 `READY_FOR_VERIFICATION`，由 Verification Role 完成正式证据。
-- [ ] Verification / Review 通过后才能 CLOSED。
+- [x] 状态已推进到 `READY_FOR_VERIFICATION`，由 Verification Role 完成正式证据。
+- [x] Verification / Review 已通过，阶段关闭为 `CLOSED / PASS`。
 
 ## Final Verification Target
 

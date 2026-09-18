@@ -131,7 +131,7 @@ Reference Heap          xFreeBytesRemaining=7344 B / minimum-ever=6720 B
 Reference Stack         appSystem=3680 B / otaWorker=3412 B / displayTask=3224 B
 ```
 
-当前结论：S07A `CLOSED / PASS`，S08 当前为 `READY_FOR_REVIEW`。
+当前结论：S07A `CLOSED / PASS`，S08 当前为 `CLOSED / PASS`。
 
 ## S08 Bootloader Foundation Current State
 
