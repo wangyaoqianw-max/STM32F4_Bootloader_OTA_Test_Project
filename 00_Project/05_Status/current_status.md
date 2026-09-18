@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `CLOSED / PASS`
+- Active Stage: `S08_Bootloader_Foundation`
+- Status: `READY_FOR_IMPLEMENTATION`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -46,13 +46,13 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S07A_RTOS_Startup_Refactor`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S08_Bootloader_Foundation`
+- Next Planned Stage: `S09_Firmware_Installation`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07 和 S07A 均已完成并关闭。S07A Review 无 Blocking / Important Finding，Application RTOS Startup Contract 已冻结。下一计划阶段为 `S08_Bootloader_Foundation`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07 和 S07A 均已完成并关闭。S07A Review 无 Blocking / Important Finding，Application RTOS Startup Contract 已冻结。`S08_Bootloader_Foundation` 已完成设计和实施计划，当前状态为 `READY_FOR_IMPLEMENTATION`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -127,7 +127,40 @@ Reference Heap          xFreeBytesRemaining=7344 B / minimum-ever=6720 B
 Reference Stack         appSystem=3680 B / otaWorker=3412 B / displayTask=3224 B
 ```
 
-当前结论：S07A `CLOSED / PASS`。下一步可进入 `S08_Bootloader_Foundation` 的设计讨论。
+当前结论：S07A `CLOSED / PASS`，S08 已进入 `READY_FOR_IMPLEMENTATION`。
+
+## S08 Bootloader Foundation Current State
+
+已创建独立裸机工程：
+
+```text
+03_Firmware/Bootloader/OTA_Bootloader/
+```
+
+冻结范围：
+
+```text
+1 Flash Layout
+2 Diagnostics
+3 APP Jump
+```
+
+冻结布局：
+
+```text
+Bootloader  0x08000000 / 64 KiB
+Application 0x08010000 / 448 KiB
+```
+
+诊断：
+
+```text
+SEGGER RTT
++ lightweight boot_log
++ CmBacktrace bare-metal
+```
+
+明确不在 S08 实现 W25Q64 / AT24C02 / Software I2C / PENDING consume / Firmware Installation / Trial / Confirm / Rollback / LCD / FreeRTOS。
 ```
 
 ## S07 OTA Service V1 Current State
@@ -441,6 +474,4 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无外部硬件或设计阻塞。S07A 已完成 Design Approval，可按正式 implementation plan 进入实施。
-
-S08 Bootloader Foundation 保持 `PLANNED`，必须在 S07A 完成 Stack/Heap、Startup Barrier、degraded/failure 路径和 S07 全链路回归后再启动。
+当前无外部硬件或设计阻塞。S08 已完成 Design Approval 和 Implementation Plan，可按 `00_Project/03_Stages/S08_Bootloader_Foundation/implementation_plan.md` 开始实施。
