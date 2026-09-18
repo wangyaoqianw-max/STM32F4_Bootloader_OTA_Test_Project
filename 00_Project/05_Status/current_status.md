@@ -110,6 +110,8 @@ defaultTask (4096 B temporary)
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/implementation_plan.md
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/handoff.md
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/review.md
+```
 
 Task 0 基线（2026-09-18）：
 
