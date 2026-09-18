@@ -826,4 +826,4 @@ KEY/UART ISR
 - Decision: `APPROVED`
 - Approved By: `Project Owner`
 - Approval Date: `2026-09-18`
-- Design Commit: `pending current update commit`
+- Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
