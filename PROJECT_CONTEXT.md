@@ -19,6 +19,8 @@
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
 - S08 Review Commit: `7dc5f7c`
+- S09 Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
+- S09 Design / Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -517,7 +519,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S08 已通过 Review 并关闭为 `CLOSED / PASS`。下一步进入 `S09_Firmware_Installation` 的设计/实施准备；S09 功能尚未在本阶段实现。
+S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，当前状态为 `READY_FOR_IMPLEMENTATION`；下一步按 `implementation_plan.md` 开始 Task 0，并在施工前读取固件代码规范与真实工程接口。
 
 ## S09 Firmware Installation Current Design
 
