@@ -31,6 +31,7 @@
 
 //******************************** Private Functions *************************//
 static void app_main_task_entry(void *argument);
+static void app_main_task_terminate(void);
 //******************************** Private Functions *************************//
 
 //******************************** Variables ********************************//
@@ -48,6 +49,20 @@ static const platform_thread_config_t s_app_main_task_config = {
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+static void app_main_task_terminate(void)
+{
+    platform_error_t result;
+
+    result = platform_thread_terminate(&g_appMainTaskThread);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("Application task termination failed: %d", (int)result);
+    }
+
+    for (;;) {
+        (void)platform_time_delay_ms(1000U);
+    }
+}
+
 /* 构造并启动 Application 前台基础资源。 */
 static platform_error_t app_main_init(void)
 {
@@ -87,19 +102,19 @@ static void app_main_task_entry(void *argument)
     result = app_startup_report_main(appResult);
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_E("Application startup report failed: %d", result);
-        return;
+        app_main_task_terminate();
     }
 
     result = app_startup_wait_for_decision();
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_I("Application startup aborted: %d", result);
-        return;
+        app_main_task_terminate();
     }
 
     startupContext = app_startup_get_context();
     if ((appResult != PLATFORM_ERR_OK) ||
         (startupContext->systemState == APP_SYSTEM_STATE_FAILED)) {
-        return;
+        app_main_task_terminate();
     }
 
     result = platform_thread_get_stack_space(
