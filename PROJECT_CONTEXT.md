@@ -47,11 +47,11 @@
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06 和 S07 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前插入 `S07A_RTOS_Startup_Refactor`，在启动 S08 前重新整理 Application RTOS Bootstrap / Runtime 边界并验证 Stack/Heap 安全。
+S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准，下一计划阶段为 `S08_Bootloader_Foundation`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
-S06 已验证 Runtime（S07A 将重构 `appSystem` 的启动职责）：
+S06 已验证 Runtime（历史合同；S07A 已替代其启动职责）：
 
 ```text
 appSystem      → 前台 Application / v1.0 Blink / v1.1 Breath
