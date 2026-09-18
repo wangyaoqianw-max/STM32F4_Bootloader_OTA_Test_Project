@@ -7,7 +7,7 @@
 - Branch: `main`
 - Design Commit: `a5c4c1b`
 - Implementation Head Reviewed: `37a0d09`
-- Verification Commit: `TBD (current board-acceptance documentation commit)`
+- Verification Commit: `ade703e0d72bdef4a26cabd2afe36ecb86a09fa6`
 - Review Commit: `9734a18`
 - Review Date: `2026-09-18`
 - Reviewer Role: `Review Role`
