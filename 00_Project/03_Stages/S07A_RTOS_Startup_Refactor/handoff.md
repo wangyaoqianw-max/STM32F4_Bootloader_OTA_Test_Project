@@ -3,14 +3,15 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
+- Implementation Commits: `306c76b`, `c30c60d`, `d631fb8`
 - Verification Commit: `8703415` (`docs: record s07a task lifecycle verification`)
+- Review Commit: `568bbccc5019f0785826534b85d6fbb1f4404290`
 
 ## Implementation Input
 
@@ -216,7 +217,7 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 
 ## Implementation Output
 
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion), following the topology implementation in `306c76b`
 
 ### Completed Design Work
@@ -335,5 +336,5 @@ Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样�
 - DEGRADED must preserve unrelated working components；
 - Task-local ownership must remain intact；
 - App directory relocation must not create duplicate source/include paths；
-- S07 当前主要物理回归、Display 肉眼、OTA 场景 Stack、Task entry failure lifetime 和基础设施 FAILED 证据均 PASS；当前状态为 `READY_FOR_REVIEW`，尚未标记 `CLOSED / PASS`。
+- S07 当前主要物理回归、Display 肉眼、OTA 场景 Stack、Task entry failure lifetime 和基础设施 FAILED 证据均 PASS；Review 无 Blocking / Important Finding，阶段已关闭为 `CLOSED / PASS`。
 - 需要确认 `uxCurrentNumberOfTasks=6` 中系统任务的解释与 defaultTask 删除后的回收证据。
