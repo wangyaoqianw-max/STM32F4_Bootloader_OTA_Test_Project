@@ -5,14 +5,14 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `READY_FOR_VERIFICATION`
+- Active Stage Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- S07A Handoff Commit: `5e3c533`
-- S07A Implementation Commit: `306c76b`
-- S07A Verification Commit: `5e3c533`
+- S07A Handoff Commit: `d631fb8` (handoff update pending documentation commit)
+- S07A Implementation Commits: `c30c60d`, `d631fb8`
+- S07A Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
 - S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
@@ -68,7 +68,7 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07A RTOS Startup Refactor
 
-当前状态：`READY_FOR_VERIFICATION`。
+当前状态：`READY_FOR_REVIEW`。
 
 冻结启动模型：
 
@@ -464,6 +464,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-S07A 计划内生产代码已在 `306c76b` 完成并提交。当前状态为 `READY_FOR_VERIFICATION`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟、GDB Stack/Heap 证据以及当前 S07A 的主要 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理回归已取得；下一步是补齐 Display 肉眼状态、OTA 场景专项 Stack 采样和可执行的 degraded/failure 路径证据。
+S07A 计划内生产代码和 Task 生命周期修复已在 `c30c60d` / `d631fb8` 完成并提交。当前状态为 `READY_FOR_REVIEW`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟、GDB Stack/Heap 证据、Display 肉眼状态、OTA 场景专项 Stack 采样、三个业务组件 DEGRADED、Startup Event Flags/shared IPC/Task create FAILED，以及当前 S07A 的主要 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理回归均已取得。
 
-完整证据前不得进入 `READY_FOR_REVIEW`，S08 Bootloader Foundation 暂不启动。
+Review / Project Owner 决定前不得标记 `CLOSED / PASS`；S08 Bootloader Foundation 暂不启动。

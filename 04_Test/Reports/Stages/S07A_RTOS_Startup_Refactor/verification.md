@@ -3,9 +3,9 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_VERIFICATION`
-- Implementation Commit: `306c76b`
-- Verification Commit: `b6896cb` (`docs: record s07a physical regression evidence`)
+- Status: `READY_FOR_REVIEW`
+- Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
+- Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
 - Branch: `main`
 - Verification Date: `2026-09-18`
 
@@ -25,6 +25,7 @@ S08/S09/S10 的 Bootloader、Internal Flash Installation、Trial、Confirm 和 R
 | App layout / stale path scan | PASS | no old flat production App paths remain; no duplicate source entries |
 | Embedded C style check | PASS | changed/new files have no tabs and no line longer than 120 columns |
 | Startup contract Host Test | PASS | `S07A Startup contract host test passed.` |
+| Task lifecycle contract | PASS | `05_Tools\\Contracts\\Application\\test_task_lifecycle.ps1` |
 
 实现包含：`platform_event_flags`、线程剩余 Stack API、`app_startup` Context/Barrier、`app_system_bootstrap()`、`defaultTask` 自删除、`appMainTask / otaWorker / displayTask` 长期运行拓扑，以及 `01_APP/system/task/runtime/contract` 目录迁移。
 
@@ -79,7 +80,7 @@ OTA 场景 Stack 采样使用临时 RTT instrumentation，未启动 GDB 介入�
 | bad CRC | PASS | 仅修改 payload 偏移 `164` 的一字节；YMODEM 仍完成 `67664/67664`，GDB：`state=FAILED`、`error=3`、progress `100%`，Metadata `pending=NONE`、Slot B `INVALID` |
 | duplicate KEY during receive | PASS | 在 `Block 7` 后再次真实按键；传输仍完成 `67664/67664`，GDB：`state=READY_TO_INSTALL`、`error=0`、target `B`、Slot B `VALID`、`pending=NONE` |
 
-本轮物理证据覆盖了 S07A 当前代码下的正常接收、PENDING/Reset、取消、中途 CRC 失败、接收中的重复 KEY，以及 Display 肉眼状态确认。组件 degraded/failure fault injection 仍受下文发现的 Task 返回问题阻塞。
+本轮物理证据覆盖了 S07A 当前代码下的正常接收、PENDING/Reset、取消、中途 CRC 失败、接收中的重复 KEY，以及 Display 肉眼状态确认。组件 degraded/failure fault injection 在修复后重新完成，所有临时注入均已移除。
 
 ### OTA Scenario Stack Evidence
 
@@ -125,27 +126,31 @@ Task Stack High Water Mark：
 
 Host contract 已验证 startup timeout、未完成 DONE、组件错误导致 DEGRADED、FAILED/ABORT 不发布 RUN，以及 RUN 广播等待不清除 flag。
 
-已执行 Display init failure 的临时板级注入，但未通过：注入后 `displayTask` 在 `app_display_task_entry()` 的失败分支返回，GDB 快照停在 FreeRTOS `prvTaskExitError`，证明当前 Task entry 不能安全结束，不能据此宣称 `DEGRADED` 运行通过。
+本轮在 `c30c60d` / `d631fb8` 修复了 Task entry 失败分支直接返回的问题。三个长期 Task 现在通过 Platform Thread termination 自身安全退出；FreeRTOS 适配层识别 current Task，并在终止前清理对应句柄。若终止 API 异常返回，Task 进入带 delay 的不可返回兜底，不会落入 `prvTaskExitError`。Startup Event Flags 创建失败时，Context 也明确记录 `FAILED` 后进入 controlled fatal path。
 
-以下项目因该冲突停止，未擅自修改冻结设计：
+真实板级 fault injection 结果如下。每次验证结束后均恢复正式源码并重新 Build/Flash/RTT；未留下 fault injection 开关、测试入口或临时 GDB 脚本。
 
-- OTA init failure → `DEGRADED`，foreground + display 继续；
-- appMain init failure → `DEGRADED`，OTA + display 继续；
-- 真实 Task create / Event Flags / shared IPC failure 的 FAILED 路径。
+| 路径 | 结果 | GDB / RTT 证据 |
+| --- | --- | --- |
+| Display init failure | PASS | `startupState=DEGRADED(2)`、`displayResult=15`；`appMainTask.native` 和 `otaWorker.native` 保持有效，`displayTask.native=0`；Idle cleanup 完成；未停在 `prvTaskExitError` |
+| OTA init failure | PASS | `startupState=DEGRADED(2)`、`otaResult=15`；`appMainTask.native` 和 `displayTask.native` 保持有效，`otaWorker.native=0`；Idle cleanup 完成；未停在 `prvTaskExitError` |
+| appMain init failure | PASS | `startupState=DEGRADED(2)`、`mainResult=15`；`otaWorker.native` 和 `displayTask.native` 保持有效，`appMainTask.native=0`；Idle cleanup 完成；未停在 `prvTaskExitError` |
+| Display Queue / shared IPC create failure | PASS | `startupState=FAILED(3)`；三个业务 Task handle 均为 `0`，未发布 `SYSTEM_RUN`；GDB 停在 `Error_Handler` |
+| Task create failure | PASS | `startupState=FAILED(3)`；业务 Task handle 均为 `0`，未发布 `SYSTEM_RUN`；GDB 停在 `Error_Handler`。`uxDeletedTasksWaitingCleanUp=2` 是 fatal handler 占用 defaultTask、Idle 尚未运行的现场状态，不是 DEGRADED 路径泄漏 |
+| Startup Event Flags create failure | PASS | `startupState=FAILED(3)`；业务 Task 未创建，未发布 `SYSTEM_RUN`；GDB 停在 `Error_Handler`。因同步对象不存在，该路径以 FAILED state + controlled fatal 作为证据，无法再通过 Event Flags 发布 abort bit |
 
-生产代码没有添加默认开启的 fault injection 开关。
+生产代码没有添加默认开启的 fault injection 开关，也没有保留测试专用业务逻辑。
 
 ## Verification Status
 
 ```text
 代码验证：PASS
-硬件验证：PENDING
+硬件验证：PASS
 ```
 
-代码实现、自动化回归、S07 当前固件主要物理业务路径、Display 肉眼确认和 OTA 场景专项 Stack 证据已完成；组件 degraded/failure 路径因 Task entry 返回问题和基础设施路径未完成，S07A 当前仍未达到 `READY_FOR_REVIEW`，不得标记 `CLOSED / PASS`。
+代码实现、自动化回归、S07 当前固件主要物理业务路径、Display 肉眼确认、OTA 场景专项 Stack 证据，以及组件 degraded/failure 和启动基础设施 failure 路径均已完成。S07A 当前达到 `READY_FOR_REVIEW`；尚未标记 `CLOSED / PASS`，等待 Review / Project Owner 决策。
 
 ## Next Actions
 
-1. 由主代理确认并修复/评审 Task-local init failure 后的 Task 生命周期处理，再重跑 Display/OTA/appMain `DEGRADED` 路径。
-2. 补齐真实 Task create / Event Flags / shared IPC failure 的 FAILED 路径证据。
-3. 证据完整后再更新状态并进入 `READY_FOR_REVIEW`。
+1. Review 对照冻结 Design、`c30c60d` 差异和本报告复核 Task 安全退出及 startup failure 处理。
+2. 由 Project Owner 决定是否将 S07A 标记为 `CLOSED / PASS`。

@@ -6,7 +6,7 @@
 - Design: `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 
 ## Global Constraints
@@ -195,13 +195,13 @@ FAILED
 **Goal:** 验证“能力故障可降级，Runtime 拓扑故障才失败”。
 
 - [x] 正常启动 → RUNNING。
-- [ ] Display init fault injection → DEGRADED，foreground + OTA 继续。已执行临时注入，但 `displayTask` 返回后进入 FreeRTOS `prvTaskExitError`，未通过，需先处理 Task 生命周期冲突。
-- [ ] OTA init fault injection → DEGRADED，foreground + display 继续。当前未执行板级 fault injection。
-- [ ] appMain init fault injection → DEGRADED，OTA + display 继续。当前未执行板级 fault injection。
-- [x] Task create / startup synchronization failure 使用 Host contract test 验证 FAILED/CANCELED 语义；真实 fault injection 待验证。
+- [x] Display init fault injection → DEGRADED，foreground + OTA 继续；失败 Task 通过 Platform Thread self-termination 安全退出，未再进入 `prvTaskExitError`。
+- [x] OTA init fault injection → DEGRADED，foreground + display 继续；失败 Task 安全退出。
+- [x] appMain init fault injection → DEGRADED，OTA + display 继续；失败 Task 安全退出。
+- [x] Task create / startup synchronization failure 使用 Host contract test 验证 FAILED/CANCELED 语义，并完成真实 Task create、Event Flags、shared IPC failure fault injection。
 - [x] Startup timeout 路径验证 FAILED，不发布 SYSTEM_RUN。
 - [x] 所有临时 fault injection 不得遗留 production 开关默认开启；本次未加入 production fault switch。
-- [ ] 提交并记录 Commit。实现已提交 `306c76b`，本 Task 的完整验证仍待完成。
+- [x] 提交并记录 Commits：`c30c60d`, `d631fb8`；所有临时注入、测试入口和 GDB 脚本已移除。
 
 ## Task 8: Stack / Heap Verification
 
@@ -237,7 +237,7 @@ T8 Idle cleanup completed
 - [x] 覆盖 idle / OTA receiving / display render / READY_TO_INSTALL / failure path。idle 使用 GDB；OTA 场景使用临时 RTT instrumentation，采样后已删除。
 - [ ] appMainTask 2048 B 如果余量不足只允许增大。
 - [ ] 未取得证据前不缩小 otaWorker/displayTask。
-- [x] 写入 Verification Report 初稿；完整板级覆盖仍待完成。
+- [x] 写入 Verification Report；idle、OTA receiving、display render、READY_TO_INSTALL、failure path 和 startup infrastructure failure 均有板级证据。
 
 ## Task 9: S07 Regression and Documentation
 
@@ -253,7 +253,7 @@ T8 Idle cleanup completed
 - [x] interrupted transfer / bad CRC。中断后 `FAILED/error=19`；坏 CRC 后 `FAILED/error=3`，均未提交 PENDING。
 - [x] duplicate KEY during receive。传输中第二次按键后仍完整接收并保持 `READY_TO_INSTALL`。
 - [x] 更新 S07A verification / handoff。
-- [x] 同步 PROJECT_CONTEXT/current_status/Roadmap 到真实实施状态。
+- [x] 同步 PROJECT_CONTEXT/current_status 到真实实施状态，阶段进入 `READY_FOR_REVIEW`。
 - [ ] Review 后由 Project Owner 决定是否 CLOSED / PASS。
 
 ## Final Verification

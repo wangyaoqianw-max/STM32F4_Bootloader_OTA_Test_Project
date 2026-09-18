@@ -3,14 +3,14 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- Implementation Commit: `306c76b`
-- Verification Commit: `5e3c533` (`docs: record s07a stack and fault verification evidence`)
+- Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
+- Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
 
 ## Implementation Input
 
@@ -216,8 +216,8 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 
 ## Implementation Output
 
-- Status: `READY_FOR_VERIFICATION`
-- Implementation Commit: `306c76b` (`refactor: implement s07a rtos startup topology`)
+- Status: `READY_FOR_REVIEW`
+- Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion), following the topology implementation in `306c76b`
 
 ### Completed Design Work
 
@@ -232,7 +232,7 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 - `01_APP/system/task/runtime/contract` directory contract frozen.
 - `app_main.* → app_main_task.*` rename frozen.
 - Implementation plan finalized.
-- Task 0 baseline captured and implementation completed in `306c76b`.
+- Task 0 baseline captured and topology implementation completed in `306c76b`; startup lifecycle fix and full fault-path verification completed in `c30c60d` / `d631fb8`.
 
 ### Delivered Implementation
 
@@ -250,11 +250,12 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 
 ### Verification Results
 
-代码和自动化验证已完成；S07A 当前固件的主要 S07 物理业务路径、Display 肉眼确认和 OTA 场景专项 Stack 采样已在真实板上完成。组件 degraded/failure fault injection 暴露出 Task 生命周期冲突，尚未通过。
+代码和自动化验证已完成；S07A 当前固件的主要 S07 物理业务路径、Display 肉眼确认、OTA 场景专项 Stack 采样，以及组件 degraded/failure 和启动基础设施 failure fault injection 均已在真实板上完成。Task 生命周期冲突已在 `c30c60d` 修复并通过板级复验。
 
 ```text
 Keil Build                         PASS, 0 error / 0 warning
 S07A Startup Host Test             PASS
+Task lifecycle contract            PASS
 S07 Host regression                7/7 PASS
 S04 Host regression                PASS; persistence 15/15
 S05 Host regression                PASS
@@ -281,7 +282,18 @@ OTA Stack scenarios        PASS  临时 RTT 采样：otaWorker 接收 3032/2912 
 Display visual states      PASS  Project Owner 确认每次验证 LCD 显示正常
 ```
 
-中断、坏 CRC、重复 KEY 和 Stack 采样使用的慢速发送器、临时坏 CRC 镜像、RTT instrumentation、GDB 状态脚本和监视器均已在测试结束后删除，未修改生产代码、Keil 工程或正式测试入口。正式镜像已重新 Build/Flash/RTT 启动冒烟。
+组件 degraded/failure 与 startup infrastructure fault injection：
+
+```text
+Display init failure          PASS  state=DEGRADED; displayTask safely terminated; appMainTask + otaWorker remain valid
+OTA init failure              PASS  state=DEGRADED; otaWorker safely terminated; appMainTask + displayTask remain valid
+appMain init failure          PASS  state=DEGRADED; appMainTask safely terminated; otaWorker + displayTask remain valid
+shared IPC create failure     PASS  state=FAILED; no business Task; controlled Error_Handler; no SYSTEM_RUN
+Task create failure           PASS  state=FAILED; no business Task; controlled Error_Handler; no SYSTEM_RUN
+Event Flags create failure   PASS  state=FAILED; no business Task; controlled Error_Handler; no SYSTEM_RUN
+```
+
+中断、坏 CRC、重复 KEY、Stack 采样和本轮 fault injection 使用的慢速发送器、临时坏 CRC 镜像、RTT instrumentation、GDB 状态脚本及监视器均已在测试结束后删除。生产修复保留在 `c30c60d`；临时注入不进入生产代码、Keil 工程或正式测试入口。正式镜像已重新 Build/Flash/RTT 启动冒烟。
 
 ### Current Board and RAM Evidence
 
@@ -307,13 +319,13 @@ displayTask stack high water     800 words  (~3200 B)
 
 Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样时待 Idle cleanup 列表为空。appMainTask 正常 idle 为 407 words / 1628 B；OTA receiving、display render、READY_TO_INSTALL 和 failure path 使用临时 RTT instrumentation 取得专项数值，且已删除 instrumentation。
 
-当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING；S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 主要物理交互已用 S07A 当前固件重跑。Display 肉眼和 OTA 场景 Stack 证据已补齐。
+当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING；S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 主要物理交互已用 S07A 当前固件重跑。Display 肉眼、OTA 场景 Stack 证据、三个业务组件 DEGRADED 和三类启动基础设施 FAILED 路径均已补齐。
 
 继续验证时曾出现一次 Fault RTT 文本。只读 J-Link/GDB 检查发现 FPB `COMP0=0x48000199` 残留了临时 `0x08000198` 入口断点，目标被调试器停在 ArmCC `__main`；清除 comparator 并恢复正常 DEMCR 后重新 Reset/Run，RTT 恢复正常启动日志，GDB 停在 FreeRTOS `prvIdleTask`。该过程没有修改生产代码，临时探针文件已移除；该次 Fault 文本不作为 S07A 生产 Fault 证据。
 
-### Known Issues
+### Resolved Findings
 
-发现一个实现与冻结启动策略的冲突：Display init failure 临时注入后，`displayTask` 在失败分支返回，GDB 停在 FreeRTOS `prvTaskExitError`。这证明 Task entry 的失败生命周期尚未安全闭合；未擅自改变设计，OTA/appMain degraded 和基础设施 FAILED 验证暂缓。修复/评审前不得进入 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
+初始板级注入发现 Task entry 在初始化失败分支直接返回，FreeRTOS 进入 `prvTaskExitError` 并停止其他 Task。`c30c60d` / `d631fb8` 通过 Platform Thread self-termination 修复了该生命周期问题；Display/OTA/appMain 三条 DEGRADED 路径均已复验通过。另补充了 Startup Event Flags、shared IPC 和 Task create failure 的 controlled fatal 证据。Event Flags 对象未创建时无法再发布 abort bit，当前以 Context=`FAILED`、无业务 Task、无 `SYSTEM_RUN` 和 `Error_Handler` 作为不可继续启动的证据。
 
 ### Review Focus
 
@@ -323,5 +335,5 @@ Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样�
 - DEGRADED must preserve unrelated working components；
 - Task-local ownership must remain intact；
 - App directory relocation must not create duplicate source/include paths；
-- S07 当前主要物理回归、Display 肉眼和 OTA 场景 Stack 已 PASS；Task entry failure lifetime 与基础设施 FAILED 证据仍使当前验证状态保持 `PENDING`。
+- S07 当前主要物理回归、Display 肉眼、OTA 场景 Stack、Task entry failure lifetime 和基础设施 FAILED 证据均 PASS；当前状态为 `READY_FOR_REVIEW`，尚未标记 `CLOSED / PASS`。
 - 需要确认 `uxCurrentNumberOfTasks=6` 中系统任务的解释与 defaultTask 删除后的回收证据。
