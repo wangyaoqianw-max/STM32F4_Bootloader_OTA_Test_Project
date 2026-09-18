@@ -90,7 +90,9 @@ S06/S07 已证明当前业务功能可用，因此 S07A 只整理启动生命周
 - 重新验证 Task Stack High Water Mark；
 - 重新验证启动阶段 Heap Peak / Minimum Ever Free Heap；
 - 验证 Bootstrap Task 删除后动态 Stack/TCB 内存可回收；
-- 回归 S07 OTA、KEY、Display、Ymodem、Metadata PENDING 全链路。
+- 回归 S07 OTA、KEY、Display、Ymodem、Metadata PENDING 全链路；
+- 同步整理 `01_APP` 物理目录，使目录结构直接反映 System / Task / Runtime / Contract 职责；
+- 将现有 `app_main.c/.h` 在实施时重命名为 `app_main_task.c/.h`，避免与 `Core/main.c` 和 `appSystem` 语义混淆。
 
 ## Out of Scope
 
@@ -103,11 +105,93 @@ S06/S07 已证明当前业务功能可用，因此 S07A 只整理启动生命周
 - 不引入 Manager Framework；
 - 不把所有模块 init 强行搬进 `app_system.c`；
 - 不在启动重构同时激进压缩各 Task Stack；
-- 不改变 Application 分层边界。
+- 不改变 Application 分层边界；
+- 不按 OTA / Display / LED 等业务功能在 App 层复制第二套 Service 风格目录；
+- 不引入 `manager/controller/coordinator/handler` 等没有实际必要的角色层。
 
 ## Design
 
-### 1. 四阶段启动模型
+### 1. App Layer Physical Organization
+
+S07A 同时整理 `01_APP` 的物理目录。目的不是增加新的架构层，而是让文件位置能够直接表达文件职责，解决当前所有 App 文件平铺后难以快速识别 System、Task、Runtime Wiring 和 IPC Contract 的问题。
+
+目标目录冻结为：
+
+```text
+01_APP/
+├─ system/
+│  ├─ app_system.c
+│  ├─ app_system.h
+│  ├─ app_startup.c
+│  └─ app_startup.h
+│
+├─ task/
+│  ├─ app_main_task.c
+│  ├─ app_main_task.h
+│  ├─ app_ota_worker.c
+│  ├─ app_ota_worker.h
+│  ├─ app_display_task.c
+│  └─ app_display_task.h
+│
+├─ runtime/
+│  ├─ app_ota_runtime.c
+│  └─ app_ota_runtime.h
+│
+├─ contract/
+│  └─ app_runtime_contract.h
+│
+└─ README.md
+```
+
+目录职责：
+
+```text
+system/
+→ Application 启动、生命周期、Composition Root、Startup Barrier
+
+task/
+→ 长期 RTOS Task 及其 task-local runtime entry
+
+runtime/
+→ Application 级依赖装配、Platform/Service instance wiring、Runtime Context
+
+contract/
+→ App 内 Task / Module 之间共享的数据契约、通知位和事件类型
+```
+
+边界规则：
+
+1. `system/` 负责“系统如何组合并进入运行态”，不直接拥有 UART/SPI/GPIO HAL handle；
+2. `task/` 只放长期 RTOS execution context，不放普通 Service 或 Driver；
+3. `runtime/` 允许组合 Platform 与 Service 对象，但不承载 OTA 业务状态机；
+4. `contract/` 只保存跨 Task/模块共享的紧凑数据合同，不保存实现状态；
+5. App 层不再按 `ota/display/led/key` 业务名称重复建立一套层级结构；
+6. 当前规模下不拆 `manager/controller/coordinator/handler` 等角色目录；
+7. 只有后续确实出现新的 Runtime Wiring 或 Contract，才在对应目录新增文件，不预先制造空抽象。
+
+文件迁移：
+
+```text
+01_APP/app_system.*          → 01_APP/system/app_system.*
+01_APP/app_main.*            → 01_APP/task/app_main_task.*
+01_APP/app_ota_worker.*      → 01_APP/task/app_ota_worker.*
+01_APP/app_display_task.*    → 01_APP/task/app_display_task.*
+01_APP/app_ota_runtime.*     → 01_APP/runtime/app_ota_runtime.*
+01_APP/app_runtime_contract.h
+                              → 01_APP/contract/app_runtime_contract.h
+```
+
+其中 `app_main.*` 不只是移动，还正式改名为 `app_main_task.*`。S07A 后三个长期 Application Task 的命名保持一致：
+
+```text
+appMainTask
+otaWorker
+displayTask
+```
+
+`app_startup.c/.h` 用于承载 Startup Context、Barrier bit/state 和启动同步辅助逻辑，避免把 Event Flags、Startup 状态和错误结果全部继续堆入 `app_system.c`。
+
+### 2. 四阶段启动模型
 
 Application 启动正式分成：
 
@@ -193,7 +277,7 @@ otaWorker
 displayTask
 ```
 
-### 2. defaultTask 定位
+### 3. defaultTask 定位
 
 `defaultTask` 保持极薄：
 
@@ -209,7 +293,7 @@ vTaskDelete(NULL)
 
 不得把真实系统初始化重新堆回 `defaultTask`。
 
-### 3. appSystem 定位
+### 4. appSystem 定位
 
 S07A 后：
 
@@ -246,7 +330,7 @@ LCD draw primitive
 
 底层硬件 binding 继续属于 BSP / Impl。
 
-### 4. Task-local Initialization 原则
+### 5. Task-local Initialization 原则
 
 System 负责初始化顺序，不等于所有初始化都在 System Stack 上执行。
 
@@ -263,7 +347,7 @@ Display SPI/ST7789 继续由 displayTask 初始化和独占。
 
 前台 LED 继续由 appMainTask 初始化和使用。
 
-### 5. Startup Barrier
+### 6. Startup Barrier
 
 必须解决 Task 创建后立即参与调度的问题。
 
@@ -313,7 +397,7 @@ APP_STARTUP_RUN
 APP_STARTUP_FAILED
 ```
 
-### 6. Failure Policy
+### 7. Failure Policy
 
 任何 required Task 初始化失败：
 
@@ -333,7 +417,7 @@ enter controlled fatal/degraded policy
 
 Display 是否未来允许 degraded mode 可另行设计；S07A 不扩大该策略，优先保持 S06/S07 已验证行为。
 
-### 7. IPC Creation Ownership
+### 8. IPC Creation Ownership
 
 共享 IPC 应优先由 `appSystem` 在创建消费者/生产者 Task 前创建。
 
@@ -355,7 +439,7 @@ create task
 
 不再同时隐式创建其他系统级共享资源。
 
-### 8. Stack / Heap Hard Constraints
+### 9. Stack / Heap Hard Constraints
 
 启动重构必须优先保证 RAM 安全。
 
@@ -388,7 +472,7 @@ S07A 第一版原则：
 9. 未获得新板测证据前禁止缩小已有 stack；
 10. 如启动峰值 Heap 不安全，优先调整生命周期/静态对象，不直接无依据扩大 heap。
 
-### 9. Stack Diagnostics
+### 10. Stack Diagnostics
 
 当前 FreeRTOS 已开启：
 
@@ -412,7 +496,7 @@ Failure path
 
 避免只测 Idle 后误判 Stack 安全。
 
-### 10. Runtime Ownership After Refactor
+### 11. Runtime Ownership After Refactor
 
 最终长期 Runtime：
 
@@ -445,7 +529,7 @@ appSystem
 → exit
 ```
 
-### 11. Relationship to S06/S07
+### 12. Relationship to S06/S07
 
 S07A 不否定 S06/S07 已验证的业务能力。
 
@@ -574,12 +658,14 @@ KEY/UART ISR
 7. appSystem 在 SYSTEM_RUN 发布后自行删除；
 8. 稳定运行态不存在多余 Bootstrap Task；
 9. otaWorker / displayTask / appMainTask ownership 清晰且无互相初始化对方私有硬件；
-10. S07 OTA Service / Metadata / Ymodem / KEY 双确认语义无变化；
-11. 启动峰值 Heap 有真实证据且不存在 allocation failure；
-12. appSystem 删除后动态内存能够回收；
-13. 所有 Task 在最坏已测路径下有明确 Stack Headroom；
-14. 不通过猜测缩减 Stack；
-15. 完整 S07 代码和真实板回归通过后，S07A 才允许关闭。
+10. `01_APP` 已按 `system/task/runtime/contract` 分类，文件物理位置与职责一致；
+11. `app_main.*` 已改名为 `app_main_task.*`，不再与 `Core/main.c` 混淆；
+12. S07 OTA Service / Metadata / Ymodem / KEY 双确认语义无变化；
+13. 启动峰值 Heap 有真实证据且不存在 allocation failure；
+14. appSystem 删除后动态内存能够回收；
+15. 所有 Task 在最坏已测路径下有明确 Stack Headroom；
+16. 不通过猜测缩减 Stack；
+17. 完整 S07 代码和真实板回归通过后，S07A 才允许关闭。
 
 ## Open Design Items
 
