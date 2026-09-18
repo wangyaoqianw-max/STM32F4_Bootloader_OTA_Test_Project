@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S08_Bootloader_Foundation`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -52,7 +52,7 @@
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07 和 S07A 均已完成并关闭。S07A Review 无 Blocking / Important Finding，Application RTOS Startup Contract 已冻结。`S08_Bootloader_Foundation` 已完成设计和实施计划，当前状态为 `READY_FOR_IMPLEMENTATION`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07 和 S07A 均已完成并关闭。S07A Review 无 Blocking / Important Finding，Application RTOS Startup Contract 已冻结。`S08_Bootloader_Foundation` 已完成设计和实施计划，当前状态为 `IN_PROGRESS`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -474,4 +474,4 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前无外部硬件或设计阻塞。S08 已完成 Design Approval 和 Implementation Plan，可按 `00_Project/03_Stages/S08_Bootloader_Foundation/implementation_plan.md` 开始实施。
+当前无外部硬件或设计阻塞。S08 Task 0 已完成双工程 Build 基线，正在按 `00_Project/03_Stages/S08_Bootloader_Foundation/implementation_plan.md` 实施 Task 1。

@@ -3,10 +3,11 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Workflow Status: `READY_FOR_IMPLEMENTATION`
-- Implementation Status: `NOT STARTED`
+- Workflow Status: `IN_PROGRESS`
+- Implementation Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
+- Implementation Baseline Commit: `f164f3c`
 - Design Commit: `03406dcba9d57191bb1109da52fc23ab7a8c0d4f`
 - Implementation Plan Commit: `05cb274ca3454f53ed47b577e5c72232a2d484ee`
 - Implementation Commits: `Not created yet`
@@ -202,8 +203,26 @@ GDB snapshot
 当前状态：
 
 ```text
-NOT STARTED
+IN_PROGRESS
 ```
+
+### Task 0 Baseline Evidence
+
+采集日期：`2026-09-18`，Implementation Baseline Commit：`f164f3c`。
+
+```text
+Branch                  main
+Worktree                clean before baseline build
+Application Build       PASS, 0 error / 0 warning, 05_Tools/toolkit.bat build
+Bootloader Build        PASS, 0 error / 0 warning, Keil V5.06 update 7
+Bootloader Program Size Code=3514, RO-data=458, RW-data=16, ZI-data=1720
+Bootloader Runtime      Bare-metal CubeMX baseline; no FreeRTOS or EasyLogger target dependency
+Bootloader Scope        SPI2/PB6/PB7 preconfigured only; no storage driver implementation
+```
+
+Baseline output log：`06_Output/Logs/S08_bootloader_baseline_build.log`。
+
+当前发现：Bootloader 工程仍为 CubeMX 空壳，IROM 尚未冻结；其输出目录为 `MDK-ARM/OTA_Bootloader/`，需要在 Task 1/2 修正为 `Objects/` 与 `Listings/`。
 
 施工时持续填写：
 
