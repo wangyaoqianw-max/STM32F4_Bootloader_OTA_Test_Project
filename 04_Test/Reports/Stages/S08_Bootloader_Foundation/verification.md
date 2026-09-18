@@ -57,13 +57,28 @@
 | Erased vector reject | PASS | `06_Output/Logs/OTA_Bootloader_rtt.log`：`APP validation FAIL: ERASED` |
 | GDB/J-Link cleanup | PASS | Snapshot halt/resume、Flash、RTT 和 Fault workflow 均通过统一入口，测试后无 GDB/J-Link client 残留 |
 
+### Final Board Test Addendum
+
+本轮在清除调试器残留 FPB 状态后重新执行最终镜像板测：
+
+| 项目 | 结果 | 证据 |
+| --- | --- | --- |
+| Final Build / Flash | PASS | Bootloader/Application Build 均 0 error / 0 warning；Application、Bootloader 均成功写入 |
+| Bootloader handoff breakpoint | PASS | `PC=0x080015D8`，APP MSP `0x2000E690`，APP Reset `0x08010281`；vector memory 与 map 一致 |
+| Bootloader → Application RTT | PASS | `toolkit.bat run bootloader 8` 后观察到 `appMainTask`、`otaWorker`、`displayTask`、Display render/backlight 日志 |
+| Application GDB runtime | PASS | `prvIdleTask`，`MSP=0x2000E670`、`PSP=0x20000C28`、`PRIMASK=0` |
+| SysTick / FreeRTOS tick | PASS | 分离 GDB 会话读取 `uwTick`：`0x00002E42 → 0x00007069`，间隔约 2 秒 |
+| Repeated Reset / Run | PASS | `flash bootloader run` 连续 3/3 成功 |
+
+期间发现一次由 GDB 断点采样遗留 FPB comparator 导致的 `HFSR=0x80000000` DEBUGEVT。直接读取确认 comparator 指向 `boot_jump_to_app`；清除 `E0002008`–`E0002024` 和 `DEMCR` 后重跑通过。该现象属于调试器状态残留，不作为生产 Fault 证据；后续 GDB 断点测试必须执行 comparator cleanup。
+
 ## Pending Owner Checks
 
 以下项目属于需要 Project Owner 在目标板上最终确认的硬件验收，不用代码结果替代：
 
 - 真实断电再上电后的 Bootloader → Application 稳定启动；
 - Application LED / LCD 基础行为的现场确认；
-- 至少一个 Application 外设中断路径在 Jump 后的现场确认。
+- 至少一个 Application 外设中断路径在 Jump 后的现场确认；本轮已确认 SysTick/FreeRTOS tick，不将其冒充外设中断证据。
 
 重复 Reset 已通过统一 J-Link 运行路径完成；本报告暂不把它等同于真实 Power-cycle。
 

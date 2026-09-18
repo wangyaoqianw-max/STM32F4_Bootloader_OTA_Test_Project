@@ -232,9 +232,11 @@ RTT / valid jump       PASS
 CmBacktrace Fault      PASS
 Invalid vector reject  PASS: MSP / Reset_Handler / ERASED
 GDB APP snapshot       PASS: FreeRTOS prvIdleTask
+SysTick / FreeRTOS tick PASS: uwTick 0x2E42 -> 0x7069
+Repeated Reset         PASS: 3/3 Bootloader reset/run cycles
 ```
 
-当前需 Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径确认；在这些证据完成前不得将 S08 标记为 `CLOSED`。
+本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样和 3 次重复 Reset。仍需 Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径确认；在这些证据完成前不得将 S08 标记为 `CLOSED`。
 
 ### Task 0 Baseline Evidence
 

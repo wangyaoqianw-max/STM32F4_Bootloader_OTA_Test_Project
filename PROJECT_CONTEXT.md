@@ -477,6 +477,7 @@ S08 已冻结三个核心目标：
 ```
 
 S08 Implementation Commit：`8ec0045`。
+S08 Board Test：Build / Flash / valid Jump / RTT / GDB / SysTick / repeated Reset 已通过；仍待断电上电、LED/LCD 现场行为和 Application 外设中断确认。
 
 冻结 Flash Layout：
 
