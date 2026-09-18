@@ -5,7 +5,7 @@
 - Stage: `S07A_RTOS_Startup_Refactor`
 - Status: `READY_FOR_VERIFICATION`
 - Implementation Commit: `306c76b`
-- Verification Commit: `8173c43` (`docs: record s07a verification evidence`)
+- Verification Commit: `b6896cb` (`docs: record s07a physical regression evidence`)
 - Branch: `main`
 - Verification Date: `2026-09-18`
 
