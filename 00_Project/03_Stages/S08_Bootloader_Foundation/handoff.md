@@ -7,8 +7,8 @@
 - Implementation Status: `NOT STARTED`
 - Branch: `main`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
-- Design Commit: `Not created yet`
-- Implementation Plan Commit: `Not created yet`
+- Design Commit: `03406dcba9d57191bb1109da52fc23ab7a8c0d4f`
+- Implementation Plan Commit: `05cb274ca3454f53ed47b577e5c72232a2d484ee`
 - Implementation Commits: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
