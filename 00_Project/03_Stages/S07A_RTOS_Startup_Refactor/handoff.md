@@ -292,6 +292,8 @@ Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样�
 
 当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING，但 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 完整物理交互尚未用 S07A 当前固件重跑。
 
+继续验证时曾出现一次 Fault RTT 文本。只读 J-Link/GDB 检查发现 FPB `COMP0=0x48000199` 残留了临时 `0x08000198` 入口断点，目标被调试器停在 ArmCC `__main`；清除 comparator 并恢复正常 DEMCR 后重新 Reset/Run，RTT 恢复正常启动日志，GDB 停在 FreeRTOS `prvIdleTask`。该过程没有修改生产代码，临时探针文件已移除；该次 Fault 文本不作为 S07A 生产 Fault 证据。
+
 ### Known Issues
 
 无设计冲突或外部实现阻塞。未完成项是当前 S07A 固件的完整物理业务回归，以及真实 degraded/failure fault path 证据；在这些证据完成前不得进入 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。

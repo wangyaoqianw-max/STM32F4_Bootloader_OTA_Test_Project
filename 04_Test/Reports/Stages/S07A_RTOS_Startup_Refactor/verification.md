@@ -55,6 +55,16 @@ S07A Host Test 使用独立 stub 验证 Event Flags transition；测试文件位
 
 RTT 冒烟未输出新增的 Stack 日志；Stack 结论以下面的 GDB A5 交叉证据为准。
 
+### Additional Startup Recheck
+
+在继续验证过程中，第一次重采样曾读到 Fault RTT 文本。只读 J-Link/GDB 检查确认目标 FPB `COMP0=0x48000199` 残留了 `0x08000198` 的临时入口断点，目标实际被调试器停在 ArmCC `__main`，不是已确认的生产 Fault。清除该 comparator、恢复正常 DEMCR 后重新 Reset/Run：
+
+- RTT 正常输出 EasyLogger、OTA Runtime、`appMainTask` 和 `displayTask` 初始化；
+- GDB 再次停在 FreeRTOS `prvIdleTask`，无 Fault Handler；
+- 当前验证未修改生产代码，临时探针文件已移除。
+
+因此，当前 S07A 正常启动/idle 路径仍为 PASS；此前 Fault 文本不作为 S07A 生产故障证据。
+
 ## GDB / RAM Evidence
 
 当前正常启动/idle 路径的 GDB 采样：
