@@ -10,9 +10,9 @@
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- S07A Handoff Commit: `d631fb8` (handoff update pending documentation commit)
+- S07A Handoff Commit: `8703415`
 - S07A Implementation Commits: `c30c60d`, `d631fb8`
-- S07A Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
+- S07A Verification Commit: `8703415`
 - S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`

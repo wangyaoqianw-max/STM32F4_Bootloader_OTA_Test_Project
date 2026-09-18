@@ -10,7 +10,7 @@
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
-- Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
+- Verification Commit: `8703415` (`docs: record s07a task lifecycle verification`)
 
 ## Implementation Input
 

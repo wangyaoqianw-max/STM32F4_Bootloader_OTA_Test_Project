@@ -5,7 +5,7 @@
 - Stage: `S07A_RTOS_Startup_Refactor`
 - Status: `READY_FOR_REVIEW`
 - Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
-- Verification Commit: `d631fb8` (verification rerun after the final startup lifecycle fix)
+- Verification Commit: `8703415` (`docs: record s07a task lifecycle verification`)
 - Branch: `main`
 - Verification Date: `2026-09-18`
 
