@@ -5,8 +5,8 @@
 - Stage: `S08_Bootloader_Foundation`
 - Status: `CLOSED / PASS`
 - Implementation Commits: `8ec0045`
-- Verification Commit: `573312a`
-- Review Commit: `pending`
+- Verification Commit: `e8757b0`
+- Review Commit: `7dc5f7c`
 - Branch: `main`
 - Verification Date: `2026-09-18`
 
