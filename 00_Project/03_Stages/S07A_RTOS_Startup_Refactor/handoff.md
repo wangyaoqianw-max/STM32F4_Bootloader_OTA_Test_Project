@@ -6,7 +6,7 @@
 - Status: `DRAFT / DESIGN_DISCUSSION`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
-- Design Commit: `5ce9ceffea60fde87fe00107bf1d2648a8e26b62`
+- Design Commit: `284fe05e689e48d06267649c449266e1e8c029e3`
 - Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
@@ -90,6 +90,56 @@ displayTask
 → SPI1/ST7789/display rendering
 ```
 
+### App Layer Directory Contract
+
+S07A 同时整理 `01_APP`，使物理目录直接表达职责。目标结构：
+
+```text
+01_APP/
+├─ system/
+│  ├─ app_system.c
+│  ├─ app_system.h
+│  ├─ app_startup.c
+│  └─ app_startup.h
+├─ task/
+│  ├─ app_main_task.c
+│  ├─ app_main_task.h
+│  ├─ app_ota_worker.c
+│  ├─ app_ota_worker.h
+│  ├─ app_display_task.c
+│  └─ app_display_task.h
+├─ runtime/
+│  ├─ app_ota_runtime.c
+│  └─ app_ota_runtime.h
+├─ contract/
+│  └─ app_runtime_contract.h
+└─ README.md
+```
+
+职责：
+
+```text
+system   → Bootstrap / Composition Root / Startup Barrier
+task     → 长期 RTOS execution context
+runtime  → Application dependency wiring / Runtime Context
+contract → App 内跨 Task 数据契约
+```
+
+迁移规则：
+
+```text
+app_system.*          → system/
+app_main.*            → task/app_main_task.*
+app_ota_worker.*      → task/
+app_display_task.*    → task/
+app_ota_runtime.*     → runtime/
+app_runtime_contract.h→ contract/
+```
+
+不要按 OTA / Display / LED 再复制一套 App 子架构，也不要引入无必要的 manager/controller/coordinator 目录。
+
+`app_startup.c/.h` 专门承载 Startup Context、Barrier 状态/位和启动同步辅助逻辑，避免继续把所有启动状态塞入 `app_system.c`。
+
 ### Stack / Heap Safety
 
 不得在本阶段一开始压缩现有栈。
@@ -144,6 +194,8 @@ S07 full regression pass
 
 - S07A Stage created.
 - Initial RTOS startup refactor design drafted.
+- App layer directory role model (`system/task/runtime/contract`) frozen in design.
+- `app_main.* → app_main_task.*` rename direction frozen.
 - Preliminary implementation plan drafted.
 - No production code changed yet.
 
@@ -172,6 +224,8 @@ None. Stage is intentionally in design discussion.
 ### Review Focus
 
 - 是否真正分离 Bootstrap 与 Runtime；
+- `01_APP/system/task/runtime/contract` 是否与真实职责一致，是否避免目录过度抽象；
+- `app_main_task` 是否真正成为长期 foreground task，而不是新的混合入口；
 - 是否保持 Task-local ownership；
 - 是否存在高优先级 Task creation race；
 - startup stack/heap peak 是否有证据；
