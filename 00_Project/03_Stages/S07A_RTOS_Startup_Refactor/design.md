@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `DRAFT`
+- Status: `DESIGN_APPROVED`
 - Owner: `Project Owner`
 - Date: `2026-09-18`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
@@ -21,19 +21,21 @@ Hardware Bootstrap
     ↓
 RTOS Kernel Start
     ↓
-defaultTask
+defaultTask (temporary bootstrap execution context)
     ↓
-appSystem Bootstrap
+app_system_bootstrap() (ordinary function/module)
     ↓
 Create IPC / Compose Runtime / Create Tasks
     ↓
 Task-local Initialization
     ↓
-READY Barrier
+DONE Barrier + Init Result
     ↓
-SYSTEM_RUN
+RUNNING / DEGRADED / FAILED decision
     ↓
-appSystem Exit
+SYSTEM_RUN or SYSTEM_ABORT
+    ↓
+defaultTask Exit
     ↓
 Steady Runtime
 ```
@@ -77,7 +79,7 @@ S06/S07 已证明当前业务功能可用，因此 S07A 只整理启动生命周
 
 ## In Scope
 
-- 将 `appSystem` 重定义为一次性 Application Bootstrap Task；
+- 将 `appSystem` 重定义为普通 Application System Composition / Bootstrap 模块，不再创建独立 `appSystem` RTOS Task；
 - 从 `appSystem` 中分离长期运行的 `appMainTask`；
 - 建立统一 Application Startup State / Startup Barrier；
 - 明确 System Composition 与 Task-local Initialization 的边界；
@@ -89,7 +91,7 @@ S06/S07 已证明当前业务功能可用，因此 S07A 只整理启动生命周
 - 增加或复用通用 RTOS Event Flags / 等价同步能力；
 - 重新验证 Task Stack High Water Mark；
 - 重新验证启动阶段 Heap Peak / Minimum Ever Free Heap；
-- 验证 Bootstrap Task 删除后动态 Stack/TCB 内存可回收；
+- 验证 `defaultTask` Bootstrap 完成并删除后动态 Stack/TCB 内存可回收；
 - 回归 S07 OTA、KEY、Display、Ymodem、Metadata PENDING 全链路；
 - 同步整理 `01_APP` 物理目录，使目录结构直接反映 System / Task / Runtime / Contract 职责；
 - 将现有 `app_main.c/.h` 在实施时重命名为 `app_main_task.c/.h`，避免与 `Core/main.c` 和 `appSystem` 语义混淆。
@@ -204,72 +206,72 @@ Phase 4 - Steady Runtime
 
 #### Phase 1 - Hardware Bootstrap
 
-由 CubeMX / Core 完成：
-
-```text
-HAL_Init
-SystemClock_Config
-MX_GPIO_Init
-MX_DMA_Init
-MX_SPI...
-MX_USART...
-osKernelInitialize
-MX_FREERTOS_Init
-osKernelStart
-```
-
-这里负责 MCU 外设的基础初始化，不负责 Application 业务装配。
+由 CubeMX / Core 完成 MCU 外设基础初始化并启动 Kernel，不负责 Application 业务装配。
 
 #### Phase 2 - Application Composition
 
-由一次性的 `appSystem` Bootstrap Task 完成：
+FreeRTOS 启动后，CubeMX `defaultTask` 作为唯一临时 Bootstrap execution context，直接调用：
 
-```text
-shared IPC creation
-startup synchronization object creation
-runtime dependency composition
-business task creation
-startup supervision
+```c
+platform_error_t app_system_bootstrap(void);
 ```
 
-`appSystem` 不再执行 LED Blink/Breath 等长期业务。
+`app_system_bootstrap()` 是普通函数，不创建额外 `appSystem` Task。它负责：
+
+```text
+Startup Context creation
+Shared IPC creation
+Runtime dependency composition
+appMainTask / otaWorker / displayTask creation
+Startup supervision
+Final RUNNING / DEGRADED / FAILED decision
+SYSTEM_RUN / SYSTEM_ABORT publication
+```
+
+函数完成后返回 `defaultTask`，随后 `defaultTask` 自删除。
 
 #### Phase 3 - Task-local Initialization
 
-每个长期 Task 只初始化自己独占、且与 Task Identity/Ownership 有关的资源。
+每个长期 Task 只初始化自己独占、且与 Task Identity/Ownership 有关的资源：
 
 ```text
 appMainTask
-→ status LED / foreground local resources
-→ report APP_READY
-→ wait SYSTEM_RUN
+→ foreground/LED local init
+→ report MAIN_DONE + result
+→ wait SYSTEM_RUN / SYSTEM_ABORT
 
 otaWorker
 → obtain current thread handle
 → KEY binding
 → OTA Runtime / UART owner binding
-→ report OTA_READY
-→ wait SYSTEM_RUN
+→ report OTA_DONE + result
+→ wait SYSTEM_RUN / SYSTEM_ABORT
 
 displayTask
-→ SPI1/ST7789/display local resources
-→ report DISPLAY_READY
-→ wait SYSTEM_RUN
+→ SPI1/ST7789/display local init
+→ report DISPLAY_DONE + result
+→ wait SYSTEM_RUN / SYSTEM_ABORT
 ```
 
-不能为了“集中 init”而破坏资源 ownership。
+System 负责初始化顺序和最终裁决，不等于所有 init 都在 defaultTask 栈上执行。
 
 #### Phase 4 - Steady Runtime
 
-`appSystem` 收到所有 required READY 后：
+`app_system_bootstrap()` 完成系统裁决后：
 
 ```text
-set SYSTEM_RUN
-↓
-appSystem self-delete
+RUNNING / DEGRADED
+→ publish SYSTEM_RUN
+→ return
+→ defaultTask delete
+
+FAILED
+→ publish SYSTEM_ABORT
+→ return failure
+→ controlled fatal path
 ```
 
-长期只保留：
+稳定运行态只保留长期业务 Task：
 
 ```text
 appMainTask
@@ -279,41 +281,55 @@ displayTask
 
 ### 3. defaultTask 定位
 
-`defaultTask` 保持极薄：
+`defaultTask` 是唯一临时 Bootstrap Task，不再只做“创建另一个 appSystem Task”的桥接。
+
+目标：
 
 ```text
 StartDefaultTask
 ↓
-app_system_start()
+app_system_bootstrap()
 ↓
 vTaskDelete(NULL)
 ```
 
-它只是 CubeMX 与 Application Runtime 的桥接层。
+第一版 stack 固定为：
 
-不得把真实系统初始化重新堆回 `defaultTask`。
+```text
+defaultTask = 4096 B
+```
+
+原因：它需要承载一次性系统装配、共享 IPC 创建和 Startup supervision；完成后其动态 stack/TCB 由 FreeRTOS Idle cleanup 回收。
+
+不得在 `defaultTask` 中执行 Ymodem 数据处理、LCD 绘制、Flash 大数据处理等长期或重业务逻辑。
 
 ### 4. appSystem 定位
 
-S07A 后：
+S07A 后不存在名为 `appSystem` 的 RTOS Task。
 
 ```text
 appSystem
-= Application Composition Root
-+ Startup Supervisor
+= Application System Composition Module
+= Composition Root
+= Startup Supervisor logic
 ```
 
-它负责“系统怎么组合起来”，不负责“设备底层怎么绑定”。
+推荐正式入口：
+
+```c
+platform_error_t app_system_bootstrap(void);
+```
 
 允许：
 
 ```text
 Create shared Queue/Event Flags
-Create appMainTask
-Create otaWorker
-Create displayTask
-Wait READY
-Release SYSTEM_RUN
+Compose runtime objects
+Create appMainTask / otaWorker / displayTask
+Wait component DONE events
+Read init results
+Decide RUNNING / DEGRADED / FAILED
+Publish SYSTEM_RUN / SYSTEM_ABORT
 ```
 
 不允许直接操作：
@@ -332,8 +348,6 @@ LCD draw primitive
 
 ### 5. Task-local Initialization 原则
 
-System 负责初始化顺序，不等于所有初始化都在 System Stack 上执行。
-
 特别是当前 OTA Runtime：
 
 ```text
@@ -341,160 +355,269 @@ service_uart ownerThread = otaWorker
 KEY event → otaWorker notification
 ```
 
-因此 OTA Runtime 中与 Task Owner 绑定的初始化必须由 `otaWorker` 自己完成。
+因此与 Task Owner 绑定的 OTA 初始化必须由 `otaWorker` 自己完成。
 
 Display SPI/ST7789 继续由 displayTask 初始化和独占。
 
 前台 LED 继续由 appMainTask 初始化和使用。
 
-### 6. Startup Barrier
-
-必须解决 Task 创建后立即参与调度的问题。
-
-当前优先级中：
+Task start API 收敛为：
 
 ```text
-otaWorker   ABOVE_NORMAL
-appSystem   NORMAL
-displayTask BELOW_NORMAL
-```
-
-因此 `appSystem` 创建 otaWorker 后，otaWorker 可能立即抢占 Bootstrap Task。
-
-S07A 必须建立显式 Startup Barrier：
-
-```text
-Task Created
-↓
-Task-local Init
-↓
-report READY
-↓
-wait SYSTEM_RUN
-```
-
-`appSystem`：
-
-```text
-wait APP_READY
-wait OTA_READY
-wait DISPLAY_READY
-↓
-SYSTEM_RUN
-↓
-self-delete
-```
-
-同步机制优先增加通用 `platform_event_flags`，基于 CMSIS-RTOS2 Event Flags；如果实现调查发现现有 Platform 有更小且同样清晰的等价能力，可以在 Design Review 时替换，但不得用忙等轮询。
-
-建议 Startup Bits：
-
-```text
-APP_STARTUP_READY_APP
-APP_STARTUP_READY_OTA
-APP_STARTUP_READY_DISPLAY
-APP_STARTUP_RUN
-APP_STARTUP_FAILED
-```
-
-### 7. Failure Policy
-
-任何 required Task 初始化失败：
-
-```text
-Task init fail
-↓
-set APP_STARTUP_FAILED
-↓
-do not set SYSTEM_RUN
-↓
-appSystem records/logs failure
-↓
-enter controlled fatal/degraded policy
-```
-
-第一版对 required runtime 组件采用 fail-fast，不允许部分任务偷偷进入业务运行。
-
-Display 是否未来允许 degraded mode 可另行设计；S07A 不扩大该策略，优先保持 S06/S07 已验证行为。
-
-### 8. IPC Creation Ownership
-
-共享 IPC 应优先由 `appSystem` 在创建消费者/生产者 Task 前创建。
-
-例如：
-
-```text
-Display Queue
-Startup Event Flags
-```
-
-然后将 opaque handle / Platform object 传给对应 Task start API。
-
-Task start API 的职责应收敛为：
-
-```text
-bind provided runtime resources
+bind provided startup/shared runtime resources
++
 create task
 ```
 
-不再同时隐式创建其他系统级共享资源。
+共享 IPC 不允许再由某个业务 Task 的 start API 隐式创建。
+
+### 6. Startup Barrier
+
+采用通用 `platform_event_flags`，Impl 基于 CMSIS-RTOS2 Event Flags。
+
+Platform 类型：
+
+```c
+typedef struct
+{
+    void *native;
+} platform_event_flags_t;
+```
+
+冻结最小 API：
+
+```c
+platform_error_t platform_event_flags_create(
+    platform_event_flags_t *eventFlags);
+
+platform_error_t platform_event_flags_set(
+    platform_event_flags_t *eventFlags,
+    uint32 flags);
+
+platform_error_t platform_event_flags_wait(
+    platform_event_flags_t *eventFlags,
+    uint32 flags,
+    platform_bool_t waitAll,
+    platform_bool_t clearOnExit,
+    uint32 timeoutMs,
+    uint32 *receivedFlags);
+
+platform_error_t platform_event_flags_delete(
+    platform_event_flags_t *eventFlags);
+```
+
+Impl 映射：
+
+```text
+osEventFlagsNew
+osEventFlagsSet
+osEventFlagsWait
+osEventFlagsDelete
+```
+
+Startup 不再只上报 READY，而是上报“初始化已完成 + 初始化结果”。
+
+冻结 flags：
+
+```c
+#define APP_STARTUP_DONE_MAIN       (1UL << 0)
+#define APP_STARTUP_DONE_OTA        (1UL << 1)
+#define APP_STARTUP_DONE_DISPLAY    (1UL << 2)
+
+#define APP_STARTUP_RUN             (1UL << 8)
+#define APP_STARTUP_ABORT           (1UL << 9)
+
+#define APP_STARTUP_DONE_ALL        \
+    (APP_STARTUP_DONE_MAIN |        \
+     APP_STARTUP_DONE_OTA |         \
+     APP_STARTUP_DONE_DISPLAY)
+```
+
+`APP_STARTUP_RUN` 为广播状态，Task wait 时不得由第一个消费者清除。
+
+Startup Context 使用 Application static lifetime，不在 `defaultTask` 删除前销毁，避免 RUN 发布后仍有 Task 正从 Event Flags wait 返回时发生对象销毁竞态。
+
+建议业务结构：
+
+```c
+typedef enum
+{
+    APP_SYSTEM_STATE_STARTING = 0,
+    APP_SYSTEM_STATE_RUNNING,
+    APP_SYSTEM_STATE_DEGRADED,
+    APP_SYSTEM_STATE_FAILED
+} app_system_state_t;
+
+typedef struct
+{
+    platform_event_flags_t events;
+
+    platform_error_t mainResult;
+    platform_error_t otaResult;
+    platform_error_t displayResult;
+
+    app_system_state_t systemState;
+} app_startup_context_t;
+```
+
+### 7. Startup Timeout and Failure Policy
+
+统一 Startup Timeout：
+
+```c
+#define APP_SYSTEM_STARTUP_TIMEOUT_MS    (5000U)
+```
+
+组件明确 init error 与 Startup infrastructure failure 分开处理。
+
+#### Component init error
+
+任一长期业务 Task 完成本地 init 后，即使失败，也必须：
+
+```text
+save result
+→ set its DONE bit
+→ wait RUN / ABORT
+```
+
+如果 Runtime topology 建立完整，但一个或多个业务组件明确初始化失败：
+
+```text
+→ APP_SYSTEM_STATE_DEGRADED
+→ publish SYSTEM_RUN
+→ 成功组件继续工作
+→ 失败组件不进入业务 loop，可安全退出
+```
+
+示例：
+
+```text
+Display fail
+→ DEGRADED
+→ appMainTask + otaWorker continue
+
+OTA fail
+→ DEGRADED
+→ appMainTask + displayTask continue
+
+appMain fail
+→ DEGRADED
+→ otaWorker + displayTask continue
+```
+
+没有某个具体业务 Task 被定义为“失败就整机必然 FAILED”。
+
+#### Startup infrastructure failure
+
+以下属于 `FAILED`：
+
+```text
+Startup Event Flags create failure
+Required shared IPC create failure
+Task create failure
+Startup Barrier timeout
+Startup synchronization corruption/error
+```
+
+`Startup Barrier timeout` 表示可能存在 deadlock、task crash 或 unexpected blocking，严重程度高于普通组件 init error。
+
+`FAILED` 不发布 SYSTEM_RUN，只发布 SYSTEM_ABORT，并进入受控 fatal path。
+
+### 8. IPC Creation Ownership
+
+共享 IPC 由 `app_system_bootstrap()` 在创建业务 Task 前建立：
+
+```text
+Startup Event Flags
+Display Queue
+other cross-task shared IPC
+```
+
+Startup Context 与共享 IPC 使用 Application lifecycle；不得因为 `defaultTask` 自删除而销毁。
 
 ### 9. Stack / Heap Hard Constraints
 
-启动重构必须优先保证 RAM 安全。
-
-当前已验证 S06 Stack 证据：
-
-```text
-appSystem   4096 B stack, remaining ≈ 3680 B
-otaWorker   4096 B stack, remaining ≈ 3412 B
-displayTask 4096 B stack, remaining ≈ 3224 B
-```
-
-当前 FreeRTOS Heap：
+当前 FreeRTOS：
 
 ```text
 configTOTAL_HEAP_SIZE = 24576 B
-S06 xFreeBytesRemaining ≈ 7344 B
-S06 xMinimumEverFreeBytesRemaining ≈ 6720 B
 ```
 
-S07A 第一版原则：
+S06 参考：
 
-1. 不在拓扑重构同时压缩 otaWorker/displayTask stack；
-2. Bootstrap `appSystem` 初始继续保留 4096 B；
-3. 新 `appMainTask` 初始建议 2048 B，最终以实测为准；
-4. `defaultTask` 保持 CubeMX 当前 512 B，继续只做桥接；
-5. `appSystem` 不创建大块局部 buffer，不在自身栈执行大数据处理；
-6. 创建所有长期 Task 时要测启动阶段 Heap Peak；
-7. appSystem 删除后必须确认其动态 Stack/TCB 内存被 Idle cleanup 回收；
-8. 完整 OTA + Display + KEY 路径后重新测所有长期 Task High Water Mark；
-9. 未获得新板测证据前禁止缩小已有 stack；
-10. 如启动峰值 Heap 不安全，优先调整生命周期/静态对象，不直接无依据扩大 heap。
+```text
+xFreeBytesRemaining ≈ 7344 B
+xMinimumEverFreeBytesRemaining ≈ 6720 B
+```
+
+S07A 第一版 stack 冻结：
+
+```text
+defaultTask   4096 B  temporary
+appMainTask   2048 B  persistent
+otaWorker     4096 B  persistent
+displayTask   4096 B  persistent
+```
+
+原则：
+
+1. 不在 Runtime 拓扑重构同时缩小 otaWorker/displayTask stack；
+2. defaultTask 扩到 4096 B 后承担 Bootstrap；
+3. appMainTask 第一版使用 2048 B；
+4. defaultTask 不创建大块局部 buffer，不执行 OTA/LCD 大数据处理；
+5. 创建所有长期 Task 时必须测 Startup Heap Peak；
+6. defaultTask 删除后必须确认其动态 stack/TCB 被 Idle cleanup 回收；
+7. 完整 OTA + Display + KEY 路径后重新测各长期 Task stack headroom；
+8. 未获得真实板证据前不得进一步压栈；
+9. 如 startup heap peak 不安全，优先调整生命周期/对象分配，不无依据扩大 heap。
+
+需记录关键时刻：
+
+```text
+T0 Kernel started
+T1 defaultTask bootstrap
+T2 appMainTask created
+T3 otaWorker created
+T4 displayTask created
+T5 all DONE
+T6 SYSTEM_RUN / DEGRADED decision
+T7 defaultTask deleted before Idle cleanup
+T8 Idle cleanup completed
+```
 
 ### 10. Stack Diagnostics
 
-当前 FreeRTOS 已开启：
+Platform Thread 正式增加最小诊断接口：
 
-```text
-INCLUDE_uxTaskGetStackHighWaterMark = 1
-configRECORD_STACK_HIGH_ADDRESS = 1
+```c
+platform_error_t platform_thread_get_stack_space(
+    const platform_thread_t *thread,
+    uint32 *freeStackBytes);
 ```
 
-S07A 验证可继续使用 GDB A5 填充扫描，并可补充 `uxTaskGetStackHighWaterMark()` 证据。
-
-必须分别记录：
+Impl 基于：
 
 ```text
-Startup peak
-Steady idle
-OTA receiving
-Display update
-READY_TO_INSTALL
-Failure path
+osThreadGetStackSpace()
 ```
 
-避免只测 Idle 后误判 Stack 安全。
+公共语义：
+
+```text
+remaining unused task stack
+unit = byte
+```
+
+GDB A5 填充扫描继续作为独立交叉验证。
+
+Heap 暂不增加 Platform abstraction。S07A 阶段验证直接使用 FreeRTOS/GDB：
+
+```text
+xPortGetFreeHeapSize()
+xPortGetMinimumEverFreeHeapSize()
+```
+
+不新增 platform_heap_manager / RTOS diagnostics framework。
 
 ### 11. Runtime Ownership After Refactor
 
@@ -516,22 +639,18 @@ displayTask
 → SPI1/ST7789 sole owner
 ```
 
-一次性 Task：
+临时 execution context：
 
 ```text
 defaultTask
-→ launch appSystem
-→ exit
-
-appSystem
-→ compose + supervise startup
-→ release SYSTEM_RUN
+→ app_system_bootstrap()
+→ publish final startup decision
 → exit
 ```
 
-### 12. Relationship to S06/S07
+`appSystem` 仅是普通模块，不再出现在 FreeRTOS Task List。
 
-S07A 不否定 S06/S07 已验证的业务能力。
+### 12. Relationship to S06/S07
 
 保留：
 
@@ -544,18 +663,17 @@ KEY_1 double confirm
 PENDING persistence
 ```
 
-S07A 只替换 S06 中：
+S07A 替换 S06 中：
 
 ```text
 appSystem = foreground runtime task
 ```
 
-这一启动/职责定义。
-
-新的定义：
+为：
 
 ```text
-appSystem = temporary bootstrap/supervisor
+defaultTask = temporary bootstrap task
+appSystem   = non-task composition/bootstrap module
 appMainTask = persistent foreground runtime task
 ```
 
@@ -566,26 +684,37 @@ appMainTask = persistent foreground runtime task
 ```text
 defaultTask
 ↓
-app_system_start()
-↓
-appSystem
-
-appSystem
-├─ create Startup Event Flags
+app_system_bootstrap()
+│
+├─ create Startup Context / Event Flags
 ├─ create Display Queue
 ├─ start appMainTask
 ├─ start otaWorker
 └─ start displayTask
 
-appMainTask  ── APP_READY ──────┐
-otaWorker    ── OTA_READY ──────┼→ appSystem
-displayTask  ── DISPLAY_READY ──┘
+appMainTask  ── MAIN_DONE + result ──────┐
+otaWorker    ── OTA_DONE + result ───────┼→ appSystem logic
+displayTask  ── DISPLAY_DONE + result ───┘
 
-all READY
+all DONE within 5000 ms
+↓
+RUNNING / DEGRADED
 ↓
 SYSTEM_RUN
 ↓
-appSystem delete
+app_system_bootstrap() returns
+↓
+defaultTask delete
+```
+
+若 Startup infrastructure failure / timeout：
+
+```text
+FAILED
+↓
+SYSTEM_ABORT
+↓
+controlled fatal path
 ```
 
 ### Runtime
@@ -603,13 +732,15 @@ KEY/UART ISR
 
 ## Failure Handling
 
-- Task create failure：不进入 SYSTEM_RUN；
-- Task-local init failure：上报 FAILED，不进入 SYSTEM_RUN；
-- Startup timeout：记录未 Ready 的 Task，系统不进入假运行状态；
+- 业务组件明确 init error：组件上报 DONE + error；System 可进入 DEGRADED 并让其他成功组件运行；
+- 失败组件收到 SYSTEM_RUN 后不得进入自身业务 loop，应安全退出或保持不可用状态；
+- Startup Event Flags / required shared IPC / Task create 失败：FAILED；
+- Startup timeout：FAILED；
+- FAILED 不发布 SYSTEM_RUN，只发布 SYSTEM_ABORT；
 - Stack warning/overflow：S07A 验收失败，禁止继续 S08；
-- Heap 创建失败：记录具体创建阶段并停止进入 Runtime；
-- appSystem delete 后 heap 未回收：调查 Idle cleanup / lifecycle，不视为完成；
-- OTA/Display 功能回归：按 S07 regression 处理，不允许以“架构更干净”为理由接受功能退化。
+- Heap allocation failure：记录具体创建阶段并进入 FAILED；
+- defaultTask delete 后 heap 未回收：调查 Idle cleanup/lifecycle，不视为完成；
+- OTA/Display 功能回归：按 S07 regression 处理，不允许以架构重构为理由接受功能退化。
 
 ## Verification Strategy
 
@@ -626,14 +757,16 @@ KEY/UART ISR
 
 ### GDB / Runtime
 
-- defaultTask 创建 appSystem 后退出；
-- appSystem 在 SYSTEM_RUN 后退出；
+- defaultTask 直接执行 `app_system_bootstrap()`；
+- Runtime 裁决后 defaultTask 自删除；
+- FreeRTOS Task List 中不存在独立 `appSystem` Task；
 - 稳定运行态只保留预期长期业务 Task；
 - Task priority 与 S07 一致；
 - Startup READY 顺序可观察；
 - Stack High Water Mark；
-- Heap before/during/after appSystem deletion；
-- Idle cleanup 后回收确认。
+- Heap before/during/after defaultTask deletion；
+- Idle cleanup 后 defaultTask stack/TCB 回收确认；
+- RUNNING / DEGRADED / FAILED startup decision 证据。
 
 ### Real Board
 
@@ -649,35 +782,48 @@ KEY/UART ISR
 
 ## Acceptance Criteria
 
-1. `defaultTask` 仍只负责启动 Application System 后退出；
-2. `appSystem` 成为一次性 Bootstrap/Supervisor，不再执行长期前台业务；
-3. 新增独立 `appMainTask` 承担 foreground Application behavior；
-4. appSystem 创建共享 IPC 和 Startup synchronization；
-5. 所有 required Task 完成本地 init 并报告 READY 后才允许进入 SYSTEM_RUN；
-6. 高优先级 otaWorker 即使创建后立即抢占，也只能初始化并阻塞在 Startup Barrier；
-7. appSystem 在 SYSTEM_RUN 发布后自行删除；
-8. 稳定运行态不存在多余 Bootstrap Task；
-9. otaWorker / displayTask / appMainTask ownership 清晰且无互相初始化对方私有硬件；
-10. `01_APP` 已按 `system/task/runtime/contract` 分类，文件物理位置与职责一致；
-11. `app_main.*` 已改名为 `app_main_task.*`，不再与 `Core/main.c` 混淆；
-12. S07 OTA Service / Metadata / Ymodem / KEY 双确认语义无变化；
-13. 启动峰值 Heap 有真实证据且不存在 allocation failure；
-14. appSystem 删除后动态内存能够回收；
-15. 所有 Task 在最坏已测路径下有明确 Stack Headroom；
-16. 不通过猜测缩减 Stack；
-17. 完整 S07 代码和真实板回归通过后，S07A 才允许关闭。
+1. `defaultTask` 是唯一临时 Bootstrap Task，直接执行 `app_system_bootstrap()`；
+2. 不再创建独立 `appSystem` RTOS Task；
+3. `appSystem` 仅作为 Composition Root / Startup Supervisor 普通模块；
+4. 新增独立 `appMainTask` 承担 foreground Application behavior；
+5. 共享 IPC 与 Startup Context 在业务 Task 创建前完成；
+6. 三个长期 Task 均执行 task-local init，并上报 DONE + init result；
+7. 高优先级 otaWorker 即使创建后立即抢占，也只能初始化并阻塞在 Startup Barrier；
+8. Startup Barrier 使用 `platform_event_flags`，无 busy-loop；
+9. 5000 ms 内全部 DONE 后，System 正确裁决 RUNNING 或 DEGRADED；
+10. 普通组件 init error 不导致无关能力停机，成功组件在 DEGRADED 下继续工作；
+11. Event Flags/shared IPC/Task create failure 或 Startup timeout 进入 FAILED，不发布 SYSTEM_RUN；
+12. defaultTask 在 RUNNING/DEGRADED 发布后自删除；
+13. 稳定 Task List 只保留 appMainTask / otaWorker / displayTask 等长期任务，不包含 appSystem；
+14. otaWorker / displayTask / appMainTask ownership 清晰且无互相初始化对方私有硬件；
+15. `01_APP` 已按 `system/task/runtime/contract` 分类；
+16. `app_main.*` 已改名为 `app_main_task.*`；
+17. Keil source groups/include paths 与 Host Test 引用同步完成；
+18. `01_APP/README.md` 记录四类目录职责；
+19. `platform_thread_get_stack_space()` 返回 byte 单位剩余 Stack；
+20. Startup Peak Heap 有真实证据且不存在 allocation failure；
+21. defaultTask 删除后动态 stack/TCB 能由 Idle cleanup 回收；
+22. 所有长期 Task 在最坏已测路径下有明确 Stack Headroom；
+23. 不通过猜测缩减 Stack；
+24. S07 OTA Service / Metadata / Ymodem / KEY 双确认语义无变化；
+25. 完整 S07 Host/Build/真实板回归通过后，S07A 才允许关闭。
 
-## Open Design Items
+## Frozen Design Decisions
 
-在进入实施前还需要最终确认：
+进入实施前的开放项已经全部收束：
 
-1. Startup Barrier 使用 `platform_event_flags` 的最小 API；
-2. startup timeout 的具体值和 fatal policy；
-3. `appMainTask` 第一版 stack 是否采用 2048 B；
-4. 是否在 Platform Thread 增加正式 stack watermark 查询 API，还是继续仅作为诊断/测试能力。
+1. Startup Barrier：新增 `platform_event_flags`，最小 API 为 create/set/wait/delete；
+2. Startup timeout：`5000 ms`；
+3. Startup policy：业务组件 init error → DEGRADED；Runtime infrastructure failure / timeout → FAILED；
+4. Bootstrap execution context：只使用 CubeMX `defaultTask`，不再创建 appSystem Task；
+5. Stack budget：defaultTask 4096 B、appMainTask 2048 B、otaWorker 4096 B、displayTask 4096 B；
+6. Stack diagnostics：新增 `platform_thread_get_stack_space()`，单位 byte；
+7. Heap diagnostics：不新增 Platform abstraction，继续使用 FreeRTOS/GDB；
+8. App 目录：冻结为 `system/task/runtime/contract`。
 
 ## Approval
 
-- Decision: `NOT_REVIEWED`
-- Approved By: `Not approved yet`
-- Design Commit: `Not created yet`
+- Decision: `APPROVED`
+- Approved By: `Project Owner`
+- Approval Date: `2026-09-18`
+- Design Commit: `pending current update commit`
