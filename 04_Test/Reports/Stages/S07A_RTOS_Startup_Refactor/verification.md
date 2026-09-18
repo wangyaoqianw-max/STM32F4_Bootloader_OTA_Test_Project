@@ -3,8 +3,8 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_REVIEW`
-- Implementation Commits: `c30c60d`, `d631fb8` (`fix: safely terminate failed startup tasks` + appMain completion)
+- Status: `CLOSED / PASS`
+- Implementation Commits: `306c76b`, `c30c60d`, `d631fb8`
 - Verification Commit: `8703415` (`docs: record s07a task lifecycle verification`)
 - Branch: `main`
 - Verification Date: `2026-09-18`
@@ -148,9 +148,8 @@ Host contract 已验证 startup timeout、未完成 DONE、组件错误导致 DE
 硬件验证：PASS
 ```
 
-代码实现、自动化回归、S07 当前固件主要物理业务路径、Display 肉眼确认、OTA 场景专项 Stack 证据，以及组件 degraded/failure 和启动基础设施 failure 路径均已完成。S07A 当前达到 `READY_FOR_REVIEW`；尚未标记 `CLOSED / PASS`，等待 Review / Project Owner 决策。
+代码实现、自动化回归、S07 当前固件主要物理业务路径、Display 肉眼确认、OTA 场景专项 Stack 证据，以及组件 degraded/failure 和启动基础设施 failure 路径均已完成。Review 已通过，S07A 正式关闭为 `CLOSED / PASS`。
 
 ## Next Actions
 
-1. Review 对照冻结 Design、`c30c60d` 差异和本报告复核 Task 安全退出及 startup failure 处理。
-2. 由 Project Owner 决定是否将 S07A 标记为 `CLOSED / PASS`。
+S07A Verification / Review 已完成，阶段关闭。下一计划阶段为 `S08_Bootloader_Foundation`。
