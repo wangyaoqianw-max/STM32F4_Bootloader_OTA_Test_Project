@@ -73,7 +73,7 @@ otaWorker   → displayTask : Queue
 
 ## S07A RTOS Startup Refactor Current State
 
-S07A 设计已批准，状态为 `READY_FOR_VERIFICATION`。Task 0 基线采集和计划内生产代码实施已完成；当前等待完整 S07 物理回归及可执行 degraded/failure 路径证据。
+S07A 设计已批准，状态为 `READY_FOR_VERIFICATION`。Task 0 基线采集和计划内生产代码实施已完成；当前 S07A 主要 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理路径已完成，仍等待 Display 肉眼状态、OTA 场景专项 Stack 采样及可执行 degraded/failure 路径证据。
 
 冻结目标：
 
@@ -123,7 +123,7 @@ Reference Heap          xFreeBytesRemaining=7344 B / minimum-ever=6720 B
 Reference Stack         appSystem=3680 B / otaWorker=3412 B / displayTask=3224 B
 ```
 
-当前下一步：在当前 S07A 固件上执行 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 物理回归，补齐可执行的 degraded/failure 路径证据；完成前不得标记 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
+当前下一步：补齐当前 S07A 固件的 Display 肉眼状态、OTA receiving/display render/READY_TO_INSTALL/failure Stack 专项采样和可执行 degraded/failure 路径证据；完成前不得标记 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
 ```
 
 ## S07 OTA Service V1 Current State

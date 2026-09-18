@@ -250,7 +250,7 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 
 ### Verification Results
 
-代码和自动化验证已完成，真实 S07 物理全流程仍待在 S07A 当前固件上重新执行。
+代码和自动化验证已完成；S07A 当前固件的主要 S07 物理业务路径已在真实板上重跑。组件 degraded/failure fault injection、Display 肉眼记录和 OTA 场景专项 Stack 采样仍待完成。
 
 ```text
 Keil Build                         PASS, 0 error / 0 warning
@@ -265,6 +265,21 @@ style whitespace/line-length       PASS
 Flash / Reset / RTT smoke          PASS
 GDB runtime snapshot               PASS
 ```
+
+### Current Physical Regression Evidence
+
+采集日期：`2026-09-18`。正式镜像为 `OTA_APP_s07_baseline_v1.0.0.img`，真实串口为 `COM9`，按键为 `KEY_1 / PA0`。
+
+```text
+正常 KEY_1 + YMODEM       PASS  67664/67664 bytes, 67 blocks, READY_TO_INSTALL, target B
+second KEY + PENDING      PASS  Reset 后 confirmed=A, pending=B, upgrade=PENDING
+Reset persistence         PASS  RTT startup re-init + GDB PENDING Metadata 回读
+interrupted transfer      PASS  Block 0..7 后双 CAN; FAILED, error=19, 6144/67664, Slot B INVALID
+bad CRC                   PASS  payload offset 164 单字节破坏; FAILED, error=3, 67664/67664, Slot B INVALID
+duplicate KEY receiving   PASS  Block 7 后再次按键; READY_TO_INSTALL, error=0, Slot B VALID
+```
+
+中断、坏 CRC 和重复 KEY 使用的慢速发送器、临时坏 CRC 镜像、GDB 状态脚本和监视器均已在测试结束后删除，未修改生产代码、Keil 工程或正式测试入口。正常路径 RTT 仍记录 EasyLogger、OTA Runtime、`appMainTask`、`displayTask` 初始化；本轮未将无独立人工记录的 LCD 肉眼画面写为 PASS。
 
 ### Current Board and RAM Evidence
 
@@ -290,13 +305,13 @@ displayTask stack high water     800 words  (~3200 B)
 
 Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样时待 Idle cleanup 列表为空。Stack 日志没有出现在本次 RTT capture 中，以上 Stack 数据来自 GDB，与 Platform API 交叉采集。当前尚未取得 OTA receiving、display render、READY_TO_INSTALL 和 failure path 的 S07A 新 Stack 证据。
 
-当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING，但 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 完整物理交互尚未用 S07A 当前固件重跑。
+当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING；S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 主要物理交互已用 S07A 当前固件重跑。Stack 证据仍只覆盖正常启动/idle，未覆盖 OTA receiving、display render、READY_TO_INSTALL 和 failure path。
 
 继续验证时曾出现一次 Fault RTT 文本。只读 J-Link/GDB 检查发现 FPB `COMP0=0x48000199` 残留了临时 `0x08000198` 入口断点，目标被调试器停在 ArmCC `__main`；清除 comparator 并恢复正常 DEMCR 后重新 Reset/Run，RTT 恢复正常启动日志，GDB 停在 FreeRTOS `prvIdleTask`。该过程没有修改生产代码，临时探针文件已移除；该次 Fault 文本不作为 S07A 生产 Fault 证据。
 
 ### Known Issues
 
-无设计冲突或外部实现阻塞。未完成项是当前 S07A 固件的完整物理业务回归，以及真实 degraded/failure fault path 证据；在这些证据完成前不得进入 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
+无设计冲突或外部实现阻塞。未完成项是 Display 肉眼状态记录、OTA 场景专项 Stack 采样和真实 degraded/failure fault path 证据；在这些证据完成前不得进入 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
 
 ### Review Focus
 
@@ -306,5 +321,5 @@ Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样�
 - DEGRADED must preserve unrelated working components；
 - Task-local ownership must remain intact；
 - App directory relocation must not create duplicate source/include paths；
-- S07 full regression must remain PASS；当前验证状态为 `PENDING`。
+- S07 当前主要物理回归已 PASS；Display 肉眼、OTA 场景 Stack 和 S07A degraded/failure 证据仍使当前验证状态保持 `PENDING`。
 - 需要确认 `uxCurrentNumberOfTasks=6` 中系统任务的解释与 defaultTask 删除后的回收证据。

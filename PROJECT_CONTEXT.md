@@ -68,7 +68,7 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07A RTOS Startup Refactor
 
-当前状态：`READY_FOR_IMPLEMENTATION`。
+当前状态：`READY_FOR_VERIFICATION`。
 
 冻结启动模型：
 
@@ -464,6 +464,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-S07A 计划内生产代码已在 `306c76b` 完成并提交。当前状态为 `READY_FOR_VERIFICATION`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟和 GDB Stack/Heap 证据已取得；下一步是在当前 S07A 固件上重新执行完整 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 物理回归，并补齐可执行的 degraded/failure 路径证据。
+S07A 计划内生产代码已在 `306c76b` 完成并提交。当前状态为 `READY_FOR_VERIFICATION`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟、GDB Stack/Heap 证据以及当前 S07A 的主要 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理回归已取得；下一步是补齐 Display 肉眼状态、OTA 场景专项 Stack 采样和可执行的 degraded/failure 路径证据。
 
 完整证据前不得进入 `READY_FOR_REVIEW`，S08 Bootloader Foundation 暂不启动。

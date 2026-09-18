@@ -245,12 +245,13 @@ T8 Idle cleanup completed
 
 - [x] Keil Build。
 - [x] S07 Metadata / OTA Service / Sink / Ymodem Host regression。
-- [ ] KEY_1 start。当前 S07A 代码尚未重新执行完整物理交互。
-- [ ] Ymodem receive。当前 S07A 代码尚未重新执行完整物理交互。
-- [ ] LCD RECEIVING / VERIFYING / READY / FAILED。当前 S07A 代码尚未重新执行完整物理交互。
-- [ ] second KEY → PENDING。当前 S07A 代码尚未重新执行完整物理交互。
-- [ ] Reset persistence。当前 S07A 代码尚未重新执行完整物理交互。
-- [ ] interrupted transfer / bad CRC。当前 S07A 代码尚未重新执行完整物理交互。
+- [x] KEY_1 start。当前 S07A 固件在真实 `COM9` / `KEY_1(PA0)` 上重新验证。
+- [x] Ymodem receive。`67664` bytes / `67` blocks 完整接收并完成 Service 状态回读。
+- [ ] LCD RECEIVING / VERIFYING / READY / FAILED。当前仅有 RTT 初始化和 Service/GDB 状态证据，肉眼状态记录待补。
+- [x] second KEY → PENDING。Reset 后回读 `confirmed=A`、`pending=B`、`upgrade=PENDING`。
+- [x] Reset persistence。Reset 后启动日志和 PENDING Metadata 回读均通过。
+- [x] interrupted transfer / bad CRC。中断后 `FAILED/error=19`；坏 CRC 后 `FAILED/error=3`，均未提交 PENDING。
+- [x] duplicate KEY during receive。传输中第二次按键后仍完整接收并保持 `READY_TO_INSTALL`。
 - [x] 更新 S07A verification / handoff。
 - [x] 同步 PROJECT_CONTEXT/current_status/Roadmap 到真实实施状态。
 - [ ] Review 后由 Project Owner 决定是否 CLOSED / PASS。

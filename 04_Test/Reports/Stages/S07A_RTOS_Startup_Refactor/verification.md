@@ -48,10 +48,11 @@ S07A Host Test 使用独立 stub 验证 Event Flags transition；测试文件位
 
 | 项目 | 结果 | 说明 |
 | --- | --- | --- |
-| Flash / reset / run | PASS | `05_Tools\\toolkit.bat flash run` |
+| Flash / reset / run | PASS | `05_Tools\\toolkit.bat run` |
 | RTT capture | PASS | 当前固件完成 EasyLogger、OTA Runtime、appMainTask、displayTask 初始化冒烟 |
 | GDB runtime snapshot | PASS | Startup state、Task handle、Heap 和 Stack 证据已采集 |
-| S07 KEY/Ymodem/PENDING/Reset/bad CRC 物理回归 | PENDING | 本次 S07A 代码尚未重新执行完整交互流程 |
+| S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理回归 | PASS | 当前 S07A 固件已在真实 `COM9` / `KEY_1(PA0)` 上重跑；详见下表 |
+| Display 肉眼状态逐阶段确认 | PENDING | 本轮记录了 RTT 初始化和 Service/GDB 状态，未把无照片/人工观察记录的 LCD 画面误记为 PASS |
 
 RTT 冒烟未输出新增的 Stack 日志；Stack 结论以下面的 GDB A5 交叉证据为准。
 
@@ -64,6 +65,21 @@ RTT 冒烟未输出新增的 Stack 日志；Stack 结论以下面的 GDB A5 交�
 - 当前验证未修改生产代码，临时探针文件已移除。
 
 因此，当前 S07A 正常启动/idle 路径仍为 PASS；此前 Fault 文本不作为 S07A 生产故障证据。
+
+### Current S07A Physical Regression
+
+本轮使用正式镜像 `OTA_APP_s07_baseline_v1.0.0.img`（`67664` bytes，`67` blocks），真实串口为 `COM9`，按键为 `KEY_1 / PA0`。临时慢速发送器、坏 CRC 镜像和监视脚本均为验证辅助，测试结束后已删除，未进入生产工程。
+
+| 路径 | 结果 | 当前 S07A 证据 |
+| --- | --- | --- |
+| KEY_1 启动 + 正常 YMODEM | PASS | 真实按键后传输 `67664/67664` bytes、`67` blocks，sender exit `0`，重试 `2`；GDB 为 `READY_TO_INSTALL`、target `B` |
+| second KEY → PENDING | PASS | 当前 S07A 正常传输后的第二次确认已提交 Metadata；Reset 后回读 `confirmed=A`、`pending=B`、`upgrade=PENDING`，额外按键被 `FAILED/error=5` 拒绝，证明 PENDING 状态仍受保护 |
+| Reset persistence | PASS | Reset 后 RTT 重新输出 EasyLogger、OTA Runtime、`appMainTask`、`displayTask` 初始化；GDB 读取到上述 PENDING Metadata |
+| interrupted transfer | PASS | 真实传输收到 `Block 0`～`7` 后发送双 `CAN`；GDB：`state=FAILED`、`error=19`、target `B`、`6144/67664` bytes、progress `9%`，Metadata `pending=NONE`、Slot B `INVALID` |
+| bad CRC | PASS | 仅修改 payload 偏移 `164` 的一字节；YMODEM 仍完成 `67664/67664`，GDB：`state=FAILED`、`error=3`、progress `100%`，Metadata `pending=NONE`、Slot B `INVALID` |
+| duplicate KEY during receive | PASS | 在 `Block 7` 后再次真实按键；传输仍完成 `67664/67664`，GDB：`state=READY_TO_INSTALL`、`error=0`、target `B`、Slot B `VALID`、`pending=NONE` |
+
+本轮物理证据覆盖了 S07A 当前代码下的正常接收、PENDING/Reset、取消、中途 CRC 失败和接收中的重复 KEY。它不等价于 S07A 组件 degraded/failure fault injection，也不替代 Display 肉眼验收或 OTA receiving/READY/failure 状态下的 Stack 专项采样。
 
 ## GDB / RAM Evidence
 
@@ -91,7 +107,7 @@ Task Stack High Water Mark：
 
 `uxCurrentNumberOfTasks=6` 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务，不应解读为只有三个系统任务。`uxDeletedTasksWaitingCleanUp=0` 证明采样时 defaultTask 删除后的待回收列表为空。当前采样仅覆盖正常启动/idle 路径，尚未覆盖 OTA receiving、display render、READY_TO_INSTALL 和 failure path。
 
-代码、Keil 工程 source group 和 GDB 符号检查均未发现长期 `appSystem` RTOS Task；`appSystem` 只保留为普通 Bootstrap / Startup Supervisor 模块。
+代码、Keil 工程 source group 和 GDB 符号检查均未发现长期 `appSystem` RTOS Task；`appSystem` 只保留为普通 Bootstrap / Startup Supervisor 模块。上述物理回归的 GDB Service 状态采样未发现启动拓扑变化；Stack 数值仍以正常启动/idle 采样为准。
 
 ## Degraded / Failure Verification
 
@@ -113,10 +129,11 @@ Host contract 已验证 startup timeout、未完成 DONE、组件错误导致 DE
 硬件验证：PENDING
 ```
 
-代码实现和自动化回归已完成，但完整当前 S07 物理流程及故障路径证据尚未完成。因此 S07A 当前尚未达到 `READY_FOR_REVIEW`，不得标记 `CLOSED / PASS`。
+代码实现、自动化回归和 S07 当前固件的主要物理业务路径已完成；组件 degraded/failure fault injection、Display 肉眼记录和 OTA 场景专项 Stack 证据尚未完成。因此 S07A 当前仍未达到 `READY_FOR_REVIEW`，不得标记 `CLOSED / PASS`。
 
 ## Next Actions
 
-1. 在当前 S07A 固件上重新执行 KEY_1、Ymodem、Display、second KEY/PENDING、Reset persistence、interrupted transfer 和 bad CRC 物理回归。
-2. 如现场条件允许，补齐三个业务组件的 degraded fault path 和基础设施 FAILED path 证据。
-3. 更新本报告、handoff 和项目状态；证据完整后再进入 `READY_FOR_REVIEW`。
+1. 补齐当前 S07A 固件 Display `RECEIVING / VERIFYING / READY / FAILED` 的肉眼或可回读状态证据。
+2. 补齐 OTA receiving、display render、READY_TO_INSTALL 和 failure path 的 Stack 专项采样。
+3. 如现场条件允许，补齐三个业务组件的 degraded fault path 和基础设施 FAILED path 证据。
+4. 证据完整后再更新状态并进入 `READY_FOR_REVIEW`。
