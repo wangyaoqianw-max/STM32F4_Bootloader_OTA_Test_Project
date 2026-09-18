@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `IN_PROGRESS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -461,6 +461,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-按 S07A `implementation_plan.md` 在当前 `main` 分支实施。先执行 Task 0 baseline capture，再依次完成 Platform Event Flags / stack-space API、App 目录迁移、Startup Context、三个长期 Task barrier 适配、`defaultTask → app_system_bootstrap()` 重构、degraded/failure 验证和 Stack/Heap 实板证据。
+S07A 已在当前 `main` 分支进入实施。Task 0 已完成基线采集，下一步按 `implementation_plan.md` 实施 Platform Event Flags / stack-space API，再进行 App 目录迁移、Startup Context、三个长期 Task barrier 适配、`defaultTask → app_system_bootstrap()` 重构、degraded/failure 验证和 Stack/Heap 实板证据。
 
 S08 Bootloader Foundation 暂不启动。

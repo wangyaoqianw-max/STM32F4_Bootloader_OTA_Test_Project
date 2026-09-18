@@ -30,12 +30,12 @@
 
 **Goal:** 修改前固定当前 S07 Runtime 和 RAM 基线。
 
-- [ ] 读取当前 `freertos.c`、`01_APP`、Platform OS、FreeRTOSConfig 和 S06/S07 verification。
-- [ ] 记录当前 `defaultTask → appSystem → otaWorker/displayTask/app_main` 拓扑、priority、stack bytes 和 ownership。
-- [ ] 确认 `platform_thread_create().stackSizeBytes` 单位为 byte。
-- [ ] 记录当前稳定态 free heap、minimum-ever-free heap 和现有 Task stack evidence。
-- [ ] Build/RTT/GDB baseline PASS。
-- [ ] 提交并记录 Commit。
+- [x] 读取当前 `freertos.c`、`01_APP`、Platform OS、FreeRTOSConfig 和 S06/S07 verification。
+- [x] 记录当前 `defaultTask → appSystem → otaWorker/displayTask/app_main` 拓扑、priority、stack bytes 和 ownership。
+- [x] 确认 `platform_thread_create().stackSizeBytes` 单位为 byte。
+- [x] 记录当前稳定态 free heap、minimum-ever-free heap 和现有 Task stack evidence。
+- [x] Build/RTT/GDB baseline PASS。
+- [x] 提交并记录 Commit。
 
 ## Task 1: Platform Event Flags and Stack Space API
 

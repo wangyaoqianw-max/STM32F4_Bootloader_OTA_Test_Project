@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -193,9 +193,30 @@ configTOTAL_HEAP_SIZE = 24576 B
 - 为 S07A 新建 heap manager 或大型 RTOS diagnostics framework；
 - 按 OTA / Display / LED 再复制一套 App 子架构。
 
+## Task 0 Baseline Capture
+
+采集日期：`2026-09-18`。
+
+```text
+Branch                  main
+HEAD                    f43e44e034e8df48dce39d275ed5c716e5e7a1dc
+Worktree                clean
+Current topology        defaultTask → appSystem → app_main / otaWorker / displayTask
+Task stacks             defaultTask 512 B; appSystem 4096 B; otaWorker 4096 B; displayTask 4096 B
+Task priorities         appSystem NORMAL; otaWorker ABOVE_NORMAL; displayTask BELOW_NORMAL
+Keil Build              PASS, 0 error / 0 warning
+Flash Run               PASS
+RTT Capture             PASS, old appSystem/otaWorker/displayTask startup observed
+GDB Snapshot            PASS, stopped in FreeRTOS prvIdleTask
+Reference Heap          xFreeBytesRemaining=7344 B; minimum-ever=6720 B
+Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
+```
+
+基线确认：`appSystem` 仍为独立长期 RTOS Task；Display Queue 仍由 `displayTask` 创建；三个 Task 尚未使用统一 Startup Barrier。以上是 S07A 实施前基线，不是 S07A 最终验收证据。
+
 ## Implementation Output
 
-- Status: `NOT_STARTED`
+- Status: `IN_PROGRESS`
 
 ### Completed Design Work
 
@@ -210,7 +231,7 @@ configTOTAL_HEAP_SIZE = 24576 B
 - `01_APP/system/task/runtime/contract` directory contract frozen.
 - `app_main.* → app_main_task.*` rename frozen.
 - Implementation plan finalized.
-- No production code changed yet.
+- Task 0 baseline captured; Platform Event Flags / stack-space API implementation is next.
 
 ### Verification Results
 

@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -70,7 +70,7 @@ otaWorker   → displayTask : Queue
 
 ## S07A RTOS Startup Refactor Current State
 
-S07A 设计已批准，状态为 `READY_FOR_IMPLEMENTATION`。尚未修改生产代码。
+S07A 设计已批准，状态为 `IN_PROGRESS`。Task 0 基线采集已完成，生产代码尚未修改。
 
 冻结目标：
 
@@ -105,6 +105,22 @@ defaultTask (4096 B temporary)
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/implementation_plan.md
 00_Project/03_Stages/S07A_RTOS_Startup_Refactor/handoff.md
+
+Task 0 基线（2026-09-18）：
+
+```text
+HEAD                    f43e44e034e8df48dce39d275ed5c716e5e7a1dc
+Branch                  main
+Worktree                clean
+Keil Build              PASS, 0 error / 0 warning
+Flash Run               PASS
+RTT Capture             PASS, old appSystem/otaWorker/displayTask topology observed
+GDB Snapshot            PASS, stopped in FreeRTOS prvIdleTask
+Reference Heap          xFreeBytesRemaining=7344 B / minimum-ever=6720 B
+Reference Stack         appSystem=3680 B / otaWorker=3412 B / displayTask=3224 B
+```
+
+当前下一步：实现 Platform Event Flags、线程剩余 Stack API 及其 Host/Compile 验证。
 ```
 
 ## S07 OTA Service V1 Current State
