@@ -546,6 +546,11 @@
               <FileType>1</FileType>
               <FilePath>../Boot/boot_installer.c</FilePath>
             </File>
+            <File>
+              <FileName>boot_metadata_commit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Boot/boot_metadata_commit.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

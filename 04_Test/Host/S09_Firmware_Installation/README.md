@@ -77,6 +77,29 @@ gcc -std=c99 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
 & "$env:TEMP\s09_txn_host_test.exe"
 ```
 
+Metadata 原子提交测试使用 AT24C02 内存替身和 commit marker 故障注入：
+
+```powershell
+gcc -std=c99 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Firmware `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/Bus/SoftI2C `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/AT24C02 `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Core/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Config `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/STM32F4xx_HAL_Driver/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Device/ST/STM32F4xx/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Boot `
+  -o "$env:TEMP\s09_metadata_commit_host_test.exe" `
+  04_Test/Host/S09_Firmware_Installation/s09_metadata_commit_host_test.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_crc32.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_metadata.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Boot/boot_metadata_commit.c
+
+& "$env:TEMP\s09_metadata_commit_host_test.exe"
+```
+
 测试覆盖：
 
 - PC Packer `app_v1.1.img` Header 固定字节向量与 Header CRC；
