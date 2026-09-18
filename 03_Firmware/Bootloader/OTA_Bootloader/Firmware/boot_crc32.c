@@ -21,6 +21,7 @@
 #define BOOT_CRC32_POLYNOMIAL (0xEDB88320UL)
 //******************************** Defines **********************************//
 
+/* CRC-32/ISO-HDLC 使用反射多项式，保持与 Application 和 PC Packer 一致。 */
 void boot_crc32_init(boot_crc32_context_t *context)
 {
     if (context != NULL) {

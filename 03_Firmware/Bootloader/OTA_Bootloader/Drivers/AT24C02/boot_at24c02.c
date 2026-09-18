@@ -52,6 +52,7 @@ static boot_driver_status_t boot_at24c02_wait_ready(boot_at24c02_t *eeprom)
     uint32_t elapsedMs = 0U;
     boot_driver_status_t result;
 
+    /* EEPROM Page Write 后设备暂时 NACK，轮询 ACK 而不是固定盲等。 */
     while (elapsedMs < BOOT_AT24C02_ACK_POLL_TIMEOUT_MS) {
         result = boot_soft_i2c_probe(eeprom->i2c, eeprom->address);
         if (result == BOOT_DRIVER_OK) {
@@ -76,6 +77,7 @@ static boot_driver_status_t boot_at24c02_page_write(
     uint8_t writeData[BOOT_AT24C02_PAGE_SIZE_BYTES + 1U];
     uint16_t index;
 
+    /* 每笔写事务严格限制在单个 8 Byte Page 内，避免地址回卷。 */
     if ((address % BOOT_AT24C02_PAGE_SIZE_BYTES) + length >
         BOOT_AT24C02_PAGE_SIZE_BYTES) {
         return BOOT_DRIVER_ERR_INVALID;
@@ -166,6 +168,7 @@ boot_driver_status_t boot_at24c02_write(
     if (result != BOOT_DRIVER_OK) {
         return result;
     }
+    /* 逐 Page 写入并在每页后完成有界 ACK polling。 */
     while (remaining > 0U) {
         pageOffset = (uint16_t)(currentAddress % BOOT_AT24C02_PAGE_SIZE_BYTES);
         pageRemaining = (uint16_t)(BOOT_AT24C02_PAGE_SIZE_BYTES - pageOffset);

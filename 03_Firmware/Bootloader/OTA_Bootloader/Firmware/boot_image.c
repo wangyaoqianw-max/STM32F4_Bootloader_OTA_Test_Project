@@ -60,6 +60,7 @@ static uint8_t boot_image_is_erased(const uint8_t *rawHeader)
     return 1U;
 }
 
+/* Header reserved 区属于持久化 Binary Contract，CRC 正确也不能放宽。 */
 static uint8_t boot_image_reserved_is_zero(const uint8_t *rawHeader)
 {
     uint32_t index;
@@ -109,6 +110,7 @@ boot_image_validation_t boot_image_validate_header(
     boot_firmware_image_header_t header;
     uint32_t headerCrc32;
 
+    /* 固定验证顺序与 Application firmware_image 保持一致。 */
     if (rawHeader == NULL) {
         return BOOT_IMAGE_VALIDATION_UNKNOWN;
     }

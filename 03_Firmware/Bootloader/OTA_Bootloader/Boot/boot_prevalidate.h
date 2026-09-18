@@ -23,6 +23,9 @@
 //******************************** Includes *********************************//
 
 //******************************** Types ***********************************//
+/**
+ * @brief Candidate 破坏性操作前预校验结果。
+ */
 typedef enum
 {
     BOOT_PREVALIDATE_INVALID = 0,
@@ -38,23 +41,44 @@ typedef enum
     BOOT_PREVALIDATE_VALID
 } boot_prevalidate_result_t;
 
+/**
+ * @brief Candidate 预校验所需的外部设备引用。
+ * @note 设备必须在调用前按 Bus → Device 顺序初始化。
+ */
 typedef struct
 {
+    /** W25Q64 只读设备；由调用者拥有。 */
     boot_w25q64_t *flash;
+    /** AT24C02 Metadata 设备；由调用者拥有。 */
     boot_at24c02_t *eeprom;
 } boot_prevalidate_context_t;
 
+/**
+ * @brief 预校验成功后供 Installer 使用的 Candidate 快照。
+ */
 typedef struct
 {
+    /** 预校验时选择的最新 Metadata。 */
     boot_firmware_metadata_t metadata;
+    /** 预校验时使用的 Metadata Copy。 */
     boot_metadata_copy_id_t metadataCopy;
+    /** Metadata.pendingSlot 指定的 Candidate Slot。 */
     boot_firmware_slot_t candidateSlot;
+    /** Candidate Header V1。 */
     boot_firmware_image_header_t header;
+    /** Candidate Payload 的 MSP/Reset_Handler。 */
     boot_app_vector_t vector;
 } boot_candidate_t;
 //******************************** Types ***********************************//
 
 //******************************** Functions ********************************//
+/**
+ * @brief 在擦除 Internal APP 前完成 Candidate 全量预校验。
+ * @param[in] context : 已初始化的 W25Q64 和 AT24C02 引用。
+ * @param[out] candidate : 校验成功时输出 Candidate 快照；失败时内容不可用。
+ * @return 预校验结果；本函数不调用 Internal Flash 擦除或写入 API。
+ * @note 会检查 Metadata PENDING、Header、Payload CRC 以及 MSP/Reset_Handler。
+ */
 boot_prevalidate_result_t boot_prevalidate_candidate(
     const boot_prevalidate_context_t *context,
     boot_candidate_t *candidate);

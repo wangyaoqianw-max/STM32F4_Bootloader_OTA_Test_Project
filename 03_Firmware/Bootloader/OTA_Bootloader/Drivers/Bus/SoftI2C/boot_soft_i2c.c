@@ -84,6 +84,7 @@ static boot_driver_status_t boot_soft_i2c_wait_scl_high(boot_soft_i2c_t *i2c)
 {
     uint32_t waitedUs = 0U;
 
+    /* 释放 SCL 后读取物理电平，支持从设备 clock stretching。 */
     boot_soft_i2c_scl_release(i2c);
     while (waitedUs < BOOT_I2C_SCL_TIMEOUT_US) {
         if (HAL_GPIO_ReadPin(i2c->sclPort, i2c->sclPin) == GPIO_PIN_SET) {
@@ -100,6 +101,7 @@ static boot_driver_status_t boot_soft_i2c_start(boot_soft_i2c_t *i2c)
 {
     boot_driver_status_t result;
 
+    /* SCL 为高时拉低 SDA，形成 START 或 Repeated START。 */
     boot_soft_i2c_sda_release(i2c);
     result = boot_soft_i2c_wait_scl_high(i2c);
     if (result != BOOT_DRIVER_OK) {
@@ -116,6 +118,7 @@ static boot_driver_status_t boot_soft_i2c_stop(boot_soft_i2c_t *i2c)
 {
     boot_driver_status_t result;
 
+    /* SCL 为高时释放 SDA，形成 STOP 并把总线交还 Idle。 */
     boot_soft_i2c_sda_low(i2c);
     result = boot_soft_i2c_wait_scl_high(i2c);
     if (result != BOOT_DRIVER_OK) {
@@ -178,6 +181,7 @@ static boot_driver_status_t boot_soft_i2c_write_byte(
     GPIO_PinState level;
     boot_driver_status_t result;
 
+    /* 每个字节发送后单独采样 ACK，NACK 立即终止当前事务。 */
     while (mask != 0U) {
         level = ((value & mask) != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET;
         result = boot_soft_i2c_write_bit(i2c, level);
@@ -210,6 +214,7 @@ static boot_driver_status_t boot_soft_i2c_read_byte(
     GPIO_PinState level;
     boot_driver_status_t result;
 
+    /* 最后一个字节发送 NACK，通知从设备读取事务结束。 */
     *value = 0U;
     for (bitIndex = 0U; bitIndex < 8U; bitIndex++) {
         result = boot_soft_i2c_read_bit(i2c, &level);
@@ -269,6 +274,7 @@ boot_driver_status_t boot_soft_i2c_init(
     if (i2c->initialized != 0U) {
         return BOOT_DRIVER_ERR_INVALID;
     }
+    /* GPIO 已由 CubeMX 配置为开漏输出，本模块只释放线路并检查 Idle。 */
     i2c->sclPort = sclPort;
     i2c->sclPin = sclPin;
     i2c->sdaPort = sdaPort;

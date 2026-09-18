@@ -47,6 +47,7 @@ static boot_driver_status_t boot_spi_map_hal_status(HAL_StatusTypeDef status)
 //******************************** Private Functions ************************//
 
 //******************************** Functions ********************************//
+/* 只绑定 CubeMX 已完成初始化的 Handle，避免 Bootloader 重复配置 SPI2。 */
 boot_driver_status_t boot_spi_init(
     boot_spi_bus_t *bus,
     SPI_HandleTypeDef *handle)

@@ -51,6 +51,7 @@ static boot_prevalidate_result_t boot_prevalidate_load_metadata(
     boot_driver_status_t resultA;
     boot_driver_status_t resultB;
 
+    /* 允许单个 EEPROM Copy 读取失败，由另一份有效副本继续恢复。 */
     (void)memset(copyA, 0xFF, sizeof(copyA));
     (void)memset(copyB, 0xFF, sizeof(copyB));
     resultA = boot_at24c02_read(context->eeprom,
@@ -85,6 +86,7 @@ static boot_prevalidate_result_t boot_prevalidate_payload(
     uint16_t chunkLength;
     uint32_t actualCrc32;
 
+    /* 只保留 256 Byte 缓冲，CRC 在外部 Flash 上流式完成。 */
     boot_crc32_init(&crcContext);
     while (remaining > 0U) {
         chunkLength = (remaining > sizeof(buffer)) ?
@@ -126,6 +128,7 @@ boot_prevalidate_result_t boot_prevalidate_candidate(
     if (result != BOOT_PREVALIDATE_VALID) {
         return result;
     }
+    /* 到这里仍未调用 Internal Flash；以下条件全部通过才允许进入 Installer。 */
     if (candidate->metadata.upgradeState != BOOT_UPGRADE_STATE_PENDING) {
         return BOOT_PREVALIDATE_NO_PENDING;
     }

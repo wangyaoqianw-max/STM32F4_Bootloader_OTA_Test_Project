@@ -30,6 +30,7 @@ static boot_driver_status_t boot_internal_flash_validate_range(
     uint32_t appOffset,
     uint32_t length)
 {
+    /* 先用 offset/length 做减法边界检查，避免基址加法溢出。 */
     if ((length == 0U) || (appOffset >= APP_FLASH_SIZE) ||
         (length > (APP_FLASH_SIZE - appOffset))) {
         return BOOT_DRIVER_ERR_RANGE;
@@ -70,6 +71,7 @@ boot_driver_status_t boot_internal_flash_erase_app(void)
     boot_driver_status_t result;
     HAL_StatusTypeDef lockResult;
 
+    /* 固定擦除 Sector 4~7，接口没有可表达 Bootloader Region 的参数。 */
     result = boot_internal_flash_map_hal_status(HAL_FLASH_Unlock());
     if (result != BOOT_DRIVER_OK) {
         return result;
@@ -141,6 +143,7 @@ boot_driver_status_t boot_internal_flash_write(
         return result;
     }
     boot_internal_flash_clear_flags();
+    /* 以 APP-relative offset 计算覆盖的 aligned Word，兼容非 4 Byte 首尾。 */
     currentOffset = appOffset & ~(BOOT_INTERNAL_FLASH_WORD_SIZE - 1U);
     while (currentOffset < (appOffset + length)) {
         blockOffset = currentOffset;

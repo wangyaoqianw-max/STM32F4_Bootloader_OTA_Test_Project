@@ -15,6 +15,10 @@
 #define BOOT_DRIVER_STATUS_H
 
 //******************************** Types ***********************************//
+/**
+ * @brief Bootloader 外设驱动统一状态码。
+ * @note 该类型只服务 Bootloader，不引入 Application platform_error。
+ */
 typedef enum
 {
     BOOT_DRIVER_OK = 0,

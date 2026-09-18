@@ -103,6 +103,7 @@ static uint8_t boot_metadata_reserved_is_zero(
     return 1U;
 }
 
+/* 与 Application 保持相同的跨字段约束，避免 Bootloader 接受不可提交状态。 */
 static uint8_t boot_metadata_fields_are_valid(const boot_firmware_metadata_t *metadata)
 {
     if ((metadata == NULL) ||
@@ -252,6 +253,7 @@ boot_contract_status_t boot_metadata_select_latest(
     if ((copyA == NULL) || (copyB == NULL) || (metadata == NULL) || (selectedCopy == NULL)) {
         return BOOT_CONTRACT_ERR_NULL;
     }
+    /* 单副本损坏时仍允许从另一份有效 Copy 恢复启动决策。 */
     resultA = boot_metadata_decode_committed(copyA, &metadataA);
     resultB = boot_metadata_decode_committed(copyB, &metadataB);
     if ((resultA != BOOT_CONTRACT_OK) && (resultB != BOOT_CONTRACT_OK)) {

@@ -49,6 +49,7 @@ static boot_driver_status_t boot_w25q64_read_jedec(
     const uint8_t command = BOOT_W25Q64_CMD_READ_JEDEC_ID;
     boot_driver_status_t result;
 
+    /* JEDEC Read 是唯一的设备身份检查；S09 不执行任何写命令。 */
     boot_w25q64_cs(flash, GPIO_PIN_RESET);
     result = boot_spi_write(flash->bus, &command, 1U);
     if (result == BOOT_DRIVER_OK) {
@@ -72,6 +73,7 @@ static boot_driver_status_t boot_w25q64_read_chunk(
     };
     boot_driver_status_t result;
 
+    /* 命令、地址和数据读取保持在同一片选事务内。 */
     boot_w25q64_cs(flash, GPIO_PIN_RESET);
     result = boot_spi_write(flash->bus, command, sizeof(command));
     if (result == BOOT_DRIVER_OK) {
