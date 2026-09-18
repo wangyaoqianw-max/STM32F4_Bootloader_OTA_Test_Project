@@ -7,6 +7,10 @@
 - Active Stage: `S07A_RTOS_Startup_Refactor`
 - Active Stage Status: `DRAFT`
 - Branch: `main`
+- S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
+- S07A Design Commit: `5ce9ceffea60fde87fe00107bf1d2648a8e26b62`
+- S07A Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
+- S07A Handoff Commit: `5c1173207d8d7163339943d86e8a969317daa1c6`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -42,7 +46,7 @@ S05、S05A、S05B、S05C、S06 和 S07 已关闭；S04 Reset / Power-cycle Persi
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
-冻结 Runtime：
+S06 已验证 Runtime（S07A 将重构 `appSystem` 的启动职责）：
 
 ```text
 appSystem      → 前台 Application / v1.0 Blink / v1.1 Breath
