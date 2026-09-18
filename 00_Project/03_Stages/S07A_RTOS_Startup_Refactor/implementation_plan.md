@@ -195,7 +195,7 @@ FAILED
 **Goal:** 验证“能力故障可降级，Runtime 拓扑故障才失败”。
 
 - [x] 正常启动 → RUNNING。
-- [ ] Display init fault injection → DEGRADED，foreground + OTA 继续。当前未执行板级 fault injection。
+- [ ] Display init fault injection → DEGRADED，foreground + OTA 继续。已执行临时注入，但 `displayTask` 返回后进入 FreeRTOS `prvTaskExitError`，未通过，需先处理 Task 生命周期冲突。
 - [ ] OTA init fault injection → DEGRADED，foreground + display 继续。当前未执行板级 fault injection。
 - [ ] appMain init fault injection → DEGRADED，OTA + display 继续。当前未执行板级 fault injection。
 - [x] Task create / startup synchronization failure 使用 Host contract test 验证 FAILED/CANCELED 语义；真实 fault injection 待验证。
@@ -234,7 +234,7 @@ T8 Idle cleanup completed
 - [x] 确认 defaultTask 删除后 stack/TCB 由 Idle cleanup 回收。
 - [x] 用 `platform_thread_get_stack_space()` 记录长期 Task 剩余 stack。
 - [x] 用 GDB A5 扫描独立交叉验证。
-- [ ] 覆盖 idle / OTA receiving / display render / READY_TO_INSTALL / failure path。当前仅取得正常启动/idle 路径证据。
+- [x] 覆盖 idle / OTA receiving / display render / READY_TO_INSTALL / failure path。idle 使用 GDB；OTA 场景使用临时 RTT instrumentation，采样后已删除。
 - [ ] appMainTask 2048 B 如果余量不足只允许增大。
 - [ ] 未取得证据前不缩小 otaWorker/displayTask。
 - [x] 写入 Verification Report 初稿；完整板级覆盖仍待完成。
@@ -247,7 +247,7 @@ T8 Idle cleanup completed
 - [x] S07 Metadata / OTA Service / Sink / Ymodem Host regression。
 - [x] KEY_1 start。当前 S07A 固件在真实 `COM9` / `KEY_1(PA0)` 上重新验证。
 - [x] Ymodem receive。`67664` bytes / `67` blocks 完整接收并完成 Service 状态回读。
-- [ ] LCD RECEIVING / VERIFYING / READY / FAILED。当前仅有 RTT 初始化和 Service/GDB 状态证据，肉眼状态记录待补。
+- [x] LCD RECEIVING / VERIFYING / READY / FAILED。Project Owner 确认每次验证 LCD 显示正常，RTT 同时确认 Display 初始化和初始渲染成功。
 - [x] second KEY → PENDING。Reset 后回读 `confirmed=A`、`pending=B`、`upgrade=PENDING`。
 - [x] Reset persistence。Reset 后启动日志和 PENDING Metadata 回读均通过。
 - [x] interrupted transfer / bad CRC。中断后 `FAILED/error=19`；坏 CRC 后 `FAILED/error=3`，均未提交 PENDING。

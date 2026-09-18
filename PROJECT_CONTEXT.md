@@ -12,7 +12,7 @@
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - S07A Handoff Commit: `b6896cb`
 - S07A Implementation Commit: `306c76b`
-- S07A Verification Commit: `b6896cb`
+- S07A Verification Commit: `b6896cb`（本轮专项 Stack/故障验证文档待提交）
 - S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
