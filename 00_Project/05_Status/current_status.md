@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S08_Bootloader_Foundation`
-- Status: `CLOSED / PASS`
+- Active Stage: `S09_Firmware_Installation`
+- Status: `READY_FOR_IMPLEMENTATION`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -50,13 +50,13 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S08_Bootloader_Foundation`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S09_Firmware_Installation`
+- Next Planned Stage: `S10_Trial_Confirm_Rollback`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07 和 S07A 均已完成并关闭。S07A Review 无 Blocking / Important Finding，Application RTOS Startup Contract 已冻结。`S08_Bootloader_Foundation` 已完成代码实施、完整板测和 Review，当前状态为 `CLOSED / PASS`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，状态为 `READY_FOR_IMPLEMENTATION`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -171,7 +171,7 @@ SEGGER RTT
 
 S07 已完成 Task 0–10 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在真实 CH340 `COM9` 上完成了 PA0 启动/确认、1.1.0 YMODEM 传输、READY 复位、中断、bad CRC/invalid image、重复 KEY、LCD 正常/失败画面和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证和硬件验证均为 `PASS`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
 
-Project Owner 已确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼全流程和最终硬件验收。设备当前保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE / upgradeState=NONE`；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。下一阶段为尚未启动的 `S08_Bootloader_Foundation`。
+Project Owner 已确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼全流程和最终硬件验收。S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback；S08 已完成 Bootloader Foundation，S09 当前负责 Internal Flash installation 与 `PENDING → TRIAL`。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 
@@ -479,3 +479,35 @@ Power-cycle Persistence PASS
 ## Blockers
 
 当前无设计、验证或 Review 阻塞。S08 代码验证、双工程 Build、Flash Layout、`.map` / `.bin`、RTT、CmBacktrace、向量拒绝、合法 Jump、GDB Runtime Snapshot、SysTick 采样、3 次重复 Reset、真实断电上电、LED/LCD 现场确认和 Application 外设中断均已通过，阶段已关闭为 `CLOSED / PASS`。
+
+## S09 Firmware Installation Current State
+
+当前工作流状态：
+
+```text
+READY_FOR_IMPLEMENTATION
+```
+
+冻结范围：
+
+```text
+External Candidate pre-validation
++ lightweight Bootloader storage access
++ APP-only Internal Flash driver
++ Firmware Installation
++ Internal CRC/vector verification
++ atomic PENDING → TRIAL
++ reset/power-loss retry validation
+```
+
+关键约束：
+
+```text
+W25Q64      read-only in Bootloader
+AT24C02     minimal read/write for Metadata
+Internal    APP Region only
+PENDING     install/retry state
+TRIAL       installed, not confirmed
+```
+
+S10 继续负责 Confirm / Watchdog / Failure Counter / Rollback。

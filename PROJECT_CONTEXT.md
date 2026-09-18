@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S08_Bootloader_Foundation`
-- Active Stage Status: `CLOSED / PASS`
+- Active Stage: `S09_Firmware_Installation`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -44,13 +44,13 @@
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
 - Last Closed Stage: `S08_Bootloader_Foundation`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S09_Firmware_Installation`
+- Next Planned Stage: `S10_Trial_Confirm_Rollback`
 - Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计、实施、验证和 Review，当前状态为 `CLOSED / PASS`。
+S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，状态为 `READY_FOR_IMPLEMENTATION`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -160,7 +160,7 @@ App 目录冻结：
 
 S07 已完成 Task 0–10 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已在真实板上完成 PA0 启动/确认、COM9 YMODEM、READY 复位、中断、坏 CRC、重复 KEY、LCD 正常/失败画面和 EEPROM durable `PENDING` 回读。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，最终 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
 
-当前结论：代码验证 `PASS`，硬件验证 `PASS`，S07 阶段状态为 `CLOSED / PASS`。当前设备在重复 KEY 验收后保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE`、`upgradeState=NONE`；S07 未执行 S09/S10 的安装、Trial、Confirm 或 Rollback。下一阶段为尚未启动的 `S08_Bootloader_Foundation`。
+当前结论：代码验证 `PASS`，硬件验证 `PASS`，S07 阶段状态为 `CLOSED / PASS`。S07 未执行 S09/S10 的安装、Trial、Confirm 或 Rollback；S08 已完成 Bootloader Foundation。当前由 S09 接手 durable `PENDING` 的 Internal Flash installation。
 
 ## Stable Toolkit Architecture
 
@@ -518,3 +518,43 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 ## Next Action
 
 S08 已通过 Review 并关闭为 `CLOSED / PASS`。下一步进入 `S09_Firmware_Installation` 的设计/实施准备；S09 功能尚未在本阶段实现。
+
+## S09 Firmware Installation Current Design
+
+当前状态：`READY_FOR_IMPLEMENTATION`。
+
+冻结主链：
+
+```text
+PENDING
+→ External Header / CRC / Vector pre-validation
+→ destructive gate
+→ erase Internal APP Sector 4~7
+→ W25Q64 → bounded RAM buffer → Internal Flash
+→ local read-back
+→ Internal whole-image CRC
+→ Internal vector validation
+→ atomic Metadata PENDING → TRIAL
+→ jump APP
+```
+
+冻结边界：
+
+- Bootloader 不迁移 Application Firmware Service，轻量独立实现 Header/Metadata/CRC consumer；
+- W25Q64 在 Bootloader 中只读；
+- AT24C02 保留 Metadata 所需最小写能力；
+- Internal Flash API 限制为 APP Region；
+- Bus 先初始化，Device 后初始化；
+- Invalid Candidate 在任何 Internal erase 前拒绝；
+- TRIAL commit 前 reset 保持 PENDING 并从头重装；
+- TRIAL commit 后 reset 不重复安装；
+- confirmedSlot/confirmedVersion 在 S10 Confirm 前不改变；
+- S10 继续负责 Trial runtime confirmation、Watchdog、Failure Counter 与 Rollback。
+
+正式入口：
+
+```text
+00_Project/03_Stages/S09_Firmware_Installation/design.md
+00_Project/03_Stages/S09_Firmware_Installation/implementation_plan.md
+00_Project/03_Stages/S09_Firmware_Installation/handoff.md
+```
