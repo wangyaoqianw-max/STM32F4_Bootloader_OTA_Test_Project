@@ -172,6 +172,7 @@ platform_error_t platform_thread_resume(platform_thread_t *thread)
 
 platform_error_t platform_thread_terminate(platform_thread_t *thread)
 {
+    osThreadId_t targetThread;
     platform_error_t result;
 
     if (thread == (void *)0) {
@@ -182,7 +183,12 @@ platform_error_t platform_thread_terminate(platform_thread_t *thread)
         return PLATFORM_ERR_INVALID_STATE;
     }
 
-    result = impl_freertos_map_status(osThreadTerminate((osThreadId_t)thread->native));
+    targetThread = (osThreadId_t)thread->native;
+    if (targetThread == osThreadGetId()) {
+        thread->native = (void *)0;
+    }
+
+    result = impl_freertos_map_status(osThreadTerminate(targetThread));
     if (result == PLATFORM_ERR_OK) {
         thread->native = (void *)0;
     }

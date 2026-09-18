@@ -42,6 +42,7 @@
 
 //******************************** Private Functions *************************//
 static void app_display_task_entry(void *argument);
+static void app_display_task_terminate(void);
 static void app_display_model_initialize(display_model_t *model);
 static const char_t *app_display_state_text(app_display_event_type_t state);
 static const char_t *app_display_target_slot_text(
@@ -75,6 +76,20 @@ static const platform_thread_config_t s_display_task_config = {
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+static void app_display_task_terminate(void)
+{
+    platform_error_t result;
+
+    result = platform_thread_terminate(&g_displayTaskThread);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("Display task termination failed: %d", (int)result);
+    }
+
+    for (;;) {
+        (void)platform_time_delay_ms(1000U);
+    }
+}
+
 static void app_display_model_initialize(display_model_t *model)
 {
     model->firmwareVersion[0] = 'V';
@@ -373,19 +388,19 @@ static void app_display_task_entry(void *argument)
     result = app_startup_report_display(initResult);
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_E("Display startup report failed: %d", result);
-        return;
+        app_display_task_terminate();
     }
 
     result = app_startup_wait_for_decision();
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_I("Display startup aborted: %d", result);
-        return;
+        app_display_task_terminate();
     }
 
     startupContext = app_startup_get_context();
     if ((initResult != PLATFORM_ERR_OK) ||
         (startupContext->systemState == APP_SYSTEM_STATE_FAILED)) {
-        return;
+        app_display_task_terminate();
     }
 
     result = platform_thread_get_stack_space(

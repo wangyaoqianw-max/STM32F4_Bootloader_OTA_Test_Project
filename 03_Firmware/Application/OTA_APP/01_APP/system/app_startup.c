@@ -74,6 +74,8 @@ platform_error_t app_startup_initialize(void)
     result = platform_event_flags_create(&g_appStartupContext.events);
     if (result == PLATFORM_ERR_OK) {
         g_appStartupInitialized = PLATFORM_TRUE;
+    } else {
+        g_appStartupContext.systemState = APP_SYSTEM_STATE_FAILED;
     }
     return result;
 }

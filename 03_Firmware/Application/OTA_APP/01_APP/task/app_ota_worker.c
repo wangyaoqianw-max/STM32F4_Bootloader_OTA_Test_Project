@@ -42,6 +42,7 @@
 
 //******************************** Private Functions *************************//
 static void app_ota_worker_entry(void *argument);
+static void app_ota_worker_terminate(void);
 static platform_error_t app_ota_worker_init_key(void);
 static platform_error_t app_ota_worker_process_session(void);
 static platform_error_t app_ota_worker_abort_session(
@@ -82,6 +83,20 @@ static const platform_thread_config_t s_ota_worker_thread_config = {
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+static void app_ota_worker_terminate(void)
+{
+    platform_error_t result;
+
+    result = platform_thread_terminate(&g_otaWorkerThread);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("OTA worker termination failed: %d", (int)result);
+    }
+
+    for (;;) {
+        (void)platform_time_delay_ms(1000U);
+    }
+}
+
 static void app_ota_worker_key_event_callback(
     platform_key_id_t key,
     void *context)
@@ -527,19 +542,19 @@ static void app_ota_worker_entry(void *argument)
     result = app_startup_report_ota(initResult);
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_E("OTA startup report failed: %d", (int)result);
-        return;
+        app_ota_worker_terminate();
     }
 
     result = app_startup_wait_for_decision();
     if (result != PLATFORM_ERR_OK) {
         SERVICE_LOG_I("OTA startup aborted: %d", (int)result);
-        return;
+        app_ota_worker_terminate();
     }
 
     startupContext = app_startup_get_context();
     if ((initResult != PLATFORM_ERR_OK) ||
         (startupContext->systemState == APP_SYSTEM_STATE_FAILED)) {
-        return;
+        app_ota_worker_terminate();
     }
 
     result = platform_thread_get_stack_space(
@@ -553,6 +568,7 @@ static void app_ota_worker_entry(void *argument)
     }
 
     app_ota_worker_wait_for_command();
+    app_ota_worker_terminate();
 }
 
 //******************************** Functions *********************************//
