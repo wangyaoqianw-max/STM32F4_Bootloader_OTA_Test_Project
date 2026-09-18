@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S08_Bootloader_Foundation`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -466,7 +466,7 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## S08 Bootloader Foundation Current State
 
-当前状态：`IN_PROGRESS`。
+当前状态：`READY_FOR_VERIFICATION`。
 
 S08 已冻结三个核心目标：
 
@@ -475,6 +475,8 @@ S08 已冻结三个核心目标：
 2. SEGGER RTT + boot_log + Bare-metal CmBacktrace
 3. APP Vector Validation + reliable jump
 ```
+
+S08 Implementation Commit：`8ec0045`。
 
 冻结 Flash Layout：
 
@@ -511,4 +513,4 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-按 S08 implementation plan 从 Task 1 开始实施：修改双工程真实 Keil IROM 配置，并同步 Application VTOR。
+由 Verification / Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径证据；证据完整后再进入 Review 和 `CLOSED`。

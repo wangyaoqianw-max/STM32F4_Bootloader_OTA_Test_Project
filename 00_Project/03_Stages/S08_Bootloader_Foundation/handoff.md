@@ -3,15 +3,15 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Workflow Status: `IN_PROGRESS`
-- Implementation Status: `IN_PROGRESS`
+- Workflow Status: `READY_FOR_VERIFICATION`
+- Implementation Status: `COMPLETE`
 - Branch: `main`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
 - Implementation Baseline Commit: `f164f3c`
 - Design Commit: `03406dcba9d57191bb1109da52fc23ab7a8c0d4f`
 - Implementation Plan Commit: `05cb274ca3454f53ed47b577e5c72232a2d484ee`
-- Implementation Commits: `Not created yet`
-- Verification Commit: `Not created yet`
+- Implementation Commits: `8ec0045`
+- Verification Commit: `pending commit`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-18`
 
@@ -203,8 +203,38 @@ GDB snapshot
 当前状态：
 
 ```text
-IN_PROGRESS
+READY_FOR_VERIFICATION
 ```
+
+### Implementation Summary
+
+已完成 S08 Task 1–8 的实施范围：
+
+- 新增共享 `03_Firmware/Shared/memory_layout.h`，冻结 Bootloader `0x08000000 / 64 KiB` 与 Application `0x08010000 / 448 KiB`；
+- 修正两个 Keil 工程的 CPU IROM、实际生效的 `OCR_RVCT4`、IRAM、Objects/Listings 输出目录和必要 Include/Define；
+- Application `VTOR` 使用共享 `APP_BASE_ADDR`；
+- Bootloader 建立精简 `Boot / Config / Diagnostics / Vendor` 目录，不引入 FreeRTOS 或 EasyLogger；
+- 集成 SEGGER RTT、轻量 `boot_log`、Bare-metal CmBacktrace、Fault context 和受控 Fault 入口；
+- 完成 APP MSP / Reset_Handler 合法性检查、SysTick/NVIC cleanup、VTOR barrier、MSP 设置和立即 Branch；
+- 扩展现有 Toolkit 为双目标入口，并增加 CubeMX 重新生成后的 `sync-s08` 恢复流程；
+- 已清理临时 Fault Injection、向量测试宏和构建调试产物，用户创建的 `MDK-ARM/Objects`、`Listings` 目录保留。
+
+正式验证报告：`04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`。
+
+### Implementation Evidence
+
+```text
+Bootloader Build       PASS, 0 error / 0 warning
+Application Build      PASS, 0 error / 0 warning
+Bootloader map         LR 0x08000000, size 0x2DA8 / max 0x10000
+Application map        LR 0x08010000, size 0x13F20 / max 0x70000
+RTT / valid jump       PASS
+CmBacktrace Fault      PASS
+Invalid vector reject  PASS: MSP / Reset_Handler / ERASED
+GDB APP snapshot       PASS: FreeRTOS prvIdleTask
+```
+
+当前需 Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径确认；在这些证据完成前不得将 S08 标记为 `CLOSED`。
 
 ### Task 0 Baseline Evidence
 
