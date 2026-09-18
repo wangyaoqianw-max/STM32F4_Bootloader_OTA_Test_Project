@@ -5,12 +5,12 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `DRAFT`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
-- S07A Design Commit: `5ce9ceffea60fde87fe00107bf1d2648a8e26b62`
-- S07A Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
-- S07A Handoff Commit: `5c1173207d8d7163339943d86e8a969317daa1c6`
+- S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
+- S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
+- S07A Handoff Commit: `ba99f38a59b09917b36c2b3ec85474d1198cf227`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -37,7 +37,7 @@
 - Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Design Role`
+- Current Role: `Implementation Role`
 - Updated At: `2026-09-18`
 
 ## Current Goal
@@ -65,38 +65,80 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07A RTOS Startup Refactor
 
-当前状态：`DRAFT / DESIGN_DISCUSSION`。
+当前状态：`READY_FOR_IMPLEMENTATION`。
 
-目标：
-
-```text
-defaultTask
-→ appSystem Bootstrap
-→ shared IPC / Startup Barrier
-→ appMainTask + otaWorker + displayTask local init
-→ all READY
-→ SYSTEM_RUN
-→ appSystem exit
-→ steady runtime
-```
-
-S07A 将 S06 的 `appSystem = foreground runtime task` 修正为：
+冻结启动模型：
 
 ```text
-appSystem  = temporary Composition Root / Startup Supervisor
-appMainTask = persistent foreground Application task
+defaultTask (temporary bootstrap, 4096 B)
+↓
+app_system_bootstrap()
+↓
+Startup Context / Event Flags / shared IPC
+↓
+appMainTask + otaWorker + displayTask
+↓
+Task-local Init
+↓
+MAIN_DONE + OTA_DONE + DISPLAY_DONE
+↓
+RUNNING / DEGRADED / FAILED
+├─ RUNNING/DEGRADED → SYSTEM_RUN → defaultTask delete
+└─ FAILED           → SYSTEM_ABORT
 ```
 
-otaWorker 与 displayTask 的资源 ownership 保持不变。S07 OTA Service、Metadata V2、KEY 双确认、Ymodem、PENDING 合同保持不变。
+S07A 对 S06 Runtime 的关键修正：
 
-RAM 约束：
+```text
+old:
+appSystem = persistent foreground RTOS task
 
-- appSystem 初始继续 4096 B；
-- otaWorker/displayTask 在重新板测前保持 4096 B；
-- appMainTask 第一版暂定 2048 B，最终以 High Water Mark 为准；
-- 必须记录 startup minimum-ever-free heap；
-- 必须确认 appSystem 删除后其动态 stack/TCB 由 Idle cleanup 回收；
-- 未获得新证据前禁止为节省 RAM 激进缩栈。
+new:
+defaultTask = only temporary bootstrap task
+appSystem   = non-task composition/bootstrap module
+appMainTask = persistent foreground task
+```
+
+冻结 Platform OS 扩展：
+
+```text
+platform_event_flags
+→ create / set / wait / delete
+
+platform_thread_get_stack_space()
+→ remaining stack bytes
+```
+
+冻结 startup policy：
+
+```text
+timeout = 5000 ms
+component init error → DEGRADED
+runtime infrastructure failure / timeout → FAILED
+```
+
+第一版 Stack：
+
+```text
+defaultTask   4096 B temporary
+appMainTask   2048 B persistent
+otaWorker     4096 B persistent
+displayTask   4096 B persistent
+```
+
+必须验证 startup peak heap、minimum-ever-free heap、defaultTask delete 后的 Idle cleanup 回收，以及各长期 Task stack space。未获得新板测证据前不压缩 otaWorker/displayTask stack。
+
+App 目录冻结：
+
+```text
+01_APP/
+├─ system/
+├─ task/
+├─ runtime/
+└─ contract/
+```
+
+`app_main.*` 在实施时改名为 `app_main_task.*`。S07 OTA Service、Metadata V2、Ymodem、KEY 双确认和 PENDING 合同保持不变。
 
 正式入口：
 
@@ -419,11 +461,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-继续 S07A Design Discussion，优先冻结：
+按 S07A `implementation_plan.md` 在当前 `main` 分支实施。先执行 Task 0 baseline capture，再依次完成 Platform Event Flags / stack-space API、App 目录迁移、Startup Context、三个长期 Task barrier 适配、`defaultTask → app_system_bootstrap()` 重构、degraded/failure 验证和 Stack/Heap 实板证据。
 
-1. `platform_event_flags` / Startup Barrier API；
-2. appSystem / appMainTask / otaWorker / displayTask 初始化归属；
-3. startup timeout 和 failure policy；
-4. Task stack 初始预算与 High Water Mark 验收方式。
-
-设计批准后再进入实现。S08 Bootloader Foundation 暂不启动。
+S08 Bootloader Foundation 暂不启动。
