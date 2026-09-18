@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S07_OTA_Service_V1`
-- Active Stage Status: `CLOSED / PASS`
+- Active Stage: `S07A_RTOS_Startup_Refactor`
+- Active Stage Status: `DRAFT`
 - Branch: `main`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
@@ -33,12 +33,12 @@
 - Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Project Owner`
+- Current Role: `Design Role`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06 和 S07 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前下一计划阶段为尚未启动的 `S08_Bootloader_Foundation`。
+S05、S05A、S05B、S05C、S06 和 S07 已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前插入 `S07A_RTOS_Startup_Refactor`，在启动 S08 前重新整理 Application RTOS Bootstrap / Runtime 边界并验证 Stack/Heap 安全。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -58,6 +58,49 @@ otaWorker   → displayTask   : Queue
 ```
 
 S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失败 OTA 路径、Slot B Validation、任务阻塞状态和 Toolkit 回归。S07 Task 0 已恢复 CubeMX 生成造成的 heap、CmBacktrace 和 FreeRTOS task introspection 回归，代码提交为 `9adba52`；随后在该 Runtime Contract 上实施正式 OTA Service/session control。
+
+## S07A RTOS Startup Refactor
+
+当前状态：`DRAFT / DESIGN_DISCUSSION`。
+
+目标：
+
+```text
+defaultTask
+→ appSystem Bootstrap
+→ shared IPC / Startup Barrier
+→ appMainTask + otaWorker + displayTask local init
+→ all READY
+→ SYSTEM_RUN
+→ appSystem exit
+→ steady runtime
+```
+
+S07A 将 S06 的 `appSystem = foreground runtime task` 修正为：
+
+```text
+appSystem  = temporary Composition Root / Startup Supervisor
+appMainTask = persistent foreground Application task
+```
+
+otaWorker 与 displayTask 的资源 ownership 保持不变。S07 OTA Service、Metadata V2、KEY 双确认、Ymodem、PENDING 合同保持不变。
+
+RAM 约束：
+
+- appSystem 初始继续 4096 B；
+- otaWorker/displayTask 在重新板测前保持 4096 B；
+- appMainTask 第一版暂定 2048 B，最终以 High Water Mark 为准；
+- 必须记录 startup minimum-ever-free heap；
+- 必须确认 appSystem 删除后其动态 stack/TCB 由 Idle cleanup 回收；
+- 未获得新证据前禁止为节省 RAM 激进缩栈。
+
+正式入口：
+
+```text
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/implementation_plan.md
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/handoff.md
+```
 
 ## S07 OTA Service V1 Current Status
 
@@ -372,6 +415,11 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-下一步是后续板测：使用 COM9 完成真实 PA0 start/confirm 和失败路径验收；保持 `otaWorker` 单一 RTOS execution shell，不实现 S09/S10 安装、Trial、Confirm 或 Rollback。
+继续 S07A Design Discussion，优先冻结：
 
-Task 0 验证证据：Keil Build 0 errors、Flash PASS、RTT baseline PASS；本轮 clean rebuild 的正式日志为 0 errors/13 warnings，已在 S07 verification 中区分记录。S07 Verification Commit 为 `e60273f`，Review 文档已创建但阶段尚未关闭。
+1. `platform_event_flags` / Startup Barrier API；
+2. appSystem / appMainTask / otaWorker / displayTask 初始化归属；
+3. startup timeout 和 failure policy；
+4. Task stack 初始预算与 High Water Mark 验收方式。
+
+设计批准后再进入实现。S08 Bootloader Foundation 暂不启动。
