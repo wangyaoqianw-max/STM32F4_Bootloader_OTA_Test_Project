@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Firmware;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -535,6 +535,26 @@
               <FileName>boot_jump_asm.S</FileName>
               <FileType>2</FileType>
               <FilePath>../Boot/boot_jump_asm.S</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Firmware</GroupName>
+          <Files>
+            <File>
+              <FileName>boot_crc32.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Firmware/boot_crc32.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_image.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Firmware/boot_image.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_metadata.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Firmware/boot_metadata.c</FilePath>
             </File>
           </Files>
         </Group>
