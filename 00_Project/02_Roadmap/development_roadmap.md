@@ -31,8 +31,8 @@ Roadmap State：
 Phase A - Application Infrastructure
 S01 → S04
 
-Phase B - OTA Download Path
-S05 → S07
+Phase B - OTA Download Path & Runtime Hardening
+S05 → S07A
 
 Phase C - Bootloader & Reliability
 S08 → S10
@@ -64,6 +64,8 @@ S06  Application 形成正式 RTOS Runtime / Concurrency Model，并接入基础
  ↓
 S07  Application OTA 下载链完成
  ↓
+S07A 整理 RTOS Startup / Bootstrap / Task Runtime 边界，并重新验证 Stack/Heap
+ ↓
 S08  Bootloader 能验证并启动 Application
  ↓
 S09  Bootloader 能安装 Pending Firmware
@@ -90,6 +92,7 @@ S12  增加 OTA 安全机制实验
 | `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `CLOSED` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归、Verification 和 Review 通过；UART/GPIO 延期 |
 | `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `CLOSED` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；成功/失败路径与 Toolkit 回归通过 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `CLOSED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
+| `S07A_RTOS_Startup_Refactor` | 整理 Application RTOS 启动生命周期并验证 RAM 安全 | `defaultTask → appSystem Bootstrap → appMainTask/otaWorker/displayTask`；Startup Barrier；Task-local Init；Stack/Heap High Water | S06；S07 | `ACTIVE` | appSystem 启动完成后退出；长期 Task 在显式 `SYSTEM_RUN` 后运行；无启动竞态；Stack/Heap 有真实证据；S07 全链路无回归 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
 | `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `TRIAL / CONFIRMED / ROLLBACK`；`firmware_confirm()`；IWDG；Reset Cause；Failure Counter；Previous Confirmed Image | S09 | `PLANNED` | 正常 Trial 可 Confirm；故障/未 Confirm 可检测；达到阈值可自动回滚 |
@@ -110,7 +113,7 @@ Application
 └─ 识别 Firmware Image / Slot / Metadata
 ```
 
-### S05 - S05C - S07: OTA Download Path and Development Tooling Gate
+### S05 - S05C - S07A: OTA Download Path and Runtime Hardening
 
 建立 Firmware 从 PC 进入设备到 Application 设置升级请求的完整下载链，同时在正式 RTOS/OTA Service 组合前补齐自动化调试、可复用 PC 工具和外部总线证据能力。
 
@@ -130,7 +133,7 @@ PENDING
 Reset
 ```
 
-S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S05C 增加 SPI / I2C 外部总线证据并冻结工具共享资源运行规则；S06 解决正式并发运行模型并接入基础 LCD Runtime；S07 才组合业务状态和升级请求。
+S05 已解决可靠文件运输；S05A 补齐 Agent 可调用的 GDB 调试与运行态证据；S05B 将已经积累的 PC 工具收敛成可扩展、可升级、可复用的工具框架；S05C 增加 SPI / I2C 外部总线证据并冻结工具共享资源运行规则；S06 建立正式并发运行模型并接入基础 LCD Runtime；S07 完成 OTA Service 与 PENDING 下载链；S07A 在进入 Bootloader 前专门整理 Bootstrap、Task-local Init、Startup Barrier 与 Stack/Heap 安全，避免把已验证但职责混合的 Runtime 直接带入后续阶段。
 
 ### S08 - S10: Bootloader & Reliability
 
@@ -207,38 +210,43 @@ Power-cycle Persistence PASS
 最近关闭阶段：
 
 ```text
-S06_RTOS_Runtime
+S07_OTA_Service_V1
 Roadmap State: CLOSED
 Workflow Status: CLOSED / PASS
 Review: PASS
 ```
 
-S06 正式入口：
+S07 已完成 Application OTA Service V1、KEY_1 双确认、Metadata V2、External A/B Firmware Image Slot、Factory baseline、PENDING 持久化和真实板验收。
 
-- `00_Project/03_Stages/S06_RTOS_Runtime/design.md`
-- `00_Project/03_Stages/S06_RTOS_Runtime/implementation_plan.md`
-- `00_Project/03_Stages/S06_RTOS_Runtime/handoff.md`
-- `00_Project/03_Stages/S06_RTOS_Runtime/review.md`
-- `04_Test/Reports/Stages/S06_RTOS_Runtime/verification.md`
-
-S06 已交付：
-
-1. ST7789/LCD Board Adaptation 与基础状态显示；
-2. `appSystem + otaWorker + displayTask` 三线程 Runtime；
-3. UART RX → otaWorker Task Notification；
-4. otaWorker → displayTask Queue；
-5. 前台 LED 与后台 Ymodem/Firmware Storage 并发；
-6. SUCCESS / FAILED / Timeout / mid-transfer abort 板测；
-7. Slot B Validation、Stack/Heap、阻塞与 Ownership 证据；
-8. Build / Flash / RTT / GDB / Ymodem / Host / Toolkit 回归；
-9. Verification / Handoff / Review PASS。
-
-下一阶段：
+当前活动阶段：
 
 ```text
-S07_OTA_Service_V1
-Roadmap State: PLANNED
-Next action: Design Discussion
+S07A_RTOS_Startup_Refactor
+Roadmap State: ACTIVE
+Workflow Status: DRAFT
+Current action: Design Discussion
 ```
 
-S07 应优先读取 S06 Handoff / Review / Verification，在已冻结 Runtime Contract 上设计正式 OTA Service facade、session control、Inactive Slot / Validation、EEPROM Metadata `PENDING` 提交和 Reset Request；不要把 S06 内部保留的 START notification flag 当作公开接口。
+S07A 只处理 Application RTOS 启动生命周期：
+
+```text
+defaultTask
+→ appSystem Bootstrap
+→ shared IPC / task creation
+→ Task-local initialization
+→ READY Barrier
+→ SYSTEM_RUN
+→ appSystem exit
+→ appMainTask + otaWorker + displayTask steady runtime
+```
+
+本阶段特别要求重新验证 startup heap peak、appSystem 删除后的 heap 回收和各长期 Task Stack High Water Mark。未获得真实证据前不压缩已有 otaWorker/displayTask stack。
+
+下一计划阶段保持：
+
+```text
+S08_Bootloader_Foundation
+Roadmap State: PLANNED
+```
+
+S08 只有在 S07A Runtime 启动模型和 RAM 安全验证完成后再启动。
