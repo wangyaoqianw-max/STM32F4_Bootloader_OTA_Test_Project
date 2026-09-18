@@ -20,6 +20,7 @@
 | `05_Tools\\toolkit.bat sync-s08` | PASS | CubeMX 生成后重新应用 Keil IROM/OCR、Include、Define、Boot source groups 和 Application VTOR |
 | Keil Bootloader Build | PASS | `05_Tools\\toolkit.bat build bootloader`，0 error / 0 warning |
 | Keil Application Build | PASS | `05_Tools\\toolkit.bat build application`，0 error / 0 warning |
+| Final `.bin` generation | PASS | Keil `fromelf --bin`：Bootloader `11688 bytes`，Application `81348 bytes` |
 | S08 PowerShell parser checks | PASS | sync / target / build / flash / RTT / run / snapshot / fault / toolkit |
 | Debug workflow contract | PASS | `05_Tools\\Contracts\\Debug\\test_debug_workflows.ps1` |
 | Fault diagnostic contract | PASS | `05_Tools\\Debug\\CmBacktrace\\test_fault_diagnostics.ps1` |
@@ -42,6 +43,8 @@
 - 两个 Flash 区间相邻但不重叠；
 - Bootloader map：`03_Firmware/Bootloader/OTA_Bootloader/MDK-ARM/Objects/OTA_Bootloader.map`；
 - Application map：`03_Firmware/Application/OTA_APP/MDK-ARM/Listings/OTA_APP.map`。
+- Bootloader bin：`03_Firmware/Bootloader/OTA_Bootloader/MDK-ARM/Objects/OTA_Bootloader.bin`，`11688 bytes`，小于 64 KiB；
+- Application bin：`03_Firmware/Application/OTA_APP/MDK-ARM/Objects/OTA_APP.bin`，`81348 bytes`，小于 448 KiB。
 
 ## Board Evidence
 

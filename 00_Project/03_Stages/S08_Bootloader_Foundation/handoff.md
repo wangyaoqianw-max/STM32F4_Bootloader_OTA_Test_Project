@@ -228,6 +228,8 @@ Bootloader Build       PASS, 0 error / 0 warning
 Application Build      PASS, 0 error / 0 warning
 Bootloader map         LR 0x08000000, size 0x2DA8 / max 0x10000
 Application map        LR 0x08010000, size 0x13F20 / max 0x70000
+Bootloader bin         11688 bytes / max 65536
+Application bin        81348 bytes / max 458752
 RTT / valid jump       PASS
 CmBacktrace Fault      PASS
 Invalid vector reject  PASS: MSP / Reset_Handler / ERASED
@@ -236,6 +238,7 @@ SysTick / FreeRTOS tick PASS: uwTick 0x2E42 -> 0x7069
 Repeated Reset         PASS: 3/3 Bootloader reset/run cycles
 Power-cycle            PASS: Project Owner confirmed normal startup
 LED / LCD              PASS: Project Owner confirmed normal behavior
+Application interrupt  PASS: Project Owner confirmed normal behavior
 ```
 
 本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样、3 次重复 Reset、真实断电上电、LED/LCD 现场确认以及 Application 外设中断确认。验证证据完整，当前交由 Review Role 审核；在 Review 通过前不得将 S08 标记为 `CLOSED`。

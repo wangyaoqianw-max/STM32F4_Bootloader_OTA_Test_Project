@@ -47,7 +47,7 @@
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计与实施计划冻结，状态为 `READY_FOR_IMPLEMENTATION`。
+S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计、实施和验证，当前状态为 `READY_FOR_REVIEW`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 

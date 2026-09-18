@@ -5,7 +5,7 @@
 - Stage: `S08_Bootloader_Foundation`
 - Design: `00_Project/03_Stages/S08_Bootloader_Foundation/design.md`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `READY_FOR_REVIEW`
 - Branch: `main`
 
 ## Global Constraints
