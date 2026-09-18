@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Firmware;../Drivers;../Drivers/Bus/SPI;../Drivers/Bus/SoftI2C;../Drivers/W25Q64;../Drivers/AT24C02;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Firmware;../Drivers;../Drivers/Bus/SPI;../Drivers/Bus/SoftI2C;../Drivers/W25Q64;../Drivers/AT24C02;../Drivers/InternalFlash;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -540,6 +540,11 @@
               <FileName>boot_prevalidate.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Boot/boot_prevalidate.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_installer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Boot/boot_installer.c</FilePath>
             </File>
           </Files>
         </Group>

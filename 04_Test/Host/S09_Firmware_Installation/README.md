@@ -51,6 +51,32 @@ gcc -std=c99 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
 & "$env:TEMP\s09_prevalidate_host_test.exe"
 ```
 
+Installer 事务测试使用只读外部存储、Internal Flash 和向量校验替身，验证 destructive gate、256 Byte 分块、写后 read-back 及失败结果：
+
+```powershell
+gcc -std=c99 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Firmware `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/Bus/SPI `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/Bus/SoftI2C `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/W25Q64 `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/AT24C02 `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/InternalFlash `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Core/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Config `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/STM32F4xx_HAL_Driver/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Device/ST/STM32F4xx/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Boot `
+  -I03_Firmware/Shared `
+  -o "$env:TEMP\s09_txn_host_test.exe" `
+  04_Test/Host/S09_Firmware_Installation/s09_installer_host_test.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_crc32.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Boot/boot_installer.c
+
+& "$env:TEMP\s09_txn_host_test.exe"
+```
+
 测试覆盖：
 
 - PC Packer `app_v1.1.img` Header 固定字节向量与 Header CRC；
@@ -58,5 +84,8 @@ gcc -std=c99 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
 - Application Metadata V2 → Bootloader decode；
 - Bootloader Metadata record → Application decode；
 - 双 Metadata Copy 的 sequence 选择与未提交 marker 拒绝。
+- Installer destructive gate、256 Byte 分块、写后 read-back 与故障注入；
+- PENDING → TRIAL 的 Metadata 原子提交、commit marker 最后写入以及 marker 故障注入；
+- 错误 Candidate Slot 不得触发 EEPROM 写入。
 
 本测试不证明真实 SPI/I2C、Flash 擦写或板级安装结果；这些由 S09 后续 Driver、Installer 和板测任务提供证据。
