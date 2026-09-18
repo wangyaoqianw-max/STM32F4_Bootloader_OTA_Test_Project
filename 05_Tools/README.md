@@ -28,6 +28,7 @@ toolkit.bat fault [application|bootloader] [capture|trigger]
 toolkit.bat firmware pack <pack_firmware.py arguments>
 toolkit.bat ymodem [python] <ymodem_sender.py arguments>
 toolkit.bat ymodem tera <COMx> <baud> <firmware.img>
+toolkit.bat factory restore -ConfirmDestructive [-Image <v1.0.img>] [-Port COMx] [-Baud 115200]
 ```
 
 Router 只负责参数校验、配置读取、Workflow/既有工具转发和统一退出码，不复制 Firmware
@@ -156,6 +157,19 @@ RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，�
 ```
 
 此工具只负责生成 `.img`，不负责串口传输、Flash 烧录或 Bootloader 安装。
+
+### 5.1 S09 Factory Restore
+
+`factory restore` 是 destructive operation，会清空 External Flash Slot A/B 和 AT24C02 Metadata，使用独立的 S09 board test 通过正式 Firmware Storage / Metadata / YMODEM 路径写入 Slot A v1.0 baseline，然后重新构建并烧录正式 v1.0 Application 到 Internal APP。必须显式传入 `-ConfirmDestructive`：
+
+```powershell
+05_Tools\toolkit.bat factory restore `
+  -ConfirmDestructive `
+  -Image .\06_Output\Packages\app_v1.0.img `
+  -Port COM9 -Baud 115200
+```
+
+该流程不会把 Factory Restore board test 加入正式 `OTA_APP.uvprojx`，流程结束后会恢复工程文件并执行正式 Application Build / Flash / RTT 验证。
 
 ### 6. YMODEM 固件发送
 
