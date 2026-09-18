@@ -48,6 +48,15 @@ typedef struct
  * @return 检查结果。
  */
 boot_app_vector_result_t boot_validate_app_vector(boot_app_vector_t *vector);
+/**
+ * @brief 使用指定的 MSP 和 Reset_Handler 检查 Application 向量值。
+ * @param[in] initialMsp : 向量表第一个字；必须位于 MCU SRAM 范围
+ * @param[in] resetHandler : 向量表第二个字；必须为 APP 内 Thumb 地址
+ * @return 检查结果；规则与 boot_validate_app_vector() 相同。
+ */
+boot_app_vector_result_t boot_validate_vector_values(
+    uint32_t initialMsp,
+    uint32_t resetHandler);
 //******************************** Functions ********************************//
 
 #endif

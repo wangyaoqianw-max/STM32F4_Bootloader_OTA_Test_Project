@@ -536,6 +536,11 @@
               <FileType>2</FileType>
               <FilePath>../Boot/boot_jump_asm.S</FilePath>
             </File>
+            <File>
+              <FileName>boot_prevalidate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Boot/boot_prevalidate.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -570,6 +575,11 @@
               <FileName>boot_soft_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/Bus/SoftI2C/boot_soft_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_internal_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/InternalFlash/boot_internal_flash.c</FilePath>
             </File>
           </Files>
         </Group>

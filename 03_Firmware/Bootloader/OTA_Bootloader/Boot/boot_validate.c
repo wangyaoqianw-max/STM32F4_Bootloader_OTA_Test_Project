@@ -24,10 +24,39 @@
 //******************************** Defines **********************************//
 
 //******************************** Functions ********************************//
+boot_app_vector_result_t boot_validate_vector_values(
+    uint32_t initialMsp,
+    uint32_t resetHandler)
+{
+    uint32_t resetAddress;
+
+    if ((initialMsp == BOOT_VECTOR_ERASED_VALUE) ||
+        (resetHandler == BOOT_VECTOR_ERASED_VALUE)) {
+        return BOOT_APP_VECTOR_ERASED;
+    }
+
+    if ((initialMsp < MCU_SRAM_BASE_ADDR) ||
+        (initialMsp > MCU_SRAM_END_ADDR) ||
+        ((initialMsp & BOOT_STACK_ALIGNMENT_MASK) != 0U)) {
+        return BOOT_APP_VECTOR_MSP_INVALID;
+    }
+
+    if ((resetHandler & BOOT_THUMB_BIT_MASK) == 0U) {
+        return BOOT_APP_VECTOR_RESET_INVALID;
+    }
+
+    resetAddress = resetHandler & ~BOOT_THUMB_BIT_MASK;
+    if ((resetAddress < APP_BASE_ADDR) ||
+        (resetAddress >= APP_FLASH_END_ADDR)) {
+        return BOOT_APP_VECTOR_RESET_INVALID;
+    }
+
+    return BOOT_APP_VECTOR_VALID;
+}
+
 boot_app_vector_result_t boot_validate_app_vector(boot_app_vector_t *vector)
 {
     volatile const uint32_t *appVector;
-    uint32_t resetAddress;
 
     if (vector == (boot_app_vector_t *)0) {
         return BOOT_APP_VECTOR_NULL;
@@ -37,27 +66,6 @@ boot_app_vector_result_t boot_validate_app_vector(boot_app_vector_t *vector)
     vector->initialMsp = appVector[0];
     vector->resetHandler = appVector[1];
 
-    if ((vector->initialMsp == BOOT_VECTOR_ERASED_VALUE) ||
-        (vector->resetHandler == BOOT_VECTOR_ERASED_VALUE)) {
-        return BOOT_APP_VECTOR_ERASED;
-    }
-
-    if ((vector->initialMsp < MCU_SRAM_BASE_ADDR) ||
-        (vector->initialMsp > MCU_SRAM_END_ADDR) ||
-        ((vector->initialMsp & BOOT_STACK_ALIGNMENT_MASK) != 0U)) {
-        return BOOT_APP_VECTOR_MSP_INVALID;
-    }
-
-    if ((vector->resetHandler & BOOT_THUMB_BIT_MASK) == 0U) {
-        return BOOT_APP_VECTOR_RESET_INVALID;
-    }
-
-    resetAddress = vector->resetHandler & ~BOOT_THUMB_BIT_MASK;
-    if ((resetAddress < APP_BASE_ADDR) ||
-        (resetAddress >= APP_FLASH_END_ADDR)) {
-        return BOOT_APP_VECTOR_RESET_INVALID;
-    }
-
-    return BOOT_APP_VECTOR_VALID;
+    return boot_validate_vector_values(vector->initialMsp, vector->resetHandler);
 }
 //******************************** Functions ********************************//
