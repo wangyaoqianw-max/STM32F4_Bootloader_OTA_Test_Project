@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S08_Bootloader_Foundation`
-- Active Stage Status: `READY_FOR_VERIFICATION`
+- Active Stage Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -466,7 +466,7 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## S08 Bootloader Foundation Current State
 
-当前状态：`READY_FOR_VERIFICATION`。
+当前状态：`READY_FOR_REVIEW`。
 
 S08 已冻结三个核心目标：
 
@@ -477,7 +477,7 @@ S08 已冻结三个核心目标：
 ```
 
 S08 Implementation Commit：`8ec0045`。
-S08 Board Test：Build / Flash / valid Jump / RTT / GDB / SysTick / repeated Reset / Power-cycle / LED / LCD 已通过；仍待 Application 外设中断确认。
+S08 Board Test：Build / Flash / valid Jump / RTT / GDB / SysTick / repeated Reset / Power-cycle / LED / LCD / Application peripheral interrupt 已通过。
 
 冻结 Flash Layout：
 
@@ -514,4 +514,4 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-由 Verification / Project Owner 补齐真实断电上电、LED/LCD 现场行为和一个 Application 外设中断路径证据；证据完整后再进入 Review 和 `CLOSED`。
+验证证据已完整，下一步由 Review Role 对照冻结设计、实施计划、代码差异、handoff 和 verification report 执行审核；审核通过后进入 `CLOSED`。

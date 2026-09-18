@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Workflow Status: `READY_FOR_VERIFICATION`
+- Workflow Status: `READY_FOR_REVIEW`
 - Implementation Status: `COMPLETE`
 - Branch: `main`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
@@ -203,7 +203,7 @@ GDB snapshot
 当前状态：
 
 ```text
-READY_FOR_VERIFICATION
+READY_FOR_REVIEW
 ```
 
 ### Implementation Summary
@@ -238,7 +238,7 @@ Power-cycle            PASS: Project Owner confirmed normal startup
 LED / LCD              PASS: Project Owner confirmed normal behavior
 ```
 
-本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样、3 次重复 Reset、真实断电上电以及 LED/LCD 现场确认。仍需 Project Owner 补齐一个 Application 外设中断路径确认；在该证据完成前不得将 S08 标记为 `CLOSED`。
+本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样、3 次重复 Reset、真实断电上电、LED/LCD 现场确认以及 Application 外设中断确认。验证证据完整，当前交由 Review Role 审核；在 Review 通过前不得将 S08 标记为 `CLOSED`。
 
 ### Task 0 Baseline Evidence
 

@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `READY_FOR_REVIEW`
 - Implementation Commits: `8ec0045`
 - Verification Commit: `573312a`
 - Branch: `main`
@@ -75,19 +75,22 @@
 
 期间发现一次由 GDB 断点采样遗留 FPB comparator 导致的 `HFSR=0x80000000` DEBUGEVT。直接读取确认 comparator 指向 `boot_jump_to_app`；清除 `E0002008`–`E0002024` 和 `DEMCR` 后重跑通过。该现象属于调试器状态残留，不作为生产 Fault 证据；后续 GDB 断点测试必须执行 comparator cleanup。
 
-## Pending Owner Checks
+## Final Owner Confirmation
 
-以下项目仍需 Project Owner 在目标板上最终确认，不用代码结果替代：
+Project Owner 已确认以下硬件验收结果：
 
-- 至少一个 Application 外设中断路径在 Jump 后的现场确认；本轮已确认 SysTick/FreeRTOS tick，不将其冒充外设中断证据。
+- 真实断电再上电后 Bootloader → Application 正常启动；
+- Application LED 正常闪烁；
+- Application LCD 正常显示；
+- Application 外设中断在 Jump 后运行正常；
 
-真实 Power-cycle、LED/LCD 现场行为和重复 Reset 均已确认 PASS。
+本轮同时通过 SysTick/FreeRTOS tick 采样和 3 次重复 Reset。未使用代码构建结果替代上述硬件确认。
 
 ## Verification Status
 
 ```text
 代码验证：PASS
-硬件验证：PENDING
+硬件验证：PASS
 ```
 
-S08 实施范围内的代码、构建、Flash Layout、RTT、CmBacktrace、向量拒绝和合法 Jump 已完成。完成阶段关闭前，补齐上面的 Project Owner 硬件检查并形成 Review 结论。
+S08 实施范围内的代码、构建、Flash Layout、RTT、CmBacktrace、向量拒绝、合法 Jump 和硬件验收证据已完整，当前交由 Review Role 审核；审核通过后才能进入 `CLOSED`。
