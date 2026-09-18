@@ -10,7 +10,7 @@
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - Implementation Commit: `306c76b`
-- Verification Commit: `b6896cb` (`docs: record s07a physical regression evidence`)
+- Verification Commit: `5e3c533` (`docs: record s07a stack and fault verification evidence`)
 
 ## Implementation Input
 
