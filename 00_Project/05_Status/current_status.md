@@ -47,7 +47,7 @@
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06 和 S07 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前新增并启动 `S07A_RTOS_Startup_Refactor` 设计阶段，在进入 `S08_Bootloader_Foundation` 前整理 Application RTOS 启动生命周期、Startup Barrier、Task ownership 以及 Stack/Heap 安全。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06 和 S07 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 `S07A_RTOS_Startup_Refactor` 已完成设计批准并进入 `READY_FOR_IMPLEMENTATION`，在进入 `S08_Bootloader_Foundation` 前整理 Application RTOS 启动生命周期、Startup Barrier、Task ownership 以及 Stack/Heap 安全。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
