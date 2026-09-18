@@ -25,7 +25,7 @@
 
 /* CmBacktrace 和启动日志使用的固件身份与版本标识。 */
 #define BOOT_CONFIG_IDENTITY         "OTA_BOOTLOADER"
-#define BOOT_CONFIG_VERSION          "S08.1"
+#define BOOT_CONFIG_VERSION          "S09.1"
 //******************************** Defines **********************************//
 
 #endif

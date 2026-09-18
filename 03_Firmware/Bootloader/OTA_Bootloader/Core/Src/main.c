@@ -21,10 +21,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "gpio.h"
 #include "boot_main.h"
 #include "boot_log.h"
 #include "cmbacktrace_port.h"
 #include "diagnostics_fault.h"
+#include "spi.h"
 
 /* USER CODE END Includes */
 
@@ -83,6 +85,10 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+
+  /* S09 storage buses must be ready before boot_main binds external devices. */
+  MX_GPIO_Init();
+  MX_SPI2_Init();
 
   /* USER CODE END SysInit */
 
