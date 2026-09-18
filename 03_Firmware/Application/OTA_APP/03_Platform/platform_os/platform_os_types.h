@@ -27,6 +27,11 @@ typedef struct {
     void *native;
 } platform_thread_t;
 
+/** @brief Event Flags 的不透明 Platform 句柄；native 仅由 Impl 创建和释放。 */
+typedef struct {
+    void *native;
+} platform_event_flags_t;
+
 /** @brief 互斥锁的不透明 Platform 句柄；native 仅由 Impl 创建和释放。 */
 typedef struct {
     void *native;

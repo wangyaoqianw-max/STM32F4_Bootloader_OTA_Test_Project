@@ -9,7 +9,7 @@ Application，当前正式 `OTA_APP.uvprojx` 不包含本目录文件，也不�
 
 1. 在 `project_config.h` 增加默认关闭的 `PROJECT_ENABLE_S04_PERSISTENCE_BOARD_TEST`，
    本地板测时仅在测试构建中置为 `1U`，并与 S05 YMODEM 测试入口互斥。
-2. 在 `app_main.c` 中临时选择 `app_s04_persistence_test_run()` 作为启动入口。
+2. 在 `01_APP/task/app_main_task.c` 中临时选择 `app_s04_persistence_test_run()` 作为启动入口。
 3. 在 `OTA_APP.uvprojx` 的临时测试组加入本目录的 `.c` 文件，并添加本目录为 Include Path。
 4. 用 Keil 构建测试镜像；确认 AXF 中存在 `app_s04_persistence_test_run` 符号。
 5. 将测试 AXF 复制到正式工程之外的本地路径，并在未提交的
@@ -19,7 +19,7 @@ Application，当前正式 `OTA_APP.uvprojx` 不包含本目录文件，也不�
    set "S04_PERSISTENCE_AXF=E:\Temp\OTA_APP_S04_Persistence.axf"
    ```
 
-6. 恢复 `project_config.h`、`app_main.c` 和 `OTA_APP.uvprojx`；提交前确认正式工程不再
+6. 恢复 `project_config.h`、`01_APP/task/app_main_task.c` 和 `OTA_APP.uvprojx`；提交前确认正式工程不再
    引用本目录。
 
 `05_Tools\Scripts\s04_persistence_test.bat` 只接受通过符号检查的 S04 测试 AXF，不会把

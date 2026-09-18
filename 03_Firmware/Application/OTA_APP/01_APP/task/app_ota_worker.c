@@ -17,6 +17,7 @@
 #define LOG_TAG "ota_worker"
 
 #include "app_ota_runtime.h"
+#include "app_startup.h"
 #include "platform_key.h"
 #include "platform_mcu_reset.h"
 #include "platform_os.h"
@@ -493,31 +494,62 @@ static void app_ota_worker_wait_for_command(void)
 
 static void app_ota_worker_entry(void *argument)
 {
+    platform_error_t initResult = PLATFORM_ERR_OK;
     platform_error_t result;
+    const app_startup_context_t *startupContext;
+    uint32_t freeStackBytes;
 
     (void)argument;
 
     if (g_otaDisplayQueue == NULL) {
         SERVICE_LOG_E("OTA worker display queue is not bound");
+        initResult = PLATFORM_ERR_INVALID_STATE;
+    } else {
+        initResult = platform_thread_get_current(&g_otaWorkerThread);
+        if (initResult != PLATFORM_ERR_OK) {
+            SERVICE_LOG_E("OTA worker current thread failed: %d",
+                          (int)initResult);
+        }
+    }
+
+    if (initResult == PLATFORM_ERR_OK) {
+        initResult = app_ota_worker_init_key();
+        if (initResult != PLATFORM_ERR_OK) {
+            SERVICE_LOG_E("OTA key init failed: %d", (int)initResult);
+        }
+    }
+
+    if (initResult == PLATFORM_ERR_OK) {
+        initResult = app_ota_runtime_init(&g_otaWorkerThread);
+        SERVICE_LOG_I("OTA runtime init result=%d", (int)initResult);
+    }
+
+    result = app_startup_report_ota(initResult);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("OTA startup report failed: %d", (int)result);
         return;
     }
 
-    result = platform_thread_get_current(&g_otaWorkerThread);
+    result = app_startup_wait_for_decision();
     if (result != PLATFORM_ERR_OK) {
-        SERVICE_LOG_E("OTA worker current thread failed: %d", (int)result);
+        SERVICE_LOG_I("OTA startup aborted: %d", (int)result);
         return;
     }
 
-    result = app_ota_worker_init_key();
-    if (result != PLATFORM_ERR_OK) {
-        SERVICE_LOG_E("OTA key init failed: %d", (int)result);
+    startupContext = app_startup_get_context();
+    if ((initResult != PLATFORM_ERR_OK) ||
+        (startupContext->systemState == APP_SYSTEM_STATE_FAILED)) {
         return;
     }
 
-    result = app_ota_runtime_init(&g_otaWorkerThread);
-    SERVICE_LOG_I("OTA runtime init result=%d", (int)result);
-    if (result != PLATFORM_ERR_OK) {
-        return;
+    result = platform_thread_get_stack_space(
+        &g_otaWorkerThread,
+        &freeStackBytes);
+    if (result == PLATFORM_ERR_OK) {
+        SERVICE_LOG_I("otaWorker stack free=%lu B",
+                      (unsigned long)freeStackBytes);
+    } else {
+        SERVICE_LOG_W("otaWorker stack query failed: %d", (int)result);
     }
 
     app_ota_worker_wait_for_command();

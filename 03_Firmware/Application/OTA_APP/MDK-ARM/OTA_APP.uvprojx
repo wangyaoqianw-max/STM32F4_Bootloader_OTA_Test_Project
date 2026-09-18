@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine />
-              <IncludePath>../00_Config;../01_APP;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_ota;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_bsp/st7789;../03_Platform/platform_bsp/key;../03_Platform/platform_graphics;../03_Platform/platform_graphics/font;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/irq;../03_Platform/platform_mcu/reset;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../04_Impl/impl_diagnostics;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../05_Vendors/CmBacktrace;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../00_Config;../01_APP;../01_APP/system;../01_APP/task;../01_APP/runtime;../01_APP/contract;../02_Service/service_log;../02_Service/service_common;../02_Service/service_common/crc;../02_Service/service_firmware;../02_Service/service_ota;../02_Service/service_uart;../02_Service/service_ymodem;../03_Platform/platform_common;../03_Platform/platform_bsp;../03_Platform/platform_bsp/led;../03_Platform/platform_bsp/w25q64;../03_Platform/platform_bsp/at24c02;../03_Platform/platform_bsp/st7789;../03_Platform/platform_bsp/key;../03_Platform/platform_graphics;../03_Platform/platform_graphics/font;../03_Platform/platform_mcu/gpio;../03_Platform/platform_mcu/irq;../03_Platform/platform_mcu/reset;../03_Platform/platform_mcu/i2c;../03_Platform/platform_mcu/spi;../03_Platform/platform_mcu/uart;../03_Platform/platform_middleware;../03_Platform/platform_os;../04_Impl/impl_board;../04_Impl/impl_bsp;../04_Impl/impl_mcu;../04_Impl/impl_os;../04_Impl/impl_os/freertos;../04_Impl/impl_middleware/impl_log;../04_Impl/impl_diagnostics;../05_Vendors/easylogger/inc;../05_Vendors/RTT;../05_Vendors/CmBacktrace;../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -629,32 +629,57 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Application/01_APP</GroupName>
+          <GroupName>Application/01_APP/system</GroupName>
           <Files>
             <File>
-              <FileName>app_main.c</FileName>
+              <FileName>app_system.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../01_APP/app_main.c</FilePath>
+              <FilePath>../01_APP/system/app_system.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_startup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/system/app_startup.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/01_APP/task</GroupName>
+          <Files>
+            <File>
+              <FileName>app_main_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/task/app_main_task.c</FilePath>
             </File>
             <File>
               <FileName>app_display_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../01_APP/app_display_task.c</FilePath>
+              <FilePath>../01_APP/task/app_display_task.c</FilePath>
             </File>
             <File>
               <FileName>app_ota_worker.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../01_APP/app_ota_worker.c</FilePath>
+              <FilePath>../01_APP/task/app_ota_worker.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/01_APP/runtime</GroupName>
+          <Files>
             <File>
               <FileName>app_ota_runtime.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../01_APP/app_ota_runtime.c</FilePath>
+              <FilePath>../01_APP/runtime/app_ota_runtime.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/01_APP/contract</GroupName>
+          <Files>
             <File>
-              <FileName>app_system.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../01_APP/app_system.c</FilePath>
+              <FileName>app_runtime_contract.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../01_APP/contract/app_runtime_contract.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -875,6 +900,11 @@
               <FileName>impl_freertos_thread.c</FileName>
               <FileType>1</FileType>
               <FilePath>../04_Impl/impl_os/freertos/impl_freertos_thread.c</FilePath>
+            </File>
+            <File>
+              <FileName>impl_freertos_event_flags.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../04_Impl/impl_os/freertos/impl_freertos_event_flags.c</FilePath>
             </File>
             <File>
               <FileName>impl_freertos_queue.c</FileName>

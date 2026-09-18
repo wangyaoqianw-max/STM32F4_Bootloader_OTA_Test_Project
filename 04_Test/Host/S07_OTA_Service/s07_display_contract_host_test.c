@@ -14,7 +14,7 @@
 //******************************** Includes *********************************//
 #include <stdio.h>
 
-#include "app_runtime_contract.h"
+#include "contract/app_runtime_contract.h"
 //******************************** Includes *********************************//
 
 //******************************** Private Functions ************************//

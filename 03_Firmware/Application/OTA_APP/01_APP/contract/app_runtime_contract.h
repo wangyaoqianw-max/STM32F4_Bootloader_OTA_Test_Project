@@ -29,6 +29,7 @@
 
 #define APP_DISPLAY_FIRMWARE_VERSION_BUFFER_SIZE  (16U)
 #define APP_DISPLAY_SYSTEM_STATE_BUFFER_SIZE      (16U)
+#define APP_DISPLAY_QUEUE_LENGTH                 (8U)
 //******************************** Defines **********************************//
 
 //******************************** Types ************************************//

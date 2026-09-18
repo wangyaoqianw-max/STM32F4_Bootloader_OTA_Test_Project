@@ -40,6 +40,10 @@ platform_error_t platform_thread_create(platform_thread_t *thread,
                                         const platform_thread_config_t *config);
 /** @brief 获取当前执行线程的 opaque handle。 */
 platform_error_t platform_thread_get_current(platform_thread_t *thread);
+/** @brief 获取线程剩余未使用 Stack 空间，单位为 byte。 */
+platform_error_t platform_thread_get_stack_space(
+    const platform_thread_t *thread,
+    uint32_t *freeStackBytes);
 /** @brief 设置线程的 Platform 优先级。 */
 platform_error_t platform_thread_set_priority(platform_thread_t *thread, platform_thread_priority_t priority);
 /** @brief 获取线程的 Platform 优先级。 */

@@ -14,8 +14,7 @@
 
 static platform_bool_t impl_freertos_thread_priority_is_valid(platform_thread_priority_t priority)
 {
-    return (priority >= PLATFORM_THREAD_PRIORITY_LOW) &&
-           (priority <= PLATFORM_THREAD_PRIORITY_HIGH);
+    return (priority <= PLATFORM_THREAD_PRIORITY_HIGH);
 }
 
 static osPriority_t impl_freertos_thread_priority_to_cmsis(platform_thread_priority_t priority)
@@ -76,6 +75,23 @@ platform_error_t platform_thread_get_current(platform_thread_t *thread)
         return PLATFORM_ERR_INVALID_STATE;
     }
 
+    return PLATFORM_ERR_OK;
+}
+
+platform_error_t platform_thread_get_stack_space(
+    const platform_thread_t *thread,
+    uint32_t *freeStackBytes)
+{
+    if ((thread == (void *)0) || (freeStackBytes == (void *)0)) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (thread->native == (void *)0) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    *freeStackBytes = osThreadGetStackSpace(
+        (osThreadId_t)thread->native);
     return PLATFORM_ERR_OK;
 }
 

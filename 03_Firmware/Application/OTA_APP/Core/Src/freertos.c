@@ -53,7 +53,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 4096,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -120,7 +120,7 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   (void)argument;
-  if (app_system_start() != PLATFORM_ERR_OK) {
+  if (app_system_bootstrap() != PLATFORM_ERR_OK) {
     Error_Handler();
   }
   vTaskDelete(NULL);

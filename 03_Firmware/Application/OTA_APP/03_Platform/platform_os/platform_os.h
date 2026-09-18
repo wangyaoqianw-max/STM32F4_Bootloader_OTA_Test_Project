@@ -12,6 +12,7 @@
 #define PLATFORM_OS_H
 
 #include "platform_thread.h"
+#include "platform_event_flags.h"
 #include "platform_mutex.h"
 #include "platform_semaphore.h"
 #include "platform_queue.h"

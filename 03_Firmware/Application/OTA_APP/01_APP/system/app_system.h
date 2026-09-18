@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file app_system.h
- * @brief Application 系统任务启动接口。
+ * @brief Application System Composition / Bootstrap 接口。
  * @author YaoQian Wang
  * @date 2026-09-12
  * @version V1.0
@@ -18,12 +18,12 @@
 #include "platform_error.h"
 //******************************** Includes *********************************//
 
-//******************************** Declaring *******************************//
+//******************************** Functions ********************************//
 /**
- * @brief 创建 Application 系统任务。
- * @return PLATFORM_ERR_OK 表示创建成功，其他 platform_error_t 表示失败。
+ * @brief 在 defaultTask 上完成 Application 系统装配和启动裁决。
+ * @return PLATFORM_ERR_OK 表示进入 RUNNING 或 DEGRADED；其他值表示启动基础设施失败。
  */
-platform_error_t app_system_start(void);
-//******************************** Declaring *******************************//
+platform_error_t app_system_bootstrap(void);
+//******************************** Functions ********************************//
 
 #endif

@@ -16,6 +16,7 @@
 
 #define LOG_TAG "display_task"
 
+#include "app_startup.h"
 #include "platform_bsp_spi.h"
 #include "platform_bsp_st7789.h"
 #include "platform_font_ascii_8x16.h"
@@ -27,7 +28,6 @@
 
 //******************************** Defines **********************************//
 #define APP_DISPLAY_TASK_STACK_SIZE    (4096U)
-#define APP_DISPLAY_QUEUE_LENGTH       (8U)
 #define APP_DISPLAY_TEXT_BUFFER_SIZE   (32U)
 #define APP_DISPLAY_LINE_HEIGHT        (16U)
 #define APP_DISPLAY_TEXT_X             (8U)
@@ -358,16 +358,44 @@ static void app_display_task_entry(void *argument)
 {
     display_model_t model;
     app_display_event_t event;
-    platform_bool_t displayReady = PLATFORM_FALSE;
+    platform_error_t initResult;
+    const app_startup_context_t *startupContext;
+    uint32_t freeStackBytes;
     platform_error_t result;
 
     (void)argument;
 
-    result = app_display_task_initialize(&model);
+    initResult = app_display_task_initialize(&model);
+    if (initResult != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("DISPLAY DEGRADED: %d", initResult);
+    }
+
+    result = app_startup_report_display(initResult);
     if (result != PLATFORM_ERR_OK) {
-        SERVICE_LOG_E("DISPLAY DEGRADED: %d", result);
+        SERVICE_LOG_E("Display startup report failed: %d", result);
+        return;
+    }
+
+    result = app_startup_wait_for_decision();
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_I("Display startup aborted: %d", result);
+        return;
+    }
+
+    startupContext = app_startup_get_context();
+    if ((initResult != PLATFORM_ERR_OK) ||
+        (startupContext->systemState == APP_SYSTEM_STATE_FAILED)) {
+        return;
+    }
+
+    result = platform_thread_get_stack_space(
+        &g_displayTaskThread,
+        &freeStackBytes);
+    if (result == PLATFORM_ERR_OK) {
+        SERVICE_LOG_I("displayTask stack free=%lu B",
+                      (unsigned long)freeStackBytes);
     } else {
-        displayReady = PLATFORM_TRUE;
+        SERVICE_LOG_W("displayTask stack query failed: %d", (int)result);
     }
 
     for (;;) {
@@ -385,11 +413,9 @@ static void app_display_task_entry(void *argument)
             continue;
         }
 
-        if (displayReady == PLATFORM_TRUE) {
-            result = app_display_render_event(&model);
-            if (result != PLATFORM_ERR_OK) {
-                SERVICE_LOG_E("Display event render failed: %d", result);
-            }
+        result = app_display_render_event(&model);
+        if (result != PLATFORM_ERR_OK) {
+            SERVICE_LOG_E("Display event render failed: %d", result);
         }
     }
 }
@@ -407,19 +433,11 @@ platform_error_t app_display_task_start(platform_queue_t *displayQueue)
         return PLATFORM_ERR_OK;
     }
 
-    result = platform_queue_create(displayQueue,
-                                   APP_DISPLAY_QUEUE_LENGTH,
-                                   sizeof(app_display_event_t));
-    if (result != PLATFORM_ERR_OK) {
-        return result;
-    }
-
     g_displayQueue = displayQueue;
     result = platform_thread_create(&g_displayTaskThread,
                                     &s_display_task_config);
     if (result != PLATFORM_ERR_OK) {
         g_displayQueue = (platform_queue_t *)0;
-        (void)platform_queue_delete(displayQueue);
         return result;
     }
 
