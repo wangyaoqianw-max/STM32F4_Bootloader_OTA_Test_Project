@@ -5,15 +5,17 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED / PASS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- S07A Handoff Commit: `8703415`
-- S07A Implementation Commits: `c30c60d`, `d631fb8`
+- S07A Handoff Commit: `b4e4102`
+- S07A Implementation Commits: `306c76b`, `c30c60d`, `d631fb8`
 - S07A Verification Commit: `8703415`
 - S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
+- S07A Review Commit: `568bbccc`
+- S07A Review Report: `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/review.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -37,10 +39,10 @@
 - S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- Last Closed Stage: `S07_OTA_Service_V1`
+- Last Closed Stage: `S07A_RTOS_Startup_Refactor`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Verification Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-18`
 
 ## Current Goal
@@ -68,7 +70,7 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07A RTOS Startup Refactor
 
-当前状态：`READY_FOR_REVIEW`。
+当前状态：`CLOSED / PASS`。
 
 冻结启动模型：
 
@@ -129,7 +131,7 @@ otaWorker     4096 B persistent
 displayTask   4096 B persistent
 ```
 
-必须验证 startup peak heap、minimum-ever-free heap、defaultTask delete 后的 Idle cleanup 回收，以及各长期 Task stack space。未获得新板测证据前不压缩 otaWorker/displayTask stack。
+已验证 startup peak heap、minimum-ever-free heap、defaultTask delete 后的 Idle cleanup 回收，以及各长期 Task stack space；当前无继续压缩 otaWorker/displayTask stack 的必要。
 
 App 目录冻结：
 
@@ -464,6 +466,4 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-S07A 计划内生产代码和 Task 生命周期修复已在 `c30c60d` / `d631fb8` 完成并提交。当前状态为 `READY_FOR_REVIEW`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟、GDB Stack/Heap 证据、Display 肉眼状态、OTA 场景专项 Stack 采样、三个业务组件 DEGRADED、Startup Event Flags/shared IPC/Task create FAILED，以及当前 S07A 的主要 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 物理回归均已取得。
-
-Review / Project Owner 决定前不得标记 `CLOSED / PASS`；S08 Bootloader Foundation 暂不启动。
+S07A 已 `CLOSED / PASS`。下一步进入 `S08_Bootloader_Foundation` 的设计讨论，基于当前已冻结的 Application Startup Contract、Firmware Image / Metadata Contract 和 S07 PENDING 交接边界设计独立 Bootloader。
