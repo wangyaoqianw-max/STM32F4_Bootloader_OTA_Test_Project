@@ -5,12 +5,14 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - S07A Handoff Commit: `ba99f38a59b09917b36c2b3ec85474d1198cf227`
+- S07A Implementation Commit: `306c76b`
+- S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -37,7 +39,7 @@
 - Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Implementation Role`
+- Current Role: `Verification Role`
 - Updated At: `2026-09-18`
 
 ## Current Goal
@@ -461,6 +463,6 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## Next Action
 
-S07A 已在当前 `main` 分支进入实施。Task 0 已完成基线采集，下一步按 `implementation_plan.md` 实施 Platform Event Flags / stack-space API，再进行 App 目录迁移、Startup Context、三个长期 Task barrier 适配、`defaultTask → app_system_bootstrap()` 重构、degraded/failure 验证和 Stack/Heap 实板证据。
+S07A 计划内生产代码已在 `306c76b` 完成并提交。当前状态为 `READY_FOR_VERIFICATION`：代码验证、Host regression、Keil Build、Flash/RTT 冒烟和 GDB Stack/Heap 证据已取得；下一步是在当前 S07A 固件上重新执行完整 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 物理回归，并补齐可执行的 degraded/failure 路径证据。
 
-S08 Bootloader Foundation 暂不启动。
+完整证据前不得进入 `READY_FOR_REVIEW`，S08 Bootloader Foundation 暂不启动。

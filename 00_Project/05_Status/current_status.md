@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -23,6 +23,8 @@
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - S07A Handoff Commit: `ba99f38a59b09917b36c2b3ec85474d1198cf227`
+- S07A Implementation Commit: `306c76b`
+- S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `5c26fe63`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
@@ -42,12 +44,12 @@
 - Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Implementation Role`
+- Current Role: `Verification Role`
 - Updated At: `2026-09-18`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06 和 S07 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 `S07A_RTOS_Startup_Refactor` 已完成设计批准并进入 `READY_FOR_IMPLEMENTATION`，在进入 `S08_Bootloader_Foundation` 前整理 Application RTOS 启动生命周期、Startup Barrier、Task ownership 以及 Stack/Heap 安全。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06 和 S07 已完成并关闭。S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 `S07A_RTOS_Startup_Refactor` 的计划内生产代码已在 `306c76b` 完成，状态为 `READY_FOR_VERIFICATION`，在进入 `S08_Bootloader_Foundation` 前整理 Application RTOS 启动生命周期、Startup Barrier、Task ownership 以及 Stack/Heap 安全。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -70,7 +72,7 @@ otaWorker   → displayTask : Queue
 
 ## S07A RTOS Startup Refactor Current State
 
-S07A 设计已批准，状态为 `IN_PROGRESS`。Task 0 基线采集已完成，生产代码尚未修改。
+S07A 设计已批准，状态为 `READY_FOR_VERIFICATION`。Task 0 基线采集和计划内生产代码实施已完成；当前等待完整 S07 物理回归及可执行 degraded/failure 路径证据。
 
 冻结目标：
 
@@ -120,7 +122,7 @@ Reference Heap          xFreeBytesRemaining=7344 B / minimum-ever=6720 B
 Reference Stack         appSystem=3680 B / otaWorker=3412 B / displayTask=3224 B
 ```
 
-当前下一步：实现 Platform Event Flags、线程剩余 Stack API 及其 Host/Compile 验证。
+当前下一步：在当前 S07A 固件上执行 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 物理回归，补齐可执行的 degraded/failure 路径证据；完成前不得标记 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
 ```
 
 ## S07 OTA Service V1 Current State

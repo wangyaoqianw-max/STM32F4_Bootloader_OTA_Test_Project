@@ -3,13 +3,13 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `306c76b`
 - Verification Commit: `Not created yet`
 
 ## Implementation Input
@@ -216,7 +216,8 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 
 ## Implementation Output
 
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
+- Implementation Commit: `306c76b` (`refactor: implement s07a rtos startup topology`)
 
 ### Completed Design Work
 
@@ -231,15 +232,69 @@ Reference Stack         appSystem=3680 B; otaWorker=3412 B; displayTask=3224 B
 - `01_APP/system/task/runtime/contract` directory contract frozen.
 - `app_main.* → app_main_task.*` rename frozen.
 - Implementation plan finalized.
-- Task 0 baseline captured; Platform Event Flags / stack-space API implementation is next.
+- Task 0 baseline captured and implementation completed in `306c76b`.
+
+### Delivered Implementation
+
+- 新增 `platform_event_flags` opaque Platform OS API 和 CMSIS-RTOS2 FreeRTOS implementation。
+- 新增 `platform_thread_get_stack_space()`，返回 byte 单位的剩余 Stack。
+- 将 `01_APP` 整理为 `system / task / runtime / contract`，同步 Keil Group、include path、Host Test 和源码引用；旧平面生产文件已迁移，不重复参与编译。
+- 新增 Startup Context / Event Flags Barrier；`SYSTEM_RUN` 使用广播等待，不使用 busy-loop。
+- `defaultTask` 直接调用 `app_system_bootstrap()`，完成装配后自删除；不再创建独立 `appSystem` RTOS Task。
+- 长期 Runtime 为 `appMainTask / otaWorker / displayTask`，Task-local hardware/runtime init ownership 保持不变。
+- 未实现 S08/S09/S10 功能，未加入生产 fault injection 开关或测试专用业务逻辑。
+
+### Style Review Corrections
+
+根据嵌入式 C 代码规范复查新增和迁移文件，已修正公开 API 的 Doxygen 参数/返回格式、只读 Startup Context 的 `const` 边界、静态函数分区、冗余 display 状态变量、直接依赖 include，以及一个无效 unsigned 下界比较导致的编译告警。改动文件通过 whitespace/line-length 检查。
 
 ### Verification Results
 
-Not started.
+代码和自动化验证已完成，真实 S07 物理全流程仍待在 S07A 当前固件上重新执行。
+
+```text
+Keil Build                         PASS, 0 error / 0 warning
+S07A Startup Host Test             PASS
+S07 Host regression                7/7 PASS
+S04 Host regression                PASS; persistence 15/15
+S05 Host regression                PASS
+Python Pack / Ymodem tests         PASS; 2 / 24
+git diff --check                   PASS
+Keil project XML parse             PASS
+style whitespace/line-length       PASS
+Flash / Reset / RTT smoke          PASS
+GDB runtime snapshot               PASS
+```
+
+### Current Board and RAM Evidence
+
+当前正常启动/idle 路径的 GDB 证据：
+
+```text
+xFreeBytesRemaining             9352 B
+xMinimumEverFreeBytesRemaining  5144 B
+configTOTAL_HEAP_SIZE           24576 B
+peak allocated heap (derived)    19432 B
+uxCurrentNumberOfTasks           6
+uxDeletedTasksWaitingCleanUp     0
+startupState                     RUNNING (1)
+g_appSystemBootstrapped          1
+g_appStartupInitialized          1
+```
+
+```text
+appMainTask stack high water     407 words  (~1628 B)
+otaWorker stack high water       908 words  (~3632 B)
+displayTask stack high water     800 words  (~3200 B)
+```
+
+Task count 6 包含 FreeRTOS idle/timer 和 EasyLogger 等系统任务；采样时待 Idle cleanup 列表为空。Stack 日志没有出现在本次 RTT capture 中，以上 Stack 数据来自 GDB，与 Platform API 交叉采集。当前尚未取得 OTA receiving、display render、READY_TO_INSTALL 和 failure path 的 S07A 新 Stack 证据。
+
+当前板级工具链已证明 Flash/Reset/RTT 启动冒烟和正常 RUNNING，但 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC 完整物理交互尚未用 S07A 当前固件重跑。
 
 ### Known Issues
 
-No external blocker. Main implementation risks are startup heap peak, task-create scheduling order, and preserving S07 runtime behavior after file relocation.
+无设计冲突或外部实现阻塞。未完成项是当前 S07A 固件的完整物理业务回归，以及真实 degraded/failure fault path 证据；在这些证据完成前不得进入 `READY_FOR_REVIEW` 或 `CLOSED / PASS`。
 
 ### Review Focus
 
@@ -249,4 +304,5 @@ No external blocker. Main implementation risks are startup heap peak, task-creat
 - DEGRADED must preserve unrelated working components；
 - Task-local ownership must remain intact；
 - App directory relocation must not create duplicate source/include paths；
-- S07 full regression must remain PASS.
+- S07 full regression must remain PASS；当前验证状态为 `PENDING`。
+- 需要确认 `uxCurrentNumberOfTasks=6` 中系统任务的解释与 defaultTask 删除后的回收证据。
