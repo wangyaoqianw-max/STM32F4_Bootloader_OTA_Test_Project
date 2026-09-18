@@ -3,11 +3,12 @@
 ## Metadata
 
 - Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `DRAFT / DESIGN_DISCUSSION`
+- Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
-- Design Commit: `284fe05e689e48d06267649c449266e1e8c029e3`
-- Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
+- Approved Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
+- Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
+- Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 
@@ -15,36 +16,158 @@
 
 ### Goal
 
-在 S08 Bootloader Foundation 之前，整理 Application RTOS 启动生命周期，使 System Bootstrap、Task-local Init 和 Steady Runtime 有清晰边界，同时重新验证 Stack/Heap 安全。
+在 S08 Bootloader Foundation 前，整理 Application RTOS 启动生命周期和 App 层物理结构，消除旧 `appSystem` Task 的职责混合，并重新验证 Startup Stack / Heap 安全。
 
-### Upstream Stable Baseline
+### Stable Upstream Contract
 
-S07 已 `CLOSED / PASS`，必须保持：
+S07 已 `CLOSED / PASS`，以下必须保持：
 
 ```text
 OTA Service V1
 Metadata V2
 KEY_1 double confirmation
 Ymodem receive
-External A/B image storage
+External A/B firmware image slots
 PENDING persistence
 Display flow
+UART ISR/RX → otaWorker notification
+otaWorker → displayTask queue
 ```
 
-当前生产启动事实：
+### Frozen Startup Model
+
+S07A 不再创建独立 `appSystem` RTOS Task。
 
 ```text
-defaultTask
-→ app_system_start()
-→ defaultTask delete
-
-appSystem
-→ start displayTask
-→ start otaWorker
-→ app_main() forever
+main / CubeMX
+↓
+RTOS Kernel
+↓
+defaultTask (temporary, 4096 B)
+↓
+app_system_bootstrap()
+│
+├─ create Startup Context / Event Flags
+├─ create shared IPC
+├─ create appMainTask
+├─ create otaWorker
+└─ create displayTask
+↓
+Task-local Init
+↓
+MAIN_DONE + OTA_DONE + DISPLAY_DONE
+↓
+RUNNING / DEGRADED / FAILED
+├─ RUNNING/DEGRADED → SYSTEM_RUN
+└─ FAILED           → SYSTEM_ABORT
+↓
+app_system_bootstrap() return
+↓
+defaultTask delete
+↓
+steady runtime
 ```
 
-S07A 要修正的是 `appSystem` 的长期职责，而不是重做 S07。
+`appSystem` 是普通 Composition Root / Startup Supervisor 模块，不是 Task。
+
+### Startup Policy
+
+- Startup timeout：`5000 ms`。
+- 业务组件明确 init error：上报 DONE + error，System 进入 `DEGRADED`，其他成功组件继续运行。
+- Event Flags / required shared IPC / Task create failure：`FAILED`。
+- Startup timeout：`FAILED`。
+- FAILED 不发布 SYSTEM_RUN，只发布 SYSTEM_ABORT。
+- 高优先级 otaWorker 创建后即使立即抢占，也必须在 local init 后阻塞于 Startup Barrier。
+
+### Platform OS Additions
+
+新增最小 `platform_event_flags`：
+
+```text
+create
+set
+wait
+delete
+```
+
+Impl 使用 CMSIS-RTOS2 `osEventFlags*`。
+
+Platform Thread 新增：
+
+```c
+platform_error_t platform_thread_get_stack_space(
+    const platform_thread_t *thread,
+    uint32 *freeStackBytes);
+```
+
+单位固定为 byte，Impl 使用 `osThreadGetStackSpace()`。
+
+Heap 不增加 Platform abstraction；S07A 验证直接使用 FreeRTOS/GDB。
+
+### App Layer Directory Contract
+
+```text
+01_APP/
+├─ system/
+│  ├─ app_system.*
+│  └─ app_startup.*
+├─ task/
+│  ├─ app_main_task.*
+│  ├─ app_ota_worker.*
+│  └─ app_display_task.*
+├─ runtime/
+│  └─ app_ota_runtime.*
+├─ contract/
+│  └─ app_runtime_contract.h
+└─ README.md
+```
+
+职责：
+
+```text
+system   → Bootstrap / Composition Root / Startup Barrier
+task     → persistent RTOS execution contexts
+runtime  → Application dependency wiring / Runtime Context
+contract → cross-task data contracts
+```
+
+迁移时必须同步 Keil source groups、include paths、Host Test includes 和所有引用。
+
+### Runtime Ownership
+
+```text
+appMainTask
+→ foreground Application behavior / LED
+
+otaWorker
+→ UART/Ymodem/KEY OTA event owner
+→ service_ota execution shell
+
+displayTask
+→ Display Queue consumer
+→ SPI1/ST7789 sole owner
+```
+
+Task-local private init 继续由各自 owner 执行，不搬到 app_system。
+
+### Stack / Heap Frozen First-pass Budget
+
+```text
+defaultTask   4096 B temporary
+appMainTask   2048 B persistent
+otaWorker     4096 B persistent
+displayTask   4096 B persistent
+
+configTOTAL_HEAP_SIZE = 24576 B
+```
+
+要求：
+
+- 不先缩 otaWorker/displayTask stack；
+- 测 startup peak heap / minimum-ever-free heap；
+- 确认 defaultTask 删除后 stack/TCB 经 Idle cleanup 回收；
+- 用 `platform_thread_get_stack_space()` + GDB A5 扫描交叉验证；
+- 覆盖 idle / OTA receive / display render / READY_TO_INSTALL / failure path。
 
 ### Required Reading
 
@@ -58,160 +181,36 @@ S07A 要修正的是 `appSystem` 的长期职责，而不是重做 S07。
 8. S07A `design.md`
 9. S07A `implementation_plan.md`
 
-### Proposed Runtime
-
-```text
-defaultTask
-→ appSystem Bootstrap
-→ create shared IPC/startup sync
-→ create appMainTask / otaWorker / displayTask
-→ tasks perform local init
-→ tasks report READY
-→ appSystem publishes SYSTEM_RUN
-→ appSystem exits
-
-steady runtime:
-appMainTask + otaWorker + displayTask
-```
-
-### Resource Ownership
-
-```text
-appSystem
-→ composition / shared IPC / startup supervision
-
-appMainTask
-→ foreground business / LED
-
-otaWorker
-→ UART/Ymodem/KEY OTA events / service_ota execution shell
-
-displayTask
-→ SPI1/ST7789/display rendering
-```
-
-### App Layer Directory Contract
-
-S07A 同时整理 `01_APP`，使物理目录直接表达职责。目标结构：
-
-```text
-01_APP/
-├─ system/
-│  ├─ app_system.c
-│  ├─ app_system.h
-│  ├─ app_startup.c
-│  └─ app_startup.h
-├─ task/
-│  ├─ app_main_task.c
-│  ├─ app_main_task.h
-│  ├─ app_ota_worker.c
-│  ├─ app_ota_worker.h
-│  ├─ app_display_task.c
-│  └─ app_display_task.h
-├─ runtime/
-│  ├─ app_ota_runtime.c
-│  └─ app_ota_runtime.h
-├─ contract/
-│  └─ app_runtime_contract.h
-└─ README.md
-```
-
-职责：
-
-```text
-system   → Bootstrap / Composition Root / Startup Barrier
-task     → 长期 RTOS execution context
-runtime  → Application dependency wiring / Runtime Context
-contract → App 内跨 Task 数据契约
-```
-
-迁移规则：
-
-```text
-app_system.*          → system/
-app_main.*            → task/app_main_task.*
-app_ota_worker.*      → task/
-app_display_task.*    → task/
-app_ota_runtime.*     → runtime/
-app_runtime_contract.h→ contract/
-```
-
-不要按 OTA / Display / LED 再复制一套 App 子架构，也不要引入无必要的 manager/controller/coordinator 目录。
-
-`app_startup.c/.h` 专门承载 Startup Context、Barrier 状态/位和启动同步辅助逻辑，避免继续把所有启动状态塞入 `app_system.c`。
-
-### Stack / Heap Safety
-
-不得在本阶段一开始压缩现有栈。
-
-当前参考：
-
-```text
-appSystem   4096 B
-otaWorker   4096 B
-displayTask 4096 B
-defaultTask 512 B
-
-configTOTAL_HEAP_SIZE 24576 B
-```
-
-新 appMainTask 第一版建议 2048 B，必须由真实 High Water Mark 再决定是否调整。
-
-必须检查创建新长期 Task 后的 startup heap peak，以及 appSystem 删除后的 heap 回收。
-
 ### Prohibited Changes
 
-- Bootloader implementation；
-- Internal Flash installation；
+- Bootloader / Internal Flash installation；
 - Trial / Confirm / Rollback；
-- OTA Metadata 语义变更；
+- OTA Metadata / Image contract changes；
 - 新的长期 manager task；
-- 忙等 startup synchronization；
-- 无实测依据压缩 stack；
-- 把所有 private hardware init 塞进 appSystem。
-
-### Acceptance Direction
-
-S07A 完成后必须看到：
-
-```text
-defaultTask exit
-appSystem exit after startup
-appMainTask running
-otaWorker blocked/running as expected
-displayTask blocked/running as expected
-no startup race
-safe stack
-safe heap
-S07 full regression pass
-```
+- busy-loop startup wait；
+- 无证据压缩 stack；
+- 把所有 private hardware init 塞进 app_system；
+- 为 S07A 新建 heap manager 或大型 RTOS diagnostics framework；
+- 按 OTA / Display / LED 再复制一套 App 子架构。
 
 ## Implementation Output
 
 - Status: `NOT_STARTED`
 
-### Completed Work
+### Completed Design Work
 
-- S07A Stage created.
-- Initial RTOS startup refactor design drafted.
-- App layer directory role model (`system/task/runtime/contract`) frozen in design.
-- `app_main.* → app_main_task.*` rename direction frozen.
-- Preliminary implementation plan drafted.
+- S07A Stage created and inserted before S08.
+- Startup model frozen.
+- Independent appSystem Task removed from target architecture.
+- Startup Event Flags API frozen.
+- RUNNING / DEGRADED / FAILED policy frozen.
+- Startup timeout frozen at 5000 ms.
+- Stack first-pass budget frozen.
+- Stack-space diagnostic API frozen.
+- `01_APP/system/task/runtime/contract` directory contract frozen.
+- `app_main.* → app_main_task.*` rename frozen.
+- Implementation plan finalized.
 - No production code changed yet.
-
-### Changed Files
-
-- `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md`
-- `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/implementation_plan.md`
-- `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/handoff.md`
-- Roadmap / current context files as recorded by subsequent commits.
-
-### Open Design Items
-
-- Startup Event Flags final public API；
-- startup timeout / fatal policy；
-- appMainTask initial stack budget final value；
-- stack watermark 是否进入正式 Platform API。
 
 ### Verification Results
 
@@ -219,14 +218,14 @@ Not started.
 
 ### Known Issues
 
-None. Stage is intentionally in design discussion.
+No external blocker. Main implementation risks are startup heap peak, task-create scheduling order, and preserving S07 runtime behavior after file relocation.
 
 ### Review Focus
 
-- 是否真正分离 Bootstrap 与 Runtime；
-- `01_APP/system/task/runtime/contract` 是否与真实职责一致，是否避免目录过度抽象；
-- `app_main_task` 是否真正成为长期 foreground task，而不是新的混合入口；
-- 是否保持 Task-local ownership；
-- 是否存在高优先级 Task creation race；
-- startup stack/heap peak 是否有证据；
-- 是否完整保留 S07 功能。
+- FreeRTOS Task List must not contain appSystem after refactor；
+- defaultTask must not overflow during Bootstrap；
+- Startup Barrier must be broadcast-safe；
+- DEGRADED must preserve unrelated working components；
+- Task-local ownership must remain intact；
+- App directory relocation must not create duplicate source/include paths；
+- S07 full regression must remain PASS.
