@@ -8,6 +8,8 @@
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
 - S08 Review Commit: `7dc5f7c`
+- S09 Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
+- S09 Design / Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
