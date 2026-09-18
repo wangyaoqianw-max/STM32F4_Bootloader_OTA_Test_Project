@@ -5,7 +5,7 @@
 - Stage: `S07A_RTOS_Startup_Refactor`
 - Status: `READY_FOR_VERIFICATION`
 - Implementation Commit: `306c76b`
-- Verification Commit: `Not created yet`
+- Verification Commit: `8173c43` (`docs: record s07a verification evidence`)
 - Branch: `main`
 - Verification Date: `2026-09-18`
 

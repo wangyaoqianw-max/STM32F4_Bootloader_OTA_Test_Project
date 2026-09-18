@@ -10,7 +10,7 @@
 - Design Reference Update Commit: `4cc1d3defb56862e7d491f724cce8ed54d29cb74`
 - Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
 - Implementation Commit: `306c76b`
-- Verification Commit: `Not created yet`
+- Verification Commit: `8173c43` (`docs: record s07a verification evidence`)
 
 ## Implementation Input
 
