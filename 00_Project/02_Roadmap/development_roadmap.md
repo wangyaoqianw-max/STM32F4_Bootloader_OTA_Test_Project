@@ -92,7 +92,7 @@ S12  增加 OTA 安全机制实验
 | `S05C_Logic_Analyzer` | 在 Toolkit 中增加可复现的 SPI / I2C 外部总线证据能力 | sigrok Executor / Parser；Capture / Decode Workflow；Effective Config；Logic Analyzer profiles；W25Q64 / AT24C02 项目只读断言；Agent 临时映射覆盖 | S05B；sigrok-cli；USB Logic Analyzer；现有 SPI2 / Software I2C 接线 | `CLOSED` | sigrok discovery、SPI/W25Q64、I2C/AT24C02、Structured Result、Golden Fixtures、Host/Toolkit 回归、Verification 和 Review 通过；UART/GPIO 延期 |
 | `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `CLOSED` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；成功/失败路径与 Toolkit 回归通过 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `CLOSED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
-| `S07A_RTOS_Startup_Refactor` | 整理 Application RTOS 启动生命周期并验证 RAM 安全 | `defaultTask → app_system_bootstrap() → appMainTask/otaWorker/displayTask`；Event Flags Startup Barrier；RUNNING/DEGRADED/FAILED；App 目录整理；Stack/Heap High Water | S06；S07 | `ACTIVE` | 不再创建 appSystem Task；defaultTask Bootstrap 后退出；长期 Task 在显式 `SYSTEM_RUN` 后运行；无启动竞态；Stack/Heap 有真实证据；S07 全链路无回归 |
+| `S07A_RTOS_Startup_Refactor` | 整理 Application RTOS 启动生命周期并验证 RAM 安全 | `defaultTask → app_system_bootstrap() → appMainTask/otaWorker/displayTask`；Event Flags Startup Barrier；RUNNING/DEGRADED/FAILED；App 目录整理；Stack/Heap High Water | S06；S07 | `CLOSED` | 不再创建 appSystem Task；defaultTask Bootstrap 后退出；长期 Task 在显式 `SYSTEM_RUN` 后运行；无启动竞态；Stack/Heap 有真实证据；S07 全链路无回归 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；S07A；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
 | `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `TRIAL / CONFIRMED / ROLLBACK`；`firmware_confirm()`；IWDG；Reset Cause；Failure Counter；Previous Confirmed Image | S09 | `PLANNED` | 正常 Trial 可 Confirm；故障/未 Confirm 可检测；达到阈值可自动回滚 |
@@ -180,7 +180,7 @@ otaWorker   → displayTask : Queue
 
 S06 已完成 ST7789/LCD Board Adaptation、三线程 Runtime、OTA→Display Queue、阻塞/资源所有权审查、Stack/Heap 诊断以及成功/失败 OTA 并发板测。S05 测试线程仅作为历史实证输入，正式 Runtime 以 S06 Handoff 为准。
 
-S07A 将在不改变上述业务 ownership 和 IPC 语义的前提下，重新定义启动生命周期：不再创建独立 `appSystem` Task；CubeMX `defaultTask` 作为唯一临时 Bootstrap execution context，直接执行 `app_system_bootstrap()`，长期前台业务迁移到独立 `appMainTask`。S07A 完成后，以 S07A Handoff 作为最新 Application Startup Contract。
+S07A 已在不改变上述业务 ownership 和 IPC 语义的前提下完成启动生命周期重构：不再创建独立 `appSystem` Task；CubeMX `defaultTask` 作为唯一临时 Bootstrap execution context，直接执行 `app_system_bootstrap()`，长期前台业务迁移到独立 `appMainTask`。当前 Application Startup Contract 以 S07A Handoff / Review 为准。
 
 ## 6. Deferred / On-demand Inputs
 
@@ -212,24 +212,13 @@ Power-cycle Persistence PASS
 最近关闭阶段：
 
 ```text
-S07_OTA_Service_V1
+S07A_RTOS_Startup_Refactor
 Roadmap State: CLOSED
 Workflow Status: CLOSED / PASS
 Review: PASS
 ```
 
-S07 已完成 Application OTA Service V1、KEY_1 双确认、Metadata V2、External A/B Firmware Image Slot、Factory baseline、PENDING 持久化和真实板验收。
-
-当前活动阶段：
-
-```text
-S07A_RTOS_Startup_Refactor
-Roadmap State: ACTIVE
-Workflow Status: READY_FOR_IMPLEMENTATION
-Current action: Implementation
-```
-
-S07A 只处理 Application RTOS 启动生命周期：
+S07A 已完成：
 
 ```text
 defaultTask
@@ -243,13 +232,13 @@ defaultTask
 → appMainTask + otaWorker + displayTask steady runtime
 ```
 
-本阶段特别要求重新验证 startup heap peak、appSystem 删除后的 heap 回收和各长期 Task Stack High Water Mark。未获得真实证据前不压缩已有 otaWorker/displayTask stack。
+验证已覆盖 Application 目录整理、Event Flags、Task safe termination、Stack/Heap、DEGRADED/FAILED fault injection，以及 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 主要物理回归。
 
-下一计划阶段保持：
+下一计划阶段：
 
 ```text
 S08_Bootloader_Foundation
 Roadmap State: PLANNED
 ```
 
-S08 只有在 S07A Runtime 启动模型和 RAM 安全验证完成后再启动。
+下一步可开始 S08 的设计讨论；尚未创建或实施 S08。
