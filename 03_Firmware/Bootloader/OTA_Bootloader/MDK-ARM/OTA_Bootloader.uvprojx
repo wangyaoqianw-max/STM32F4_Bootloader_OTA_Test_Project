@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE,CMB_USER_CFG</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Firmware;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Boot;../Config;../Diagnostics;../Firmware;../Drivers;../Drivers/Bus/SPI;../Drivers/Bus/SoftI2C;../Drivers/W25Q64;../Drivers/AT24C02;../Vendor;../Vendor/RTT;../Vendor/CmBacktrace;../../../Shared;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -555,6 +555,41 @@
               <FileName>boot_metadata.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Firmware/boot_metadata.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers/Bus</GroupName>
+          <Files>
+            <File>
+              <FileName>boot_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/Bus/SPI/boot_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_soft_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/Bus/SoftI2C/boot_soft_i2c.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers/W25Q64</GroupName>
+          <Files>
+            <File>
+              <FileName>boot_w25q64.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/W25Q64/boot_w25q64.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers/AT24C02</GroupName>
+          <Files>
+            <File>
+              <FileName>boot_at24c02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/AT24C02/boot_at24c02.c</FilePath>
             </File>
           </Files>
         </Group>
