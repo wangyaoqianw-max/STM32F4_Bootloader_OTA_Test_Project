@@ -93,7 +93,7 @@ S12  增加 OTA 安全机制实验
 | `S06_RTOS_Runtime` | 正式化 Application 后台 OTA 所需的 RTOS Runtime 与并发模型，并接入基础 LCD 状态显示 | ST7789/SPI1 Board Adaptation；`appSystem + otaWorker + displayTask`；UART Notification；OTA→Display Queue；Display Model；Blocking/Timeout/Ownership；并发与恢复板测 | S01；S05；S05A；S05B；S05C；现有 FreeRTOS/Platform RTOS abstraction | `CLOSED` | LCD 可用；三线程按设计阻塞/唤醒；v1.0 前台 LED 与后台 Firmware 接收并发；LCD 显示 OTA 状态/进度；UART/Flash/日志资源边界明确；成功/失败路径与 Toolkit 回归通过 |
 | `S07_OTA_Service_V1` | 完成 Application 侧 OTA 下载链 | OTA Service；Inactive Slot；启动/控制 Ymodem；Firmware Validation；更新 EEPROM Metadata；设置 `PENDING`；请求 Reset | S04；S05；S06 | `CLOSED` | `PC → UART/Ymodem → External Flash → Validation → PENDING → Reset` 完整闭环；失败下载不破坏当前 APP/Confirmed Image |
 | `S07A_RTOS_Startup_Refactor` | 整理 Application RTOS 启动生命周期并验证 RAM 安全 | `defaultTask → app_system_bootstrap() → appMainTask/otaWorker/displayTask`；Event Flags Startup Barrier；RUNNING/DEGRADED/FAILED；App 目录整理；Stack/Heap High Water | S06；S07 | `CLOSED` | 不再创建 appSystem Task；defaultTask Bootstrap 后退出；长期 Task 在显式 `SYSTEM_RUN` 后运行；无启动竞态；Stack/Heap 有真实证据；S07 全链路无回归 |
-| `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 独立工程；Internal Flash Layout；Vector Table；MSP / Reset_Handler / VTOR；中断/外设清理；APP Jump；Boot Reason 日志 | S01；S04；S07A；Internal Flash Layout | `PLANNED` | 无升级请求时稳定跳转到 APP；非法 APP 被拒绝；跳转后中断正常 |
+| `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 64 KiB/448 KiB Internal Flash Layout；Bare-metal HAL/CMSIS；RTT + lightweight boot_log + CmBacktrace；MSP / Reset_Handler / VTOR；SysTick/NVIC cleanup；APP Jump | S01；S04；S07A | `ACTIVE` | 双工程地址无重叠；诊断可用；合法 APP 稳定启动；非法 APP 被拒绝；跳转后 FreeRTOS/中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 读取 Metadata；识别 PENDING；再次校验；擦写 Internal Flash；写后 CRC；启动新 APP | S07；S08 | `PLANNED` | 完成 V1.0 → V1.1 OTA 安装；写入/校验失败不误标成功 |
 | `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `TRIAL / CONFIRMED / ROLLBACK`；`firmware_confirm()`；IWDG；Reset Cause；Failure Counter；Previous Confirmed Image | S09 | `PLANNED` | 正常 Trial 可 Confirm；故障/未 Confirm 可检测；达到阈值可自动回滚 |
 | `S11_Diagnostics_UI` | 在完整 OTA/Bootloader 可靠性闭环上扩展高级诊断与演示 UI | 复用 S06 Display Runtime；增加 Version、Slot、CRC、Boot State、Trial/Confirmed/Rollback、Reset Cause、Error History；可选 CTP/LVGL | S10；S06 Display Runtime；必要的 LCD/CTP 资料 | `PLANNED` | 不依赖 RTT 即可观察完整 OTA/Bootloader 关键状态；UI 故障不影响 OTA 核心逻辑；不重复实现底层 LCD Driver |
@@ -234,11 +234,12 @@ defaultTask
 
 验证已覆盖 Application 目录整理、Event Flags、Task safe termination、Stack/Heap、DEGRADED/FAILED fault injection，以及 S07 KEY/Ymodem/PENDING/Reset/interrupted/bad CRC/duplicate KEY 主要物理回归。
 
-下一计划阶段：
+当前活动阶段：
 
 ```text
 S08_Bootloader_Foundation
-Roadmap State: PLANNED
+Roadmap State: ACTIVE
+Workflow Status: READY_FOR_IMPLEMENTATION
 ```
 
-下一步可开始 S08 的设计讨论；尚未创建或实施 S08。
+S08 已创建独立裸机工程，并冻结 Flash Layout、RTT/CmBacktrace 诊断与 APP Jump 三项范围。下一步按 implementation plan 开始实施；S09 Firmware Installation 保持 PLANNED。
