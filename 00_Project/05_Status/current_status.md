@@ -3,13 +3,15 @@
 ## Context Metadata
 
 - Active Stage: `S09_Firmware_Installation`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
 - S08 Review Commit: `7dc5f7c`
 - S09 Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
 - S09 Design / Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
+- S09 Implementation Commits: `6e3fef5`, `c8e0c07`, `1f5b4d9`, `fbe8e37`, `e4d6816`, `69c426a`, `28feb5a`, `53acd8e`
+- S09 Verification Evidence: `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -58,7 +60,7 @@
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，状态为 `READY_FOR_IMPLEMENTATION`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，Task 0–7 的主要实现和自动化代码验证已完成，状态为 `IN_PROGRESS`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -487,7 +489,7 @@ Power-cycle Persistence PASS
 当前工作流状态：
 
 ```text
-READY_FOR_IMPLEMENTATION
+IN_PROGRESS
 ```
 
 冻结范围：
@@ -513,3 +515,17 @@ TRIAL       installed, not confirmed
 ```
 
 S10 继续负责 Confirm / Watchdog / Failure Counter / Rollback。
+
+施工与验证摘要：
+
+```text
+四项 S09 Host Test                 PASS
+Bootloader Build                   PASS, 0 error / 0 warning
+Application Build                  PASS, 0 error / 0 warning
+Bootloader ROM                     21104 bytes / 20.61 KiB
+Bootloader BIN                     11688 bytes / 11.41 KiB
+代码验证                           PASS
+硬件验证                           PENDING
+```
+
+自动 Factory Restore 重试在外部 Slot 擦除阶段返回 `PLATFORM_ERR_TIMEOUT`，Ymodem 未收到初始 `C`；依赖人工按键、复位/断电配合的正常安装和 Fault Injection 延期到下一次板测。当前不推进 `READY_FOR_VERIFICATION` 或 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。

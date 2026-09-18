@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S09_Firmware_Installation`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `IN_PROGRESS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -21,6 +21,8 @@
 - S08 Review Commit: `7dc5f7c`
 - S09 Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
 - S09 Design / Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
+- S09 Implementation Commits: `6e3fef5`, `c8e0c07`, `1f5b4d9`, `fbe8e37`, `e4d6816`, `69c426a`, `28feb5a`, `53acd8e`
+- S09 Verification Evidence: `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -52,7 +54,7 @@
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，状态为 `READY_FOR_IMPLEMENTATION`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
+S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，Task 0–7 的主要实现和自动化代码验证已完成，状态为 `IN_PROGRESS`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -519,11 +521,11 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，当前状态为 `READY_FOR_IMPLEMENTATION`；下一步按 `implementation_plan.md` 开始 Task 0，并在施工前读取固件代码规范与真实工程接口。
+S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，Task 0–7 的代码实现、注释补齐、Host Test 和固件构建已完成；当前状态为 `IN_PROGRESS`。下一步由 Project Owner 在可配合时重新建立 Factory Restore baseline，并补齐 S09 正常安装、复位/断电和 Fault Injection 硬件证据。
 
 ## S09 Firmware Installation Current Design
 
-当前状态：`READY_FOR_IMPLEMENTATION`。
+当前状态：`IN_PROGRESS`。
 
 冻结主链：
 
@@ -560,3 +562,14 @@ PENDING
 00_Project/03_Stages/S09_Firmware_Installation/implementation_plan.md
 00_Project/03_Stages/S09_Firmware_Installation/handoff.md
 ```
+
+当前施工结论：
+
+```text
+代码验证：PASS
+硬件验证：PENDING
+Bootloader ROM：21104 bytes / 20.61 KiB < 64 KiB
+Bootloader BIN：11688 bytes / 11.41 KiB < 64 KiB
+```
+
+S09 已完成 Bootloader contract、最小 Driver、APP-only Internal Flash、Candidate pre-validation、Installer、`PENDING → TRIAL` 原子提交和 Boot Main 编排。新增 C 文件已按 `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md` 补齐文件头、公开 API、类型、边界和硬件约束注释。自动 Factory Restore 重试在外部 Slot 擦除阶段返回 `PLATFORM_ERR_TIMEOUT`，相关证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
