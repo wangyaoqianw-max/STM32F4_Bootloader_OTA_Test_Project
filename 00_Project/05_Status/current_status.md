@@ -19,6 +19,10 @@
 - S05B Implementation Plan Commit: `3a055a84397ab5eab6dcddf2dea0590c97daff4c`
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
+- S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
+- S07A Design Commit: `5ce9ceffea60fde87fe00107bf1d2648a8e26b62`
+- S07A Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
+- S07A Handoff Commit: `5c1173207d8d7163339943d86e8a969317daa1c6`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `5c26fe63`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
@@ -47,7 +51,7 @@
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
-冻结 Runtime：
+S06 已验证 Runtime（S07A 将重构 `appSystem` 的启动职责）：
 
 ```text
 appSystem      → 前台 Application / Demo behavior
