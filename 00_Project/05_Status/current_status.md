@@ -56,7 +56,7 @@
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
-S06 已验证 Runtime（S07A 将重构 `appSystem` 的启动职责）：
+S06 已验证 Runtime（历史合同；S07A 已替代其启动职责）：
 
 ```text
 appSystem      → 前台 Application / Demo behavior
