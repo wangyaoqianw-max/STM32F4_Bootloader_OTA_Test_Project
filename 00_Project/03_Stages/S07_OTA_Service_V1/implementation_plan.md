@@ -255,18 +255,18 @@ upgradeState   = NONE
 
 - [x] Step 1: 完成 Factory baseline，确认 Internal v1.0 + Slot A v1.0 VALID + Metadata confirmed A。已在 Task 8 的独立临时板测中完成；当前设备随后进入 S07 PENDING 测试状态。
 - [x] Step 2: Reset 后确认正常 foreground Application、LCD、RTT 和任务运行无 S06 回归。已完成正式 Application 恢复、Flash/RTT 冒烟；完整显示交互仍按后续步骤单独验收。
-- [ ] Step 3: 按 KEY_1，确认进入 OTA READY / Ymodem handshake；Sender 等 `'C'` 后传输新 `.img`。
-- [ ] Step 4: 确认 foreground behavior 持续，LCD RECEIVING progress → VERIFYING → READY_TO_INSTALL，target 为 non-confirmed Slot。
-- [ ] Step 5: READY_TO_INSTALL 前复位一次，确认新 image 可保持 VALID 但 Metadata 无 PENDING，旧 APP 正常继续。
-- [ ] Step 6: 再次完成 download，按第二次 KEY；确认 PENDING atomic commit 后才 reset。
+- [x] Step 3: 真实 PA0 启动 OTA；COM9 Sender 收到 `'C'` 后完成新 `.img` 传输。
+- [ ] Step 4: foreground/Service/GDB 已确认持续运行、target 为 non-confirmed Slot，LCD `RECEIVING progress → VERIFYING → READY_TO_INSTALL` 的肉眼全流程确认仍待用户回报。
+- [x] Step 5: READY_TO_INSTALL 前真实复位；复位前 GDB 为 `state=4` 且 `77468/77468`，复位后 RTT 启动正常、GDB 为 `state=0 IDLE`，没有 PENDING。
+- [x] Step 6: 真实 PA0 第二次确认；Metadata PENDING 已回读，随后发生复位请求。
 - [ ] Step 7: Reset 后 OTA_APP startup diagnostics 读取相同 `pendingSlot` / `upgradeState=PENDING` / valid sequence / CRC / commit marker。
-- [ ] Step 8: 验证 interrupted transfer：target INVALID、new Header 未提交、confirmed image untouched、foreground unaffected。
-- [ ] Step 9: 验证 bad CRC / invalid image：不得进入 READY_TO_INSTALL，不得写 PENDING。
-- [ ] Step 10: RECEIVING / VERIFYING / COMMITTING 中重复按 KEY，确认被忽略且 session 不损坏。
-- [ ] Step 11: 如需要确认 SPI/I2C 实际事务，复用 `toolkit logic` 采集，不建立临时平行工具。
-- [x] Step 12: 已将当前代码验证、COM9 传输、GDB 模拟按键和 Metadata 持久化证据写入 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`；未完成的物理验收项保持 PENDING。
+- [x] Step 8: 真实 interrupted transfer：target B 为 INVALID、未提交新 Header、confirmed Slot A 和 Metadata pending/upgrade 保持安全。
+- [x] Step 9: 真实坏 CRC 镜像：Service 进入 FAILED，不进入 READY_TO_INSTALL，不写 PENDING。
+- [x] Step 10: 真实接收过程中重复按 KEY；完整 session 仍到 READY_TO_INSTALL，未误提交 PENDING。
+- [x] Step 11: 本轮已有 RTT/GDB/EEPROM 状态证据，未发现需要额外 SPI/I2C waveform 的失败定位需求；保持 NOT_REQUIRED_THIS_RUN。
+- [x] Step 12: 已将当前代码验证、真实 PA0/COM9 传输、GDB 状态回读、失败路径和 Metadata 持久化证据写入 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`；LCD 肉眼确认和 Project Owner 验收保持 PENDING。
 
-Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成可重复的代码、工具链、COM9 YMODEM 传输和 Metadata 持久化证据；真实 PA0 按键、LCD 全流程观察、中断传输、坏 CRC、重复按键和最终物理验收留待后续板测。不得据此将 S07 标记为 `CLOSED / PASS`。
+Task 10 当前状态：`PARTIAL / HARDWARE_ACCEPTANCE_PENDING`。本轮已完成真实 PA0、COM9 YMODEM、READY 复位、中断、坏 CRC、重复按键和 PENDING 持久化验收；LCD 状态的肉眼全流程确认及最终 Project Owner 确认仍未完成。不得据此将 S07 标记为 `CLOSED / PASS`。
 
 ## Task 11: Documentation, Handoff and Review Readiness
 

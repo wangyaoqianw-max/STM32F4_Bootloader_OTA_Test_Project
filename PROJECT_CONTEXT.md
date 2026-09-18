@@ -34,7 +34,7 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
 - Current Role: `Implementation Role`
-- Updated At: `2026-09-17`
+- Updated At: `2026-09-18`
 
 ## Current Goal
 
@@ -61,9 +61,9 @@ S06 已验证 LCD 状态显示、前台 LED 与后台 Ymodem 并发、成功/失
 
 ## S07 OTA Service V1 Current Status
 
-S07 已完成 Task 0–9 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已获得 COM9 YMODEM 传输、GDB 模拟按键和 EEPROM durable `PENDING` 回读证据。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，Task 11 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
+S07 已完成 Task 0–9 的代码实现、Host/Toolkit 回归和生产依赖隔离；Task 10 已在真实板上完成 PA0 启动/确认、COM9 YMODEM、READY 复位、中断、坏 CRC、重复 KEY 和 EEPROM durable `PENDING` 回读。100% 终止进度事件洪泛问题已在 `2ab34f1` 修复。Task 10 验证报告为 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`，Task 11 Review 为 `00_Project/03_Stages/S07_OTA_Service_V1/review.md`。
 
-当前结论：代码验证 `PASS`，硬件验证 `PARTIAL / PENDING`。真实 PA0 按键、LCD 全流程观察、中途复位、interrupted transfer、bad CRC 和重复 KEY 尚未完成，阶段保持 `IN_PROGRESS`，不得标记 `CLOSED / PASS`。当前设备 EEPROM 保留 `pendingSlot=B`、`upgradeState=PENDING`，S07 不消费该状态；后续板测需先按安全 provisioning 流程恢复 baseline。
+当前结论：代码验证 `PASS`，硬件验证 `PARTIAL / PENDING`。真实 PA0、COM9、失败路径和 Metadata 证据已通过；LCD `RECEIVING → VERIFYING → READY/FAILED` 的肉眼全流程确认及最终 Project Owner 确认仍未完成，阶段保持 `IN_PROGRESS`，不得标记 `CLOSED / PASS`。当前设备在重复 KEY 验收后保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE`、`upgradeState=NONE`；S07 未执行 S09/S10 的安装、Trial、Confirm 或 Rollback。
 
 ## Stable Toolkit Architecture
 

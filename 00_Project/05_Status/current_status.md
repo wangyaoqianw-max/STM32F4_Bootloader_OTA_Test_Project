@@ -39,7 +39,7 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S07_OTA_Service_V1`
 - Current Role: `Implementation Role`
-- Updated At: `2026-09-17`
+- Updated At: `2026-09-18`
 
 ## Current Goal
 
@@ -66,9 +66,9 @@ otaWorker   → displayTask : Queue
 
 ## S07 OTA Service V1 Current State
 
-S07 已完成 Task 0–9 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在 CH340 `COM9` 上完成了 1.1.0 YMODEM 传输、GDB 模拟 KEY 路径和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
+S07 已完成 Task 0–9 实现与代码回归，并完成 Task 8 Factory baseline。Task 10 在真实 CH340 `COM9` 上完成了 PA0 启动/确认、1.1.0 YMODEM 传输、READY 复位、中断、bad CRC/invalid image、重复 KEY 和 Metadata durable `PENDING` 回读；进度 100% 队列洪泛问题已由 `2ab34f1` 修复。代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`，详细证据见 `04_Test/Reports/Stages/S07_OTA_Service_V1/verification.md`。
 
-真实 PA0 按键、LCD 全流程观察、READY 前复位、interrupted transfer、bad CRC/invalid image、重复 KEY 和最终 Project Owner 确认留待下一次板测。当前设备保留 `pendingSlot=B / upgradeState=PENDING`，后续开始新会话前必须先恢复安全 baseline；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。
+当前仍待确认 LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼全流程和最终 Project Owner 硬件签字。设备当前保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE / upgradeState=NONE`；S07 不实现 Bootloader consume、Internal Flash Installation、Trial、Confirm 或 Rollback。
 
 S05A 已完成 GDB 自动化与真实板测。手工 GDB 控制能力、Runtime Snapshot resume/halt、失败路径、进程清理和 J-Link 释放均已验证。CmBacktrace 源码已完成 Keil/FreeRTOS/RTT 工程接入；Invalid Address、Undefined Instruction、Divide by Zero 三类受控 Fault 均已完成真实板端 GDB/RTT 采集和现场交叉核对。S04 Reset / Power-cycle Persistence 补充回归也已完成。
 

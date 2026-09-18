@@ -6,10 +6,10 @@
 - Status: `IN_PROGRESS / HARDWARE_ACCEPTANCE_PENDING`
 - Branch: `main`
 - Design Commit: `a5c4c1b`
-- Implementation Head Reviewed: `e60273f`
-- Verification Commit: `e60273f`
+- Implementation Head Reviewed: `37a0d09`
+- Verification Commit: `TBD (current board-acceptance documentation commit)`
 - Review Commit: `9734a18`
-- Review Date: `2026-09-17`
+- Review Date: `2026-09-18`
 - Reviewer Role: `Review Role`
 
 ## Review Scope
@@ -20,8 +20,8 @@
 
 ### Blocking for Stage Closure
 
-1. 真实 PA0 `KEY_1` start/confirm 尚未执行；当前只有 GDB 调用公开 BSP EXTI forwarding 的模拟证据。
-2. LCD 全流程人工观察、READY 前复位、interrupted transfer、bad CRC/invalid image 和重复 KEY 板测尚未完成。
+1. LCD `RECEIVING → VERIFYING → READY/FAILED` 全流程仍缺少操作者肉眼确认记录。
+2. 最终 Project Owner 硬件验收/签字尚未完成。
 
 这些是验收证据缺失，不是通过修改代码或文档可以消除的实现问题。因此阶段不得进入 `CLOSED / PASS`。
 
@@ -33,7 +33,7 @@
 
 1. Keil clean rebuild 当前为 `0 errors, 13 warnings`；警告来自既有 GPIO/UART/FreeRTOS 枚举边界检查，Toolkit 因 warning policy 返回 WARN。未将无关底层格式化或重构带入 S07。
 2. `service_ota_init()` 只初始化 RAM Service 对象，Metadata 在 `service_ota_start()` 时加载；S07 不消费启动时的 `PENDING`，原始 EEPROM 持久化已通过临时只读板测回读。该边界与后续 Bootloader consumption 分离并已记录在 handoff。
-3. 当前测试设备已经留下 durable `pendingSlot=B / upgradeState=PENDING`，后续板测开始新会话前必须按计划重新建立允许的 baseline，不得无条件擦除未知状态。
+3. 当前测试设备在重复 KEY 验收后保持 `READY_TO_INSTALL`，Metadata 为 `pendingSlot=NONE / upgradeState=NONE`；未执行 S09/S10 consume 或安装路径。
 
 ## Review Results
 
@@ -46,8 +46,10 @@
 | Header-last and failure safety | PASS (code) | Production sink Host tests、Service Host tests |
 | C code style | PASS for S07 changes | 已按 `嵌入式C代码规范.md` 复核新增/修改文件 |
 | Host / Toolkit / Keil regression | PASS | verification.md；Keil 0 errors |
-| COM9 transfer / durable PENDING | PARTIAL hardware evidence | 真实串口传输和 EEPROM 回读有证据；按键路径为 GDB 模拟 |
-| Physical board acceptance | PENDING | 由 Project Owner 后续完成 |
+| COM9 transfer / durable PENDING | PASS | 真实 PA0 启动/确认、COM9 传输和 Metadata PENDING 回读均有证据 |
+| READY reset / interrupted / bad CRC / duplicate KEY | PASS | 真实板 GDB 状态回读分别证明安全复位、Slot B INVALID、FAILED/no PENDING 和重复键忽略 |
+| Physical LCD full-flow observation | PENDING | RTT/Display 初始化通过，RECEIVING/VERIFYING/READY/FAILED 肉眼记录待补 |
+| Physical board acceptance | PENDING | 等 Project Owner 确认 |
 | S09/S10 boundary | PASS | 未实现 Internal Flash Installation、Trial、Confirm、Rollback execution |
 
 ## Decision

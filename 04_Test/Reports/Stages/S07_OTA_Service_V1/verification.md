@@ -7,13 +7,13 @@
 - Branch: `main`
 - Design Commit: `a5c4c1b`
 - Implementation Commits: `9adba52`, `13d67ef`, `6ac6a49`, `bb0f96b`, `7536cf0`, `29c1f35`, `e0b8b8f`, `b9c6198`, `4e5a8e5`, `ae26497`, `a8045d2`, `23ac3db`, `2ab34f1`
-- Verification Commit: `e60273f`
-- Verification Date: `2026-09-17`
+- Verification Commit: `TBD (current board-acceptance documentation commit)`
+- Verification Date: `2026-09-18`
 - Coding Standard Review: `PASS for S07 changes`
 
 ## Scope
 
-本报告覆盖 S07 已完成的代码、Host、Toolkit、Keil Build、正式 Application 恢复，以及当前可获得的 COM9 板级证据。真实 PA0 物理按键和失败路径板测按用户安排留待后续，不用代码验证替代硬件结论。
+本报告覆盖 S07 已完成的代码、Host、Toolkit、Keil Build、正式 Application 恢复，以及 2026-09-18 在 CH340 `COM9` 上完成的真实 PA0、YMODEM、Metadata 和失败路径板级证据。LCD 文案是否按验收条件被肉眼完整确认，仍单独保留为待确认项，不用 RTT 或代码状态替代视觉验收。
 
 S07 仍严格止于：
 
@@ -45,16 +45,16 @@ Internal Flash Installation、Trial、Confirm 和 Rollback execution 不属于�
 
 | Acceptance item | Result | Evidence / limitation |
 | --- | --- | --- |
-| Factory baseline | PASS | Task 8 临时板测：Slot A `1.0.0` VALID、Metadata confirmed A、pending NONE、upgrade NONE；COM9 传输 67664 bytes / 67 blocks / retries 2 |
-| CH340 YMODEM transfer on COM9 | PASS (simulated start path) | Python sender：77456 bytes / 76 blocks / exit 0 / retries 2；sender 完成 EOT/Block 0；RTT `READY_TO_INSTALL`, target Slot B, `dropped=0`, `errors=0` |
-| Second confirm / reset request | PASS (GDB-simulated BSP EXTI call) | 通过 GDB 调用公开 BSP EXTI forwarding，Session 进入 reset 流程；GDB clean continue/disconnect，随后 RTT 为正常重启日志。不是物理 PA0 按键证据 |
-| Durable Metadata PENDING | PASS (direct EEPROM read) | 临时只读 S04 板测恢复并回读：copy A/B valid=1、selected copy=1、sequence=6、confirmed A、pending B、Slot A/B VALID、upgrade `PENDING`、confirmed version `1.0.0`；临时代码已完整恢复 |
-| S06 foreground / LCD full flow | PENDING | 有启动和 Display init RTT 冒烟；未完成人工 LCD 全流程观察 |
-| Physical KEY_1 PA0 start/confirm | PENDING | 本轮未进行真实按键操作，不能以 GDB 模拟替代 |
-| READY reset before PENDING | PENDING | 尚未完成真实板上的中途复位验收 |
-| Interrupted transfer | PENDING | 尚未完成本阶段独立的真实失败路径板测 |
-| Bad CRC / invalid image | PENDING | 尚未完成真实板测 |
-| Duplicate KEY during transfer/verify/commit | PENDING | 尚未完成真实板测 |
+| Factory baseline | PASS | 临时 S07 provisioning board test 严格校验后恢复：Slot A `1.0.0` VALID、Slot B EMPTY、confirmed A、pending NONE、upgrade NONE；RTT 记录 `known PENDING reset PASS source=1 committed=2 baseline=1.0.0` |
+| CH340 YMODEM transfer on COM9 | PASS | 真实 PA0 启动；Python sender 在 `COM9/115200` 完成 `77468` bytes / `76` blocks / exit `0` / retries `2`，RTT/GDB 最终为 Slot B `READY_TO_INSTALL`、`77468/77468` |
+| Second confirm / reset request | PASS | 用户真实按下第二次 PA0；复位后 RTT 为正常 Application/LCD 启动日志，GDB 回读 Metadata `confirmed=0/pending=1/slotA=1/slotB=1/upgrade=1/sequence=10`。复位释放时产生的按键再次被新一轮 Service 采到并显示 `FAILED/INVALID_STATE`，不改变已提交 PENDING |
+| Durable Metadata PENDING | PASS | 第二次真实 PA0 后 GDB 只读回读 `pendingSlot=B`、`upgradeState=PENDING`、Slot A/B VALID、sequence `10`；未执行 Bootloader consume 或 S09/S10 安装 |
+| S06 foreground / LCD full flow | PARTIAL | 多轮 RTT 均确认 foreground/Application、displayTask、Display SPI/init/start、初始渲染和 backlight 成功；LCD `RECEIVING → VERIFYING → READY/FAILED` 肉眼确认待用户回报 |
+| Physical KEY_1 PA0 start/confirm | PASS | 真实 PA0 启动 YMODEM；真实第二次 PA0 触发 PENDING 提交并复位。不是 GDB 模拟按键 |
+| READY reset before PENDING | PASS | 真实传输完成后 GDB 为 `state=4`、`received=expected=77468`；Toolkit GDB `monitor reset → continue` 后 RTT 捕获正常启动，GDB 为 `state=0 IDLE`，没有 PENDING 提交 |
+| Interrupted transfer | PASS | 真实启动后 Ctrl+C 中止发送；GDB 为 `state=2 RECEIVING`、target B、`received=0`，Metadata 为 Slot A VALID / Slot B INVALID / pending NONE / upgrade NONE / sequence `16` |
+| Bad CRC / invalid image | PASS | 临时镜像仅篡改 Payload 字节、Header 保持不变；真实 COM9 完整发送后 GDB 为 `state=7 FAILED`、`error=3`（校验失败映射）、Slot B INVALID、pending NONE、upgrade NONE、sequence `17` |
+| Duplicate KEY during transfer/verify/commit | PASS | 用户在真实接收过程中第二次按 PA0；完整发送后 GDB 仍为 `state=4 READY_TO_INSTALL`，pending NONE、upgrade NONE、Slot A/B VALID、sequence `19`，未误触发 PENDING |
 | SPI/I2C logic capture | NOT_REQUIRED_THIS_RUN | 当前已有代码、RTT 和 EEPROM 结果；后续若失败定位需要，再复用 `toolkit logic` |
 
 ## Evidence Details
@@ -62,14 +62,14 @@ Internal Flash Installation、Trial、Confirm 和 Rollback execution 不属于�
 关键 COM9 Sender 结果：
 
 ```text
-{"blocks_sent":76,"bytes_sent":77456,"exit_code":0,"ok":true,"phase":"complete","port":"COM9","retries":2}
+{"blocks_sent":76,"bytes_sent":77468,"exit_code":0,"ok":true,"phase":"complete","port":"COM9","retries":2}
 ```
 
 关键 RTT 结果：
 
 ```text
-OTA state=4 event=0 target=1 progress=77456/77456 error=0
-OTA UART rx_events=703 rx_bytes=79502 buffered=79502 read=79502 dropped=0 errors=0 tx_bytes=87
+state=4 event=0 error=0 target=1 progress=100 expected=77468 received=77468
+metadata_confirmed=0 pending=255 slotA=1 slotB=1 upgrade=0 sequence=19
 ```
 
 Task 10 期间发现并修复了一个真实生产问题：进度达到 100% 后，每个剩余 payload 字节仍重复发布终止进度事件，可能填满 Display Queue，导致尾部 Block 0 无法完成。修复为同一 Session 只发布一次 `100%`，提交 `2ab34f1`；Service Host Test、Keil link 和 COM9 完整传输随后通过。
@@ -87,6 +87,6 @@ Metadata 原始回读：
 ```text
 代码验证：PASS
 硬件验证：PARTIAL
-硬件待验收：真实 PA0 按键、LCD 全流程观察、中途复位、interrupted transfer、bad CRC、重复按键和最终 Project Owner 确认
+硬件待验收：LCD 全流程肉眼确认、最终 Project Owner 确认
 阶段状态：IN_PROGRESS，不得标记 CLOSED / PASS
 ```
