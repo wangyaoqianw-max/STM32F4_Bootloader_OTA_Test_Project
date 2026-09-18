@@ -1,5 +1,8 @@
 param(
-    [string]$ToolsRoot = ""
+    [string]$ToolsRoot = "",
+
+    [ValidateSet("application", "bootloader")]
+    [string]$Target = "application"
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,11 +14,13 @@ if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
 try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Build\Keil\keil_build.ps1")
+    . (Join-Path $frameworkRoot "Workflows\S08_BootloaderFoundation\target_config.ps1")
     $configuration = Import-ToolkitConfiguration -ToolsRoot $ToolsRoot
-    $target = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
+    $configuration = Set-S08ToolkitTarget -Configuration $configuration -Target $Target
+    $keilTarget = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
     $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $configuration.PROJECT_ROOT -RelativePath (Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_LOG_DIR")
     New-ToolkitLogDirectory -Path $logDirectory | Out-Null
-    $result = Invoke-KeilBuild -Configuration $configuration -LogPath (Join-Path $logDirectory ("{0}_build.log" -f $target))
+    $result = Invoke-KeilBuild -Configuration $configuration -LogPath (Join-Path $logDirectory ("{0}_build.log" -f $keilTarget))
 }
 catch {
     Write-Host "[BUILD][ERROR] $($_.Exception.Message)"

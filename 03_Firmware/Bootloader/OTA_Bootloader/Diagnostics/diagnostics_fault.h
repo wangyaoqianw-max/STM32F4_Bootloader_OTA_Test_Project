@@ -1,0 +1,86 @@
+/******************************************************************************
+ * Copyright (C) 2026 YaoQian Wang
+ *
+ * All Rights Reserved.
+ *
+ * @file diagnostics_fault.h
+ * @brief Bootloader Cortex-M Fault 诊断接口。
+ * @author YaoQian Wang
+ * @date 2026-09-18
+ * @version V1.0
+ *
+ ******************************************************************************/
+
+#ifndef DIAGNOSTICS_FAULT_H
+#define DIAGNOSTICS_FAULT_H
+
+//******************************** Includes *********************************//
+#include "diagnostics_config.h"
+
+#include <stdint.h>
+//******************************** Includes *********************************//
+
+//******************************** Types ************************************//
+/**
+ * @brief 受控 Fault 测试类型。
+ */
+typedef enum
+{
+    DIAG_FAULT_NONE = 0U,
+    DIAG_FAULT_INVALID_ADDRESS,
+    DIAG_FAULT_UNDEFINED_INSTRUCTION,
+    DIAG_FAULT_DIV_BY_ZERO
+} diagnostics_fault_type_t;
+
+/**
+ * @brief 保存 Cortex-M 自动压栈帧和 Fault 寄存器快照。
+ */
+typedef struct
+{
+    uint32_t exceptionReturn;
+    uint32_t stackedSp;
+    uint32_t msp;
+    uint32_t psp;
+    uint32_t cfsr;
+    uint32_t hfsr;
+    uint32_t mmfar;
+    uint32_t bfar;
+    uint32_t r0;
+    uint32_t r1;
+    uint32_t r2;
+    uint32_t r3;
+    uint32_t r12;
+    uint32_t lr;
+    uint32_t pc;
+    uint32_t xpsr;
+} diagnostics_fault_context_t;
+//******************************** Types ************************************//
+
+//******************************** Variables ********************************//
+/**
+ * @brief 供 Fault Handler 写入、供调试器读取的最新现场快照。
+ */
+extern volatile diagnostics_fault_context_t g_diagnostics_fault_context;
+//******************************** Variables ********************************//
+
+//******************************** Functions ********************************//
+/**
+ * @brief 初始化 Cortex-M 系统 Fault 使能。
+ */
+void diagnostics_fault_init(void);
+
+/**
+ * @brief 触发一个受控 Fault 测试。
+ * @param[in] type : Fault 类型。
+ */
+void diagnostics_fault_trigger(diagnostics_fault_type_t type);
+
+/**
+ * @brief 保存 Fault 现场并输出 CmBacktrace 诊断信息。
+ * @param[in] exceptionReturn : Fault 入口的 EXC_RETURN 值。
+ * @param[in] stackedSp : Cortex-M 自动压栈帧地址。
+ */
+void diagnostics_fault_handler(uint32_t exceptionReturn, uint32_t stackedSp);
+//******************************** Functions ********************************//
+
+#endif

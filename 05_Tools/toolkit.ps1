@@ -191,52 +191,153 @@ try {
     $workflow = $Command.ToLowerInvariant()
     switch ($workflow) {
         "build" {
-            if ($Arguments.Count -gt 0) {
-                throw "build does not accept arguments"
+            if ($Arguments.Count -gt 1) {
+                throw "build accepts at most one target: application or bootloader"
+            }
+            $target = if ($Arguments.Count -eq 0) { "application" } else { $Arguments[0].ToLowerInvariant() }
+            if ($target -notin @("application", "bootloader")) {
+                throw "build target must be application or bootloader"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Application\build.ps1"
+            $workflowArguments = @("-Target", $target)
+        }
+        "sync-s08" {
+            if ($Arguments.Count -gt 0) {
+                throw "sync-s08 does not accept arguments"
+            }
+            $workflowPath = Join-Path $toolsRoot "Workflows\S08_BootloaderFoundation\sync_generated.ps1"
         }
         "flash" {
-            $mode = if ($Arguments.Count -eq 0) { "run" } elseif ($Arguments.Count -eq 1) { $Arguments[0].ToLowerInvariant() } else { throw "flash accepts at most one mode: run or prepare" }
-            if ($mode -notin @("run", "prepare")) {
-                throw "flash mode must be run or prepare"
+            $mode = "run"
+            $target = "application"
+            if ($Arguments.Count -eq 1) {
+                $argument = $Arguments[0].ToLowerInvariant()
+                if ($argument -in @("run", "prepare")) {
+                    $mode = $argument
+                }
+                elseif ($argument -in @("application", "bootloader")) {
+                    $target = $argument
+                }
+                else {
+                    throw "flash argument must be run, prepare, application or bootloader"
+                }
+            }
+            elseif ($Arguments.Count -eq 2) {
+                $target = $Arguments[0].ToLowerInvariant()
+                $mode = $Arguments[1].ToLowerInvariant()
+                if ($target -notin @("application", "bootloader") -or $mode -notin @("run", "prepare")) {
+                    throw "flash usage: flash [application|bootloader] [run|prepare]"
+                }
+            }
+            elseif ($Arguments.Count -gt 2) {
+                throw "flash accepts target and mode at most"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Application\flash.ps1"
-            $workflowArguments = @("-Mode", $mode)
+            $workflowArguments = @("-Mode", $mode, "-Target", $target)
         }
         "rtt" {
-            if ($Arguments.Count -gt 1 -or (($Arguments.Count -eq 1) -and (-not (Test-PositiveInteger $Arguments[0])))) {
-                throw "rtt accepts one positive duration in seconds"
+            $target = "application"
+            $seconds = 0
+            if ($Arguments.Count -eq 1) {
+                if (Test-PositiveInteger $Arguments[0]) {
+                    $seconds = $Arguments[0]
+                }
+                else {
+                    $target = $Arguments[0].ToLowerInvariant()
+                }
+            }
+            elseif ($Arguments.Count -eq 2) {
+                $target = $Arguments[0].ToLowerInvariant()
+                if (-not (Test-PositiveInteger $Arguments[1])) {
+                    throw "rtt duration must be a positive integer"
+                }
+                $seconds = $Arguments[1]
+            }
+            elseif ($Arguments.Count -gt 2 -or $target -notin @("application", "bootloader")) {
+                throw "rtt usage: rtt [application|bootloader] [seconds]"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Application\rtt.ps1"
-            if ($Arguments.Count -eq 1) {
-                $workflowArguments = @("-Seconds", $Arguments[0])
+            $workflowArguments = @("-Target", $target)
+            if ($seconds -gt 0) {
+                $workflowArguments += @("-Seconds", $seconds)
             }
         }
         "run" {
-            if ($Arguments.Count -gt 1 -or (($Arguments.Count -eq 1) -and (-not (Test-PositiveInteger $Arguments[0])))) {
-                throw "run accepts one positive RTT duration in seconds"
+            $target = "application"
+            $seconds = 0
+            if ($Arguments.Count -eq 1) {
+                if (Test-PositiveInteger $Arguments[0]) {
+                    $seconds = $Arguments[0]
+                }
+                else {
+                    $target = $Arguments[0].ToLowerInvariant()
+                }
+            }
+            elseif ($Arguments.Count -eq 2) {
+                $target = $Arguments[0].ToLowerInvariant()
+                if (-not (Test-PositiveInteger $Arguments[1])) {
+                    throw "run duration must be a positive integer"
+                }
+                $seconds = $Arguments[1]
+            }
+            elseif ($Arguments.Count -gt 2 -or $target -notin @("application", "bootloader")) {
+                throw "run usage: run [application|bootloader] [seconds]"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Application\run.ps1"
-            if ($Arguments.Count -eq 1) {
-                $workflowArguments = @("-Seconds", $Arguments[0])
+            $workflowArguments = @("-Target", $target)
+            if ($seconds -gt 0) {
+                $workflowArguments += @("-Seconds", $seconds)
             }
         }
         "snapshot" {
-            $mode = if ($Arguments.Count -eq 0) { "halt" } elseif ($Arguments.Count -eq 1) { $Arguments[0].ToLowerInvariant() } else { throw "snapshot accepts at most one mode: halt or resume" }
-            if ($mode -notin @("halt", "resume")) {
-                throw "snapshot mode must be halt or resume"
+            $target = "application"
+            $mode = "halt"
+            if ($Arguments.Count -eq 1) {
+                $argument = $Arguments[0].ToLowerInvariant()
+                if ($argument -in @("halt", "resume")) {
+                    $mode = $argument
+                }
+                else {
+                    $target = $argument
+                }
+            }
+            elseif ($Arguments.Count -eq 2) {
+                $target = $Arguments[0].ToLowerInvariant()
+                $mode = $Arguments[1].ToLowerInvariant()
+            }
+            elseif ($Arguments.Count -gt 2) {
+                throw "snapshot usage: snapshot [application|bootloader] [halt|resume]"
+            }
+            if ($target -notin @("application", "bootloader") -or $mode -notin @("halt", "resume")) {
+                throw "snapshot usage: snapshot [application|bootloader] [halt|resume]"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Debug\snapshot.ps1"
-            $workflowArguments = @("-Mode", $mode)
+            $workflowArguments = @("-Mode", $mode, "-Target", $target)
         }
         "fault" {
-            $mode = if ($Arguments.Count -eq 0) { "capture" } elseif ($Arguments.Count -eq 1) { $Arguments[0].ToLowerInvariant() } else { throw "fault accepts at most one mode: capture or trigger" }
-            if ($mode -notin @("capture", "trigger")) {
-                throw "fault mode must be capture or trigger"
+            $target = "application"
+            $mode = "capture"
+            if ($Arguments.Count -eq 1) {
+                $argument = $Arguments[0].ToLowerInvariant()
+                if ($argument -in @("capture", "trigger")) {
+                    $mode = $argument
+                }
+                else {
+                    $target = $argument
+                }
+            }
+            elseif ($Arguments.Count -eq 2) {
+                $target = $Arguments[0].ToLowerInvariant()
+                $mode = $Arguments[1].ToLowerInvariant()
+            }
+            elseif ($Arguments.Count -gt 2) {
+                throw "fault usage: fault [application|bootloader] [capture|trigger]"
+            }
+            if ($target -notin @("application", "bootloader") -or $mode -notin @("capture", "trigger")) {
+                throw "fault usage: fault [application|bootloader] [capture|trigger]"
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\Debug\fault_capture.ps1"
-            $workflowArguments = @("-Mode", $mode)
+            $workflowArguments = @("-Mode", $mode, "-Target", $target)
         }
         "logic" {
             $workflowPath = Join-Path $toolsRoot "Workflows\LogicAnalyzer\logic.ps1"

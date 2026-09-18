@@ -1,7 +1,10 @@
 param(
     [string]$ToolsRoot = "",
 
-    [int]$Seconds = 0
+    [int]$Seconds = 0,
+
+    [ValidateSet("application", "bootloader")]
+    [string]$Target = "application"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,13 +20,15 @@ try {
     . (Join-Path $frameworkRoot "Adapters\Build\Keil\keil_build.ps1")
     . (Join-Path $frameworkRoot "Adapters\Probe\JLink\jlink_flash.ps1")
     . (Join-Path $frameworkRoot "Adapters\Probe\JLink\jlink_rtt.ps1")
+    . (Join-Path $frameworkRoot "Workflows\S08_BootloaderFoundation\target_config.ps1")
     $configuration = Import-ToolkitConfiguration -ToolsRoot $ToolsRoot
-    $target = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
+    $configuration = Set-S08ToolkitTarget -Configuration $configuration -Target $Target
+    $keilTarget = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
     $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $configuration.PROJECT_ROOT -RelativePath (Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_LOG_DIR")
     New-ToolkitLogDirectory -Path $logDirectory | Out-Null
 
     Write-Host "[CYCLE] Step 1/3: Build"
-    $buildResult = Invoke-KeilBuild -Configuration $configuration -LogPath (Join-Path $logDirectory ("{0}_build.log" -f $target))
+    $buildResult = Invoke-KeilBuild -Configuration $configuration -LogPath (Join-Path $logDirectory ("{0}_build.log" -f $keilTarget))
     if ($buildResult.ExitCode -ge 2) {
         Write-Host "[CYCLE][FAIL] Build failed."
         $exitCode = 20
@@ -32,7 +37,7 @@ try {
         $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)
 
         Write-Host "[CYCLE] Step 2/3: Flash"
-        $flashResult = Invoke-JLinkFlash -Configuration $configuration -Mode "run" -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $target))
+        $flashResult = Invoke-JLinkFlash -Configuration $configuration -Mode "run" -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $keilTarget))
         if ($flashResult.ExitCode -ne 0) {
             Write-Host "[CYCLE][FAIL] Flash failed."
             $exitCode = 30
@@ -42,7 +47,7 @@ try {
             if ($Seconds -lt 1) {
                 $Seconds = if ($configuration.PSObject.Properties["RTT_CAPTURE_SECONDS"]) { [int]$configuration.RTT_CAPTURE_SECONDS } else { 10 }
             }
-            $rttResult = Invoke-JLinkRtt -Configuration $configuration -Seconds $Seconds -OutputPath (Join-Path $logDirectory ("{0}_rtt.log" -f $target)) -DiagnosticPath (Join-Path $logDirectory ("{0}_rtt_logger.log" -f $target))
+            $rttResult = Invoke-JLinkRtt -Configuration $configuration -Seconds $Seconds -OutputPath (Join-Path $logDirectory ("{0}_rtt.log" -f $keilTarget)) -DiagnosticPath (Join-Path $logDirectory ("{0}_rtt_logger.log" -f $keilTarget))
             if ($rttResult.ExitCode -ne 0) {
                 Write-Host "[CYCLE][FAIL] RTT capture failed."
                 $exitCode = 30

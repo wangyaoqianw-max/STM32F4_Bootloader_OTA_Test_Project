@@ -23,14 +23,13 @@
 推荐从 `05_Tools\toolkit.bat` 进入；本目录的 BAT 保留为兼容透传入口：
 
 ```bat
-05_Tools\toolkit.bat build
-05_Tools\toolkit.bat flash run
-05_Tools\toolkit.bat flash prepare
-05_Tools\toolkit.bat run 10
-05_Tools\toolkit.bat rtt 10
-05_Tools\toolkit.bat snapshot halt
-05_Tools\toolkit.bat snapshot resume
-05_Tools\toolkit.bat fault capture
+05_Tools\toolkit.bat build [application|bootloader]
+05_Tools\toolkit.bat flash [application|bootloader] [run|prepare]
+05_Tools\toolkit.bat run [application|bootloader] [seconds]
+05_Tools\toolkit.bat rtt [application|bootloader] [seconds]
+05_Tools\toolkit.bat sync-s08
+05_Tools\toolkit.bat snapshot [application|bootloader] [halt|resume]
+05_Tools\toolkit.bat fault [application|bootloader] [capture|trigger]
 05_Tools\toolkit.bat firmware pack --input app.bin --output app.img --version 1.1.0
 05_Tools\toolkit.bat ymodem tera COM10 115200 app.img
 05_Tools\toolkit.bat ymodem send app.img --port COM10 --baud 115200 --json
@@ -44,15 +43,18 @@ Firmware/YMODEM 的外部工具非零退出码统一映射为 `50 TRANSFER_ERROR
 
 | 入口 | 功能 |
 |---|---|
-| `build_app.bat` | 透传到 `toolkit.bat build`，使用 Keil 编译当前工程 Target |
+| `build_app.bat` | 透传到 `toolkit.bat build`，使用 Keil 编译 Application Target |
+| `toolkit.bat build bootloader` | 使用同一 Keil Adapter 编译 Bootloader Target |
+| `toolkit.bat sync-s08` | CubeMX 重新生成后重放 S08 的 Keil IROM/OCR_RVCT4、VTOR 和 CmBacktrace/RTT 工程适配 |
 | `flash_app.bat run` | 透传到 `toolkit.bat flash run`，J-Link SWD 烧录并 Reset → Halt → Go |
+| `toolkit.bat flash bootloader [run\|prepare]` | 使用同一 J-Link Adapter 烧录 Bootloader HEX |
 | `flash_app.bat prepare` | 透传到 `toolkit.bat flash prepare`，烧录后保持 MCU Halt |
 | `rtt_capture.bat [秒数]` | 透传到 `toolkit.bat rtt`，采集 RTT |
 | `run_app_cycle.bat [秒数]` | 透传到 `toolkit.bat run`，编译 → 烧录 → RTT 采集 |
 | `start_gdb_server.bat` | 前台启动 J-Link GDB Server，供手工调试 |
-| `gdb_runtime_snapshot.bat halt` | 快照后 `detach → quit`，保持 MCU 暂停 |
-| `gdb_runtime_snapshot.bat resume` | 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
-| `gdb_fault_capture.bat capture` | 已发生 Fault 时读取 GDB Fault 现场并保持 MCU Halt |
+| `gdb_runtime_snapshot.bat halt` | Application 快照后 `detach → quit`，保持 MCU 暂停；Bootloader 使用 `toolkit.bat snapshot bootloader halt` |
+| `gdb_runtime_snapshot.bat resume` | Application 快照后 `continue& → disconnect → quit`，恢复 MCU 运行 |
+| `gdb_fault_capture.bat capture` | Application 已发生 Fault 时读取 GDB Fault 现场并保持 MCU Halt；Bootloader 使用 `toolkit.bat fault bootloader capture` |
 | `gdb_fault_capture.bat trigger` | GDB 已启动后执行复位、运行受控 Fault 测试并采集现场 |
 | `s04_persistence_test.bat reset` | GDB 读取复位前后持久性快照；执行 `monitor reset → continue& → disconnect` |
 | `s04_persistence_test.bat power-cycle` | 先启动 RTT 监听，等待 `READY` 后由操作者完成断电/上电；固定地址重连并处理退出/卡死 |
@@ -178,8 +180,9 @@ Windows PowerShell 时同时存在 `PATH` / `Path` 环境变量的本机环境�
 GDB 调试入口：
 
 ```bat
-05_Tools\toolkit.bat snapshot resume
-05_Tools\toolkit.bat snapshot halt
+05_Tools\toolkit.bat snapshot application resume
+05_Tools\toolkit.bat snapshot application halt
+05_Tools\toolkit.bat snapshot bootloader halt
 ```
 
 依赖 `toolchain.local.bat` 中的 `ARM_GDB` 和 `JLINK_GDB_SERVER`。入口自动启动并回收本次创建的 J-Link GDB Server，使用 Keil 生成的 `OTA_APP.axf` 读取运行态信息，不执行 GDB `load`，不会隐式烧录 Flash。
@@ -198,7 +201,7 @@ GDB 调试入口：
 
 ```bat
 05_Tools\toolkit.bat flash prepare
-05_Tools\toolkit.bat fault trigger
+05_Tools\toolkit.bat fault application trigger
 ```
 
 `trigger` 模式要求当前 AXF 对应的测试固件已经启用 `DIAG_FAULT_TEST_ENABLE=1`。
@@ -211,7 +214,7 @@ set breakpoint -> monitor reset -> halt -> continue -> Fault Handler capture -> 
 如果 Fault 已经由其他方式产生，使用：
 
 ```bat
-05_Tools\toolkit.bat fault capture
+05_Tools\toolkit.bat fault application capture
 ```
 
 Fault Capture 不执行 `load`、不自动恢复 MCU。GDB 释放 J-Link 后，脚本才启动 RTT Logger 读取

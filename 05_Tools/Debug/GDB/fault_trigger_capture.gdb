@@ -46,6 +46,7 @@ x/16wx $fault_sp
 
 echo \n[EXIT]\n
 echo halt-and-detach\n
+delete
 detach
 quit
 end

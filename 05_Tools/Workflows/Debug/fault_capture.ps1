@@ -4,7 +4,10 @@ param(
     [ValidateSet("capture", "trigger")]
     [string]$Mode = "capture",
 
-    [int]$Seconds = 5
+    [int]$Seconds = 5,
+
+    [ValidateSet("application", "bootloader")]
+    [string]$Target = "application"
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,13 +25,15 @@ try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Debug\GDB\gdb_session.ps1")
     . (Join-Path $frameworkRoot "Adapters\Probe\JLink\jlink_rtt.ps1")
+    . (Join-Path $frameworkRoot "Workflows\S08_BootloaderFoundation\target_config.ps1")
     $configuration = Import-ToolkitConfiguration -ToolsRoot $ToolsRoot
-    $target = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
+    $configuration = Set-S08ToolkitTarget -Configuration $configuration -Target $Target
+    $keilTarget = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
     $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $configuration.PROJECT_ROOT -RelativePath (Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_LOG_DIR")
     New-ToolkitLogDirectory -Path $logDirectory | Out-Null
-    $serverLog = Join-Path $logDirectory ("{0}_gdb_server.log" -f $target)
-    $gdbLog = Join-Path $logDirectory ("{0}_fault_gdb.log" -f $target)
-    $rttLog = Join-Path $logDirectory ("{0}_fault_rtt.log" -f $target)
+    $serverLog = Join-Path $logDirectory ("{0}_gdb_server.log" -f $keilTarget)
+    $gdbLog = Join-Path $logDirectory ("{0}_fault_gdb.log" -f $keilTarget)
+    $rttLog = Join-Path $logDirectory ("{0}_fault_rtt.log" -f $keilTarget)
     $gdbScriptName = if ($Mode -eq "capture") { "fault_capture.gdb" } else { "fault_trigger_capture.gdb" }
     $gdbScript = Join-Path $frameworkRoot ("Debug\GDB\{0}" -f $gdbScriptName)
     $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)

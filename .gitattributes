@@ -1,3 +1,7 @@
 03_Firmware/Application/OTA_APP/Core/Src/usart.c whitespace=cr-at-eol
+03_Firmware/Application/OTA_APP/Core/Src/system_stm32f4xx.c whitespace=cr-at-eol
 03_Firmware/Application/OTA_APP/OTA_APP.ioc whitespace=cr-at-eol
 03_Firmware/Application/OTA_APP/MDK-ARM/OTA_APP.uvprojx whitespace=cr-at-eol
+03_Firmware/Bootloader/OTA_Bootloader/Core/Src/main.c whitespace=cr-at-eol
+03_Firmware/Bootloader/OTA_Bootloader/MDK-ARM/OTA_Bootloader.uvprojx whitespace=cr-at-eol
+03_Firmware/Bootloader/OTA_Bootloader/Vendor/** whitespace=-trailing-space,cr-at-eol

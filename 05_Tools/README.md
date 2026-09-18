@@ -18,12 +18,13 @@ Keil .bin → Firmware Image V1 .img
 推荐使用 `05_Tools\toolkit.bat`，旧 `Scripts\*.bat` 继续作为兼容入口：
 
 ```text
-toolkit.bat build
-toolkit.bat flash [run|prepare]
-toolkit.bat run [rtt_seconds]
-toolkit.bat rtt [seconds]
-toolkit.bat snapshot [halt|resume]
-toolkit.bat fault [capture|trigger]
+toolkit.bat build [application|bootloader]
+toolkit.bat flash [application|bootloader] [run|prepare]
+toolkit.bat run [application|bootloader] [rtt_seconds]
+toolkit.bat rtt [application|bootloader] [seconds]
+toolkit.bat sync-s08
+toolkit.bat snapshot [application|bootloader] [halt|resume]
+toolkit.bat fault [application|bootloader] [capture|trigger]
 toolkit.bat firmware pack <pack_firmware.py arguments>
 toolkit.bat ymodem [python] <ymodem_sender.py arguments>
 toolkit.bat ymodem tera <COMx> <baud> <firmware.img>
@@ -49,7 +50,7 @@ Router 只负责参数校验、配置读取、Workflow/既有工具转发和统�
 
 ## 当前工具与支持功能
 
-### 1. Application 编译、烧录和运行时采集
+### 1. Application / Bootloader 编译、烧录和运行时采集
 
 | 入口 | 支持功能 | 主要输出 |
 |---|---|---|
@@ -59,6 +60,18 @@ Router 只负责参数校验、配置读取、Workflow/既有工具转发和统�
 | `Scripts/rtt_capture.bat [秒数]` | 使用 J-Link RTT Logger 采集 RTT Up Channel 0；默认 10 秒 | `OTA_APP_rtt.log`、`OTA_APP_rtt_logger.log` |
 | `Scripts/run_app_cycle.bat [秒数]` | `Build → Flash(run) → RTT Capture` 一键闭环；编译警告会保留为警告结果 | 上述编译、烧录、RTT 日志 |
 
+Bootloader 使用同一套 Workflow/Adapter，通过目标参数切换：
+
+```bat
+05_Tools\toolkit.bat sync-s08
+05_Tools\toolkit.bat build bootloader
+05_Tools\toolkit.bat flash bootloader prepare
+05_Tools\toolkit.bat run bootloader 20
+```
+
+`sync-s08` 用于 CubeMX 重新生成后恢复 S08 的 Keil IROM/OCR_RVCT4、Application
+VTOR、Include Path、CmBacktrace 配置和 Bootloader 工程 Groups；不会复制第二套工具链。
+
 这些入口默认使用 `STM32F411CE / SWD / 4000 kHz`。闭环成功只表示工具链动作成功，不能替代阶段级功能验收。
 
 ### 2. GDB 在线调试与 Runtime Snapshot
@@ -66,8 +79,9 @@ Router 只负责参数校验、配置读取、Workflow/既有工具转发和统�
 | 入口 | 支持功能 |
 |---|---|
 | `Scripts/start_gdb_server.bat` | 前台启动 J-Link GDB Server，供手工 GDB 会话使用 |
-| `Scripts/gdb_runtime_snapshot.bat halt` | 启动临时 Server，读取寄存器、PC、源代码位置、Backtrace、栈内存，然后 `detach → quit`；目标保持暂停 |
-| `Scripts/gdb_runtime_snapshot.bat resume` | 读取同样的运行态信息，然后 `continue& → disconnect → quit`；目标继续运行 |
+| `Scripts/gdb_runtime_snapshot.bat halt` | 启动临时 Server，读取 Application 寄存器、PC、源代码位置、Backtrace、栈内存，然后 `detach → quit`；目标保持暂停 |
+| `toolkit.bat snapshot bootloader halt` | 使用 Bootloader AXF 读取 Bootloader 运行态信息；目标保持暂停 |
+| `Scripts/gdb_runtime_snapshot.bat resume` | 读取同样的 Application 运行态信息，然后 `continue& → disconnect → quit`；目标继续运行 |
 | `Debug/GDB/test_gdb_automation.ps1` | 检查 GDB 脚本合同、禁止 `load`、入口存在性和常见失败路径 |
 
 GDB 使用 Keil 生成的 `OTA_APP.axf` 加载符号，但不会执行 GDB `load`，不会隐式烧录 Flash。Resume 模式不使用 `-batch`，也不在 `continue&` 后执行 `detach`。Runtime Snapshot 日志为：
@@ -110,7 +124,8 @@ Build → Flash(run) 启动只读测试固件 → 关闭可能占用 J-Link 的�
 
 | 入口 | 支持功能 |
 |---|---|
-| `Scripts/gdb_fault_capture.bat capture` | 连接已经停在 Fault Handler 的 MCU，读取 Fault PC/LR、MSP/PSP、CFSR/HFSR/MMFAR/BFAR、源码位置、Backtrace 和栈内存；保持 Halt |
+| `Scripts/gdb_fault_capture.bat capture` | 连接已经停在 Application Fault Handler 的 MCU，读取 Fault PC/LR、MSP/PSP、CFSR/HFSR/MMFAR/BFAR、源码位置、Backtrace 和栈内存；保持 Halt |
+| `toolkit.bat fault bootloader capture` | 使用 Bootloader AXF 读取已停机的 Bootloader Fault 现场；保持 Halt |
 | `Scripts/gdb_fault_capture.bat trigger` | 适用于启用 `DIAG_FAULT_TEST_ENABLE=1` 的测试固件；由已启动的 GDB 会话设置 Fault-loop 断点，再执行 `monitor reset → halt → continue`，命中后采集 Fault |
 | `Debug/GDB/fault_capture.gdb` | 已发生 Fault 的只读现场采集脚本，不执行 `load`、`reset` 或 `continue&` |
 | `Debug/GDB/fault_trigger_capture.gdb` | 在 GDB 已启动后设置捕获断点，执行复位、halt 和阻塞 `continue`，待工程 Fault Handler 保存现场后采集 |

@@ -18,11 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "spi.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "boot_main.h"
+#include "boot_log.h"
+#include "cmbacktrace_port.h"
+#include "diagnostics_fault.h"
 
 /* USER CODE END Includes */
 
@@ -77,17 +79,23 @@ int main(void)
 
   /* USER CODE END Init */
 
-  /* Configure the system clock */
+  /* Configure the generated HAL clock before entering Bootloader logic. */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+  boot_log_init();
+  cmbacktrace_port_init();
+  diagnostics_fault_init();
+
+#if (DIAG_FAULT_TEST_ENABLE != 0U)
+  diagnostics_fault_trigger((diagnostics_fault_type_t)DIAG_FAULT_TEST_TYPE);
+#endif
+
+  boot_main_run();
 
   /* USER CODE END 2 */
 

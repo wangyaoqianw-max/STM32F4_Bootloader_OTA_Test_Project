@@ -2,7 +2,10 @@ param(
     [string]$ToolsRoot = "",
 
     [ValidateSet("run", "prepare")]
-    [string]$Mode = "run"
+    [string]$Mode = "run",
+
+    [ValidateSet("application", "bootloader")]
+    [string]$Target = "application"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,12 +19,14 @@ $exitCode = 10
 try {
     Import-Module -Name (Join-Path $frameworkRoot "Core\Toolkit.Core.psm1") -Force
     . (Join-Path $frameworkRoot "Adapters\Probe\JLink\jlink_flash.ps1")
+    . (Join-Path $frameworkRoot "Workflows\S08_BootloaderFoundation\target_config.ps1")
     $configuration = Import-ToolkitConfiguration -ToolsRoot $ToolsRoot
-    $target = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
+    $configuration = Set-S08ToolkitTarget -Configuration $configuration -Target $Target
+    $keilTarget = Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_KEIL_TARGET"
     $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $configuration.PROJECT_ROOT -RelativePath (Assert-ToolkitRequiredValue -Configuration $configuration -Name "PROJECT_LOG_DIR")
     New-ToolkitLogDirectory -Path $logDirectory | Out-Null
     $lock = Enter-ToolkitLock -Path (Get-ToolkitJLinkLockPath -Configuration $configuration)
-    $result = Invoke-JLinkFlash -Configuration $configuration -Mode $Mode -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $target))
+    $result = Invoke-JLinkFlash -Configuration $configuration -Mode $Mode -LogPath (Join-Path $logDirectory ("{0}_flash.log" -f $keilTarget))
     if ($result.ExitCode -eq 0) {
         Write-Host "[FLASH][PASS] J-Link programming command completed successfully."
         $exitCode = 0
