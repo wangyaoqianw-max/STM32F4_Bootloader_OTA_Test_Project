@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Workflow Status: `READY_FOR_REVIEW`
+- Workflow Status: `CLOSED / PASS`
 - Implementation Status: `COMPLETE`
 - Branch: `main`
 - Baseline Commit: `fba93ad7ea36321d218790b50bcb493e95574b32`
@@ -12,7 +12,7 @@
 - Implementation Plan Commit: `05cb274ca3454f53ed47b577e5c72232a2d484ee`
 - Implementation Commits: `8ec0045`
 - Verification Commit: `573312a`
-- Review Commit: `Not created yet`
+- Review Commit: `pending`
 - Updated At: `2026-09-18`
 
 ## Required Reading
@@ -203,7 +203,7 @@ GDB snapshot
 当前状态：
 
 ```text
-READY_FOR_REVIEW
+CLOSED / PASS
 ```
 
 ### Implementation Summary
@@ -241,7 +241,7 @@ LED / LCD              PASS: Project Owner confirmed normal behavior
 Application interrupt  PASS: Project Owner confirmed normal behavior
 ```
 
-本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样、3 次重复 Reset、真实断电上电、LED/LCD 现场确认以及 Application 外设中断确认。验证证据完整，当前交由 Review Role 审核；在 Review 通过前不得将 S08 标记为 `CLOSED`。
+本轮已完成最终镜像 Build / Flash、合法 Jump、RTT、GDB Runtime、SysTick 采样、3 次重复 Reset、真实断电上电、LED/LCD 现场确认以及 Application 外设中断确认。Review Role 已完成审核，无 Blocking / Important Finding，S08 已关闭为 `CLOSED / PASS`。
 
 ### Task 0 Baseline Evidence
 

@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S08_Bootloader_Foundation`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED / PASS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -16,6 +16,9 @@
 - S07A Verification Report: `04_Test/Reports/Stages/S07A_RTOS_Startup_Refactor/verification.md`
 - S07A Review Commit: `568bbccc`
 - S07A Review Report: `00_Project/03_Stages/S07A_RTOS_Startup_Refactor/review.md`
+- S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
+- S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
+- S08 Review Commit: `pending`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -39,7 +42,7 @@
 - S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- Last Closed Stage: `S07A_RTOS_Startup_Refactor`
+- Last Closed Stage: `S08_Bootloader_Foundation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S09_Firmware_Installation`
 - Current Role: `Project Owner`
@@ -47,7 +50,7 @@
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计、实施和验证，当前状态为 `READY_FOR_REVIEW`。
+S05、S05A、S05B、S05C、S06、S07 和 S07A 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前 Application Startup Contract 以 S07A 为准。`S08_Bootloader_Foundation` 已完成设计、实施、验证和 Review，当前状态为 `CLOSED / PASS`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -466,9 +469,9 @@ LCD RECEIVING / VERIFYING / SUCCESS|FAILED
 
 ## S08 Bootloader Foundation Current State
 
-当前状态：`READY_FOR_REVIEW`。
+当前状态：`CLOSED / PASS`。
 
-S08 已冻结三个核心目标：
+S08 已冻结并完成三个核心目标：
 
 ```text
 1. Internal Flash Layout
@@ -514,4 +517,4 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-验证证据已完整，下一步由 Review Role 对照冻结设计、实施计划、代码差异、handoff 和 verification report 执行审核；审核通过后进入 `CLOSED`。
+S08 已通过 Review 并关闭为 `CLOSED / PASS`。下一步进入 `S09_Firmware_Installation` 的设计/实施准备；S09 功能尚未在本阶段实现。

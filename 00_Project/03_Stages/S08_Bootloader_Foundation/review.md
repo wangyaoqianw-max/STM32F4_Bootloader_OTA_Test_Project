@@ -3,13 +3,14 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `f164f3c`
 - Design Commit: `03406dcba9d57191bb1109da52fc23ab7a8c0d4f`
 - Implementation Plan Commit: `05cb274ca3454f53ed47b577e5c72232a2d484ee`
 - Implementation Commit: `8ec0045`
 - Verification Commits: `573312a`, `ac9abec`, `0c32781`
+- Review Commit: `pending`
 - Reviewed Head: `0c32781`
 - Review Date: `2026-09-18`
 - Reviewer Role: `Review Role`
@@ -36,12 +37,13 @@
 
 ### Important Findings
 
-1. 关闭前需要补齐 Bootloader `.bin` 产物证据。当前已使用 Keil `fromelf --bin` 从最终 `OTA_Bootloader.axf` 生成 `OTA_Bootloader.bin`，并核对产物大小 `11688 bytes`，小于 64 KiB；Application 同步生成 `OTA_APP.bin`，大小 `81348 bytes`。
-2. `PROJECT_CONTEXT.md`、`current_status.md` 和本阶段文档存在旧的 `READY_FOR_IMPLEMENTATION` / `READY_FOR_REVIEW` 状态残留，关闭提交前统一同步。
+无。
 
 ### Resolved Findings
 
 1. 早期 GDB 跳转断点测试曾遗留 FPB comparator，产生 `HFSR=0x80000000` 的 `DEBUGEVT`。已读取并清除 `E0002008`–`E0002024` 及 `DEMCR` 后重新执行最终 Build / Flash / Jump / RTT / GDB 验证；该现象确认为调试器状态残留，不作为生产 Fault 证据。
+2. Review 发现缺少 `.bin` 证据；已从最终 AXF 生成并回读 Bootloader `11688 bytes`、Application `81348 bytes` 的 `.bin`，均未超过对应 Flash 分区。
+3. Review 发现阶段状态残留；已同步 `implementation_plan.md`、`handoff.md`、`verification.md`、`PROJECT_CONTEXT.md` 和 `current_status.md`。
 
 ### Non-blocking Notes
 
@@ -63,7 +65,7 @@
 | Build / map / bin / size | PASS | Bootloader/Application 均 0 error / 0 warning；Boot LR size `0x2da8`，Boot `.bin` `11688 bytes`，均小于 64 KiB |
 | Board verification | PASS | Final Flash、合法 Jump、RTT、GDB、SysTick、3 次 Reset、断电上电、LED、LCD、Application 外设中断均确认通过 |
 | Scope isolation | PASS | 未实现 S09/S10 的安装、元数据消费、回滚和确认功能 |
-| Documentation consistency | PASS | Verification、Handoff、PROJECT_CONTEXT、current_status 已同步到 Review 状态 |
+| Documentation consistency | PASS | Verification、Handoff、Implementation Plan、PROJECT_CONTEXT、current_status 和 Review 已同步到关闭状态 |
 
 ## Review Decision
 
@@ -72,9 +74,9 @@ Implementation:       PASS
 Architecture:         PASS
 Code Verification:    PASS
 Hardware Verification: PASS
-Review:               PENDING EVIDENCE SYNC
-Stage:                READY_FOR_REVIEW
-Closure:              NOT YET APPROVED
+Review:               PASS
+Stage:                CLOSED / PASS
+Closure:              APPROVED
 ```
 
-实现本身无 Critical 问题；在补齐 `.bin` 证据并同步阶段状态文档后重新确认，再关闭本阶段。下一计划阶段为 `S09_Firmware_Installation`；S09 功能不属于本次交付。
+实现本身无 Critical / Important 问题；S08 满足冻结设计和实施计划的验收条件，关闭为 `CLOSED / PASS`。下一计划阶段为 `S09_Firmware_Installation`；S09 功能不属于本次交付。

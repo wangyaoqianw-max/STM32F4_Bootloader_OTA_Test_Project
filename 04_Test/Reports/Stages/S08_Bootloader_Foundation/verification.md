@@ -3,9 +3,10 @@
 ## Metadata
 
 - Stage: `S08_Bootloader_Foundation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Implementation Commits: `8ec0045`
 - Verification Commit: `573312a`
+- Review Commit: `pending`
 - Branch: `main`
 - Verification Date: `2026-09-18`
 
@@ -96,4 +97,4 @@ Project Owner 已确认以下硬件验收结果：
 硬件验证：PASS
 ```
 
-S08 实施范围内的代码、构建、Flash Layout、RTT、CmBacktrace、向量拒绝、合法 Jump 和硬件验收证据已完整，当前交由 Review Role 审核；审核通过后才能进入 `CLOSED`。
+S08 实施范围内的代码、构建、Flash Layout、RTT、CmBacktrace、向量拒绝、合法 Jump 和硬件验收证据已完整。Review Role 已完成审核，无 Blocking / Important Finding，阶段关闭为 `CLOSED / PASS`。
