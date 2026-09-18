@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S07A_RTOS_Startup_Refactor`
-- Status: `DRAFT`
+- Status: `READY_FOR_IMPLEMENTATION`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -20,9 +20,9 @@
 - S04 Persistence Supplementary Regression Commit: `6f2fad5`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
-- S07A Design Commit: `5ce9ceffea60fde87fe00107bf1d2648a8e26b62`
-- S07A Implementation Plan Commit: `4c4dc83e217da108f1e5d713fa2e06ecf339fff8`
-- S07A Handoff Commit: `5c1173207d8d7163339943d86e8a969317daa1c6`
+- S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
+- S07A Implementation Plan Commit: `fa8409c335727720e387887d254caada5939f346`
+- S07A Handoff Commit: `ba99f38a59b09917b36c2b3ec85474d1198cf227`
 - S05A Baseline Commit: `ec6119f64306d027c86208329823cf42b77ceebf`
 - Baseline Commit: `5c26fe63`
 - Design Commit: `400b8b4f4cb50672faea2c332379466bb637b3a6`
@@ -42,7 +42,7 @@
 - Last Closed Stage: `S07_OTA_Service_V1`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S08_Bootloader_Foundation`
-- Current Role: `Design Role`
+- Current Role: `Implementation Role`
 - Updated At: `2026-09-18`
 
 ## Current Goal
@@ -70,35 +70,42 @@ otaWorker   → displayTask : Queue
 
 ## S07A RTOS Startup Refactor Current State
 
-S07A 当前为 `DRAFT / DESIGN_DISCUSSION`，尚未修改生产代码。
+S07A 设计已批准，状态为 `READY_FOR_IMPLEMENTATION`。尚未修改生产代码。
 
-本阶段解决当前 Runtime 中 `appSystem` 同时承担 Bootstrap、Task Creation 和长期 foreground work 的职责混合。目标模型：
+冻结目标：
 
 ```text
-defaultTask
-→ appSystem Bootstrap
-→ create shared IPC / startup sync
+defaultTask (4096 B temporary)
+→ app_system_bootstrap()
+→ create Startup Event Flags / shared IPC
 → create appMainTask / otaWorker / displayTask
 → task-local init
-→ APP_READY + OTA_READY + DISPLAY_READY
-→ SYSTEM_RUN
-→ appSystem delete
-→ steady runtime
+→ MAIN_DONE + OTA_DONE + DISPLAY_DONE
+→ RUNNING / DEGRADED / FAILED
+├─ RUNNING/DEGRADED → SYSTEM_RUN → defaultTask delete
+└─ FAILED           → SYSTEM_ABORT → controlled fatal path
 ```
 
-关键约束：
+关键设计：
 
-- `appSystem` 变成一次性 Composition Root / Startup Supervisor；
-- 新增独立长期 `appMainTask`；
-- otaWorker 继续持有 UART/Ymodem/KEY OTA runtime；
-- displayTask 继续独占 SPI1/ST7789；
-- 使用显式 Startup Barrier，禁止依赖 task create 后不会立即调度；
-- 不把所有 private init 强行搬进 appSystem；
-- 不在重构同时压缩 otaWorker/displayTask stack；
-- 必须重新测 startup heap peak、appSystem delete 后 heap 回收和各 Task Stack High Water Mark；
-- S07 OTA 行为必须完整回归。
+- 不再创建独立 `appSystem` RTOS Task；`appSystem` 仅是 Composition Root / Startup Supervisor 模块；
+- Startup Barrier 使用 `platform_event_flags`，Impl 基于 CMSIS-RTOS2 Event Flags；
+- startup timeout = `5000 ms`；
+- 业务组件 init error → `DEGRADED`，无关成功组件继续运行；
+- Event Flags / required shared IPC / Task create failure 或 timeout → `FAILED`；
+- 第一版 stack：defaultTask 4096 B、appMainTask 2048 B、otaWorker 4096 B、displayTask 4096 B；
+- Platform Thread 新增 `platform_thread_get_stack_space()`，返回 byte；
+- Heap 继续使用 FreeRTOS/GDB 诊断，不增加 Platform heap manager；
+- `01_APP` 冻结为 `system/task/runtime/contract`，`app_main.*` 改名为 `app_main_task.*`；
+- S07 OTA Service / Metadata V2 / Ymodem / KEY 双确认 / PENDING 合同保持不变。
 
-正式设计入口：`00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md`。
+实施入口：
+
+```text
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/design.md
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/implementation_plan.md
+00_Project/03_Stages/S07A_RTOS_Startup_Refactor/handoff.md
+```
 
 ## S07 OTA Service V1 Current State
 
@@ -411,11 +418,6 @@ Power-cycle Persistence PASS
 
 ## Blockers
 
-当前没有外部硬件阻塞。S07A 仍处于设计讨论，进入实现前需要冻结：
+当前无外部硬件或设计阻塞。S07A 已完成 Design Approval，可按正式 implementation plan 进入实施。
 
-1. Startup Barrier 的 `platform_event_flags` 最小 API；
-2. startup timeout / failure policy；
-3. appMainTask 第一版 stack budget；
-4. stack watermark 是否进入正式 Platform API。
-
-S08 Bootloader Foundation 保持 `PLANNED`，待 S07A 关闭后启动。
+S08 Bootloader Foundation 保持 `PLANNED`，必须在 S07A 完成 Stack/Heap、Startup Barrier、degraded/failure 路径和 S07 全链路回归后再启动。
