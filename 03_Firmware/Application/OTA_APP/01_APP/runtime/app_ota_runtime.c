@@ -17,6 +17,7 @@
 #define LOG_TAG "ota_runtime"
 
 #include "firmware_storage.h"
+#include "firmware_lifecycle.h"
 #include "platform_at24c02.h"
 #include "platform_bsp_gpio.h"
 #include "platform_bsp_spi.h"
@@ -343,6 +344,15 @@ platform_error_t app_ota_runtime_read(
         buffer,
         bufferSize,
         readLength);
+}
+
+platform_error_t app_ota_runtime_confirm_trial(void)
+{
+    if (g_otaRuntimeInitialized != PLATFORM_TRUE) {
+        return PLATFORM_ERR_NOT_INITIALIZED;
+    }
+
+    return firmware_lifecycle_confirm(&g_otaFirmwareStorage);
 }
 
 service_ota_t *app_ota_runtime_get_service(void)

@@ -77,6 +77,13 @@ platform_error_t app_ota_runtime_read(
     platform_size_t *readLength);
 
 /**
+ * @brief 在 OTA Worker 上下文执行严格 Trial Confirm
+ * @return platform_error_t : Lifecycle 事务结果
+ * @note 不向其他 Task 暴露 Firmware Storage 或底层 Driver。
+ */
+platform_error_t app_ota_runtime_confirm_trial(void);
+
+/**
  * @brief 获取 OTA Service 对象
  * @return OTA Service 对象指针；运行时未初始化时返回 NULL
  */

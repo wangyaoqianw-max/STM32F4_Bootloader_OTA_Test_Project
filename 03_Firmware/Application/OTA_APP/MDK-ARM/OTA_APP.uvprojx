@@ -740,6 +740,11 @@
               <FilePath>../02_Service/service_firmware/firmware_storage.c</FilePath>
             </File>
             <File>
+              <FileName>firmware_lifecycle.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../02_Service/service_firmware/firmware_lifecycle.c</FilePath>
+            </File>
+            <File>
               <FileName>ota_firmware_sink.c</FileName>
               <FileType>1</FileType>
               <FilePath>../02_Service/service_firmware/ota_firmware_sink.c</FilePath>

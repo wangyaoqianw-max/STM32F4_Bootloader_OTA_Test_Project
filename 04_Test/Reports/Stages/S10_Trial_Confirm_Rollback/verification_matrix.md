@@ -7,7 +7,7 @@
 - Execution Branch: `main`
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Clean Execution Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
-- Remote Check: `HEAD == origin/main`, ahead/behind `0/0`
+- Remote Check at implementation start: `HEAD == origin/main`, ahead/behind `0/0`
 - Date: `2026-09-19`
 
 ## Baseline Evidence
@@ -27,6 +27,15 @@
 | GDB snapshot/fault on target | real target session | NOT_EXECUTED; BOARD_AUTO pending |
 
 The current baseline contains no identified S10 production test hook or fault-injection macro. Temporary S10 hooks, if required later, must be isolated, marked `TEST ONLY`, compile-time disabled by default, and removed before the final clean build.
+
+## Task 3 Evidence
+
+- Strict Lifecycle API: `firmware_lifecycle_confirm(firmware_storage_t *)`; it reloads latest Metadata, validates the Trial/pending invariants, performs full pending-image validation, reuses the existing atomic Metadata commit, and reloads Metadata for field verification.
+- Runtime boundary: `app_ota_runtime_confirm_trial()` is the only Application runtime entry; `appMainTask` and `app_health` do not receive Firmware Storage or Raw Driver pointers.
+- Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_lifecycle_host_test.c` — PASS; strict state/slot gates, Header/size/Payload CRC/Version gates, commit body/marker failure propagation, reload mismatch, normal `TRIAL → NONE`, and confirmed Slot/Version update.
+- Application project XML parse — PASS.
+- Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
+- Real target Confirm transaction, RTT, GDB, IWDG and board reset/power-cycle evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
 
 ## Acceptance Matrix
 
