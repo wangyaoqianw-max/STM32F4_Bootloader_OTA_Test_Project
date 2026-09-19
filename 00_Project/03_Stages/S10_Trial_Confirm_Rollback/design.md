@@ -1397,46 +1397,52 @@ S10 第一版不实现：
 3. Trial 未 Confirm 前再次进入 Bootloader 时立即进入 rollback path，不等待 Failure Counter；
 4. Application IWDG 不依赖 CubeMX 重新生成；
 5. Watchdog 作为 Platform MCU Capability，通过 Platform/Impl 隔离 HAL；
-6. IWDG 在 RTOS scheduler 前启动；
-7. IWDG 第一版 timeout 约 10 s；
+6. IWDG 在 `HAL_Init()` 成功后、`SystemClock_Config()` 前且 RTOS scheduler 前启动；
+7. IWDG 第一版 timeout 约 10 s；当前禁用的 HAL IWDG module 和缺失的 Keil IWDG source 必须显式接入；
 8. Pre-RTOS / Startup Feed 使用受控 checkpoint，不使用独立无脑 Feed Task；
 9. Runtime 长期 Feed Owner 为 `appMainTask`；
-10. `appMainTask` 只在完成正常工作周期后 Feed；
+10. `appMainTask` 只在完成正常工作周期且 Health State 允许时 Feed；
 11. Debug Halt 时 IWDG 被 DBGMCU 冻结；
 12. GDB Continue 后 IWDG 恢复；
 13. Trial Startup 必须达到 `APP_SYSTEM_STATE_RUNNING` 才能继续 Confirm；
 14. Trial DEGRADED 不允许 Confirm；
-15. MAIN / OTA / DISPLAY Runtime Ready 均被验证；
-16. Runtime Ready 组件不重复定义新的 component enum；
-17. Trial Observation Window 第一版为 5 s；
-18. Observation Window 不是唯一健康条件；
-19. Runtime Confirm 不复用 `service_ota_confirm_install()`；
-20. `firmware_confirm()` 属于 Firmware Lifecycle 语义；
-21. Confirm 前重新 load latest Metadata，不只相信缓存；
-22. Confirm 前校验 TRIAL / pendingSlot / slot state / Header/version；
-23. Confirm 成功原子更新 confirmedSlot / confirmedVersion / pendingSlot / upgradeState；
-24. Confirm commit marker 最后写入并重新 load 验证；
-25. Confirm 掉电只能落在完整 TRIAL 或完整 NONE 两种权威状态；
-26. Bootloader 在 rollback destructive gate 前完整验证 confirmedSlot；
-27. confirmed image version 必须等于 `confirmedVersion`；
-28. Confirmed Image invalid 时禁止擦 Internal APP；
-29. `TRIAL → ROLLBACK` 在 Internal erase 前原子提交；
-30. ROLLBACK restore 使用 External confirmedSlot 作为只读源；
-31. PENDING install 与 ROLLBACK restore 共用镜像验证/安装核心；
-32. 不复制第二套 Internal Flash installer；
-33. ROLLBACK 中掉电后可从头重新恢复；
-34. Internal CRC/vector PASS 前不得提交 `ROLLBACK → NONE`；
-35. Rollback 完成后 `pendingSlot = NONE`；
-36. Rollback 完成后 confirmedSlot / confirmedVersion 保持原 Known-Good 基线；
-37. Slot VALID 仍表示静态镜像有效，不因 Runtime Trial Failure 自动改为 INVALID；
-38. Reset Cause 只用于 Diagnostics，不参与 rollback 判断；
-39. Stable NONE Firmware Confirm 后 Watchdog 继续长期运行；
-40. Existing S05A GDB、S07A Startup、S09 Installer contracts 无无计划回归；
-41. Application / Bootloader Clean Build 通过；
-42. Bootloader 仍小于 64 KiB；
-43. Trial Confirm / IWDG / Rollback 正常链完成真实板验证；
-44. Rollback power-loss / reset fault injection 有可回读证据；
-45. S09 Deferred Fault Injection 若补测，结果回填原 S09 证据，不混淆阶段归属。
+15. MAIN / OTA / DISPLAY Runtime Ready 均发生在 SYSTEM_RUN 之后；
+16. appMainTask 以正常工作周期、otaWorker 以 command-wait、displayTask 以 display-queue wait 作为第一版 Runtime Ready 证据；
+17. Runtime Ready 组件不重复定义新的 component enum；
+18. Trial Runtime Ready deadline 第一版为 5 s，超时必须主动 Reset 或停止有效 Feed，禁止永久 TRIAL；
+19. Trial Observation Window 第一版为 5 s；
+20. Observation Window 不是唯一健康条件；
+21. WAIT_RUNTIME_READY / OBSERVING / CONFIRMING / STABLE 的 Feed Policy 必须明确，Confirm 卡死不能被 appMainTask 无限 Feed 掩盖；
+22. Runtime Confirm 不复用 `service_ota_confirm_install()`；
+23. `firmware_confirm()` 属于 Firmware Lifecycle 语义；
+24. otaWorker 继续作为 Application Firmware Storage I/O owner；app_health/appMainTask 不直接并发访问 W25Q64/EEPROM；
+25. Confirm 前重新 load latest Metadata，不只相信缓存；
+26. Confirm 前必须验证 TRIAL、confirmedSlot/pendingSlot A/B 合法、`pendingSlot != confirmedSlot`、pending slot VALID；
+27. Confirm 前必须完整验证 pending Image Header、Internal APP size compatibility、Payload CRC 和 version；
+28. Confirm 成功原子更新 confirmedSlot / confirmedVersion / pendingSlot / upgradeState；
+29. Confirm commit marker 最后写入并重新 load 验证；
+30. Confirm 掉电只能落在完整 TRIAL 或完整 NONE 两种权威状态；
+31. PENDING/TRIAL destructive gate 必须保证 `confirmedSlot != pendingSlot`，确保独立 Known-Good rollback source；
+32. Bootloader 在 rollback destructive gate 前完整验证 confirmedSlot；
+33. confirmed image version 必须等于 `confirmedVersion`；
+34. Confirmed Image invalid 时禁止擦 Internal APP；
+35. `TRIAL → ROLLBACK` 在 Internal erase 前原子提交；
+36. ROLLBACK restore 使用 External confirmedSlot 作为只读源；
+37. PENDING install 与 ROLLBACK restore 共用镜像验证/安装核心；
+38. 不复制第二套 Internal Flash installer；
+39. ROLLBACK 中掉电后可从头重新恢复；
+40. Internal CRC/vector PASS 前不得提交 `ROLLBACK → NONE`；
+41. Rollback 完成后 `pendingSlot = NONE`；
+42. Rollback 完成后 confirmedSlot / confirmedVersion 保持原 Known-Good 基线；
+43. Slot VALID 仍表示静态镜像有效，不因 Runtime Trial Failure 自动改为 INVALID；
+44. Reset Cause 只用于 Diagnostics，不参与 rollback 判断；
+45. Stable NONE Firmware Confirm 后 Watchdog 继续长期运行；
+46. Existing S05A GDB、S07A Startup、S09 Installer contracts 无无计划回归；
+47. Application / Bootloader Clean Build 通过；
+48. Bootloader 仍小于 64 KiB；
+49. Trial Confirm / IWDG / Rollback 正常链完成真实板验证；
+50. Rollback power-loss / reset fault injection 有可回读证据；
+51. S09 Deferred Fault Injection 若补测，结果回填原 S09 证据，不混淆阶段归属。
 
 ## 22. Design Review Result
 
@@ -1464,4 +1470,4 @@ Review 修订项：
 - Decision: `PENDING_PROJECT_OWNER_APPROVAL`
 - Approved By: `Not approved yet`
 - Initial Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
-- Design Review Amendment Commit: `Will be recorded after this update`
+- Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
