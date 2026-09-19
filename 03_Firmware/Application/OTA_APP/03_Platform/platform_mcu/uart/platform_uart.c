@@ -38,17 +38,17 @@ static platform_error_t platform_uart_validate_config(
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->stopBits < PLATFORM_UART_STOP_BITS_1) ||
+    if (((int32_t)config->stopBits < (int32_t)PLATFORM_UART_STOP_BITS_1) ||
         (config->stopBits >= PLATFORM_UART_STOP_BITS_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->parity < PLATFORM_UART_PARITY_NONE) ||
+    if (((int32_t)config->parity < (int32_t)PLATFORM_UART_PARITY_NONE) ||
         (config->parity >= PLATFORM_UART_PARITY_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->flowControl < PLATFORM_UART_FLOW_CONTROL_NONE) ||
+    if (((int32_t)config->flowControl < (int32_t)PLATFORM_UART_FLOW_CONTROL_NONE) ||
         (config->flowControl >= PLATFORM_UART_FLOW_CONTROL_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
@@ -146,9 +146,9 @@ static platform_error_t platform_uart_validate_event(
      * 先校验公共枚举范围，再校验每类事件的专用约束。
      **/
     if ((event == NULL) ||
-        (event->type < PLATFORM_UART_EVENT_TX_COMPLETE) ||
+        ((int32_t)event->type < (int32_t)PLATFORM_UART_EVENT_TX_COMPLETE) ||
         (event->type >= PLATFORM_UART_EVENT_MAX) ||
-        (event->direction < PLATFORM_UART_DIRECTION_TX) ||
+        ((int32_t)event->direction < (int32_t)PLATFORM_UART_DIRECTION_TX) ||
         (event->direction >= PLATFORM_UART_DIRECTION_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
@@ -466,7 +466,7 @@ platform_error_t platform_uart_cancel(platform_uart_t *uart,
     /**
      * BOTH 用于停止前同时取消 TX 和 RX，其他越界值全部拒绝。
      **/
-    if ((direction < PLATFORM_UART_DIRECTION_TX) ||
+    if (((int32_t)direction < (int32_t)PLATFORM_UART_DIRECTION_TX) ||
         (direction >= PLATFORM_UART_DIRECTION_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }

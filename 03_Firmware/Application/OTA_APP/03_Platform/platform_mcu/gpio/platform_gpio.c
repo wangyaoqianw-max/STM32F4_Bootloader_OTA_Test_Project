@@ -30,22 +30,22 @@ static platform_error_t platform_gpio_validate_config(
         return PLATFORM_ERR_NULL_POINTER;
     }
 
-    if ((config->direction < PLATFORM_GPIO_DIRECTION_INPUT) ||
+    if (((int32_t)config->direction < (int32_t)PLATFORM_GPIO_DIRECTION_INPUT) ||
         (config->direction >= PLATFORM_GPIO_DIRECTION_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->pull < PLATFORM_GPIO_PULL_NONE) ||
+    if (((int32_t)config->pull < (int32_t)PLATFORM_GPIO_PULL_NONE) ||
         (config->pull >= PLATFORM_GPIO_PULL_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->outputType < PLATFORM_GPIO_OUTPUT_PUSH_PULL) ||
+    if (((int32_t)config->outputType < (int32_t)PLATFORM_GPIO_OUTPUT_PUSH_PULL) ||
         (config->outputType >= PLATFORM_GPIO_OUTPUT_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((config->initialLevel < PLATFORM_GPIO_LEVEL_LOW) ||
+    if (((int32_t)config->initialLevel < (int32_t)PLATFORM_GPIO_LEVEL_LOW) ||
         (config->initialLevel >= PLATFORM_GPIO_LEVEL_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
@@ -136,7 +136,7 @@ platform_error_t platform_gpio_write(
         return PLATFORM_ERR_INVALID_STATE;
     }
 
-    if ((level < PLATFORM_GPIO_LEVEL_LOW) ||
+    if (((int32_t)level < (int32_t)PLATFORM_GPIO_LEVEL_LOW) ||
         (level >= PLATFORM_GPIO_LEVEL_MAX)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }

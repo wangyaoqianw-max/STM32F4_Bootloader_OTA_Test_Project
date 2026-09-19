@@ -33,7 +33,13 @@
 static platform_bool_t g_appSystemBootstrapped = PLATFORM_FALSE;
 static platform_queue_t g_displayQueue = PLATFORM_OS_OBJECT_INITIALIZER;
 static platform_event_flags_t g_appHealthEvents = PLATFORM_OS_OBJECT_INITIALIZER;
-static app_health_context_t g_appHealthContext = {0};
+static app_health_context_t g_appHealthContext = {
+    APP_HEALTH_STATE_STARTUP,
+    PLATFORM_FALSE,
+    0U,
+    0U,
+    0U
+};
 static platform_error_t g_appHealthConfirmResult = PLATFORM_ERR_UNKNOWN;
 static platform_bool_t g_appHealthEventsInitialized = PLATFORM_FALSE;
 static platform_bool_t g_appHealthInitialized = PLATFORM_FALSE;

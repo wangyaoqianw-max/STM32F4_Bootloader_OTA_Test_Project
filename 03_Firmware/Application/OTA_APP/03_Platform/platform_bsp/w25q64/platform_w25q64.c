@@ -274,7 +274,12 @@ platform_error_t platform_w25q64_init(
     platform_spi_bus_t *spiBus)
 {
     platform_error_t result = PLATFORM_ERR_OK;
-    platform_gpio_config_t csConfig = {0};
+    platform_gpio_config_t csConfig = {
+        PLATFORM_GPIO_DIRECTION_INPUT,
+        PLATFORM_GPIO_PULL_NONE,
+        PLATFORM_GPIO_OUTPUT_PUSH_PULL,
+        PLATFORM_GPIO_LEVEL_LOW
+    };
     platform_w25q64_jedec_id_t jedecId = {0U};
 
     if ((flash == NULL) || (spiBus == NULL)) {
