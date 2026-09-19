@@ -66,7 +66,7 @@
 
 ## Current Goal
 
-S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0→7 已按单一职责提交：`dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c` 及当前 Task 7 工作树；已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0→7 已按单一职责提交：`dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`；已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 

@@ -17,7 +17,7 @@
 - Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
-- Implementation Commit: `Not created yet`
+- Implementation Commit: `352ee62`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-19`
@@ -404,8 +404,8 @@ Task 3 strict Firmware Lifecycle Confirm: 26ce0ee
 Task 4 Runtime Ready / Feed / Confirm handshake: 1ae57ef
 Task 5 Metadata A/B recovery invariants: d1b08b2
 Task 6 Bootloader Pending Install / Confirmed Restore split: a43086c
-Task 7 Atomic Rollback Metadata Transactions and Boot Decision: worktree changes pending commit
-Production implementation remains IN_PROGRESS; Task 8 is the next implementation input after the Task 7 commit.
+Task 7 Atomic Rollback Metadata Transactions and Boot Decision: 352ee62
+Production implementation remains IN_PROGRESS; Task 8 is the next implementation input.
 ```
 
 ### Changed Files
