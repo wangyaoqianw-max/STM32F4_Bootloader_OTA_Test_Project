@@ -16,9 +16,14 @@
 
 #define LOG_TAG "app_main_task"
 
+#include "app_health.h"
 #include "app_startup.h"
+#include "app_system.h"
+#include "app_ota_worker.h"
 #include "platform_os.h"
+#include "platform_mcu_reset.h"
 #include "platform_time.h"
+#include "platform_watchdog.h"
 #include "project_config.h"
 #include "diagnostics_fault.h"
 #include "service_log.h"
@@ -32,11 +37,20 @@
 //******************************** Private Functions *************************//
 static void app_main_task_entry(void *argument);
 static void app_main_task_terminate(void);
+static platform_error_t app_main_task_consume_runtime_ready(
+    app_health_context_t *health,
+    uint32_t nowMs);
+static platform_error_t app_main_task_consume_confirm_result(
+    app_health_context_t *health);
+static platform_error_t app_main_task_service_health(void);
+static void app_main_task_controlled_reset(platform_error_t error);
 //******************************** Private Functions *************************//
 
 //******************************** Variables ********************************//
 static platform_led_t g_statusLed = PLATFORM_LED_INITIALIZER;
 static platform_bool_t g_appMainTaskStarted = PLATFORM_FALSE;
+static platform_bool_t g_appMainRuntimeReadyReported = PLATFORM_FALSE;
+static platform_bool_t g_appMainConfirmRequested = PLATFORM_FALSE;
 static platform_thread_t g_appMainTaskThread = PLATFORM_OS_OBJECT_INITIALIZER;
 
 static const platform_thread_config_t s_app_main_task_config = {
@@ -49,6 +63,170 @@ static const platform_thread_config_t s_app_main_task_config = {
 //******************************** Variables ********************************//
 
 //******************************** Private Functions *************************//
+static platform_error_t app_main_task_consume_runtime_ready(
+    app_health_context_t *health,
+    uint32_t nowMs)
+{
+    app_health_state_t state;
+    uint32_t readyMask;
+    platform_error_t result;
+
+    if (health == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    result = app_system_take_runtime_ready(&readyMask);
+    if (result == PLATFORM_ERR_TIMEOUT) {
+        return PLATFORM_ERR_OK;
+    }
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_health_get_state(health, &state);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if (state != APP_HEALTH_STATE_WAIT_RUNTIME_READY) {
+        return PLATFORM_ERR_OK;
+    }
+
+    if ((readyMask & APP_HEALTH_READY_MAIN) != 0U) {
+        result = app_health_mark_runtime_ready(
+            health,
+            APP_HEALTH_READY_MAIN,
+            nowMs);
+        if ((result != PLATFORM_ERR_OK) &&
+            (result != PLATFORM_ERR_ALREADY_INITIALIZED)) {
+            return result;
+        }
+    }
+
+    if ((readyMask & APP_HEALTH_READY_OTA) != 0U) {
+        result = app_health_mark_runtime_ready(
+            health,
+            APP_HEALTH_READY_OTA,
+            nowMs);
+        if ((result != PLATFORM_ERR_OK) &&
+            (result != PLATFORM_ERR_ALREADY_INITIALIZED)) {
+            return result;
+        }
+    }
+
+    if ((readyMask & APP_HEALTH_READY_DISPLAY) != 0U) {
+        result = app_health_mark_runtime_ready(
+            health,
+            APP_HEALTH_READY_DISPLAY,
+            nowMs);
+        if ((result != PLATFORM_ERR_OK) &&
+            (result != PLATFORM_ERR_ALREADY_INITIALIZED)) {
+            return result;
+        }
+    }
+
+    return PLATFORM_ERR_OK;
+}
+
+static platform_error_t app_main_task_consume_confirm_result(
+    app_health_context_t *health)
+{
+    platform_error_t confirmResult;
+    platform_error_t result;
+
+    if (health == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    result = app_system_take_confirm_result(&confirmResult);
+    if (result == PLATFORM_ERR_TIMEOUT) {
+        return PLATFORM_ERR_OK;
+    }
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_health_finish_confirm(health, confirmResult);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    return confirmResult;
+}
+
+static platform_error_t app_main_task_service_health(void)
+{
+    app_health_context_t *health;
+    app_health_state_t state;
+    uint32_t nowMs;
+    platform_error_t result;
+
+    health = app_system_get_health_context();
+    if (health == NULL) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    result = platform_time_get_ms(&nowMs);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_main_task_consume_runtime_ready(health, nowMs);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_health_update(health, nowMs);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_main_task_consume_confirm_result(health);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    result = app_health_get_state(health, &state);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if (state == APP_HEALTH_STATE_FAILED) {
+        return PLATFORM_ERR_INVALID_STATE;
+    }
+
+    if ((g_appMainConfirmRequested == PLATFORM_FALSE) &&
+        (app_health_confirm_allowed(health) == PLATFORM_TRUE)) {
+        result = app_health_begin_confirm(health);
+        if (result != PLATFORM_ERR_OK) {
+            return result;
+        }
+
+        g_appMainConfirmRequested = PLATFORM_TRUE;
+        result = app_ota_worker_request_confirm();
+        if (result != PLATFORM_ERR_OK) {
+            (void)app_health_finish_confirm(health, result);
+            return result;
+        }
+    }
+
+    if (app_health_feed_allowed(health, nowMs) == PLATFORM_TRUE) {
+        return platform_watchdog_feed();
+    }
+
+    return PLATFORM_ERR_OK;
+}
+
+static void app_main_task_controlled_reset(platform_error_t error)
+{
+    SERVICE_LOG_E("Health control requests reset: %d", (int)error);
+    platform_mcu_reset();
+
+    for (;;) {
+        (void)platform_time_delay_ms(1000U);
+    }
+}
+
 static void app_main_task_terminate(void)
 {
     platform_error_t result;
@@ -137,6 +315,19 @@ static void app_main_task_entry(void *argument)
         (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_ON_MS);
         (void)platform_led_off(&g_statusLed);
         (void)platform_time_delay_ms(PROJECT_STATUS_LED_BLINK_OFF_MS);
+
+        if (g_appMainRuntimeReadyReported == PLATFORM_FALSE) {
+            result = app_system_report_runtime_ready(APP_HEALTH_READY_MAIN);
+            if (result != PLATFORM_ERR_OK) {
+                app_main_task_controlled_reset(result);
+            }
+            g_appMainRuntimeReadyReported = PLATFORM_TRUE;
+        }
+
+        result = app_main_task_service_health();
+        if (result != PLATFORM_ERR_OK) {
+            app_main_task_controlled_reset(result);
+        }
     }
 }
 //******************************** Private Functions *************************//

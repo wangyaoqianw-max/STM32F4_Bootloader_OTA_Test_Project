@@ -26,6 +26,13 @@
  * @note S06 仅冻结启动入口，不提前暴露 S07 OTA 业务控制接口。
  */
 platform_error_t app_ota_worker_start(platform_queue_t *displayQueue);
+
+/**
+ * @brief 向 otaWorker 投递一次内部 Trial Confirm 命令。
+ * @return platform_error_t : 通知结果
+ * @note Strict Confirm 只在 otaWorker Task Context 执行。
+ */
+platform_error_t app_ota_worker_request_confirm(void);
 //******************************** Functions ********************************//
 
 #endif

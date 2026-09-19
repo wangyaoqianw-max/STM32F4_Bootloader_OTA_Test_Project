@@ -26,6 +26,7 @@
 #define APP_OTA_NOTIFY_CANCEL        (1U << 2)
 #define APP_OTA_NOTIFY_SHUTDOWN      (1U << 3)
 #define APP_OTA_NOTIFY_KEY_1         (1U << 4)
+#define APP_OTA_NOTIFY_CONFIRM       (1U << 5)
 
 #define APP_DISPLAY_FIRMWARE_VERSION_BUFFER_SIZE  (16U)
 #define APP_DISPLAY_SYSTEM_STATE_BUFFER_SIZE      (16U)

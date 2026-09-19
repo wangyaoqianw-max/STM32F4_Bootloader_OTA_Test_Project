@@ -16,6 +16,8 @@
 
 #define LOG_TAG "ota_worker"
 
+#include "app_health.h"
+#include "app_system.h"
 #include "app_ota_runtime.h"
 #include "app_startup.h"
 #include "platform_key.h"
@@ -37,7 +39,7 @@
 #define APP_OTA_WORKER_UART_WAIT_TIMEOUT_MS  (1000U)
 #define APP_OTA_WORKER_NOTIFY_FLAGS          \
     (APP_OTA_NOTIFY_UART_RX | APP_OTA_NOTIFY_START | APP_OTA_NOTIFY_CANCEL | \
-     APP_OTA_NOTIFY_SHUTDOWN | APP_OTA_NOTIFY_KEY_1)
+     APP_OTA_NOTIFY_SHUTDOWN | APP_OTA_NOTIFY_KEY_1 | APP_OTA_NOTIFY_CONFIRM)
 //******************************** Defines **********************************//
 
 //******************************** Private Functions *************************//
@@ -58,6 +60,7 @@ static platform_error_t app_ota_worker_post_display_event(
 static platform_error_t app_ota_worker_publish_service_event(
     platform_bool_t *resetRequired);
 static platform_error_t app_ota_worker_handle_key(void);
+static platform_error_t app_ota_worker_handle_confirm(void);
 static platform_bool_t app_ota_worker_accept_key_event(void);
 static void app_ota_worker_wait_for_command(void);
 static void app_ota_worker_key_event_callback(
@@ -429,6 +432,22 @@ static platform_error_t app_ota_worker_handle_key(void)
     return result;
 }
 
+static platform_error_t app_ota_worker_handle_confirm(void)
+{
+    platform_error_t confirmResult;
+    platform_error_t reportResult;
+
+    confirmResult = app_ota_runtime_confirm_trial();
+    reportResult = app_system_report_confirm_result(confirmResult);
+    if (reportResult != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("OTA confirm result report failed: %d",
+                      (int)reportResult);
+        return reportResult;
+    }
+
+    return confirmResult;
+}
+
 static void app_ota_worker_log_status(void)
 {
     service_ota_t *service;
@@ -465,6 +484,7 @@ static void app_ota_worker_log_status(void)
 static void app_ota_worker_wait_for_command(void)
 {
     uint32_t receivedFlags;
+    platform_bool_t confirmHandled;
     platform_bool_t keyHandled;
     platform_error_t result;
 
@@ -484,9 +504,19 @@ static void app_ota_worker_wait_for_command(void)
             return;
         }
 
+        confirmHandled = PLATFORM_FALSE;
         keyHandled = PLATFORM_FALSE;
+        if ((receivedFlags & APP_OTA_NOTIFY_CONFIRM) != 0U) {
+            result = app_ota_worker_handle_confirm();
+            confirmHandled = PLATFORM_TRUE;
+            if (result != PLATFORM_ERR_OK) {
+                SERVICE_LOG_I("OTA confirm action result: %d", (int)result);
+            }
+        }
+
         if ((receivedFlags & APP_OTA_NOTIFY_KEY_1) != 0U) {
-            if (app_ota_worker_accept_key_event() == PLATFORM_TRUE) {
+            if ((confirmHandled == PLATFORM_FALSE) &&
+                (app_ota_worker_accept_key_event() == PLATFORM_TRUE)) {
                 result = app_ota_worker_handle_key();
                 keyHandled = PLATFORM_TRUE;
                 if (result != PLATFORM_ERR_OK) {
@@ -497,7 +527,8 @@ static void app_ota_worker_wait_for_command(void)
         }
 
         if (((receivedFlags & APP_OTA_NOTIFY_START) != 0U) &&
-            (keyHandled == PLATFORM_FALSE)) {
+            (keyHandled == PLATFORM_FALSE) &&
+            (confirmHandled == PLATFORM_FALSE)) {
             result = app_ota_worker_handle_key();
             if (result != PLATFORM_ERR_OK) {
                 SERVICE_LOG_I("OTA start action result: %d", (int)result);
@@ -567,6 +598,12 @@ static void app_ota_worker_entry(void *argument)
         SERVICE_LOG_W("otaWorker stack query failed: %d", (int)result);
     }
 
+    result = app_system_report_runtime_ready(APP_HEALTH_READY_OTA);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("OTA runtime ready report failed: %d", (int)result);
+        app_ota_worker_terminate();
+    }
+
     app_ota_worker_wait_for_command();
     app_ota_worker_terminate();
 }
@@ -595,5 +632,16 @@ platform_error_t app_ota_worker_start(platform_queue_t *displayQueue)
 
     g_otaWorkerStarted = PLATFORM_TRUE;
     return PLATFORM_ERR_OK;
+}
+
+platform_error_t app_ota_worker_request_confirm(void)
+{
+    if (g_otaWorkerStarted != PLATFORM_TRUE) {
+        return PLATFORM_ERR_NOT_INITIALIZED;
+    }
+
+    return platform_notify_set(
+        &g_otaWorkerThread,
+        APP_OTA_NOTIFY_CONFIRM);
 }
 //******************************** Functions *********************************//

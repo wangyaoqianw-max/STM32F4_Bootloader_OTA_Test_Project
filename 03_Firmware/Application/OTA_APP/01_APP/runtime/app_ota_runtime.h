@@ -84,6 +84,14 @@ platform_error_t app_ota_runtime_read(
 platform_error_t app_ota_runtime_confirm_trial(void);
 
 /**
+ * @brief 获取 OTA Worker 初始化时读取到的 Firmware Lifecycle 状态。
+ * @param[out] trial : PLATFORM_TRUE 表示当前 Application 处于 Trial
+ * @return platform_error_t : 查询结果
+ * @note 本接口只返回缓存的状态，不执行 Storage I/O。
+ */
+platform_error_t app_ota_runtime_get_trial_status(platform_bool_t *trial);
+
+/**
  * @brief 获取 OTA Service 对象
  * @return OTA Service 对象指针；运行时未初始化时返回 NULL
  */

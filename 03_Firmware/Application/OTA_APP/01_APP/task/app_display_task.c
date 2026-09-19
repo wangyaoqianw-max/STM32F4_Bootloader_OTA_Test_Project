@@ -16,7 +16,9 @@
 
 #define LOG_TAG "display_task"
 
+#include "app_health.h"
 #include "app_startup.h"
+#include "app_system.h"
 #include "platform_bsp_spi.h"
 #include "platform_bsp_st7789.h"
 #include "platform_font_ascii_8x16.h"
@@ -411,6 +413,12 @@ static void app_display_task_entry(void *argument)
                       (unsigned long)freeStackBytes);
     } else {
         SERVICE_LOG_W("displayTask stack query failed: %d", (int)result);
+    }
+
+    result = app_system_report_runtime_ready(APP_HEALTH_READY_DISPLAY);
+    if (result != PLATFORM_ERR_OK) {
+        SERVICE_LOG_E("Display runtime ready report failed: %d", (int)result);
+        app_display_task_terminate();
     }
 
     for (;;) {

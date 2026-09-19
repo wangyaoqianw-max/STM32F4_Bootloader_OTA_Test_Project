@@ -47,6 +47,7 @@ static platform_error_t app_ota_runtime_init_uart(
 
 //******************************** Variables ********************************//
 static platform_bool_t g_otaRuntimeInitialized = PLATFORM_FALSE;
+static platform_bool_t g_otaRuntimeTrial = PLATFORM_FALSE;
 static platform_spi_bus_t g_otaStorageSpiBus = PLATFORM_SPI_BUS_INITIALIZER;
 static platform_w25q64_t g_otaFlash = PLATFORM_W25Q64_INITIALIZER;
 static platform_gpio_t g_otaEepromScl = PLATFORM_GPIO_INITIALIZER;
@@ -192,6 +193,8 @@ static platform_error_t app_ota_runtime_init_uart(
 //******************************** Functions *********************************//
 platform_error_t app_ota_runtime_init(platform_thread_t *ownerThread)
 {
+    firmware_metadata_t lifecycleMetadata;
+    firmware_metadata_copy_id_t lifecycleMetadataCopy;
     service_ota_config_t serviceConfig;
     platform_error_t result;
 
@@ -206,6 +209,22 @@ platform_error_t app_ota_runtime_init(platform_thread_t *ownerThread)
     result = app_ota_runtime_init_storage();
     if (result != PLATFORM_ERR_OK) {
         return result;
+    }
+
+    result = firmware_storage_load_metadata(
+        &g_otaFirmwareStorage,
+        &lifecycleMetadata,
+        &lifecycleMetadataCopy);
+    if (result != PLATFORM_ERR_OK) {
+        return result;
+    }
+
+    if (lifecycleMetadata.upgradeState == FIRMWARE_UPGRADE_STATE_NONE) {
+        g_otaRuntimeTrial = PLATFORM_FALSE;
+    } else if (lifecycleMetadata.upgradeState == FIRMWARE_UPGRADE_STATE_TRIAL) {
+        g_otaRuntimeTrial = PLATFORM_TRUE;
+    } else {
+        return PLATFORM_ERR_INVALID_STATE;
     }
 
     result = app_ota_runtime_init_uart(ownerThread);
@@ -353,6 +372,20 @@ platform_error_t app_ota_runtime_confirm_trial(void)
     }
 
     return firmware_lifecycle_confirm(&g_otaFirmwareStorage);
+}
+
+platform_error_t app_ota_runtime_get_trial_status(platform_bool_t *trial)
+{
+    if (trial == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+
+    if (g_otaRuntimeInitialized != PLATFORM_TRUE) {
+        return PLATFORM_ERR_NOT_INITIALIZED;
+    }
+
+    *trial = g_otaRuntimeTrial;
+    return PLATFORM_ERR_OK;
 }
 
 service_ota_t *app_ota_runtime_get_service(void)

@@ -32,3 +32,22 @@ Remove-Item -LiteralPath $out -Force
 - Header、容量、Payload CRC 和 Version 校验失败；
 - Metadata commit 失败与 commit 后回读不一致；
 - 正常 `TRIAL → NONE` 以及 confirmed Slot/Version 更新。
+
+Runtime Health 状态机测试：
+
+```powershell
+$gcc = 'C:\MinGW\bin\gcc.exe'
+$out = Join-Path $env:TEMP 's10_health_host_test.exe'
+& $gcc -std=c11 -Wall -Wextra -Werror `
+  -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
+  -I03_Firmware/Application/OTA_APP/01_APP `
+  -I03_Firmware/Application/OTA_APP/01_APP/system `
+  -o $out `
+  04_Test/Host/S10_Trial_Confirm_Rollback/s10_health_host_test.c `
+  03_Firmware/Application/OTA_APP/01_APP/system/app_health.c
+& $out
+Remove-Item -LiteralPath $out -Force
+```
+
+另有 `05_Tools/Contracts/Application/test_s10_runtime_health_integration.ps1` 检查 Health 初始化、三个 Runtime Ready、单次 Confirm 请求、otaWorker 执行和窄 Runtime 状态接口均已接入。

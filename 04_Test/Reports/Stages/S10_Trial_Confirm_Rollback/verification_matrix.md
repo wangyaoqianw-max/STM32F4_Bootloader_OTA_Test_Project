@@ -37,6 +37,14 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
 - Real target Confirm transaction, RTT, GDB, IWDG and board reset/power-cycle evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
 
+## Task 4 Evidence
+
+- Runtime integration contract: `05_Tools\Contracts\Application\test_s10_runtime_health_integration.ps1` — PASS; Health bootstrap, three Runtime Ready reports, single Confirm request gate, otaWorker execution, Confirm result handoff, and narrow lifecycle status API are present. The contract also rejects Raw Storage references in Health, appMainTask and appSystem.
+- Health Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_health_host_test.c` — PASS; Ready deadline, Observation Window, Confirm success/failure states, feed permission and stable `NONE` behavior.
+- Application Build: `05_Tools\toolkit.bat build application` — PASS; `OTA_APP_build.log` reports `ExitCode=0`, no errors or warnings.
+- Runtime task changes: appMainTask is the only long-term Watchdog Feed owner; otaWorker remains the Confirm Storage transaction owner; display/OTA Ready reports occur after the startup decision.
+- Real Runtime Ready/Confirm RTT, GDB, watchdog and board reset evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
+
 ## Acceptance Matrix
 
 The category is the primary evidence path. A later board result never replaces a required host contract or static/build check.
