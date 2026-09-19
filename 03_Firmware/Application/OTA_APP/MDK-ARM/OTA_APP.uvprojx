@@ -649,6 +649,16 @@
               <FileType>1</FileType>
               <FilePath>../01_APP/system/app_startup.c</FilePath>
             </File>
+            <File>
+              <FileName>app_health.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../01_APP/system/app_health.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_health.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../01_APP/system/app_health.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
