@@ -225,7 +225,7 @@ S08 已交付独立裸机 Bootloader、固定 Internal Flash Layout、RTT/CmBack
 ```text
 S09_Firmware_Installation
 Roadmap State: ACTIVE
-Workflow Status: READY_FOR_IMPLEMENTATION
+Workflow Status: READY_FOR_REVIEW
 ```
 
-S09 已冻结 External Candidate pre-validation、轻量 Bootloader 存储访问、APP-only Internal Flash、安装事务、Metadata `PENDING → TRIAL` 原子边界、Factory Restore 与 Fault Injection 方案。下一步按 S09 implementation plan 实施；S10 Trial/Confirm/Watchdog/Rollback 保持 PLANNED。
+S09 已完成 External Candidate pre-validation、轻量 Bootloader 存储访问、APP-only Internal Flash、安装事务、Metadata `PENDING → TRIAL` 原子边界、Factory Restore 和正常安装链验证。剩余真实板级 Fault Injection 已由 Project Owner 明确延期到下一阶段作为补充验证；S10 Trial/Confirm/Watchdog/Rollback 保持 PLANNED。

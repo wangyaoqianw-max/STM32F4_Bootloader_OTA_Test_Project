@@ -4,12 +4,12 @@
 
 - Stage: `S09_Firmware_Installation`
 - Report type: Implementation evidence / board verification handoff
-- Workflow status: `IN_PROGRESS`
+- Workflow status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Evidence date: `2026-09-19`
-- Verification result: `PENDING`
+- Verification result: `PASS_WITH_DEFERRED_FOLLOW_UP`
 
-本文件保存已完成的自动化和代码证据，不把未完成的真实板级安装、复位、断电和人工按键场景描述为通过。S09 不实现 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback。
+本文件保存已完成的自动化和代码证据，不把未完成的真实板级故障注入、断电和人工配合场景描述为通过。经 Project Owner 明确决定，剩余故障注入延期到下一阶段作为补充验证；S09 不实现 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback。
 
 ## Implementation Commits
 
@@ -60,14 +60,14 @@ e4d6816 docs: complete S09 bootloader comments
 
 失败路径已补充工具恢复动作：Factory Restore 失败后恢复源文件、重建并烧录正式 Application，避免临时测试固件继续留在板上；脚本语法检查 PASS，恢复后的正式 Application RTT 已确认正常初始化。
 
-仍未取得真实板级证据的 Fault Injection 点：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body 后/commit marker 前后、Power Loss。当前不能把未执行点描述为 PASS。
+仍未取得真实板级证据的 Fault Injection 点：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body 后/commit marker 前后、Power Loss。当前不能把未执行点描述为 PASS；这些点已记录为下一阶段的补充验证项。
 
 ## Verification Decision
 
 ```text
 代码验证：PASS
-硬件验证：PENDING（部分板级场景 PASS）
-阶段状态：IN_PROGRESS
+硬件验证：PARTIAL PASS（剩余故障注入 DEFERRED）
+阶段状态：READY_FOR_REVIEW
 ```
 
-未满足 `implementation_plan.md` 的 Task 8 / Task 9 Completion Gate，不推进 `CLOSED`，也不修改 S10 ownership。后续验证应从稳定 Factory baseline 开始，补齐 erase/program/CRC/Metadata marker/Power Loss checkpoints。
+`implementation_plan.md` 的 Task 8 / Task 9 Completion Gate 保持原样；本报告不把延期项宣称为已满足。此次状态推进是 Project Owner 对剩余真实板级故障注入的明确延期决定，后续应从稳定 Factory baseline 开始补齐 erase/program/CRC/Metadata marker/Power Loss checkpoints。S10 ownership 不变，本次不标记 `CLOSED`。

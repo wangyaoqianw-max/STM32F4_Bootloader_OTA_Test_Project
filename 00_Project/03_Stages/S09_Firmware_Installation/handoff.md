@@ -3,13 +3,13 @@
 ## Metadata
 
 - Stage: `S09_Firmware_Installation`
-- Workflow Status: `IN_PROGRESS`
+- Workflow Status: `READY_FOR_REVIEW`
 - Branch: `main`
 - Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
 - Design Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
 - Implementation Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
 - Implementation Commits: `6e3fef5`, `c8e0c07`, `1f5b4d9`, `fbe8e37`, `e4d6816`, `69c426a`, `28feb5a`, `53acd8e`
-- Verification Commit: `Not created yet`
+- Verification Commit: `4fdc9ac`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-19`
 
@@ -195,7 +195,7 @@ RTT 用于稳定状态检查点；GDB/J-Link 用于 reset/fault injection；Logi
 - `git diff --check`：PASS；Bootloader 中未发现 W25Q64 写入/擦除生产 API；
 - 完整证据索引见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
 
-### Board Evidence and Pending Work
+### Board Evidence and Deferred Follow-up
 
 - Factory Restore baseline 已取得真实 PASS：Slot A v1.0 VALID、Slot B EMPTY、Metadata `NONE`，证据见 `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`；
 - v1.1 已通过真实 YMODEM 发送，80 blocks / 81412 bytes，存在重试但最终完成；
@@ -205,11 +205,14 @@ RTT 用于稳定状态检查点；GDB/J-Link 用于 reset/fault injection；Logi
 - 用户已确认 v1.1 LED 闪烁变慢。LCD 显示 V1.0 属于既有硬编码文本，本阶段不作为阻塞项；
 - 最新 Factory Restore 重试仍因 PC 未收到初始 `C` 失败，板端最终 `worker result=2`；该失败不覆盖前述成功 baseline；
 - Factory Restore 失败路径已补充正式 Application 恢复：恢复源文件后重新 Build/Flash，避免临时测试固件留在板上；
-- erase/program 中途、Internal CRC 前后、Metadata marker 前后和 Power Loss 等完整 Fault Injection 尚未全部取得真实板证据；当前不满足 Task 9 Completion Gate，阶段保持 `IN_PROGRESS`，不得进入 `CLOSED`。
+- erase/program 中途、Internal CRC 前后、Metadata marker 前后和 Power Loss 等完整 Fault Injection 尚未全部取得真实板证据；这些项目经 Project Owner 于 2026-09-19 明确决定，延期到下一阶段作为补充验证，不在本次 S09 实现中伪造为 PASS。
+- 上述延期不改变 S09 冻结的 `PENDING → TRIAL` 状态语义、Metadata 原子边界或 S10 ownership，也不修改 `design.md` / `implementation_plan.md` 的冻结内容。
+- 本次 S09 交接基于代码验证 PASS、正常安装链和已完成的 reset 边界证据进入 `READY_FOR_REVIEW`；阶段不在本次提交中标记为 `CLOSED`。
 
 ### Handoff to Next Role
 
-- 当前建议角色：继续由 Verification / Project Owner 补齐剩余板级 Fault Injection；
+- 当前建议角色：Review Role；下一阶段由 Verification / Project Owner 补齐延期的板级 Fault Injection；
 - 已完成主链：Factory baseline → v1.0 → v1.1 Ymodem → PENDING → Bootloader install → TRIAL → v1.1；
-- 首要补测：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body/commit marker 前后、Power Loss/retry；
+- 延期补测：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body/commit marker 前后、Power Loss/retry；
+- 这些补测属于 S09 安装事务的后续验证证据，不得扩展为 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback 生产职责；
 - S10 仍直接接手 TRIAL runtime confirmation、Watchdog、Failure Counter 和 Rollback。

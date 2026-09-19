@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S09_Firmware_Installation`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_REVIEW`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -12,6 +12,9 @@
 - S09 Design / Plan Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
 - S09 Implementation Commits: `6e3fef5`, `c8e0c07`, `1f5b4d9`, `fbe8e37`, `e4d6816`, `69c426a`, `28feb5a`, `53acd8e`
 - S09 Verification Evidence: `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`
+- S09 Verification Commit: `4fdc9ac`
+- S09 Review Report: `00_Project/03_Stages/S09_Firmware_Installation/review.md`
+- S09 Review Commit: `Not created yet`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -55,12 +58,12 @@
 - Last Closed Stage: `S08_Bootloader_Foundation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S10_Trial_Confirm_Rollback`
-- Current Role: `Project Owner`
+- Current Role: `Review Role`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，Task 0–8 已完成主要实现和部分真实板验证，代码验证 PASS、硬件验证部分 PASS / PENDING，状态为 `IN_PROGRESS`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，主要实现和正常安装链已完成，代码验证 PASS、硬件验证为部分 PASS，剩余真实板级 Fault Injection 已明确延期到下一阶段补充验证，状态为 `READY_FOR_REVIEW`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -489,7 +492,7 @@ Power-cycle Persistence PASS
 当前工作流状态：
 
 ```text
-IN_PROGRESS
+READY_FOR_REVIEW
 ```
 
 冻结范围：
@@ -525,7 +528,7 @@ Application Build                  PASS, formal image rebuilt and flashed
 Bootloader ROM                     21104 bytes / 20.61 KiB
 Bootloader BIN                     11688 bytes / 11.41 KiB
 代码验证                           PASS
-硬件验证                           PENDING
+硬件验证                           PARTIAL PASS / DEFERRED FOLLOW-UP
 ```
 
-真实板已通过 Factory baseline、v1.1 YMODEM、PENDING → install → TRIAL、TRIAL reset 和提交前 reset 注入；LED 变慢现象符合 v1.1。最新 Factory Restore 重试因 YMODEM 未收到初始 `C` 失败，且已由工具自动恢复正式 Application。erase/program/CRC/Metadata marker/Power Loss 等剩余 Fault Injection 尚未全部完成，当前不推进 `READY_FOR_VERIFICATION` 或 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
+真实板已通过 Factory baseline、v1.1 YMODEM、PENDING → install → TRIAL、TRIAL reset 和提交前 reset 注入；LED 变慢现象符合 v1.1。最新 Factory Restore 重试因 YMODEM 未收到初始 `C` 失败，且已由工具自动恢复正式 Application。erase/program/CRC/Metadata marker/Power Loss 等剩余 Fault Injection 已由 Project Owner 明确延期到下一阶段补充验证；当前进入 `READY_FOR_REVIEW`，不在本次提交中标记 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
