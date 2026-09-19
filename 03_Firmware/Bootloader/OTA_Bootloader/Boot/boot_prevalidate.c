@@ -105,58 +105,57 @@ static boot_prevalidate_result_t boot_prevalidate_payload(
     return (actualCrc32 == expectedCrc32) ?
            BOOT_PREVALIDATE_VALID : BOOT_PREVALIDATE_PAYLOAD_CRC_INVALID;
 }
-//******************************** Private Functions ************************//
 
-//******************************** Functions ********************************//
-boot_prevalidate_result_t boot_prevalidate_candidate(
+static uint8_t boot_prevalidate_version_matches(
+    const boot_firmware_version_t *actual,
+    const boot_firmware_version_t *expected)
+{
+    if (expected == NULL) {
+        return 1U;
+    }
+    return ((actual->major == expected->major) &&
+            (actual->minor == expected->minor) &&
+            (actual->patch == expected->patch) &&
+            (actual->reserved == expected->reserved)) ? 1U : 0U;
+}
+
+/* Pending Install 与 Confirmed Restore 共用完整的只读镜像验证。 */
+static boot_prevalidate_result_t boot_prevalidate_image_slot(
     const boot_prevalidate_context_t *context,
-    boot_candidate_t *candidate)
+    boot_firmware_slot_t sourceSlot,
+    const boot_firmware_version_t *expectedVersion,
+    boot_prevalidated_image_t *image)
 {
     uint8_t rawHeader[BOOT_FIRMWARE_HEADER_SIZE];
     uint8_t vectorBytes[BOOT_PREVALIDATE_VECTOR_SIZE];
     boot_prevalidate_result_t result;
     uint32_t slotBase;
 
-    if ((context == NULL) || (candidate == NULL) ||
+    if ((context == NULL) || (image == NULL) ||
         (context->flash == NULL) || (context->eeprom == NULL)) {
         return BOOT_PREVALIDATE_INVALID;
     }
-    (void)memset(candidate, 0, sizeof(*candidate));
-    result = boot_prevalidate_load_metadata(context,
-                                            &candidate->metadata,
-                                            &candidate->metadataCopy);
-    if (result != BOOT_PREVALIDATE_VALID) {
-        return result;
-    }
-    /* 到这里仍未调用 Internal Flash；以下条件全部通过才允许进入 Installer。 */
-    if (candidate->metadata.upgradeState != BOOT_UPGRADE_STATE_PENDING) {
-        return BOOT_PREVALIDATE_NO_PENDING;
-    }
-    candidate->candidateSlot = candidate->metadata.pendingSlot;
-    if (candidate->candidateSlot == BOOT_FIRMWARE_SLOT_A) {
-        if (candidate->metadata.slotAState != BOOT_FIRMWARE_SLOT_STATE_VALID) {
-            return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
-        }
-    } else if (candidate->candidateSlot == BOOT_FIRMWARE_SLOT_B) {
-        if (candidate->metadata.slotBState != BOOT_FIRMWARE_SLOT_STATE_VALID) {
-            return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
-        }
-    } else {
-        return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
+    if ((sourceSlot != BOOT_FIRMWARE_SLOT_A) &&
+        (sourceSlot != BOOT_FIRMWARE_SLOT_B)) {
+        return BOOT_PREVALIDATE_INVALID;
     }
 
-    slotBase = boot_prevalidate_slot_base(candidate->candidateSlot);
+    slotBase = boot_prevalidate_slot_base(sourceSlot);
     if (boot_w25q64_read(context->flash, slotBase, rawHeader,
                          sizeof(rawHeader)) != BOOT_DRIVER_OK) {
         return BOOT_PREVALIDATE_EXTERNAL_READ_FAILED;
     }
-    if (boot_image_validate_header(rawHeader, &candidate->header) !=
+    if (boot_image_validate_header(rawHeader, &image->header) !=
         BOOT_IMAGE_VALIDATION_VALID) {
         return BOOT_PREVALIDATE_HEADER_INVALID;
     }
-    if ((candidate->header.imageSize < BOOT_PREVALIDATE_VECTOR_SIZE) ||
-        (candidate->header.imageSize > APP_FLASH_SIZE)) {
+    if ((image->header.imageSize < BOOT_PREVALIDATE_VECTOR_SIZE) ||
+        (image->header.imageSize > APP_FLASH_SIZE)) {
         return BOOT_PREVALIDATE_SIZE_INVALID;
+    }
+    if (boot_prevalidate_version_matches(&image->header.version,
+                                         expectedVersion) == 0U) {
+        return BOOT_PREVALIDATE_CONFIRMED_VERSION_MISMATCH;
     }
     if (boot_w25q64_read(context->flash,
                          slotBase + BOOT_FIRMWARE_PAYLOAD_OFFSET,
@@ -164,20 +163,102 @@ boot_prevalidate_result_t boot_prevalidate_candidate(
                          sizeof(vectorBytes)) != BOOT_DRIVER_OK) {
         return BOOT_PREVALIDATE_EXTERNAL_READ_FAILED;
     }
-    candidate->vector.initialMsp = boot_prevalidate_read_u32_le(vectorBytes);
-    candidate->vector.resetHandler = boot_prevalidate_read_u32_le(&vectorBytes[4]);
-    if (boot_validate_vector_values(candidate->vector.initialMsp,
-                                    candidate->vector.resetHandler) !=
+    image->vector.initialMsp = boot_prevalidate_read_u32_le(vectorBytes);
+    image->vector.resetHandler = boot_prevalidate_read_u32_le(&vectorBytes[4]);
+    if (boot_validate_vector_values(image->vector.initialMsp,
+                                    image->vector.resetHandler) !=
         BOOT_APP_VECTOR_VALID) {
         return BOOT_PREVALIDATE_VECTOR_INVALID;
     }
     result = boot_prevalidate_payload(context,
                                       slotBase + BOOT_FIRMWARE_PAYLOAD_OFFSET,
-                                      candidate->header.imageSize,
-                                      candidate->header.payloadCrc32);
+                                      image->header.imageSize,
+                                      image->header.payloadCrc32);
     if (result != BOOT_PREVALIDATE_VALID) {
         return result;
     }
-
+    image->sourceSlot = sourceSlot;
     return BOOT_PREVALIDATE_VALID;
+}
+//******************************** Private Functions ************************//
+
+//******************************** Functions ********************************//
+boot_prevalidate_result_t boot_prevalidate_candidate(
+    const boot_prevalidate_context_t *context,
+    boot_prevalidated_image_t *image)
+{
+    boot_prevalidate_result_t result;
+
+    if ((context == NULL) || (image == NULL) ||
+        (context->flash == NULL) || (context->eeprom == NULL)) {
+        return BOOT_PREVALIDATE_INVALID;
+    }
+    (void)memset(image, 0, sizeof(*image));
+    result = boot_prevalidate_load_metadata(context,
+                                            &image->metadata,
+                                            &image->metadataCopy);
+    if (result != BOOT_PREVALIDATE_VALID) {
+        return result;
+    }
+    /* 到这里仍未调用 Internal Flash；以下条件全部通过才允许进入 Installer。 */
+    if (image->metadata.upgradeState != BOOT_UPGRADE_STATE_PENDING) {
+        return BOOT_PREVALIDATE_NO_PENDING;
+    }
+    if ((image->metadata.pendingSlot != BOOT_FIRMWARE_SLOT_A) &&
+        (image->metadata.pendingSlot != BOOT_FIRMWARE_SLOT_B)) {
+        return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
+    }
+    if (image->metadata.pendingSlot == image->metadata.confirmedSlot) {
+        return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
+    }
+    if (((image->metadata.pendingSlot == BOOT_FIRMWARE_SLOT_A) &&
+         (image->metadata.slotAState != BOOT_FIRMWARE_SLOT_STATE_VALID)) ||
+        ((image->metadata.pendingSlot == BOOT_FIRMWARE_SLOT_B) &&
+         (image->metadata.slotBState != BOOT_FIRMWARE_SLOT_STATE_VALID))) {
+        return BOOT_PREVALIDATE_PENDING_SLOT_INVALID;
+    }
+    return boot_prevalidate_image_slot(context,
+                                       image->metadata.pendingSlot,
+                                       NULL,
+                                       image);
+}
+
+boot_prevalidate_result_t boot_prevalidate_confirmed(
+    const boot_prevalidate_context_t *context,
+    boot_prevalidated_image_t *image)
+{
+    boot_prevalidate_result_t result;
+
+    if ((context == NULL) || (image == NULL) ||
+        (context->flash == NULL) || (context->eeprom == NULL)) {
+        return BOOT_PREVALIDATE_INVALID;
+    }
+    (void)memset(image, 0, sizeof(*image));
+    result = boot_prevalidate_load_metadata(context,
+                                            &image->metadata,
+                                            &image->metadataCopy);
+    if (result != BOOT_PREVALIDATE_VALID) {
+        return result;
+    }
+    if ((image->metadata.upgradeState != BOOT_UPGRADE_STATE_TRIAL) &&
+        (image->metadata.upgradeState != BOOT_UPGRADE_STATE_ROLLBACK)) {
+        return BOOT_PREVALIDATE_NO_RECOVERY;
+    }
+    if ((image->metadata.confirmedSlot != BOOT_FIRMWARE_SLOT_A) &&
+        (image->metadata.confirmedSlot != BOOT_FIRMWARE_SLOT_B)) {
+        return BOOT_PREVALIDATE_CONFIRMED_SLOT_INVALID;
+    }
+    if (image->metadata.confirmedSlot == image->metadata.pendingSlot) {
+        return BOOT_PREVALIDATE_CONFIRMED_SLOT_INVALID;
+    }
+    if (((image->metadata.confirmedSlot == BOOT_FIRMWARE_SLOT_A) &&
+         (image->metadata.slotAState != BOOT_FIRMWARE_SLOT_STATE_VALID)) ||
+        ((image->metadata.confirmedSlot == BOOT_FIRMWARE_SLOT_B) &&
+         (image->metadata.slotBState != BOOT_FIRMWARE_SLOT_STATE_VALID))) {
+        return BOOT_PREVALIDATE_CONFIRMED_SLOT_INVALID;
+    }
+    return boot_prevalidate_image_slot(context,
+                                       image->metadata.confirmedSlot,
+                                       &image->metadata.confirmedVersion,
+                                       image);
 }

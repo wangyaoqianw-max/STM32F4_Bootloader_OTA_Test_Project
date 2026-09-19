@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file boot_installer.h
- * @brief S09 W25Q64 Candidate 到 Internal APP 的安装事务接口。
+ * @brief S10 Pending Install/Confirmed Restore 安装事务接口。
  * @author YaoQian Wang
  * @date 2026-09-18
  * @version V1.0
@@ -25,7 +25,7 @@
 
 //******************************** Types ***********************************//
 /**
- * @brief Candidate 安装事务结果。
+ * @brief 外部镜像安装事务结果。
  */
 typedef enum
 {
@@ -53,15 +53,25 @@ typedef struct
 
 //******************************** Functions ********************************//
 /**
- * @brief 执行 Candidate 预校验、擦除、分块安装和安装后验证。
+ * @brief 预校验 Pending Image、安装并完成 Internal APP 验证。
  * @param[in] context : 已初始化的 W25Q64 和 AT24C02 引用。
- * @param[out] candidate : 成功时输出本次安装使用的 Candidate 快照。
+ * @param[out] image : 成功时输出本次安装使用的 Pending 镜像快照。
  * @return 安装事务结果；失败时不产生 TRIAL Metadata。
  * @note 本函数只负责 W25Q64 → Internal APP，不执行 PENDING→TRIAL 提交。
  */
-boot_installer_result_t boot_installer_run(
+boot_installer_result_t boot_installer_install_pending(
     const boot_installer_context_t *context,
-    boot_candidate_t *candidate);
+    boot_prevalidated_image_t *image);
+/**
+ * @brief 预校验 Confirmed Image、恢复并完成 Internal APP 验证。
+ * @param[in] context : 已初始化的 W25Q64 和 AT24C02 引用。
+ * @param[out] image : 成功时输出本次恢复使用的 Confirmed 镜像快照。
+ * @return 安装事务结果；Confirmed 预校验失败时不得擦除 Internal APP。
+ * @note 只接受 TRIAL/ROLLBACK recovery path，不公开任意 Slot 安装入口。
+ */
+boot_installer_result_t boot_installer_restore_confirmed(
+    const boot_installer_context_t *context,
+    boot_prevalidated_image_t *image);
 //******************************** Functions ********************************//
 
 #endif

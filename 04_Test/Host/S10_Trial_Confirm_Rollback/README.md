@@ -77,3 +77,38 @@ Remove-Item -LiteralPath $out -Force
 该测试同时验证 Application/Bootloader 编码结果一致，并验证两端都拒绝
 `pendingSlot == confirmedSlot`、无效 confirmed Slot 基线和无效 pending Slot，
 同时保留 Factory/stable `NONE` 记录。
+
+Bootloader Pending Install / Confirmed Restore 测试：
+
+```powershell
+$gcc = 'C:\MinGW\bin\gcc.exe'
+$out = Join-Path $env:TEMP 's10_boot_recovery_host_test.exe'
+& $gcc -std=c11 -Wall -Wextra -Werror -DSTM32F411xE -DUSE_HAL_DRIVER `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Firmware `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/Bus/SPI `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/Bus/SoftI2C `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/W25Q64 `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/AT24C02 `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/InternalFlash `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Core/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Config `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/STM32F4xx_HAL_Driver/Inc `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Device/ST/STM32F4xx/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Drivers/CMSIS/Include `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Boot `
+  -I03_Firmware/Shared `
+  -o $out `
+  04_Test/Host/S10_Trial_Confirm_Rollback/s10_boot_recovery_host_test.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_crc32.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_image.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_metadata.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Boot/boot_validate.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Boot/boot_prevalidate.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Boot/boot_installer.c
+& $out
+Remove-Item -LiteralPath $out -Force
+```
+
+该测试验证 Pending/Confirmed 来源选择、共享验证/安装核心、Confirmed version、
+Payload CRC、Vector、同 Slot 门禁，以及 prevalidate 失败不得擦除 Internal APP。

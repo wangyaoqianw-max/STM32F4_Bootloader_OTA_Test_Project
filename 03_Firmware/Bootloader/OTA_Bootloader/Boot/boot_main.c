@@ -219,7 +219,7 @@ void boot_main_run(void)
     boot_firmware_metadata_t committedMetadata = {0};
     boot_metadata_copy_id_t selectedCopy = BOOT_METADATA_COPY_NONE;
     boot_installer_context_t installerContext;
-    boot_candidate_t candidate = {0};
+    boot_prevalidated_image_t candidate = {0};
     boot_installer_result_t installerResult;
     boot_metadata_commit_result_t commitResult;
     boot_driver_status_t driverResult;
@@ -245,7 +245,7 @@ void boot_main_run(void)
     if (metadata.upgradeState == BOOT_UPGRADE_STATE_PENDING) {
         installerContext.flash = &flash;
         installerContext.eeprom = &eeprom;
-        installerResult = boot_installer_run(&installerContext, &candidate);
+        installerResult = boot_installer_install_pending(&installerContext, &candidate);
         if (installerResult != BOOT_INSTALLER_OK) {
             BOOT_LOG_E("Installer FAIL: %u", (unsigned int)installerResult);
             boot_main_halt("Candidate installation");
@@ -253,7 +253,7 @@ void boot_main_run(void)
         BOOT_LOG_I("installed APP CRC/vector PASS");
 
         commitResult = boot_metadata_commit_trial(&eeprom,
-                                                  candidate.candidateSlot,
+                                                  candidate.sourceSlot,
                                                   &committedMetadata);
         if (commitResult != BOOT_METADATA_COMMIT_OK) {
             BOOT_LOG_E("Metadata PENDING -> TRIAL FAIL: %u",

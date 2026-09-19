@@ -77,10 +77,10 @@ static void test_reset_state(void)
     (void)memset(g_internalApp, 0xFF, sizeof(g_internalApp));
 }
 
-static void test_prepare_candidate(boot_candidate_t *candidate)
+static void test_prepare_candidate(boot_prevalidated_image_t *candidate)
 {
     (void)memset(candidate, 0, sizeof(*candidate));
-    candidate->candidateSlot = BOOT_FIRMWARE_SLOT_B;
+    candidate->sourceSlot = BOOT_FIRMWARE_SLOT_B;
     candidate->header.imageSize = TEST_PAYLOAD_SIZE;
     candidate->header.payloadCrc32 = boot_crc32_calculate(
         g_payload, sizeof(g_payload));
@@ -91,12 +91,12 @@ static void test_prepare_candidate(boot_candidate_t *candidate)
 static void test_prevalidation_gate(void)
 {
     boot_installer_context_t context = {0};
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_installer_result_t result;
 
     test_reset_state();
     g_prevalidatePass = 0U;
-    result = boot_installer_run(&context, &candidate);
+    result = boot_installer_install_pending(&context, &candidate);
     test_expect(result == BOOT_INSTALLER_PREVALIDATION_FAILED,
                 "failed prevalidation stops installer");
     test_expect(g_eraseCount == 0U, "failed prevalidation does not erase APP");
@@ -107,13 +107,13 @@ static void test_successful_install(void)
     boot_installer_context_t context = {0};
     boot_w25q64_t flash = {0};
     boot_at24c02_t eeprom = {0};
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_installer_result_t result;
 
     test_reset_state();
     context.flash = &flash;
     context.eeprom = &eeprom;
-    result = boot_installer_run(&context, &candidate);
+    result = boot_installer_install_pending(&context, &candidate);
     test_expect(result == BOOT_INSTALLER_OK, "valid candidate installs successfully");
     test_expect(g_eraseCount == 1U, "valid candidate erases APP once");
     test_expect(g_writeCount == 2U, "300-byte payload uses two bounded writes");
@@ -126,14 +126,14 @@ static void test_internal_write_failure(void)
     boot_installer_context_t context = {0};
     boot_w25q64_t flash = {0};
     boot_at24c02_t eeprom = {0};
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_installer_result_t result;
 
     test_reset_state();
     g_internalWriteFail = 1U;
     context.flash = &flash;
     context.eeprom = &eeprom;
-    result = boot_installer_run(&context, &candidate);
+    result = boot_installer_install_pending(&context, &candidate);
     test_expect(result == BOOT_INSTALLER_INTERNAL_WRITE_FAILED,
                 "internal write failure is reported");
     test_expect(g_eraseCount == 1U, "write failure occurs after destructive gate");
@@ -144,14 +144,14 @@ static void test_readback_failure(void)
     boot_installer_context_t context = {0};
     boot_w25q64_t flash = {0};
     boot_at24c02_t eeprom = {0};
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_installer_result_t result;
 
     test_reset_state();
     g_internalReadbackCorrupt = 1U;
     context.flash = &flash;
     context.eeprom = &eeprom;
-    result = boot_installer_run(&context, &candidate);
+    result = boot_installer_install_pending(&context, &candidate);
     test_expect(result == BOOT_INSTALLER_READBACK_FAILED,
                 "read-back mismatch is reported");
 }
@@ -160,7 +160,7 @@ static void test_readback_failure(void)
 //******************************** Test Doubles ******************************//
 boot_prevalidate_result_t boot_prevalidate_candidate(
     const boot_prevalidate_context_t *context,
-    boot_candidate_t *candidate)
+    boot_prevalidated_image_t *candidate)
 {
     (void)context;
     if ((g_prevalidatePass == 0U) || (candidate == NULL)) {
@@ -168,6 +168,15 @@ boot_prevalidate_result_t boot_prevalidate_candidate(
     }
     test_prepare_candidate(candidate);
     return BOOT_PREVALIDATE_VALID;
+}
+
+boot_prevalidate_result_t boot_prevalidate_confirmed(
+    const boot_prevalidate_context_t *context,
+    boot_prevalidated_image_t *image)
+{
+    (void)context;
+    (void)image;
+    return BOOT_PREVALIDATE_NO_RECOVERY;
 }
 
 boot_driver_status_t boot_w25q64_read(

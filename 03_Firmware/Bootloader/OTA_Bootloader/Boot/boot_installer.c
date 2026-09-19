@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file boot_installer.c
- * @brief S09 W25Q64 Candidate 到 Internal APP 的安装事务实现。
+ * @brief S10 Pending Install/Confirmed Restore 安装事务实现。
  * @author YaoQian Wang
  * @date 2026-09-18
  * @version V1.0
@@ -32,14 +32,14 @@ static uint32_t boot_installer_slot_base(boot_firmware_slot_t slot)
 
 static boot_installer_result_t boot_installer_copy_payload(
     const boot_installer_context_t *context,
-    const boot_candidate_t *candidate)
+    const boot_prevalidated_image_t *image)
 {
     uint8_t buffer[BOOT_INSTALLER_BUFFER_SIZE];
     boot_crc32_context_t internalCrc;
-    uint32_t slotAddress = boot_installer_slot_base(candidate->candidateSlot) +
+    uint32_t slotAddress = boot_installer_slot_base(image->sourceSlot) +
                            BOOT_FIRMWARE_PAYLOAD_OFFSET;
     uint32_t appOffset = 0U;
-    uint32_t remaining = candidate->header.imageSize;
+    uint32_t remaining = image->header.imageSize;
     uint16_t chunkLength;
     uint32_t expectedChunkCrc;
     uint32_t actualChunkCrc;
@@ -78,7 +78,7 @@ static boot_installer_result_t boot_installer_copy_payload(
     /* 安装完成后重新从 Internal APP 计算 whole-image CRC。 */
     boot_crc32_init(&internalCrc);
     appOffset = 0U;
-    remaining = candidate->header.imageSize;
+    remaining = image->header.imageSize;
     while (remaining > 0U) {
         chunkLength = (remaining > sizeof(buffer)) ?
                       (uint16_t)sizeof(buffer) : (uint16_t)remaining;
@@ -91,7 +91,7 @@ static boot_installer_result_t boot_installer_copy_payload(
         remaining -= chunkLength;
     }
     actualInternalCrc = boot_crc32_finalize(&internalCrc);
-    if (actualInternalCrc != candidate->header.payloadCrc32) {
+    if (actualInternalCrc != image->header.payloadCrc32) {
         return BOOT_INSTALLER_INTERNAL_CRC_FAILED;
     }
 
@@ -99,7 +99,7 @@ static boot_installer_result_t boot_installer_copy_payload(
 }
 
 static boot_installer_result_t boot_installer_validate_installed_vector(
-    boot_candidate_t *candidate)
+    boot_prevalidated_image_t *image)
 {
     uint8_t vectorBytes[BOOT_INSTALLER_VECTOR_SIZE];
 
@@ -107,50 +107,78 @@ static boot_installer_result_t boot_installer_validate_installed_vector(
         BOOT_DRIVER_OK) {
         return BOOT_INSTALLER_VECTOR_FAILED;
     }
-    candidate->vector.initialMsp = (uint32_t)vectorBytes[0] |
+    image->vector.initialMsp = (uint32_t)vectorBytes[0] |
                                    ((uint32_t)vectorBytes[1] << 8U) |
                                    ((uint32_t)vectorBytes[2] << 16U) |
                                    ((uint32_t)vectorBytes[3] << 24U);
-    candidate->vector.resetHandler = (uint32_t)vectorBytes[4] |
+    image->vector.resetHandler = (uint32_t)vectorBytes[4] |
                                      ((uint32_t)vectorBytes[5] << 8U) |
                                      ((uint32_t)vectorBytes[6] << 16U) |
                                      ((uint32_t)vectorBytes[7] << 24U);
-    return (boot_validate_vector_values(candidate->vector.initialMsp,
-                                        candidate->vector.resetHandler) ==
+    return (boot_validate_vector_values(image->vector.initialMsp,
+                                        image->vector.resetHandler) ==
             BOOT_APP_VECTOR_VALID) ?
            BOOT_INSTALLER_OK : BOOT_INSTALLER_VECTOR_FAILED;
 }
 //******************************** Private Functions ************************//
-
-//******************************** Functions ********************************//
-boot_installer_result_t boot_installer_run(
+static boot_installer_result_t boot_installer_install_core(
     const boot_installer_context_t *context,
-    boot_candidate_t *candidate)
+    boot_prevalidated_image_t *image)
 {
-    boot_prevalidate_context_t prevalidateContext;
-    boot_candidate_t validatedCandidate;
-    boot_prevalidate_result_t prevalidateResult;
     boot_installer_result_t result;
 
-    if ((context == NULL) || (candidate == NULL) ||
-        (context->flash == NULL) || (context->eeprom == NULL)) {
-        return BOOT_INSTALLER_PREVALIDATION_FAILED;
-    }
-    /* 统一在本函数内重新预校验，禁止调用者绕过 destructive gate。 */
-    prevalidateContext.flash = context->flash;
-    prevalidateContext.eeprom = context->eeprom;
-    prevalidateResult = boot_prevalidate_candidate(&prevalidateContext,
-                                                   &validatedCandidate);
-    if (prevalidateResult != BOOT_PREVALIDATE_VALID) {
-        return BOOT_INSTALLER_PREVALIDATION_FAILED;
-    }
-    *candidate = validatedCandidate;
     if (boot_internal_flash_erase_app() != BOOT_DRIVER_OK) {
         return BOOT_INSTALLER_ERASE_FAILED;
     }
-    result = boot_installer_copy_payload(context, candidate);
+    result = boot_installer_copy_payload(context, image);
     if (result != BOOT_INSTALLER_OK) {
         return result;
     }
-    return boot_installer_validate_installed_vector(candidate);
+    return boot_installer_validate_installed_vector(image);
+}
+
+//******************************** Functions ********************************//
+
+boot_installer_result_t boot_installer_install_pending(
+    const boot_installer_context_t *context,
+    boot_prevalidated_image_t *image)
+{
+    boot_prevalidate_context_t prevalidateContext;
+    boot_prevalidated_image_t validatedImage;
+
+    if ((context == NULL) || (image == NULL) ||
+        (context->flash == NULL) || (context->eeprom == NULL)) {
+        return BOOT_INSTALLER_PREVALIDATION_FAILED;
+    }
+    /* Pending 入口必须在同一调用中重新完成只读预校验。 */
+    prevalidateContext.flash = context->flash;
+    prevalidateContext.eeprom = context->eeprom;
+    if (boot_prevalidate_candidate(&prevalidateContext, &validatedImage) !=
+        BOOT_PREVALIDATE_VALID) {
+        return BOOT_INSTALLER_PREVALIDATION_FAILED;
+    }
+    *image = validatedImage;
+    return boot_installer_install_core(context, image);
+}
+
+boot_installer_result_t boot_installer_restore_confirmed(
+    const boot_installer_context_t *context,
+    boot_prevalidated_image_t *image)
+{
+    boot_prevalidate_context_t prevalidateContext;
+    boot_prevalidated_image_t validatedImage;
+
+    if ((context == NULL) || (image == NULL) ||
+        (context->flash == NULL) || (context->eeprom == NULL)) {
+        return BOOT_INSTALLER_PREVALIDATION_FAILED;
+    }
+    /* Confirmed 入口同样必须在 destructive gate 前重新验证 Metadata/Image。 */
+    prevalidateContext.flash = context->flash;
+    prevalidateContext.eeprom = context->eeprom;
+    if (boot_prevalidate_confirmed(&prevalidateContext, &validatedImage) !=
+        BOOT_PREVALIDATE_VALID) {
+        return BOOT_INSTALLER_PREVALIDATION_FAILED;
+    }
+    *image = validatedImage;
+    return boot_installer_install_core(context, image);
 }

@@ -56,6 +56,16 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
 - Bootloader Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 21140 bytes (20.64 KiB)`, below 64 KiB.
 
+## Task 6 Evidence
+
+- TDD red baseline: the new Bootloader recovery Host Test initially failed to compile because the Confirmed prevalidate and the two narrow Installer APIs did not yet exist.
+- Prevalidate split: `boot_prevalidate_candidate()` remains the PENDING-only entry; `boot_prevalidate_confirmed()` accepts only TRIAL/ROLLBACK, selects `confirmedSlot`, checks `confirmedVersion`, and both use the private common Header/size/vector/Payload CRC validation.
+- Installer split: `boot_installer_install_pending()` and `boot_installer_restore_confirmed()` select their sources through the narrow prevalidate entries and share one private erase/copy/read-back/Internal CRC/vector install core. No arbitrary Slot install API was added.
+- S10 Bootloader recovery Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_boot_recovery_host_test.c` — PASS; Pending B, Confirmed A, wrong state, same Slot, version mismatch, invalid Payload CRC/vector, common source selection, and prevalidate-before-erase gate.
+- S09 regression Host Tests — PASS: prevalidate, installer, fixed Header/Metadata contract, and atomic Metadata commit.
+- Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 21288 bytes (20.79 KiB)`, below 64 KiB.
+- Real Bootloader rollback/restore, RTT, GDB and board evidence — NOT_EXECUTED; pending Task 7/8/9 board verification.
+
 ## Acceptance Matrix
 
 The category is the primary evidence path. A later board result never replaces a required host contract or static/build check.

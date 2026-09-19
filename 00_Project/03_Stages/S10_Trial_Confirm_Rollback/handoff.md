@@ -314,7 +314,7 @@ ESP-IDF OTA rollback
 
 ## Implementation Progress
 
-Project Owner 已批准 Design，Implementation Plan 已冻结。Task 0 已完成：同步并核对 `main`/`origin/main`、确认实际施工基线、完成 Application/Bootloader Clean Build、执行现有 Host/契约检查并建立 `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`。后续按 Implementation Plan Task 1→10 执行，继续以真实文件/API 为准，不机械照抄建议命名。
+Project Owner 已批准 Design，Implementation Plan 已冻结。Task 0→6 已完成：同步并核对 `main`/`origin/main`、确认实际施工基线、完成 Application/Bootloader Clean Build、执行现有 Host/契约检查、实现 Application Trial Health/Confirm、Metadata A/B invariants 和 Bootloader Pending Install/Confirmed Restore 共用验证/安装核心，并将证据写入 `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`。后续按 Implementation Plan Task 7→10 执行，继续以真实文件/API 为准，不机械照抄建议命名。
 
 ## S09 Deferred Verification Carried Forward
 
@@ -397,30 +397,36 @@ Bootloader < 64 KiB
 ### Completed Work
 
 ```text
-Task 0 baseline, tool/Host contract checks, verification matrix and S09 Deferred boundary completed.
-Production implementation has not started yet.
+Task 0 baseline and verification matrix: dfb012b
+Task 1 Application Watchdog capability: cd15bad
+Task 2 Application Runtime Health: e245e21
+Task 3 strict Firmware Lifecycle Confirm: 26ce0ee
+Task 4 Runtime Ready / Feed / Confirm handshake: 1ae57ef
+Task 5 Metadata A/B recovery invariants: d1b08b2
+Task 6 Bootloader Pending Install / Confirmed Restore split: worktree changes pending commit
+Production implementation remains IN_PROGRESS; Task 7 is the next implementation input.
 ```
 
 ### Changed Files
 
 ```text
-00_Project/03_Stages/S10_Trial_Confirm_Rollback/implementation_plan.md
-00_Project/03_Stages/S10_Trial_Confirm_Rollback/handoff.md
-PROJECT_CONTEXT.md
-00_Project/05_Status/current_status.md
+Application OTA_APP watchdog, health, lifecycle and runtime integration
+Bootloader prevalidate/installer/main integration
+S10 Host contracts and S09 Host fixture compatibility updates
 04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md
+PROJECT_CONTEXT.md / 00_Project/05_Status/current_status.md
 ```
 
 ### Deviations From Plan
 
 ```text
-The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b95d1`; only stage-document commits intervene. No design or production scope was changed.
+The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b95d1`; only stage-document commits intervene. Task 5 required updating the stale S09 Host fixture from same-slot pending to the valid A-confirmed/B-pending combination. Task 6 uses the actual narrow APIs `boot_prevalidate_confirmed()`, `boot_installer_install_pending()` and `boot_installer_restore_confirmed()` while preserving the frozen architecture.
 ```
 
 ### Verification Results
 
 ```text
-Task 0 baseline evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`. Real target RTT/GDB/Factory Restore and manual board evidence remain pending.
+Task 0→6 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`. Application/Bootloader Clean Builds and relevant Host/S09 regression tests pass; real target RTT/GDB/Factory Restore, rollback and manual board evidence remain pending.
 ```
 
 ### Design Review Status

@@ -162,19 +162,19 @@ boot_driver_status_t boot_at24c02_read(
 //******************************** Functions ********************************//
 static int test_valid_candidate(void)
 {
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_prevalidate_context_t context;
 
     test_reset_fixture(1U);
     context = test_context();
     return (boot_prevalidate_candidate(&context, &candidate) == BOOT_PREVALIDATE_VALID) &&
-                   (candidate.candidateSlot == BOOT_FIRMWARE_SLOT_B) &&
+                   (candidate.sourceSlot == BOOT_FIRMWARE_SLOT_B) &&
                    (g_externalReadCount == 3U) ? 0 : 1;
 }
 
 static int test_header_crc_gate(void)
 {
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_prevalidate_context_t context;
 
     test_reset_fixture(1U);
@@ -186,7 +186,7 @@ static int test_header_crc_gate(void)
 
 static int test_payload_crc_gate(void)
 {
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_prevalidate_context_t context;
 
     test_reset_fixture(1U);
@@ -198,7 +198,7 @@ static int test_payload_crc_gate(void)
 
 static int test_vector_gate(void)
 {
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_prevalidate_context_t context;
 
     test_reset_fixture(1U);
@@ -211,7 +211,7 @@ static int test_vector_gate(void)
 
 static int test_no_pending_gate(void)
 {
-    boot_candidate_t candidate;
+    boot_prevalidated_image_t candidate;
     boot_prevalidate_context_t context;
 
     test_reset_fixture(0U);
