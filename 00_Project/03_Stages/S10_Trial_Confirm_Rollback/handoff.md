@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `DESIGN_APPROVED`
+- Workflow Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
@@ -14,7 +14,7 @@
 - Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
 - Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
-- Implementation Plan Commit: `Not created yet`
+- Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
@@ -25,25 +25,26 @@
 当前角色：
 
 ```text
-Project Owner / S10 Implementation Planning
+Implementation Role
 ```
 
 当前允许继续：
 
 ```text
-implementation_plan.md preparation
-implementation task decomposition
-verification-plan mapping
+execute implementation_plan.md
+production implementation within approved scope
+automated verification
+temporary test/fault code under the approved test rules
 ```
 
 当前禁止：
 
 ```text
-production implementation
-stage verification claims
+scope expansion outside approved S10 design
+unapproved Metadata V3 / CONFIRMED enum / failure-threshold rollback
+claiming hardware PASS without evidence
+leaving temporary test code in the final production build
 ```
-
-只有 implementation plan 完成并同步正式上下文后，阶段才进入 `READY_FOR_IMPLEMENTATION`。
 
 ## Required Reading
 
@@ -448,7 +449,7 @@ Technical Result   : READY_FOR_OWNER_APPROVAL
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up.
 - S10 Design has received formal Project Owner approval.
-- Implementation Plan has not yet been created.
+- Implementation Plan has been created and approved for execution.
 
 ### Review Focus
 
@@ -461,3 +462,23 @@ Technical Result   : READY_FOR_OWNER_APPROVAL
 5. Installer 泛化是否保持安全窄接口；
 6. Debug Freeze 是否保持现有 GDB 自动化可用；
 7. S10 是否错误吸收 S09 Deferred Verification。
+
+
+## Test Execution Policy
+
+Project Owner confirmed the following S10 test policy:
+
+```text
+Automated first:
+Host Test
+→ Clean Build
+→ Toolkit / RTT / GDB
+→ automated reset / fault injection where feasible
+
+Then consolidated manual verification:
+KEY press
+→ LED/LCD visual confirmation
+→ real power-cycle / power-loss scenarios
+```
+
+Temporary test code is allowed when needed. It must be clearly isolated, default-disabled, and removed after its evidence is captured. Final production Clean Build must contain no temporary test-only behavior.
