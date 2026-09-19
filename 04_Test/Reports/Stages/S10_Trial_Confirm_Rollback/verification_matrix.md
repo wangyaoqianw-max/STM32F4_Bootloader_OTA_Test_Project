@@ -75,6 +75,18 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below 64 KiB.
 - Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; no target Reset Cause, rollback restore, RTT or GDB evidence has been executed yet — NOT_EXECUTED; pending Task 8/9 board verification.
 
+## Task 8 Evidence
+
+- Host regression matrix — PASS: S02 SPI chunking; S04 CRC, firmware format and storage; S05 storage write, YMODEM parser/receiver and flash sink; S07A startup; S07 IRQ, Key, Worker, Display, Metadata, sink and OTA service; S09 contract, prevalidate, installer and Metadata commit; S10 health, lifecycle, Metadata invariant, boot recovery and rollback transaction.
+- Python tests — PASS: `05_Tools/Firmware/test_pack_firmware.py` 2/2; `05_Tools/Ymodem/tests` 24/24; `04_Test/Host/S04_Firmware_Image_Storage/test_s04_persistence_log.py` 15/15.
+- Static contracts — PASS: all 11 scripts under `05_Tools/Contracts`; GDB automation, CmBacktrace integration/fault diagnostics, tool sequence and S05C parser fixture checks also PASS.
+- Host fixture maintenance — commit `54c9827`; S04 test stubs now expose the current AT24C02/W25Q64 initializer contracts and the Metadata recovery fixture uses a distinct valid confirmed/pending Slot pair. The S07 UART test double uses independent test-owned TX storage instead of removed production struct fields. No production API or behavior was changed by this fixture commit.
+- Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 84596 bytes (82.61 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
+- Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below the 64 KiB limit.
+- Real-board automation — NOT_EXECUTED/PENDING: no Flash, RTT, GDB target session, IWDG target observation, reset/power-cycle or rollback fault-injection evidence was produced.
+- S05C result-file checks — NOT_EXECUTED/PENDING: `test_i2c.ps1` and `test_spi.ps1` require a real logic-analyzer result file; the fixture parser check passed, but no target capture was available.
+- Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches were removed after evidence collection.
+
 ## Acceptance Matrix
 
 The category is the primary evidence path. A later board result never replaces a required host contract or static/build check.
