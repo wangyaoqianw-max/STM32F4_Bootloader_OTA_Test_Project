@@ -403,16 +403,17 @@ Task 2 Application Runtime Health: e245e21
 Task 3 strict Firmware Lifecycle Confirm: 26ce0ee
 Task 4 Runtime Ready / Feed / Confirm handshake: 1ae57ef
 Task 5 Metadata A/B recovery invariants: d1b08b2
-Task 6 Bootloader Pending Install / Confirmed Restore split: worktree changes pending commit
-Production implementation remains IN_PROGRESS; Task 7 is the next implementation input.
+Task 6 Bootloader Pending Install / Confirmed Restore split: a43086c
+Task 7 Atomic Rollback Metadata Transactions and Boot Decision: worktree changes pending commit
+Production implementation remains IN_PROGRESS; Task 8 is the next implementation input after the Task 7 commit.
 ```
 
 ### Changed Files
 
 ```text
 Application OTA_APP watchdog, health, lifecycle and runtime integration
-Bootloader prevalidate/installer/main integration
-S10 Host contracts and S09 Host fixture compatibility updates
+Bootloader prevalidate/installer/metadata commit/main integration
+S10 Host rollback transaction and Boot decision contracts; S09 Host fixture compatibility updates
 04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md
 PROJECT_CONTEXT.md / 00_Project/05_Status/current_status.md
 ```
@@ -426,7 +427,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→6 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`. Application/Bootloader Clean Builds and relevant Host/S09 regression tests pass; real target RTT/GDB/Factory Restore, rollback and manual board evidence remain pending.
+Task 0→7 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`. Application/Bootloader Clean Builds and relevant Host/S09 regression tests pass; real target RTT/GDB/Factory Restore, rollback and manual board evidence remain pending.
 ```
 
 ### Design Review Status

@@ -72,7 +72,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。Task 0→6 已完成：两工程 Clean Build、Watchdog/Health/strict Confirm、Metadata A/B invariant、Bootloader Pending/Confirmed 共用预校验与安装核心，以及对应 Host/S09 回归均已有证据；当前继续执行 Task 7。测试仍采用自动化优先、人工场景最后集中验收；临时测试代码最终必须移除。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。Task 0→7 已完成：两工程 Clean Build、Watchdog/Health/strict Confirm、Metadata A/B invariant、Bootloader Pending/Confirmed 共用预校验与安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision，以及对应 Host/S09 回归均已有证据；当前继续执行 Task 8。测试仍采用自动化优先、人工场景最后集中验收；临时测试代码最终必须移除。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 

@@ -66,7 +66,7 @@
 
 ## Current Goal
 
-S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0→6 已按单一职责提交：`dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2` 及当前 Task 6 工作树；已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant 和 Pending/Confirmed 共用 Bootloader 验证/安装核心。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0→7 已按单一职责提交：`dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c` 及当前 Task 7 工作树；已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -533,7 +533,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，当前状态为 `IN_PROGRESS`。Task 0→6 已完成，下一步由 Implementation Role 执行 Task 7 的 Atomic Rollback Metadata Transactions 与 Boot Decision；测试采用自动化优先、人工场景最后集中验收，允许临时测试代码但最终必须移除。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，当前状态为 `IN_PROGRESS`。Task 0→7 已完成，下一步由 Implementation Role 执行 Task 8 的 Automated Regression and Board Verification；测试采用自动化优先、人工场景最后集中验收，允许临时测试代码但最终必须移除。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

@@ -4,7 +4,7 @@
  * All Rights Reserved.
  *
  * @file boot_metadata_commit.c
- * @brief S09 Metadata PENDING 到 TRIAL 原子提交实现。
+ * @brief S09/S10 Metadata 生命周期原子提交实现。
  * @author YaoQian Wang
  * @date 2026-09-18
  * @version V1.0
@@ -20,6 +20,7 @@
 
 //******************************** Defines **********************************//
 #define BOOT_METADATA_BODY_AND_CRC_SIZE (0x7CU)
+#define BOOT_METADATA_MARKER_OFFSET     (BOOT_METADATA_BODY_AND_CRC_SIZE)
 #define BOOT_METADATA_MARKER_SIZE       (4U)
 //******************************** Defines **********************************//
 
@@ -65,9 +66,14 @@ static uint16_t boot_metadata_commit_target_address(
 //******************************** Private Functions ************************//
 
 //******************************** Functions ********************************//
-boot_metadata_commit_result_t boot_metadata_commit_trial(
+static boot_metadata_commit_result_t boot_metadata_commit_transition(
     boot_at24c02_t *eeprom,
-    boot_firmware_slot_t installedSlot,
+    boot_upgrade_state_t expectedState,
+    uint8_t checkPendingSlot,
+    boot_firmware_slot_t expectedPendingSlot,
+    boot_upgrade_state_t newState,
+    uint8_t updatePendingSlot,
+    boot_firmware_slot_t newPendingSlot,
     boot_firmware_metadata_t *committedMetadata)
 {
     uint8_t copyA[BOOT_METADATA_COPY_SIZE];
@@ -90,12 +96,16 @@ boot_metadata_commit_result_t boot_metadata_commit_trial(
     if (result != BOOT_DRIVER_OK) {
         return BOOT_METADATA_COMMIT_READ_FAILED;
     }
-    if ((latest.upgradeState != BOOT_UPGRADE_STATE_PENDING) ||
-        (latest.pendingSlot != installedSlot)) {
+    if ((latest.upgradeState != expectedState) ||
+        ((checkPendingSlot != 0U) &&
+         (latest.pendingSlot != expectedPendingSlot))) {
         return BOOT_METADATA_COMMIT_STATE_INVALID;
     }
     latest.sequence++;
-    latest.upgradeState = BOOT_UPGRADE_STATE_TRIAL;
+    latest.upgradeState = newState;
+    if (updatePendingSlot != 0U) {
+        latest.pendingSlot = newPendingSlot;
+    }
     targetCopy = (selectedCopy == BOOT_METADATA_COPY_A) ?
                  BOOT_METADATA_COPY_B : BOOT_METADATA_COPY_A;
     targetAddress = boot_metadata_commit_target_address(targetCopy);
@@ -106,7 +116,7 @@ boot_metadata_commit_result_t boot_metadata_commit_trial(
     /* 先使目标 Copy 无效，再写 Body+CRC，最后单独提交 marker。 */
     boot_metadata_commit_write_u32_le(invalidMarker, BOOT_METADATA_INVALID_MARKER);
     if (boot_at24c02_write(eeprom,
-                           targetAddress + 0x7CU,
+                           targetAddress + BOOT_METADATA_MARKER_OFFSET,
                            invalidMarker,
                            BOOT_METADATA_MARKER_SIZE) != BOOT_DRIVER_OK) {
         return BOOT_METADATA_COMMIT_WRITE_FAILED;
@@ -127,12 +137,12 @@ boot_metadata_commit_result_t boot_metadata_commit_trial(
 
     boot_metadata_commit_write_u32_le(commitMarker, BOOT_METADATA_COMMIT_MARKER);
     if (boot_at24c02_write(eeprom,
-                           targetAddress + 0x7CU,
+                           targetAddress + BOOT_METADATA_MARKER_OFFSET,
                            commitMarker,
                            BOOT_METADATA_MARKER_SIZE) != BOOT_DRIVER_OK) {
         return BOOT_METADATA_COMMIT_WRITE_FAILED;
     }
-    if (boot_at24c02_read(eeprom, targetAddress + 0x7CU,
+    if (boot_at24c02_read(eeprom, targetAddress + BOOT_METADATA_MARKER_OFFSET,
                           verify, BOOT_METADATA_MARKER_SIZE) != BOOT_DRIVER_OK) {
         return BOOT_METADATA_COMMIT_VERIFY_FAILED;
     }
@@ -143,10 +153,61 @@ boot_metadata_commit_result_t boot_metadata_commit_trial(
     result = boot_metadata_commit_load(eeprom, copyA, copyB, &verified, &selectedCopy);
     if ((result != BOOT_DRIVER_OK) || (selectedCopy != targetCopy) ||
         (verified.sequence != latest.sequence) ||
-        (verified.upgradeState != BOOT_UPGRADE_STATE_TRIAL)) {
+        (verified.confirmedSlot != latest.confirmedSlot) ||
+        (verified.pendingSlot != latest.pendingSlot) ||
+        (verified.slotAState != latest.slotAState) ||
+        (verified.slotBState != latest.slotBState) ||
+        (verified.upgradeState != latest.upgradeState) ||
+        (verified.confirmedVersion.major != latest.confirmedVersion.major) ||
+        (verified.confirmedVersion.minor != latest.confirmedVersion.minor) ||
+        (verified.confirmedVersion.patch != latest.confirmedVersion.patch) ||
+        (verified.confirmedVersion.reserved != latest.confirmedVersion.reserved)) {
         return BOOT_METADATA_COMMIT_VERIFY_FAILED;
     }
 
     *committedMetadata = verified;
     return BOOT_METADATA_COMMIT_OK;
+}
+
+boot_metadata_commit_result_t boot_metadata_commit_trial(
+    boot_at24c02_t *eeprom,
+    boot_firmware_slot_t installedSlot,
+    boot_firmware_metadata_t *committedMetadata)
+{
+    return boot_metadata_commit_transition(eeprom,
+                                           BOOT_UPGRADE_STATE_PENDING,
+                                           1U,
+                                           installedSlot,
+                                           BOOT_UPGRADE_STATE_TRIAL,
+                                           1U,
+                                           installedSlot,
+                                           committedMetadata);
+}
+
+boot_metadata_commit_result_t boot_metadata_commit_rollback_begin(
+    boot_at24c02_t *eeprom,
+    boot_firmware_metadata_t *committedMetadata)
+{
+    return boot_metadata_commit_transition(eeprom,
+                                           BOOT_UPGRADE_STATE_TRIAL,
+                                           0U,
+                                           BOOT_FIRMWARE_SLOT_NONE,
+                                           BOOT_UPGRADE_STATE_ROLLBACK,
+                                           0U,
+                                           BOOT_FIRMWARE_SLOT_NONE,
+                                           committedMetadata);
+}
+
+boot_metadata_commit_result_t boot_metadata_commit_rollback_complete(
+    boot_at24c02_t *eeprom,
+    boot_firmware_metadata_t *committedMetadata)
+{
+    return boot_metadata_commit_transition(eeprom,
+                                           BOOT_UPGRADE_STATE_ROLLBACK,
+                                           0U,
+                                           BOOT_FIRMWARE_SLOT_NONE,
+                                           BOOT_UPGRADE_STATE_NONE,
+                                           1U,
+                                           BOOT_FIRMWARE_SLOT_NONE,
+                                           committedMetadata);
 }

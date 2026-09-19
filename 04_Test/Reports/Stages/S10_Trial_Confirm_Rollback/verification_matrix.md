@@ -66,6 +66,15 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 21288 bytes (20.79 KiB)`, below 64 KiB.
 - Real Bootloader rollback/restore, RTT, GDB and board evidence — NOT_EXECUTED; pending Task 7/8/9 board verification.
 
+## Task 7 Evidence
+
+- TDD red baseline: the rollback transaction Host Test initially failed to compile because the two rollback Metadata APIs did not yet exist; after implementation it passed.
+- Rollback transaction Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_rollback_transaction_host_test.c` — PASS; verifies `TRIAL → ROLLBACK`, `ROLLBACK → NONE`, preserved confirmed Slot/Version and Slot states, pending clearing only at completion, wrong-state rejection, body/marker atomic boundaries and restart-readable power-loss outcomes.
+- Boot decision contract: `05_Tools\Contracts\Bootloader\test_s10_boot_decision_contract.ps1` — PASS; verifies PENDING/TRIAL/ROLLBACK ordering, confirmed prevalidation before destructive restore, persisted ROLLBACK before erase, restart-from-zero ROLLBACK path, and diagnostic-only Reset Cause.
+- S09 Metadata commit Host Test — PASS; existing `PENDING → TRIAL` atomic marker ordering and compatibility remain green after private core extraction.
+- Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below 64 KiB.
+- Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; no target Reset Cause, rollback restore, RTT or GDB evidence has been executed yet — NOT_EXECUTED; pending Task 8/9 board verification.
+
 ## Acceptance Matrix
 
 The category is the primary evidence path. A later board result never replaces a required host contract or static/build check.

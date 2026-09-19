@@ -32,7 +32,38 @@
 #include "stm32f4xx_hal.h"
 //******************************** Includes *********************************//
 
+//******************************** Defines **********************************//
+#define BOOT_RESET_CAUSE_BOR     (1UL << 0U)
+#define BOOT_RESET_CAUSE_POR     (1UL << 1U)
+#define BOOT_RESET_CAUSE_PIN     (1UL << 2U)
+#define BOOT_RESET_CAUSE_SOFTWARE (1UL << 3U)
+#define BOOT_RESET_CAUSE_IWDG    (1UL << 4U)
+//******************************** Defines **********************************//
+
 //******************************** Private Functions ************************//
+static uint32_t boot_main_capture_reset_cause(void)
+{
+    uint32_t resetCause = 0U;
+
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET) {
+        resetCause |= BOOT_RESET_CAUSE_BOR;
+    }
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_PORRST) != RESET) {
+        resetCause |= BOOT_RESET_CAUSE_POR;
+    }
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST) != RESET) {
+        resetCause |= BOOT_RESET_CAUSE_PIN;
+    }
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST) != RESET) {
+        resetCause |= BOOT_RESET_CAUSE_SOFTWARE;
+    }
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET) {
+        resetCause |= BOOT_RESET_CAUSE_IWDG;
+    }
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return resetCause;
+}
+
 static const char *boot_main_upgrade_state_name(boot_upgrade_state_t state)
 {
     switch (state) {
@@ -158,7 +189,7 @@ static boot_driver_status_t boot_main_load_metadata(
             BOOT_CONTRACT_OK) ? BOOT_DRIVER_OK : BOOT_DRIVER_ERR_NOT_FOUND;
 }
 
-/* 记录不可继续的启动错误；S09 不在此处清除 PENDING 或执行恢复。 */
+/* 记录不可继续的启动错误；恢复事务失败时保留可重启的 Metadata 状态。 */
 static void boot_main_halt(const char *reason)
 {
     BOOT_LOG_E("BOOT halt: %s", reason);
@@ -220,11 +251,17 @@ void boot_main_run(void)
     boot_metadata_copy_id_t selectedCopy = BOOT_METADATA_COPY_NONE;
     boot_installer_context_t installerContext;
     boot_prevalidated_image_t candidate = {0};
+    boot_prevalidated_image_t confirmed = {0};
+    boot_prevalidate_context_t prevalidateContext;
     boot_installer_result_t installerResult;
+    boot_prevalidate_result_t prevalidateResult;
     boot_metadata_commit_result_t commitResult;
     boot_driver_status_t driverResult;
+    uint32_t resetCause;
 
+    resetCause = boot_main_capture_reset_cause();
     BOOT_LOG_I("BOOT start");
+    BOOT_LOG_I("Reset cause flags=0x%08lx", (unsigned long)resetCause);
     driverResult = boot_main_init_devices(&spiBus, &i2c, &flash, &eeprom);
     if (driverResult != BOOT_DRIVER_OK) {
         boot_main_halt("external device init");
@@ -262,11 +299,80 @@ void boot_main_run(void)
         }
         BOOT_LOG_I("Metadata PENDING -> TRIAL PASS sequence=%lu",
                    (unsigned long)committedMetadata.sequence);
-    } else if (metadata.upgradeState == BOOT_UPGRADE_STATE_ROLLBACK) {
-        BOOT_LOG_E("ROLLBACK is owned by S10; no recovery action in S09");
-        boot_main_halt("S10 rollback state");
     } else if (metadata.upgradeState == BOOT_UPGRADE_STATE_TRIAL) {
-        BOOT_LOG_I("TRIAL state: skip reinstall");
+        prevalidateContext.flash = &flash;
+        prevalidateContext.eeprom = &eeprom;
+        prevalidateResult = boot_prevalidate_confirmed(&prevalidateContext,
+                                                       &confirmed);
+        if (prevalidateResult != BOOT_PREVALIDATE_VALID) {
+            BOOT_LOG_E("Confirmed prevalidate FAIL: %u",
+                       (unsigned int)prevalidateResult);
+            boot_main_halt("invalid confirmed APP");
+        }
+        BOOT_LOG_I("confirmed APP prevalidate PASS");
+
+        commitResult = boot_metadata_commit_rollback_begin(&eeprom,
+                                                           &committedMetadata);
+        if (commitResult != BOOT_METADATA_COMMIT_OK) {
+            BOOT_LOG_E("Metadata TRIAL -> ROLLBACK FAIL: %u",
+                       (unsigned int)commitResult);
+            boot_main_halt("ROLLBACK begin");
+        }
+        BOOT_LOG_I("Metadata TRIAL -> ROLLBACK PASS sequence=%lu",
+                   (unsigned long)committedMetadata.sequence);
+
+        installerContext.flash = &flash;
+        installerContext.eeprom = &eeprom;
+        installerResult = boot_installer_restore_confirmed(&installerContext,
+                                                            &confirmed);
+        if (installerResult != BOOT_INSTALLER_OK) {
+            BOOT_LOG_E("Confirmed restore FAIL: %u",
+                       (unsigned int)installerResult);
+            boot_main_halt("Confirmed restore");
+        }
+        BOOT_LOG_I("confirmed APP restore PASS");
+
+        commitResult = boot_metadata_commit_rollback_complete(&eeprom,
+                                                              &committedMetadata);
+        if (commitResult != BOOT_METADATA_COMMIT_OK) {
+            BOOT_LOG_E("Metadata ROLLBACK -> NONE FAIL: %u",
+                       (unsigned int)commitResult);
+            boot_main_halt("ROLLBACK complete");
+        }
+        BOOT_LOG_I("Metadata ROLLBACK -> NONE PASS sequence=%lu",
+                   (unsigned long)committedMetadata.sequence);
+    } else if (metadata.upgradeState == BOOT_UPGRADE_STATE_ROLLBACK) {
+        prevalidateContext.flash = &flash;
+        prevalidateContext.eeprom = &eeprom;
+        prevalidateResult = boot_prevalidate_confirmed(&prevalidateContext,
+                                                       &confirmed);
+        if (prevalidateResult != BOOT_PREVALIDATE_VALID) {
+            BOOT_LOG_E("Confirmed prevalidate FAIL: %u",
+                       (unsigned int)prevalidateResult);
+            boot_main_halt("invalid confirmed APP");
+        }
+        BOOT_LOG_I("ROLLBACK confirmed APP prevalidate PASS");
+
+        installerContext.flash = &flash;
+        installerContext.eeprom = &eeprom;
+        installerResult = boot_installer_restore_confirmed(&installerContext,
+                                                            &confirmed);
+        if (installerResult != BOOT_INSTALLER_OK) {
+            BOOT_LOG_E("ROLLBACK confirmed restore FAIL: %u",
+                       (unsigned int)installerResult);
+            boot_main_halt("ROLLBACK restore");
+        }
+        BOOT_LOG_I("ROLLBACK confirmed APP restore PASS");
+
+        commitResult = boot_metadata_commit_rollback_complete(&eeprom,
+                                                              &committedMetadata);
+        if (commitResult != BOOT_METADATA_COMMIT_OK) {
+            BOOT_LOG_E("Metadata ROLLBACK -> NONE FAIL: %u",
+                       (unsigned int)commitResult);
+            boot_main_halt("ROLLBACK complete");
+        }
+        BOOT_LOG_I("Metadata ROLLBACK -> NONE PASS sequence=%lu",
+                   (unsigned long)committedMetadata.sequence);
     } else {
         BOOT_LOG_I("NONE state: no pending installation");
     }
