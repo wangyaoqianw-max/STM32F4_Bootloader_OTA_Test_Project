@@ -3,6 +3,9 @@
 
 #include "platform_error.h"
 
+#define PLATFORM_AT24C02_INITIALIZER      {0}
+#define PLATFORM_AT24C02_TOTAL_SIZE_BYTES (256U)
+
 typedef struct
 {
     uint8_t memory[256];

@@ -3,6 +3,8 @@
 
 #include "platform_error.h"
 
+#define PLATFORM_W25Q64_INITIALIZER {0}
+
 typedef struct
 {
     uint8_t *memory;

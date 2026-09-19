@@ -26,6 +26,7 @@
 #define TEST_IMAGE_FILE_SIZE             (FIRMWARE_IMAGE_HEADER_SIZE + TEST_IMAGE_PAYLOAD_SIZE)
 #define TEST_PACKET_OVERHEAD             (5U)
 #define TEST_METADATA_SEQUENCE           (10U)
+#define TEST_UART_TX_CAPACITY            (1024U)
 //******************************** Defines **********************************//
 
 //******************************** Types ***********************************//
@@ -55,12 +56,16 @@ typedef struct
 
 //******************************** Variables ********************************//
 static test_storage_context_t g_storageContext;
+static uint8_t g_uartTxData[TEST_UART_TX_CAPACITY];
+static uint32_t g_uartTxLength;
 //******************************** Variables ********************************//
 
 //******************************** Private Functions ************************//
 static void test_storage_reset(void)
 {
     (void)memset(&g_storageContext, 0, sizeof(g_storageContext));
+    (void)memset(g_uartTxData, 0, sizeof(g_uartTxData));
+    g_uartTxLength = 0U;
     g_storageContext.metadata.sequence = TEST_METADATA_SEQUENCE;
     g_storageContext.metadata.confirmedSlot = FIRMWARE_SLOT_A;
     g_storageContext.metadata.pendingSlot = FIRMWARE_SLOT_NONE;
@@ -363,16 +368,16 @@ platform_error_t service_uart_write(
 {
     (void)timeoutMs;
 
-    if ((service == NULL) || (data == NULL) || (dataLength > sizeof(service->txData))) {
+    if ((service == NULL) || (data == NULL) || (dataLength > sizeof(g_uartTxData))) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if (service->txLength + dataLength > sizeof(service->txData)) {
+    if (g_uartTxLength + dataLength > sizeof(g_uartTxData)) {
         return PLATFORM_ERR_OVERFLOW;
     }
 
-    (void)memcpy(&service->txData[service->txLength], data, dataLength);
-    service->txLength += dataLength;
+    (void)memcpy(&g_uartTxData[g_uartTxLength], data, dataLength);
+    g_uartTxLength += dataLength;
     return PLATFORM_ERR_OK;
 }
 

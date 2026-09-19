@@ -3,6 +3,7 @@
 
 #include "crc.h"
 #include "firmware_storage.h"
+#include "platform_def.h"
 
 #define TEST_FLASH_BASE       (FIRMWARE_SLOT_B_BASE)
 #define TEST_FLASH_SIZE       (0x3000U)
@@ -210,6 +211,7 @@ static int test_metadata_commit_recovery(void)
     }
 
     input.confirmedSlot = FIRMWARE_SLOT_B;
+    input.slotBState = FIRMWARE_SLOT_STATE_VALID;
     g_eepromFailWriteOnCall = g_eepromWriteCount + 3U;
     if ((firmware_storage_commit_metadata(&storage, &input, &copy) != PLATFORM_ERR_IO) ||
         (firmware_storage_load_metadata(&storage, &loaded, &copy) != PLATFORM_ERR_OK) ||
