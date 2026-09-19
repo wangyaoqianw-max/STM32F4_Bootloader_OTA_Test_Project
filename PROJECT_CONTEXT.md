@@ -50,11 +50,11 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S10_Trial_Confirm_Rollback`
 - Current Role: `Project Owner`
-- Updated At: `2026-09-18`
+- Updated At: `2026-09-19`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，Task 0–7 的主要实现和自动化代码验证已完成，状态为 `IN_PROGRESS`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
+S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，Task 0–8 已完成主要实现和部分真实板验证，代码验证 PASS、硬件验证仍为部分 PASS / PENDING，状态为 `IN_PROGRESS`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -521,7 +521,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，Task 0–7 的代码实现、注释补齐、Host Test 和固件构建已完成；当前状态为 `IN_PROGRESS`。下一步由 Project Owner 在可配合时重新建立 Factory Restore baseline，并补齐 S09 正常安装、复位/断电和 Fault Injection 硬件证据。
+S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，Task 0–7 的代码实现、注释补齐、Host Test 和固件构建已完成；真实板已通过 Factory baseline、v1.1 正常安装、TRIAL reset 和提交前 reset 注入，当前状态为 `IN_PROGRESS`。下一步补齐 erase/program/CRC/Metadata marker/Power Loss Fault Injection；不推进 `CLOSED`。
 
 ## S09 Firmware Installation Current Design
 
@@ -572,4 +572,4 @@ Bootloader ROM：21104 bytes / 20.61 KiB < 64 KiB
 Bootloader BIN：11688 bytes / 11.41 KiB < 64 KiB
 ```
 
-S09 已完成 Bootloader contract、最小 Driver、APP-only Internal Flash、Candidate pre-validation、Installer、`PENDING → TRIAL` 原子提交和 Boot Main 编排。新增 C 文件已按 `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md` 补齐文件头、公开 API、类型、边界和硬件约束注释。自动 Factory Restore 重试在外部 Slot 擦除阶段返回 `PLATFORM_ERR_TIMEOUT`，相关证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
+S09 已完成 Bootloader contract、最小 Driver、APP-only Internal Flash、Candidate pre-validation、Installer、`PENDING → TRIAL` 原子提交和 Boot Main 编排。新增 C 文件已按 `03_Firmware/00_Doc/Standards/嵌入式C代码规范.md` 补齐文件头、公开 API、类型、边界和硬件约束注释。Factory Restore 已有真实 baseline PASS；最新重试因 PC 未收到初始 `C` 最终返回 `worker result=2`，相关证据和不覆盖原则见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。失败路径已补充恢复正式 Application 的工具逻辑，避免临时测试固件残留。

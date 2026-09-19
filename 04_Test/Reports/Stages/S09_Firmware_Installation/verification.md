@@ -3,10 +3,10 @@
 ## Report Status
 
 - Stage: `S09_Firmware_Installation`
-- Report type: Implementation evidence / verification handoff draft
+- Report type: Implementation evidence / board verification handoff
 - Workflow status: `IN_PROGRESS`
 - Branch: `main`
-- Evidence date: `2026-09-18`
+- Evidence date: `2026-09-19`
 - Verification result: `PENDING`
 
 本文件保存已完成的自动化和代码证据，不把未完成的真实板级安装、复位、断电和人工按键场景描述为通过。S09 不实现 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback。
@@ -33,47 +33,41 @@ e4d6816 docs: complete S09 bootloader comments
 | Installer transaction and fault injection | PASS | `s09_txn_host_test.exe` → `destructive gate and read-back verified.` |
 | Atomic Metadata commit | PASS | `s09_metadata_commit_host_test.exe` → `atomic marker ordering verified.` |
 | Bootloader Keil build | PASS | `OTA_Bootloader_build.log`，0 error / 0 warning |
-| Application Keil build | PASS | 最终正式工程 0 error / 0 warning |
+| Application Keil build | PASS | 正式工程重新编译并烧录；恢复正式 Application 后 RTT 初始化 PASS |
 | Bootloader size | PASS | Map ROM `21104 bytes / 20.61 KiB`；BIN `11688 bytes / 11.41 KiB`；limit `65536 bytes` |
 | Diff/style checks | PASS | `git diff --check`；新增 C 文件注释审查完成 |
 | W25Q64 write/erase scope | PASS | Bootloader production driver仅保留 init/JEDEC/status/read；无写入/擦除 API |
 
-## Existing Board Evidence
+## Board Verification Evidence
 
-此前真实板自动流程已保存以下证据：
+本轮已取得以下真实硬件证据：
 
-- `06_Output/Logs/S09_boot_rtt_gdb_client.log`：Bootloader `TRIAL` 状态跳过重复安装；
-- `06_Output/Logs/S09_app_key_gdb_client.log`、`S09_app_confirm_gdb_client.log`：使用现有 GDB 合同触发 Application 事件，未修改生产代码；
-- `06_Output/Logs/OTA_Bootloader_rtt.log`：`W25Q64 JEDEC EF 40 17`、外部设备初始化和 `NONE` Metadata 基线；
-- `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`：一次历史 Factory Restore baseline PASS。
+| 场景 | 结果 | 证据 |
+| --- | --- | --- |
+| Factory Restore baseline | PASS | `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`；Slot A v1.0 VALID、Slot B EMPTY、Metadata NONE |
+| v1.1 YMODEM transfer | PASS | 现有 YMODEM 记录：80 blocks / 81412 bytes；存在重试但最终完成 |
+| PENDING → install → TRIAL | PASS | `S09_install_rtt_output.log`：CRC/vector PASS、Metadata PENDING → TRIAL、sequence=62 |
+| TRIAL reset | PASS | `S09_trial_reset_output.log`：`TRIAL state: skip reinstall` |
+| Commit 前复位注入 | PASS | `S09_pretrial_reset_output.log` 命中 `boot_metadata_commit_trial` 入口并注入 reset；`S09_post_pretrial_capture_output.log` 随后恢复为 TRIAL 并跳转 |
+| v1.1 运行现象 | PASS | 用户确认 LED 闪烁变慢；LCD V1.0 为既有硬编码文本，不作为 S09 阻塞项 |
 
-上述证据证明了相应单点行为，但不能替代当前完整 S09 正常安装验收。
-
-## Current Board Result
-
-今晚按“无需人工按键”的范围自动重试 Factory Restore 两次，均未完成：
-
-```text
-YMODEM sender: receiver did not send initial C
-Board RTT:    worker result=2
-```
-
-`platform_error_t` 中 `2` 为 `PLATFORM_ERR_TIMEOUT`。板端 RTT 在 `destructive erase Slot A/B start` 后未到达 `YMODEM_READY`，因此本次不能证明 Factory baseline，也不能继续宣称当前板处于 v1.0 baseline。原始证据已另存：
+最新 Factory Restore 重试仍未完成：PC 未收到初始 `C`，板端最终 `worker result=2`；该失败不覆盖前述成功 baseline。失败日志为：
 
 ```text
-06_Output/Logs/S09_Factory_Restore/provision_rtt_failure_20260918.log
-06_Output/Logs/S09_Factory_Restore/ymodem_failure_20260918.log
-06_Output/Logs/S09_Factory_Restore/provision_flash_failure_20260918.log
+06_Output/Logs/S09_Factory_Restore/ymodem.log
+06_Output/Logs/OTA_APP_rtt.log
 ```
 
-需要 Project Owner/人工配合的按键、复位时序、断电和 Fault Injection 场景延期到下一次板测。
+失败路径已补充工具恢复动作：Factory Restore 失败后恢复源文件、重建并烧录正式 Application，避免临时测试固件继续留在板上；脚本语法检查 PASS，恢复后的正式 Application RTT 已确认正常初始化。
+
+仍未取得真实板级证据的 Fault Injection 点：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body 后/commit marker 前后、Power Loss。当前不能把未执行点描述为 PASS。
 
 ## Verification Decision
 
 ```text
 代码验证：PASS
-硬件验证：PENDING
+硬件验证：PENDING（部分板级场景 PASS）
 阶段状态：IN_PROGRESS
 ```
 
-未满足 `implementation_plan.md` 的 Task 8 / Task 9 Completion Gate，不推进 `CLOSED`。下一次验证从 Factory Restore 重新建立的 baseline 开始，并补齐 `PENDING → install → TRIAL` 以及 marker 前后 reset/power-loss 证据。
+未满足 `implementation_plan.md` 的 Task 8 / Task 9 Completion Gate，不推进 `CLOSED`，也不修改 S10 ownership。后续验证应从稳定 Factory baseline 开始，补齐 erase/program/CRC/Metadata marker/Power Loss checkpoints。

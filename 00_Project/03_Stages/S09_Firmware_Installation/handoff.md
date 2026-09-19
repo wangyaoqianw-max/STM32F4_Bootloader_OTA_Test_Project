@@ -11,7 +11,7 @@
 - Implementation Commits: `6e3fef5`, `c8e0c07`, `1f5b4d9`, `fbe8e37`, `e4d6816`, `69c426a`, `28feb5a`, `53acd8e`
 - Verification Commit: `Not created yet`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-18`
+- Updated At: `2026-09-19`
 
 ## Required Reading
 
@@ -197,16 +197,19 @@ RTT 用于稳定状态检查点；GDB/J-Link 用于 reset/fault injection；Logi
 
 ### Board Evidence and Pending Work
 
-- 既有真实板自动 GDB/Ymodem 流程已完成 v1.1 发送，复位后 Bootloader RTT 捕获 `Metadata ... state=TRIAL` 与 `TRIAL state: skip reinstall`；
-- 既有 Bootloader 自动 RTT 基线捕获 `W25Q64 JEDEC EF 40 17`、外部设备初始化成功、Metadata `NONE` 和合法 APP Jump；
-- Factory Restore 曾有一次历史成功基线证据，见 `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`；
-- 今晚自动重试未通过：发送端未收到初始 `C`，板端后续 RTT 为 `worker result=2`，对应外部 Slot 擦除超时。证据见 `provision_rtt_failure_20260918.log`、`ymodem_failure_20260918.log`；
-- 依赖人工按键或人工断电/复位配合的正常安装、安装中断、Power Loss 和完整 Fault Injection 暂不宣称通过，留待下一次板测；
-- 当前不满足 Task 9 Completion Gate，阶段保持 `IN_PROGRESS`，不得进入 `CLOSED`。
+- Factory Restore baseline 已取得真实 PASS：Slot A v1.0 VALID、Slot B EMPTY、Metadata `NONE`，证据见 `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`；
+- v1.1 已通过真实 YMODEM 发送，80 blocks / 81412 bytes，存在重试但最终完成；
+- 正常安装已通过：`S09_install_rtt_output.log` 捕获 Internal CRC/vector PASS、`PENDING → TRIAL`、sequence=62；
+- TRIAL 复位已通过：`S09_trial_reset_output.log` 捕获 `TRIAL state: skip reinstall`；
+- 提交前复位注入已通过：`S09_pretrial_reset_output.log` 命中 `boot_metadata_commit_trial` 入口后 reset，随后 `S09_post_pretrial_capture_output.log` 捕获 TRIAL 恢复和 APP 跳转；
+- 用户已确认 v1.1 LED 闪烁变慢。LCD 显示 V1.0 属于既有硬编码文本，本阶段不作为阻塞项；
+- 最新 Factory Restore 重试仍因 PC 未收到初始 `C` 失败，板端最终 `worker result=2`；该失败不覆盖前述成功 baseline；
+- Factory Restore 失败路径已补充正式 Application 恢复：恢复源文件后重新 Build/Flash，避免临时测试固件留在板上；
+- erase/program 中途、Internal CRC 前后、Metadata marker 前后和 Power Loss 等完整 Fault Injection 尚未全部取得真实板证据；当前不满足 Task 9 Completion Gate，阶段保持 `IN_PROGRESS`，不得进入 `CLOSED`。
 
 ### Handoff to Next Role
 
-- 当前建议角色：先由 Project Owner/人工板测恢复 Factory Restore 基线，再进入 Verification；
-- 首要补测：Factory baseline → v1.0 → v1.1 Ymodem → PENDING → Bootloader install → TRIAL → v1.1；
-- 随后补测：Metadata marker 前后 reset、安装中断、Power Loss/retry；
+- 当前建议角色：继续由 Verification / Project Owner 补齐剩余板级 Fault Injection；
+- 已完成主链：Factory baseline → v1.0 → v1.1 Ymodem → PENDING → Bootloader install → TRIAL → v1.1；
+- 首要补测：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body/commit marker 前后、Power Loss/retry；
 - S10 仍直接接手 TRIAL runtime confirmation、Watchdog、Failure Counter 和 Rollback。

@@ -56,11 +56,11 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S10_Trial_Confirm_Rollback`
 - Current Role: `Project Owner`
-- Updated At: `2026-09-18`
+- Updated At: `2026-09-19`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，Task 0–7 的主要实现和自动化代码验证已完成，状态为 `IN_PROGRESS`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，Task 0–8 已完成主要实现和部分真实板验证，代码验证 PASS、硬件验证部分 PASS / PENDING，状态为 `IN_PROGRESS`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -521,11 +521,11 @@ S10 继续负责 Confirm / Watchdog / Failure Counter / Rollback。
 ```text
 四项 S09 Host Test                 PASS
 Bootloader Build                   PASS, 0 error / 0 warning
-Application Build                  PASS, 0 error / 0 warning
+Application Build                  PASS, formal image rebuilt and flashed
 Bootloader ROM                     21104 bytes / 20.61 KiB
 Bootloader BIN                     11688 bytes / 11.41 KiB
 代码验证                           PASS
 硬件验证                           PENDING
 ```
 
-自动 Factory Restore 重试在外部 Slot 擦除阶段返回 `PLATFORM_ERR_TIMEOUT`，Ymodem 未收到初始 `C`；依赖人工按键、复位/断电配合的正常安装和 Fault Injection 延期到下一次板测。当前不推进 `READY_FOR_VERIFICATION` 或 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
+真实板已通过 Factory baseline、v1.1 YMODEM、PENDING → install → TRIAL、TRIAL reset 和提交前 reset 注入；LED 变慢现象符合 v1.1。最新 Factory Restore 重试因 YMODEM 未收到初始 `C` 失败，且已由工具自动恢复正式 Application。erase/program/CRC/Metadata marker/Power Loss 等剩余 Fault Injection 尚未全部完成，当前不推进 `READY_FOR_VERIFICATION` 或 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
