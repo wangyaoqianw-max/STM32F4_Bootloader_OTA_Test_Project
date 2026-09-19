@@ -4,7 +4,7 @@
 
 - Stage: `S09_Firmware_Installation`
 - Report type: Implementation evidence / board verification handoff
-- Workflow status: `READY_FOR_REVIEW`
+- Workflow status: `CLOSED / PASS`
 - Branch: `main`
 - Evidence date: `2026-09-19`
 - Verification result: `PASS_WITH_DEFERRED_FOLLOW_UP`
@@ -70,4 +70,4 @@ e4d6816 docs: complete S09 bootloader comments
 阶段状态：READY_FOR_REVIEW
 ```
 
-`implementation_plan.md` 的 Task 8 / Task 9 Completion Gate 保持原样；本报告不把延期项宣称为已满足。此次状态推进是 Project Owner 对剩余真实板级故障注入的明确延期决定，后续应从稳定 Factory baseline 开始补齐 erase/program/CRC/Metadata marker/Power Loss checkpoints。S10 ownership 不变，本次不标记 `CLOSED`。
+`implementation_plan.md` 的 Task 8 / Task 9 Completion Gate 历史验收条件保持原样；本报告不把延期项宣称为已满足。Project Owner 于 2026-09-19 接受剩余真实板级故障注入作为跨阶段 Deferred Follow-up，并据此关闭 S09 为 `CLOSED / PASS`。后续仍应从稳定 Factory baseline 开始补齐 erase/program/CRC/Metadata marker/Power Loss checkpoints；补测结果继续回写本报告。S10 ownership 不变。

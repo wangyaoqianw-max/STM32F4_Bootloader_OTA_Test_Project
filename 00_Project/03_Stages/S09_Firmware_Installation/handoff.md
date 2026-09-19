@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S09_Firmware_Installation`
-- Workflow Status: `READY_FOR_REVIEW`
+- Workflow Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `e4eb1ac5704971ed72ec4bdb8986e070752c5390`
 - Design Commit: `4882077d6c8798900c0e12f1fc902c28682263c3`
@@ -207,12 +207,27 @@ RTT 用于稳定状态检查点；GDB/J-Link 用于 reset/fault injection；Logi
 - Factory Restore 失败路径已补充正式 Application 恢复：恢复源文件后重新 Build/Flash，避免临时测试固件留在板上；
 - erase/program 中途、Internal CRC 前后、Metadata marker 前后和 Power Loss 等完整 Fault Injection 尚未全部取得真实板证据；这些项目经 Project Owner 于 2026-09-19 明确决定，延期到下一阶段作为补充验证，不在本次 S09 实现中伪造为 PASS。
 - 上述延期不改变 S09 冻结的 `PENDING → TRIAL` 状态语义、Metadata 原子边界或 S10 ownership，也不修改 `design.md` / `implementation_plan.md` 的冻结内容。
-- 本次 S09 交接基于代码验证 PASS、正常安装链和已完成的 reset 边界证据进入 `READY_FOR_REVIEW`；阶段不在本次提交中标记为 `CLOSED`。
+- 本次 S09 基于代码验证 PASS、正常安装链和已完成的 reset 边界证据，由 Project Owner 接受剩余真实板级 Fault Injection 延期并正式关闭为 `CLOSED / PASS`。延期项继续作为跨阶段补充验证，不计作已通过。
 
 ### Handoff to Next Role
 
-- 当前建议角色：Review Role；下一阶段由 Verification / Project Owner 补齐延期的板级 Fault Injection；
+- 当前建议角色：Project Owner / S10 Design Role；S09 已正式关闭，下一阶段进入 S10 设计，同时保留延期的板级 Fault Injection 作为跨阶段补充验证；
 - 已完成主链：Factory baseline → v1.0 → v1.1 Ymodem → PENDING → Bootloader install → TRIAL → v1.1；
 - 延期补测：erase 后、program 约 25%/50%、program 完成、Internal CRC 前后、Metadata body/commit marker 前后、Power Loss/retry；
 - 这些补测属于 S09 安装事务的后续验证证据，不得扩展为 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback 生产职责；
 - S10 仍直接接手 TRIAL runtime confirmation、Watchdog、Failure Counter 和 Rollback。
+
+## Closure
+
+Project Owner 于 2026-09-19 确认 S09 阶段任务完成并接受延期项。
+
+```text
+Stage                CLOSED / PASS
+Implementation       PASS
+Code Verification    PASS
+Hardware Verification PARTIAL PASS / DEFERRED FOLLOW-UP
+Deferred Evidence    carried forward, not counted as PASS
+Next Planned Stage   S10_Trial_Confirm_Rollback
+```
+
+关闭 S09 不改变 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md` 中未执行 Fault Injection 的真实状态。

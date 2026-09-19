@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S09_Firmware_Installation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -55,10 +55,10 @@
 - Previous Review Commit: `ec90dbb`
 - Review Commit: `b19c80d`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S08_Bootloader_Foundation`
+- Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S10_Trial_Confirm_Rollback`
-- Current Role: `Review Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-19`
 
 ## Current Goal
@@ -492,7 +492,7 @@ Power-cycle Persistence PASS
 当前工作流状态：
 
 ```text
-READY_FOR_REVIEW
+CLOSED / PASS
 ```
 
 冻结范围：
@@ -531,4 +531,4 @@ Bootloader BIN                     11688 bytes / 11.41 KiB
 硬件验证                           PARTIAL PASS / DEFERRED FOLLOW-UP
 ```
 
-真实板已通过 Factory baseline、v1.1 YMODEM、PENDING → install → TRIAL、TRIAL reset 和提交前 reset 注入；LED 变慢现象符合 v1.1。最新 Factory Restore 重试因 YMODEM 未收到初始 `C` 失败，且已由工具自动恢复正式 Application。erase/program/CRC/Metadata marker/Power Loss 等剩余 Fault Injection 已由 Project Owner 明确延期到下一阶段补充验证；当前进入 `READY_FOR_REVIEW`，不在本次提交中标记 `CLOSED`，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。
+真实板已通过 Factory baseline、v1.1 YMODEM、PENDING → install → TRIAL、TRIAL reset 和提交前 reset 注入；LED 变慢现象符合 v1.1。最新 Factory Restore 重试因 YMODEM 未收到初始 `C` 失败，且已由工具自动恢复正式 Application。erase/program/CRC/Metadata marker/Power Loss 等剩余 Fault Injection 已由 Project Owner 接受为跨阶段补充验证。S09 当前正式关闭为 `CLOSED / PASS`；延期项不计作硬件验证 PASS，详细证据见 `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md`。

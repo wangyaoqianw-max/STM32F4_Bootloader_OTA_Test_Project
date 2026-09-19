@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S09_Firmware_Installation`
-- Active Stage Status: `READY_FOR_REVIEW`
+- Active Stage Status: `CLOSED / PASS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -49,15 +49,15 @@
 - S05C Review Commit: `f3f5ce0b34b9d92bdd426b69a0af645bdfe115bb`
 - S05C Verification Report: `04_Test/Reports/Stages/S05C_Logic_Analyzer/verification.md`
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
-- Last Closed Stage: `S08_Bootloader_Foundation`
+- Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `S10_Trial_Confirm_Rollback`
-- Current Role: `Review Role`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已关闭；S04 Reset / Power-cycle Persistence 补充回归也已完成。当前活动阶段为 `S09_Firmware_Installation`，设计已获 Project Owner 确认，主要实现和正常安装链已完成，代码验证 PASS、硬件验证为部分 PASS，剩余真实板级 Fault Injection 已明确延期到下一阶段补充验证，状态为 `READY_FOR_REVIEW`。S09 负责消费 S07 durable `PENDING`，将 External Candidate 安装到 Internal APP，完成静态验证后原子提交 `PENDING → TRIAL`。
+S05、S05A、S05B、S05C、S06、S07、S07A、S08 与 S09 均已关闭。S09 已完成 durable `PENDING` 消费、External Candidate 安装、Internal CRC/vector 验证和 `PENDING → TRIAL` 原子提交；代码验证 PASS，正常安装链和关键 reset 边界已通过真实板验证。剩余 erase/program/CRC/Metadata marker/Power Loss Fault Injection 由 Project Owner 接受为跨阶段 Deferred Follow-up，不视为已通过。下一计划阶段为 `S10_Trial_Confirm_Rollback`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -524,11 +524,11 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S08 已通过 Review 并关闭为 `CLOSED / PASS`。S09 设计与实施计划已冻结，主要实现、注释补齐、Host Test、固件构建和正常安装链已完成；真实板已通过 Factory baseline、v1.1 正常安装、TRIAL reset 和提交前 reset 注入。当前状态为 `READY_FOR_REVIEW`；erase/program/CRC/Metadata marker/Power Loss Fault Injection 已由 Project Owner 明确延期到下一阶段补充验证，本次不推进 `CLOSED`。
+S09 已由 Project Owner 正式关闭为 `CLOSED / PASS`。下一步进入 `S10_Trial_Confirm_Rollback` 的设计阶段；S09 延期的 erase/program/CRC/Metadata marker/Power Loss Fault Injection 继续保留为跨阶段补充验证，不得在后续文档中误标为已通过。
 
 ## S09 Firmware Installation Current Design
 
-当前状态：`READY_FOR_REVIEW`。
+当前状态：`CLOSED / PASS`。
 
 冻结主链：
 

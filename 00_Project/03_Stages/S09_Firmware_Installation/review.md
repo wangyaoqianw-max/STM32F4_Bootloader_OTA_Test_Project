@@ -3,18 +3,18 @@
 ## Metadata
 
 - Stage: `S09_Firmware_Installation`
-- Status: `READY_FOR_REVIEW`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Verification Commit: `4fdc9ac`
 - Review Commit: `8099cb5`
-- Reviewed Head: `8099cb5`
+- Reviewed Head: `8b9bdc2`
 - Review Date: `2026-09-19`
-- Reviewer Role: `Review Role`
+- Reviewer Role: `Review Role / Project Owner`
 - Updated At: `2026-09-19`
 
 ## Review Gate
 
-本次为 S09 实现交接前的轻量 Review。剩余真实板级 Fault Injection 已由 Project Owner 明确延期到下一阶段补充验证；本 Review 不把延期项描述为已通过，也不修改冻结设计和实施计划。
+本次 Review 在实现交接审核基础上，由 Project Owner 对阶段关闭作最终确认。剩余真实板级 Fault Injection 明确延期到下一阶段补充验证；关闭 S09 不把延期项描述为已通过，也不修改冻结设计和实施计划。
 
 审核至少核对：
 
@@ -65,9 +65,9 @@ Implementation:       PASS
 Architecture:         PASS
 Code Verification:    PASS
 Hardware Verification: PARTIAL PASS / DEFERRED FOLLOW-UP
-Review:               ACCEPTED FOR HANDOFF
-Stage:                READY_FOR_REVIEW
-Closure:              NOT CLOSED
+Review:               PASS
+Stage:                CLOSED / PASS
+Closure:              CLOSED BY PROJECT OWNER
 ```
 
-S09 当前实现无 Critical / Important Finding，可交接到下一阶段继续补充安装事务故障注入证据。该延期不改变 S09 的状态语义和架构边界，也不把 S10 的 Confirm / Watchdog / Failure Counter / Rollback 提前实现；阶段最终关闭仍需后续 Review / Project Owner 按仓库工作流决定。
+S09 当前实现无 Critical / Important Finding。Project Owner 已确认本阶段任务完成并接受剩余真实板级 Fault Injection 作为跨阶段 Deferred Follow-up，因此 S09 正式关闭为 `CLOSED / PASS`。该关闭不将延期项视为硬件验证 PASS；后续补测结果应继续回写 S09 Verification/Review 证据，同时 S10 仍只负责 Confirm、Watchdog、Failure Counter 与 Rollback 的生产职责。
