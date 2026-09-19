@@ -218,6 +218,22 @@ finally {
 }
 
 if (-not $success) {
+    try {
+        Write-Host "[FACTORY][RECOVERY] restoring formal Application after failed restore"
+        $recoveryBuildExit = Invoke-FactoryBuild -LogName "formal_build_after_failure.log"
+        if ($recoveryBuildExit -eq 0) {
+            $recoveryFlashExit = Invoke-FactoryCommand -Arguments @("flash", "application", "run") -LogName "formal_flash_after_failure.log"
+            if ($recoveryFlashExit -ne 0) {
+                Write-Host "[FACTORY][RECOVERY][WARN] formal Application flash failed: $recoveryFlashExit"
+            }
+        }
+        else {
+            Write-Host "[FACTORY][RECOVERY][WARN] formal Application build failed: $recoveryBuildExit"
+        }
+    }
+    catch {
+        Write-Host "[FACTORY][RECOVERY][WARN] formal Application recovery failed: $($_.Exception.Message)"
+    }
     throw "Factory Restore stopped before baseline verification"
 }
 
