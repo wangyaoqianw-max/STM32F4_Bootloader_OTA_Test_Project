@@ -21,6 +21,7 @@ $appSystemPath = Join-Path $projectRoot "03_Firmware\Application\OTA_APP\01_APP\
 $restoreTestRoot = Join-Path $projectRoot "04_Test\Board\S09_Firmware_Installation"
 $restoreTestSource = Join-Path $restoreTestRoot "app_s09_factory_restore_test.c"
 $restoreTestHeader = Join-Path $restoreTestRoot "app_s09_factory_restore_test.h"
+$projectConfigPath = Join-Path $projectRoot "03_Firmware\Application\OTA_APP\00_Config\project_config.h"
 $logDirectory = Resolve-ToolkitProjectPath -ProjectRoot $projectRoot -RelativePath $configuration.PROJECT_LOG_DIR
 $factoryLogDirectory = Join-Path $logDirectory "S09_Factory_Restore"
 New-Item -ItemType Directory -Force -Path $factoryLogDirectory | Out-Null
@@ -88,10 +89,46 @@ function Set-TemporaryFactoryProject {
 #include "app_system.h"
 #include "app_s09_factory_restore_test.h"
 
+#include <stddef.h>
+
 platform_error_t app_system_bootstrap(void)
 {
     return app_s09_factory_restore_test_run();
 }
+
+platform_error_t app_system_report_runtime_ready(uint32_t readyFlag)
+{
+    (void)readyFlag;
+    return PLATFORM_ERR_INVALID_STATE;
+}
+
+platform_error_t app_system_take_runtime_ready(uint32_t *readyMask)
+{
+    if (readyMask == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+    return PLATFORM_ERR_INVALID_STATE;
+}
+
+platform_error_t app_system_report_confirm_result(platform_error_t result)
+{
+    (void)result;
+    return PLATFORM_ERR_INVALID_STATE;
+}
+
+platform_error_t app_system_take_confirm_result(platform_error_t *result)
+{
+    if (result == NULL) {
+        return PLATFORM_ERR_NULL_POINTER;
+    }
+    return PLATFORM_ERR_INVALID_STATE;
+}
+
+app_health_context_t *app_system_get_health_context(void)
+{
+    return NULL;
+}
+
 '@
     $utf8 = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($appSystemPath, $testSystem, $utf8)
@@ -153,8 +190,7 @@ if (-not (Test-Path -LiteralPath $restoreTestSource -PathType Leaf) -or
 }
 
 Assert-CompactFirmwareImage -Path (Resolve-Path -LiteralPath $Image).Path
-$projectConfig = Join-Path $projectRoot "03_Firmware\Application\OTA_APP\00_Config\project_config.h"
-$configText = [System.IO.File]::ReadAllText($projectConfig, [System.Text.Encoding]::UTF8)
+$configText = [System.IO.File]::ReadAllText($projectConfigPath, [System.Text.Encoding]::UTF8)
 if (($configText -notmatch 'PROJECT_STATUS_LED_BLINK_ON_MS\s+\(500U\)') -or
     ($configText -notmatch 'PROJECT_STATUS_LED_BLINK_OFF_MS\s+\(500U\)')) {
     throw "Factory Restore requires Application v1.0 500/500 ms configuration"
@@ -162,6 +198,7 @@ if (($configText -notmatch 'PROJECT_STATUS_LED_BLINK_ON_MS\s+\(500U\)') -or
 
 $originalSystem = [System.IO.File]::ReadAllText($appSystemPath, [System.Text.Encoding]::UTF8)
 $originalProject = [System.IO.File]::ReadAllText($projectPath, [System.Text.Encoding]::UTF8)
+$originalProjectConfig = $configText
 $sender = $null
 $success = $false
 try {
@@ -172,6 +209,16 @@ try {
     }
 
     Set-TemporaryFactoryProject -OriginalSystem $originalSystem -OriginalProject $originalProject
+    $testConfigText = $originalProjectConfig -replace `
+        '(?m)^#define PROJECT_WATCHDOG_TIMEOUT_MS\s+\([^\r\n]+\)$', `
+        '#define PROJECT_WATCHDOG_TIMEOUT_MS           (32000U)'
+    if ($testConfigText -eq $originalProjectConfig) {
+        throw "Temporary Factory Restore watchdog configuration marker not found"
+    }
+    [System.IO.File]::WriteAllText(
+        $projectConfigPath,
+        $testConfigText,
+        (New-Object System.Text.UTF8Encoding($false)))
     $testBuildExit = Invoke-FactoryBuild -LogName "provision_build.log"
     if ($testBuildExit -ne 0) {
         throw "Temporary Factory Restore build failed: $testBuildExit"
@@ -181,7 +228,7 @@ try {
     $senderErrorLog = Join-Path $factoryLogDirectory "ymodem_error.log"
     $senderArguments = @(
         "ymodem", "python", "send", (Resolve-Path -LiteralPath $Image).Path,
-        "--port", $Port, "--baud", [string]$Baud, "--timeout", "30", "--json"
+        "--port", $Port, "--baud", [string]$Baud, "--timeout", "90", "--json"
     )
     $sender = Start-Process -FilePath $toolkitPath -ArgumentList $senderArguments `
         -RedirectStandardOutput $senderLog -RedirectStandardError $senderErrorLog -PassThru -WindowStyle Hidden
@@ -215,6 +262,7 @@ finally {
     }
     [System.IO.File]::WriteAllText($appSystemPath, $originalSystem, (New-Object System.Text.UTF8Encoding($false)))
     [System.IO.File]::WriteAllText($projectPath, $originalProject, (New-Object System.Text.UTF8Encoding($false)))
+    [System.IO.File]::WriteAllText($projectConfigPath, $originalProjectConfig, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 if (-not $success) {

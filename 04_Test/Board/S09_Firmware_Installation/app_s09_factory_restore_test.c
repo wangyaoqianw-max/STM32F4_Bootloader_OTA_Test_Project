@@ -427,7 +427,12 @@ static platform_error_t s09_factory_execute(void)
 {
     ymodem_receiver_config_t receiverConfig = {0};
     ymodem_sink_t sinkContract = {0};
-    ymodem_receiver_status_t receiverStatus = {0};
+    ymodem_receiver_status_t receiverStatus = {
+        YMODEM_RECEIVER_STATE_UNINITIALIZED,
+        PLATFORM_ERR_OK,
+        {{0}},
+        0U
+    };
     firmware_image_header_t header = {0};
     firmware_image_validation_t validation = FIRMWARE_IMAGE_VALIDATION_UNKNOWN;
     platform_error_t result;
