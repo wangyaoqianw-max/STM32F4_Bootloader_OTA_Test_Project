@@ -40,6 +40,9 @@
 /* W25Q64 Platform 校验上限。 */
 #define PROJECT_FLASH_SPI_MAX_CLOCK_HZ        (50000000U)
 
+/* Application IWDG 目标超时时间，实际值受 LSI 误差影响。 */
+#define PROJECT_WATCHDOG_TIMEOUT_MS           (10000U)
+
 //******************************** Defines *********************************//
 
 #endif

@@ -29,6 +29,8 @@
 #include "cmbacktrace_port.h"
 #include "diagnostics_fault.h"
 #include "impl_platform_bsp_key.h"
+#include "platform_watchdog.h"
+#include "project_config.h"
 
 /* USER CODE END Includes */
 
@@ -81,6 +83,10 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  if (platform_watchdog_start(PROJECT_WATCHDOG_TIMEOUT_MS) != PLATFORM_ERR_OK)
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END Init */
 
@@ -100,12 +106,20 @@ int main(void)
   /* USER CODE BEGIN 2 */
   cmbacktrace_port_init();
   diagnostics_fault_init();
+  if (platform_watchdog_feed() != PLATFORM_ERR_OK)
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
+  if (platform_watchdog_feed() != PLATFORM_ERR_OK)
+  {
+    Error_Handler();
+  }
 
   /* Start scheduler */
   osKernelStart();
