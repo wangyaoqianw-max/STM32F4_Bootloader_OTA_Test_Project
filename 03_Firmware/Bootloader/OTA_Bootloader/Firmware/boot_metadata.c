@@ -121,6 +121,21 @@ static uint8_t boot_metadata_fields_are_valid(const boot_firmware_metadata_t *me
          (metadata->pendingSlot == BOOT_FIRMWARE_SLOT_NONE))) {
         return 0U;
     }
+
+    if (((metadata->confirmedSlot == BOOT_FIRMWARE_SLOT_A) &&
+         (metadata->slotAState != BOOT_FIRMWARE_SLOT_STATE_VALID)) ||
+        ((metadata->confirmedSlot == BOOT_FIRMWARE_SLOT_B) &&
+         (metadata->slotBState != BOOT_FIRMWARE_SLOT_STATE_VALID))) {
+        return 0U;
+    }
+
+    if ((metadata->upgradeState != BOOT_UPGRADE_STATE_NONE) &&
+        ((metadata->confirmedSlot == BOOT_FIRMWARE_SLOT_NONE) ||
+         (metadata->pendingSlot == BOOT_FIRMWARE_SLOT_NONE) ||
+         (metadata->confirmedSlot == metadata->pendingSlot))) {
+        return 0U;
+    }
+
     if (((metadata->pendingSlot == BOOT_FIRMWARE_SLOT_A) &&
          (metadata->slotAState != BOOT_FIRMWARE_SLOT_STATE_VALID)) ||
         ((metadata->pendingSlot == BOOT_FIRMWARE_SLOT_B) &&

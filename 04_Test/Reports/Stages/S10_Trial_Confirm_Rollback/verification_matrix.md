@@ -45,6 +45,17 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Runtime task changes: appMainTask is the only long-term Watchdog Feed owner; otaWorker remains the Confirm Storage transaction owner; display/OTA Ready reports occur after the startup decision.
 - Real Runtime Ready/Confirm RTT, GDB, watchdog and board reset evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
 
+## Task 5 Evidence
+
+- TDD red baseline: the new Metadata Host Test initially accepted `pendingSlot == confirmedSlot` before the production validation change.
+- Metadata invariant Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_metadata_invariant_host_test.c` — PASS; Application and Bootloader encode/decode both reject same-slot pending, missing/invalid confirmed baseline, and invalid pending Slot for PENDING/TRIAL/ROLLBACK. Factory `confirmedSlot=NONE + pendingSlot=NONE + upgradeState=NONE` and stable known-good `NONE` records remain accepted.
+- Application/Bootloader raw compatibility: valid records encoded by both implementations are byte-identical; S09 fixed Metadata V2 vector remains accepted.
+- Regression Host Tests — PASS: S04 format, S07 Metadata, S09 contract, S09 prevalidation, and S09 atomic Metadata commit.
+- S09 prevalidation Host Fixture was corrected from the now-invalid `confirmedSlot=A / pendingSlot=A` combination to the normal `confirmedSlot=A / pendingSlot=B` combination; no production prevalidation behavior changed.
+- Metadata V2 raw layout, sequence comparison, CRC calculation and commit-marker ordering were not changed.
+- Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
+- Bootloader Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 21140 bytes (20.64 KiB)`, below 64 KiB.
+
 ## Acceptance Matrix
 
 The category is the primary evidence path. A later board result never replaces a required host contract or static/build check.

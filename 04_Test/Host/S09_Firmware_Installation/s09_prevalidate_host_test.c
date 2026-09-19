@@ -73,9 +73,10 @@ static void test_build_metadata(uint8_t pending)
 
     metadata.sequence = 1U;
     metadata.confirmedSlot = BOOT_FIRMWARE_SLOT_A;
-    metadata.pendingSlot = (pending != 0U) ? BOOT_FIRMWARE_SLOT_A : BOOT_FIRMWARE_SLOT_NONE;
+    metadata.pendingSlot = (pending != 0U) ? BOOT_FIRMWARE_SLOT_B : BOOT_FIRMWARE_SLOT_NONE;
     metadata.slotAState = BOOT_FIRMWARE_SLOT_STATE_VALID;
-    metadata.slotBState = BOOT_FIRMWARE_SLOT_STATE_EMPTY;
+    metadata.slotBState = (pending != 0U) ? BOOT_FIRMWARE_SLOT_STATE_VALID :
+                           BOOT_FIRMWARE_SLOT_STATE_EMPTY;
     metadata.upgradeState = (pending != 0U) ? BOOT_UPGRADE_STATE_PENDING : BOOT_UPGRADE_STATE_NONE;
     metadata.confirmedVersion.major = 1U;
     if (boot_metadata_encode_uncommitted(&metadata, g_metadataA) != BOOT_CONTRACT_OK) {
@@ -119,12 +120,14 @@ boot_driver_status_t boot_w25q64_read(
 {
     (void)flash;
     g_externalReadCount++;
-    if ((address == BOOT_FIRMWARE_SLOT_A_BASE) &&
+    if (((address == BOOT_FIRMWARE_SLOT_A_BASE) ||
+         (address == BOOT_FIRMWARE_SLOT_B_BASE)) &&
         (length == BOOT_FIRMWARE_HEADER_SIZE)) {
         (void)memcpy(data, g_header, length);
         return BOOT_DRIVER_OK;
     }
-    if ((address == (BOOT_FIRMWARE_SLOT_A_BASE + BOOT_FIRMWARE_PAYLOAD_OFFSET)) &&
+    if (((address == (BOOT_FIRMWARE_SLOT_A_BASE + BOOT_FIRMWARE_PAYLOAD_OFFSET)) ||
+         (address == (BOOT_FIRMWARE_SLOT_B_BASE + BOOT_FIRMWARE_PAYLOAD_OFFSET))) &&
         (length <= TEST_PAYLOAD_SIZE)) {
         (void)memcpy(data, g_payload, length);
         return BOOT_DRIVER_OK;
@@ -165,7 +168,7 @@ static int test_valid_candidate(void)
     test_reset_fixture(1U);
     context = test_context();
     return (boot_prevalidate_candidate(&context, &candidate) == BOOT_PREVALIDATE_VALID) &&
-                   (candidate.candidateSlot == BOOT_FIRMWARE_SLOT_A) &&
+                   (candidate.candidateSlot == BOOT_FIRMWARE_SLOT_B) &&
                    (g_externalReadCount == 3U) ? 0 : 1;
 }
 

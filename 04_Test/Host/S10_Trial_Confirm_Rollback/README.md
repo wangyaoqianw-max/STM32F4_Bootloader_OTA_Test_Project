@@ -51,3 +51,29 @@ Remove-Item -LiteralPath $out -Force
 ```
 
 另有 `05_Tools/Contracts/Application/test_s10_runtime_health_integration.ps1` 检查 Health 初始化、三个 Runtime Ready、单次 Confirm 请求、otaWorker 执行和窄 Runtime 状态接口均已接入。
+
+Metadata A/B 生命周期不变量测试：
+
+```powershell
+$gcc = 'C:\MinGW\bin\gcc.exe'
+$out = Join-Path $env:TEMP 's10_metadata_invariant_host_test.exe'
+& $gcc -std=c11 -Wall -Wextra -Werror `
+  -I03_Firmware/Bootloader/OTA_Bootloader/Firmware `
+  -I03_Firmware/Application/OTA_APP/03_Platform/platform_common `
+  -I03_Firmware/Application/OTA_APP/04_Impl/impl_board `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_common/crc `
+  -I03_Firmware/Application/OTA_APP/02_Service/service_firmware `
+  -o $out `
+  04_Test/Host/S10_Trial_Confirm_Rollback/s10_metadata_invariant_host_test.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_crc32.c `
+  03_Firmware/Bootloader/OTA_Bootloader/Firmware/boot_metadata.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_common/crc/crc.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_version.c `
+  03_Firmware/Application/OTA_APP/02_Service/service_firmware/firmware_metadata.c
+& $out
+Remove-Item -LiteralPath $out -Force
+```
+
+该测试同时验证 Application/Bootloader 编码结果一致，并验证两端都拒绝
+`pendingSlot == confirmedSlot`、无效 confirmed Slot 基线和无效 pending Slot，
+同时保留 Factory/stable `NONE` 记录。

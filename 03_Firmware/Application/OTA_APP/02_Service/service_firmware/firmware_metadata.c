@@ -155,6 +155,20 @@ static platform_bool_t firmware_metadata_fields_are_valid(const firmware_metadat
         return (platform_bool_t)0U;
     }
 
+    if (((metadata->confirmedSlot == FIRMWARE_SLOT_A) &&
+         (metadata->slotAState != FIRMWARE_SLOT_STATE_VALID)) ||
+        ((metadata->confirmedSlot == FIRMWARE_SLOT_B) &&
+         (metadata->slotBState != FIRMWARE_SLOT_STATE_VALID))) {
+        return (platform_bool_t)0U;
+    }
+
+    if ((metadata->upgradeState != FIRMWARE_UPGRADE_STATE_NONE) &&
+        ((metadata->confirmedSlot == FIRMWARE_SLOT_NONE) ||
+         (metadata->pendingSlot == FIRMWARE_SLOT_NONE) ||
+         (metadata->confirmedSlot == metadata->pendingSlot))) {
+        return (platform_bool_t)0U;
+    }
+
     if (((metadata->pendingSlot == FIRMWARE_SLOT_A) &&
          (metadata->slotAState != FIRMWARE_SLOT_STATE_VALID)) ||
         ((metadata->pendingSlot == FIRMWARE_SLOT_B) &&
