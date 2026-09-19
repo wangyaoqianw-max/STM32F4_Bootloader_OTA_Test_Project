@@ -8,6 +8,9 @@
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
 - Design Metadata Commit: `d054f165553ed320561d726fe736f8bea7ec525e`
+- Initial Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
+- Project Context Sync Commit: `f2a4eb1c4ca80a74a94ead818427eeb359a5d8b7`
+- Current Status Sync Commit: `c4ff10d9fc345408655bc11d62c2976bb915e44f`
 - Implementation Plan Commit: `Not created yet`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
@@ -409,7 +412,8 @@ No production implementation has started.
 ```text
 00_Project/03_Stages/S10_Trial_Confirm_Rollback/design.md
 00_Project/03_Stages/S10_Trial_Confirm_Rollback/handoff.md
-PROJECT_CONTEXT.md / current_status.md will be synchronized by the handoff update.
+PROJECT_CONTEXT.md
+00_Project/05_Status/current_status.md
 ```
 
 ### Deviations From Plan
