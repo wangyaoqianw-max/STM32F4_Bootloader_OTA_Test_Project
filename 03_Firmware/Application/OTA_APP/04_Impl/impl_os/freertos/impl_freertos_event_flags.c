@@ -116,6 +116,11 @@ platform_error_t platform_event_flags_wait(
         options,
         impl_freertos_timeout_to_ticks(timeoutMs));
     error = impl_freertos_event_flags_map_result(result);
+    /* 无等待且无匹配事件时，FreeRTOS 返回 Resource，Platform 统一映射为超时。 */
+    if ((error == PLATFORM_ERR_NO_RESOURCE) &&
+        (timeoutMs == PLATFORM_OS_NO_WAIT)) {
+        return PLATFORM_ERR_TIMEOUT;
+    }
     if (error == PLATFORM_ERR_OK) {
         *receivedFlags = result;
     }
