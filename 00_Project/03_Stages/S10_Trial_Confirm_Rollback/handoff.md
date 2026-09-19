@@ -11,6 +11,8 @@
 - Initial Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
 - Project Context Sync Commit: `f2a4eb1c4ca80a74a94ead818427eeb359a5d8b7`
 - Current Status Sync Commit: `c4ff10d9fc345408655bc11d62c2976bb915e44f`
+- Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
+- Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - Implementation Plan Commit: `Not created yet`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
@@ -28,9 +30,7 @@ Project Owner / S10 Design Role
 当前允许继续：
 
 ```text
-design review
-state-machine review
-interface/boundary review
+Project Owner approval
 implementation-plan preparation after approval
 ```
 
@@ -312,13 +312,10 @@ ESP-IDF OTA rollback
 
 当前设计主架构已收束，但实施前仍需要完成：
 
-1. 对 S10 `design.md` 做正式 Design Review；
-2. 核实 STM32F411 IWDG Prescaler / Reload 与 DBGMCU freeze 的准确 HAL/CMSIS 落点；
-3. 基于真实 Application 调用链冻结具体 Pre-RTOS / Startup Feed checkpoints；
-4. 核实现有 Platform/Impl 目录命名，确定 Watchdog 实际文件位置；
-5. 核实现有 Firmware Storage 对象 ownership，确定 `firmware_lifecycle` 如何取得 Storage 依赖；
-6. 核实现有 Bootloader `boot_prevalidate` / `boot_installer` 接口后冻结重构 API；
-7. 设计通过后再创建 `implementation_plan.md`。
+1. 等待 Project Owner 明确批准 Design；
+2. 批准后创建 `implementation_plan.md`；
+3. Implementation Plan 中落实当前已确认的 HAL IWDG 手工接入、Pre-RTOS/Startup checkpoint、otaWorker Storage ownership、Health/Confirm handshake 和 Bootloader Installer 重构任务；
+4. 实施前继续以真实文件/API 为准，不机械照抄设计中的建议命名。
 
 上述项目允许在 Design Role 调查，但不得提前修改生产代码。
 
@@ -428,6 +425,23 @@ No implementation plan exists yet.
 ```text
 NOT_APPLICABLE at design-only stage.
 ```
+
+### Design Review Status
+
+```text
+Blocking Findings : 0
+Important Findings: 5
+Resolution         : all incorporated into design.md
+Technical Result   : READY_FOR_OWNER_APPROVAL
+```
+
+主要修订：
+
+- IWDG start 前移到 HAL_Init 后、SystemClock_Config 前；
+- 明确 HAL IWDG module/source 当前未接入，实施需手工加入；
+- 增加 5 s Runtime Ready deadline 与 Health Feed gating；
+- otaWorker 保持 Firmware Storage I/O owner；
+- strict Confirm 做完整 image validation，并强制 pendingSlot != confirmedSlot。
 
 ### Known Issues
 
