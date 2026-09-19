@@ -20,6 +20,8 @@
 - S10 Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
 - S10 Design Metadata Commit: `d054f165553ed320561d726fe736f8bea7ec525e`
 - S10 Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
+- S10 Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
+- S10 Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - S10 Implementation Plan Commit: `Not created yet`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
@@ -69,7 +71,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已进入 Design Role，当前状态为 `DRAFT`。S10 设计已建立一次 Trial、Application-controlled Confirm、IWDG 恢复和 Bootloader 自动 Rollback 主链；保持 Metadata V2，不新增 `CONFIRMED` 状态或 Failure Counter 回滚阈值。Application Watchdog 计划在 RTOS Scheduler 前启动，约 10 s timeout，Debug Halt 冻结；Trial Confirm 采用 Startup RUNNING + Runtime Ready + 5 s Observation；Bootloader Rollback 在 Known-Good Image 预校验和 `TRIAL → ROLLBACK` 原子提交后才跨过 destructive gate，并复用 S09 Installer 核心。当前未进入 Implementation，Implementation Plan 尚未创建。S09 Deferred Fault Injection 保持跨阶段补充验证，不视为已通过。
+`S10_Trial_Confirm_Rollback` 已进入 Design Role，当前状态为 `DRAFT`。S10 设计已建立一次 Trial、Application-controlled Confirm、IWDG 恢复和 Bootloader 自动 Rollback 主链；保持 Metadata V2，不新增 `CONFIRMED` 状态或 Failure Counter 回滚阈值。Application Watchdog 计划在 RTOS Scheduler 前启动，约 10 s timeout，Debug Halt 冻结；Trial Confirm 采用 Startup RUNNING + Runtime Ready + 5 s Observation；Bootloader Rollback 在 Known-Good Image 预校验和 `TRIAL → ROLLBACK` 原子提交后才跨过 destructive gate，并复用 S09 Installer 核心。Design Review 已完成：0 Blocking、5 Important，全部已回写设计解决，技术结论为 `READY_FOR_OWNER_APPROVAL`。当前仍为 `DRAFT`，未进入 Implementation，Implementation Plan 尚未创建。S09 Deferred Fault Injection 保持跨阶段补充验证，不视为已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
