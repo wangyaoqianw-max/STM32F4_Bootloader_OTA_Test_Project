@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `DRAFT`
+- Workflow Status: `DESIGN_APPROVED`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Owner: Project Owner
@@ -1467,7 +1467,7 @@ Review 修订项：
 
 ## 23. Approval
 
-- Decision: `PENDING_PROJECT_OWNER_APPROVAL`
-- Approved By: `Not approved yet`
+- Decision: `APPROVED`
+- Approved By: `Project Owner`
 - Initial Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
 - Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
