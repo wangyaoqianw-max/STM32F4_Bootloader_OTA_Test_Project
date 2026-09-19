@@ -4,8 +4,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S09_Firmware_Installation`
-- Active Stage Status: `CLOSED / PASS`
+- Active Stage: `S10_Trial_Confirm_Rollback`
+- Active Stage Status: `DRAFT`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -27,6 +27,11 @@
 - S09 Review Report: `00_Project/03_Stages/S09_Firmware_Installation/review.md`
 - S09 Review Commit: `8099cb5`
 - S09 Closure Commit: `8192573`
+- S10 Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
+- S10 Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
+- S10 Design Metadata Commit: `d054f165553ed320561d726fe736f8bea7ec525e`
+- S10 Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
+- S10 Implementation Plan Commit: `Not created yet`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -52,13 +57,13 @@
 - S05C Review Report: `00_Project/03_Stages/S05C_Logic_Analyzer/review.md`
 - Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S10_Trial_Confirm_Rollback`
-- Current Role: `Project Owner`
+- Next Planned Stage: `Not selected; S10 is active`
+- Current Role: `Project Owner / S10 Design Role`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-S05、S05A、S05B、S05C、S06、S07、S07A、S08 与 S09 均已关闭。S09 已完成 durable `PENDING` 消费、External Candidate 安装、Internal CRC/vector 验证和 `PENDING → TRIAL` 原子提交；代码验证 PASS，正常安装链和关键 reset 边界已通过真实板验证。剩余 erase/program/CRC/Metadata marker/Power Loss Fault Injection 由 Project Owner 接受为跨阶段 Deferred Follow-up，不视为已通过。下一计划阶段为 `S10_Trial_Confirm_Rollback`。
+S10 已进入 Design Role，当前状态为 `DRAFT`。设计基线已建立 Trial / Confirm / Watchdog / Rollback 闭环：保持 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`，采用一次 Trial、未 Confirm 再次启动即回滚；Application IWDG 作为 Platform MCU Capability 在 RTOS Scheduler 前启动，约 10 s timeout，Runtime 长期 Feed Owner 为 `appMainTask`，Debug Halt 时冻结；Trial Confirm 需要 Startup RUNNING + MAIN/OTA/DISPLAY Runtime Ready + 5 s Observation，并执行严格原子 `firmware_confirm()`；Bootloader Rollback 在 confirmed image 完整预校验后先原子提交 `TRIAL → ROLLBACK`，再复用统一 Installer 从 `confirmedSlot` 恢复，最后原子提交 `ROLLBACK → NONE`。当前尚未批准设计，也尚未创建 Implementation Plan 或修改生产代码。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -525,7 +530,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S09 已由 Project Owner 正式关闭为 `CLOSED / PASS`。下一步进入 `S10_Trial_Confirm_Rollback` 的设计阶段；S09 延期的 erase/program/CRC/Metadata marker/Power Loss Fault Injection 继续保留为跨阶段补充验证，不得在后续文档中误标为已通过。
+对 `00_Project/03_Stages/S10_Trial_Confirm_Rollback/design.md` 做正式 Design Review，重点检查 Trial reset 语义、Watchdog Feed ownership、Debug Freeze、严格 Confirm 原子边界、Rollback destructive gate 和 Installer 复用边界。Project Owner 明确批准设计后，才创建 `implementation_plan.md` 并进入后续实施门禁。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 
