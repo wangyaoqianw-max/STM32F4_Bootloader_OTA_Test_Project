@@ -2,8 +2,8 @@
 
 ## Context Metadata
 
-- Active Stage: `S09_Firmware_Installation`
-- Status: `CLOSED / PASS`
+- Active Stage: `S10_Trial_Confirm_Rollback`
+- Status: `DRAFT`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -16,6 +16,11 @@
 - S09 Review Report: `00_Project/03_Stages/S09_Firmware_Installation/review.md`
 - S09 Review Commit: `8099cb5`
 - S09 Closure Commit: `8192573`
+- S10 Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
+- S10 Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
+- S10 Design Metadata Commit: `d054f165553ed320561d726fe736f8bea7ec525e`
+- S10 Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
+- S10 Implementation Plan Commit: `Not created yet`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -58,13 +63,13 @@
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
 - Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `S10_Trial_Confirm_Rollback`
-- Current Role: `Project Owner`
+- Next Planned Stage: `Not selected; S10 is active`
+- Current Role: `Project Owner / S10 Design Role`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A、S08 与 S09 均已完成并关闭。S09 已完成 Firmware Installation 主链并由 Project Owner 正式关闭为 `CLOSED / PASS`；代码验证 PASS，真实板正常安装链和关键 Reset 边界已通过。剩余 erase/program/CRC/Metadata marker/Power Loss Fault Injection 保留为跨阶段 Deferred Follow-up，不视为已通过。下一计划阶段为 `S10_Trial_Confirm_Rollback`。
+`S10_Trial_Confirm_Rollback` 已进入 Design Role，当前状态为 `DRAFT`。S10 设计已建立一次 Trial、Application-controlled Confirm、IWDG 恢复和 Bootloader 自动 Rollback 主链；保持 Metadata V2，不新增 `CONFIRMED` 状态或 Failure Counter 回滚阈值。Application Watchdog 计划在 RTOS Scheduler 前启动，约 10 s timeout，Debug Halt 冻结；Trial Confirm 采用 Startup RUNNING + Runtime Ready + 5 s Observation；Bootloader Rollback 在 Known-Good Image 预校验和 `TRIAL → ROLLBACK` 原子提交后才跨过 destructive gate，并复用 S09 Installer 核心。当前未进入 Implementation，Implementation Plan 尚未创建。S09 Deferred Fault Injection 保持跨阶段补充验证，不视为已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
