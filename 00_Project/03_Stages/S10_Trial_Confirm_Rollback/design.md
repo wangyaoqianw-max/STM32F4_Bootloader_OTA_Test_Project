@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `DESIGN_APPROVED`
+- Workflow Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Owner: Project Owner
