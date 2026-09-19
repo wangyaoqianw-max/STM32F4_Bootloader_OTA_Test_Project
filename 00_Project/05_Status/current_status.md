@@ -15,6 +15,7 @@
 - S09 Verification Commit: `4fdc9ac`
 - S09 Review Report: `00_Project/03_Stages/S09_Firmware_Installation/review.md`
 - S09 Review Commit: `8099cb5`
+- S09 Closure Commit: `8192573`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -63,7 +64,7 @@
 
 ## Current Goal
 
-`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A 与 S08 均已完成并关闭。当前活动阶段为 `S09_Firmware_Installation`，设计和实施方案已由 Project Owner 确认，主要实现和正常安装链已完成，代码验证 PASS、硬件验证为部分 PASS，剩余真实板级 Fault Injection 已明确延期到下一阶段补充验证，状态为 `READY_FOR_REVIEW`。
+`S05_UART_Ymodem`、S05A、S05B、S05C、S06、S07、S07A、S08 与 S09 均已完成并关闭。S09 已完成 Firmware Installation 主链并由 Project Owner 正式关闭为 `CLOSED / PASS`；代码验证 PASS，真实板正常安装链和关键 Reset 边界已通过。剩余 erase/program/CRC/Metadata marker/Power Loss Fault Injection 保留为跨阶段 Deferred Follow-up，不视为已通过。下一计划阶段为 `S10_Trial_Confirm_Rollback`。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 

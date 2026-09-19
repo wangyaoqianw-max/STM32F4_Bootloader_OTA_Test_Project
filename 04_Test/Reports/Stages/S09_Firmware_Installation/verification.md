@@ -7,6 +7,7 @@
 - Workflow status: `CLOSED / PASS`
 - Branch: `main`
 - Evidence date: `2026-09-19`
+- Closure Commit: `8192573`
 - Verification result: `PASS_WITH_DEFERRED_FOLLOW_UP`
 
 本文件保存已完成的自动化和代码证据，不把未完成的真实板级故障注入、断电和人工配合场景描述为通过。经 Project Owner 明确决定，剩余故障注入延期到下一阶段作为补充验证；S09 不实现 S10 的 Confirm、Watchdog、Failure Counter 或 Rollback。
