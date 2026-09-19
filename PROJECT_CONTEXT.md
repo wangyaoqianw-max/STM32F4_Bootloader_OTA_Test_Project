@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S10_Trial_Confirm_Rollback`
-- Active Stage Status: `IN_PROGRESS`
+- Active Stage Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -61,12 +61,12 @@
 - Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `Not selected; S10 is active`
-- Current Role: `Implementation Role`
+- Current Role: `Verification Role`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0→7 已按单一职责提交：`dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`；已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。主要提交为 `dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`、`c237361`、`54c9827`、`b40d1b4`、`a5295c2`。已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision；Application/Bootloader 代码验证为 `PASS`，真实板级验证为 `PENDING`。当前转入 Verification Role，等待集中执行板级场景后再进入 Review。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -533,7 +533,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，当前状态为 `IN_PROGRESS`。Task 0→7 已完成，下一步由 Implementation Role 执行 Task 8 的 Automated Regression and Board Verification；测试采用自动化优先、人工场景最后集中验收，允许临时测试代码但最终必须移除。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build 均已完成并通过；代码验证为 `PASS`，硬件验证为 `PENDING`。下一步由 Verification Role 集中执行真实 Flash/RTT/GDB/IWDG、Trial/Confirm/Rollback、复位/掉电和人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

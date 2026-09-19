@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Execution Branch: `main`
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Clean Execution Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
@@ -86,6 +86,22 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Real-board automation — NOT_EXECUTED/PENDING: no Flash, RTT, GDB target session, IWDG target observation, reset/power-cycle or rollback fault-injection evidence was produced.
 - S05C result-file checks — NOT_EXECUTED/PENDING: `test_i2c.ps1` and `test_spi.ps1` require a real logic-analyzer result file; the fixture parser check passed, but no target capture was available.
 - Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches were removed after evidence collection.
+
+## Task 9 Evidence
+
+- Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
+- Hardware execution status — `PENDING / NOT_EXECUTED`: this implementation run produced no new Flash, RTT, GDB target, IWDG, reset/power-cycle or visual board evidence. Existing historical S04/S07/S09 logs are not reused as S10 evidence.
+- S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; only the parser fixture contract was executed.
+
+## Task 10 Exit Evidence
+
+- Production warning cleanup — commit `a5295c2`; explicit enum initialization and signed range comparisons remove compiler diagnostics without changing public APIs or lifecycle semantics.
+- Final Application Clean Build — `05_Tools\toolkit.bat build application` PASS; raw UV4 clean-build log reports `0 Error(s), 0 Warning(s)`. Total ROM remains `84596 bytes (82.61 KiB)`; configured FreeRTOS heap remains `24576 bytes`, startup stack remains `1024 bytes`.
+- Final Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; `0 Error(s), 0 Warning(s)`. Total ROM remains `22372 bytes (21.85 KiB)`, below 64 KiB.
+- Final static, Python and Host evidence is recorded in Task 8; no production source changes occurred after the last Host fixture regression except the warning-only cleanup above.
+- Code verification — `PASS`; hardware verification — `PENDING`.
+- Temporary production test code — `NONE`; no test-only production hook or forced-failure behavior remains in the final build.
+- S09 Deferred Fault Injection — not executed in S10; remains S09-owned and is not counted in this stage.
 
 ## Acceptance Matrix
 
