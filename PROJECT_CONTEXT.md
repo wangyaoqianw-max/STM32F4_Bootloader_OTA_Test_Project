@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S10_Trial_Confirm_Rollback`
-- Active Stage Status: `DESIGN_APPROVED`
+- Active Stage Status: `READY_FOR_IMPLEMENTATION`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -34,7 +34,7 @@
 - S10 Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
 - S10 Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - S10 Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
-- S10 Implementation Plan Commit: `Not created yet`
+- S10 Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -61,12 +61,12 @@
 - Last Closed Stage: `S09_Firmware_Installation`
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `Not selected; S10 is active`
-- Current Role: `Project Owner / S10 Implementation Planning`
+- Current Role: `Implementation Role`
 - Updated At: `2026-09-19`
 
 ## Current Goal
 
-S10 已进入 Design Role，当前状态为 `DRAFT`。设计基线已建立 Trial / Confirm / Watchdog / Rollback 闭环：保持 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`，采用一次 Trial、未 Confirm 再次启动即回滚；Application IWDG 作为 Platform MCU Capability 在 RTOS Scheduler 前启动，约 10 s timeout，Runtime 长期 Feed Owner 为 `appMainTask`，Debug Halt 时冻结；Trial Confirm 需要 Startup RUNNING + MAIN/OTA/DISPLAY Runtime Ready + 5 s Observation，并执行严格原子 `firmware_confirm()`；Bootloader Rollback 在 confirmed image 完整预校验后先原子提交 `TRIAL → ROLLBACK`，再复用统一 Installer 从 `confirmedSlot` 恢复，最后原子提交 `ROLLBACK → NONE`。Design Review 已完成：0 Blocking、5 Important，5 项均已回写设计并解决。Project Owner 已正式批准当前方案，阶段状态进入 `DESIGN_APPROVED`。Implementation Plan 尚未创建，生产代码尚未修改。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已进入 Design Role，当前状态为 `DRAFT`。设计基线已建立 Trial / Confirm / Watchdog / Rollback 闭环：保持 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`，采用一次 Trial、未 Confirm 再次启动即回滚；Application IWDG 作为 Platform MCU Capability 在 RTOS Scheduler 前启动，约 10 s timeout，Runtime 长期 Feed Owner 为 `appMainTask`，Debug Halt 时冻结；Trial Confirm 需要 Startup RUNNING + MAIN/OTA/DISPLAY Runtime Ready + 5 s Observation，并执行严格原子 `firmware_confirm()`；Bootloader Rollback 在 confirmed image 完整预校验后先原子提交 `TRIAL → ROLLBACK`，再复用统一 Installer 从 `confirmedSlot` 恢复，最后原子提交 `ROLLBACK → NONE`。Design Review 已完成：0 Blocking、5 Important，5 项均已回写设计并解决。Project Owner 已正式批准当前方案，Implementation Plan 已创建并冻结，阶段状态进入 `READY_FOR_IMPLEMENTATION`。生产代码尚未开始修改。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -533,7 +533,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 已由 Project Owner 批准，当前状态为 `DESIGN_APPROVED`。下一步创建 `implementation_plan.md`，完成施工任务、验证映射和文件边界后再切换到 `READY_FOR_IMPLEMENTATION`。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，当前状态为 `READY_FOR_IMPLEMENTATION`。下一步由 Implementation Role 按 Task 0→10 执行；测试采用自动化优先、人工场景最后集中验收，允许临时测试代码但最终必须移除。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 
