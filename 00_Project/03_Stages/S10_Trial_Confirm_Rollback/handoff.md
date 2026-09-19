@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `DRAFT`
+- Workflow Status: `DESIGN_APPROVED`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
@@ -13,6 +13,7 @@
 - Current Status Sync Commit: `c4ff10d9fc345408655bc11d62c2976bb915e44f`
 - Design Review Amendment Commit: `ffcf6b835d2c9dd43ee907b4770c6df43c964dc2`
 - Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
+- Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `Not created yet`
 - Implementation Commit: `Not created yet`
 - Verification Commit: `Not created yet`
@@ -24,14 +25,15 @@
 当前角色：
 
 ```text
-Project Owner / S10 Design Role
+Project Owner / S10 Implementation Planning
 ```
 
 当前允许继续：
 
 ```text
-Project Owner approval
-implementation-plan preparation after approval
+implementation_plan.md preparation
+implementation task decomposition
+verification-plan mapping
 ```
 
 当前禁止：
@@ -39,10 +41,9 @@ implementation-plan preparation after approval
 ```text
 production implementation
 stage verification claims
-READY_FOR_IMPLEMENTATION transition
 ```
 
-直到 Project Owner 明确批准 S10 Design。
+只有 implementation plan 完成并同步正式上下文后，阶段才进入 `READY_FOR_IMPLEMENTATION`。
 
 ## Required Reading
 
@@ -446,7 +447,7 @@ Technical Result   : READY_FOR_OWNER_APPROVAL
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up.
-- S10 Design has not yet received formal Project Owner approval.
+- S10 Design has received formal Project Owner approval.
 - Implementation Plan has not yet been created.
 
 ### Review Focus
