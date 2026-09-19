@@ -18,7 +18,8 @@
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification Commit: `Not created; Verification Role pending`
+- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`
+- Verification Commit: `Pending final consolidated board verification`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-19`
 
@@ -313,7 +314,7 @@ ESP-IDF OTA rollback
 
 ## Implementation Progress
 
-Project Owner 已批准 Design，Implementation Plan 已冻结。Task 0→10 已完成：同步并核对 `main`/`origin/main`、完成 Application/Bootloader Clean Build、执行 Host/Contract/Python 回归、实现 Application Trial Health/Confirm、Metadata A/B invariants、Bootloader Pending Install/Confirmed Restore 共用验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision，并将证据写入 `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` 与 `verification.md`。当前转入 Verification Role，代码验证通过，真实板级证据待集中执行；继续以真实文件/API 为准，不机械照抄建议命名。
+Project Owner 已批准 Design，Implementation Plan 已冻结。Task 0→10 已完成：同步并核对 `main`/`origin/main`、完成 Application/Bootloader Clean Build、执行 Host/Contract/Python 回归、实现 Application Trial Health/Confirm、Metadata A/B invariants、Bootloader Pending Install/Confirmed Restore 共用验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision，并将证据写入 `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` 与 `verification.md`。当前转入 Verification Role；本轮已补充正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的真实 RTT/GDB 证据，但 IWDG、Rollback、复位/掉电和 LED/LCD 仍待集中执行；继续以真实文件/API 为准，不机械照抄建议命名。
 
 ## S09 Deferred Verification Carried Forward
 
@@ -429,7 +430,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target RTT/GDB/Factory Restore, IWDG, rollback, reset/power-cycle and manual board evidence remain PENDING / NOT_EXECUTED.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup and Trial/Confirm handshake evidence are PARTIAL/PASS, while IWDG, rollback, reset/power-cycle and manual board evidence remain PENDING.
 ```
 
 ### Design Review Status
@@ -452,7 +453,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification remains pending for the Verification Role; historical logs were not reused as S10 evidence.
+- S10 real board verification is partially evidenced for NONE startup and Trial/Confirm; the remaining IWDG, rollback, reset/power-cycle and visual scenarios are still pending for the Verification Role. Historical logs were not reused as S10 evidence.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 

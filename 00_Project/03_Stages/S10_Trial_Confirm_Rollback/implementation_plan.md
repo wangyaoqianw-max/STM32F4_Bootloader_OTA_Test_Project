@@ -3,11 +3,11 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `IN_PROGRESS`
+- Workflow Status: `READY_FOR_VERIFICATION`
 - Branch: `main`
 - Baseline Commit: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_VERIFICATION`
 - Updated At: `2026-09-19`
 
 ## Required Reading
@@ -804,3 +804,5 @@ DESIGN_APPROVED
 READY_FOR_IMPLEMENTATION
 → IN_PROGRESS
 ```
+
+本轮实际执行结果：Task 0→10 已完成，自动化验证与正式双工程构建通过；阶段当前为 `READY_FOR_VERIFICATION`，真实 IWDG、Rollback、复位/掉电和人工观察证据仍待集中验收。

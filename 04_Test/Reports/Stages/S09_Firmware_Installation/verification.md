@@ -25,6 +25,8 @@ e4d6816 docs: complete S09 bootloader comments
 53acd8e feat: integrate S09 boot decision flow
 ```
 
+S09 verification follow-up: `f0e5d88` hardens the temporary Factory Restore build/transfer workflow and preserves restoration of the formal project files. The latest retry remains unfinished as recorded below; it does not replace the earlier baseline PASS.
+
 ## Code Verification
 
 | Item | Result | Evidence |

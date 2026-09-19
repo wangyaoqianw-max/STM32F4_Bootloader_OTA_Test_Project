@@ -21,12 +21,19 @@
 | Compatibility/core contracts | `05_Tools\Contracts\Compatibility`, `05_Tools\Contracts\Core` | PASS |
 | S04/S05/S07A Host tests | format, CRC, storage, YMODEM, receiver, startup | PASS |
 | S09 Host contracts | prevalidate, installer, metadata commit | PASS |
-| Factory Restore | destructive board operation | NOT_EXECUTED; BOARD_MANUAL/BOARD_AUTO pending |
-| Ymodem board transport | existing host contract passed; real target transport | NOT_EXECUTED; BOARD_AUTO pending |
-| RTT capture | real target capture | NOT_EXECUTED; BOARD_AUTO pending |
-| GDB snapshot/fault on target | real target session | NOT_EXECUTED; BOARD_AUTO pending |
+| Factory Restore | destructive board operation | PARTIAL; earlier S09 baseline PASS, latest retry unfinished |
+| Ymodem board transport | real target v1.1 transfer | PASS for transfer/READY_TO_INSTALL; rollback transport pending |
+| RTT capture | real target capture | PARTIAL; formal NONE and Trial/Confirm evidence captured |
+| GDB snapshot/fault on target | real target session | PARTIAL PASS; startup and Trial/Confirm symbols read, fault scenarios pending |
 
 The current baseline contains no identified S10 production test hook or fault-injection macro. Temporary S10 hooks, if required later, must be isolated, marked `TEST ONLY`, compile-time disabled by default, and removed before the final clean build.
+
+## Real Target Evidence Collected
+
+- Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.
+- `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
+- After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove persisted Metadata after a later power-cycle.
+- The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
 
 ## Task 3 Evidence
 
@@ -35,7 +42,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_lifecycle_host_test.c` — PASS; strict state/slot gates, Header/size/Payload CRC/Version gates, commit body/marker failure propagation, reload mismatch, normal `TRIAL → NONE`, and confirmed Slot/Version update.
 - Application project XML parse — PASS.
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
-- Real target Confirm transaction, RTT, GDB, IWDG and board reset/power-cycle evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
+- Real target Confirm transaction, RTT and GDB evidence — PASS for the runtime handshake; IWDG and board reset/power-cycle evidence remain pending.
 
 ## Task 4 Evidence
 
@@ -43,7 +50,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Health Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_health_host_test.c` — PASS; Ready deadline, Observation Window, Confirm success/failure states, feed permission and stable `NONE` behavior.
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; `OTA_APP_build.log` reports `ExitCode=0`, no errors or warnings.
 - Runtime task changes: appMainTask is the only long-term Watchdog Feed owner; otaWorker remains the Confirm Storage transaction owner; display/OTA Ready reports occur after the startup decision.
-- Real Runtime Ready/Confirm RTT, GDB, watchdog and board reset evidence — NOT_EXECUTED; pending later Board Auto/Manual verification.
+- Real Runtime Ready/Confirm RTT and GDB evidence — PASS for `readyMask=0x7`, stable Trial health and `PLATFORM_ERR_OK` Confirm result; watchdog and reset evidence remain pending.
 
 ## Task 5 Evidence
 
@@ -64,7 +71,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - S10 Bootloader recovery Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_boot_recovery_host_test.c` — PASS; Pending B, Confirmed A, wrong state, same Slot, version mismatch, invalid Payload CRC/vector, common source selection, and prevalidate-before-erase gate.
 - S09 regression Host Tests — PASS: prevalidate, installer, fixed Header/Metadata contract, and atomic Metadata commit.
 - Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 21288 bytes (20.79 KiB)`, below 64 KiB.
-- Real Bootloader rollback/restore, RTT, GDB and board evidence — NOT_EXECUTED; pending Task 7/8/9 board verification.
+- Real Bootloader rollback/restore, RTT, GDB and board evidence — rollback restore remains pending; formal NONE and Trial/Confirm target evidence is recorded below.
 
 ## Task 7 Evidence
 
@@ -73,32 +80,32 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Boot decision contract: `05_Tools\Contracts\Bootloader\test_s10_boot_decision_contract.ps1` — PASS; verifies PENDING/TRIAL/ROLLBACK ordering, confirmed prevalidation before destructive restore, persisted ROLLBACK before erase, restart-from-zero ROLLBACK path, and diagnostic-only Reset Cause.
 - S09 Metadata commit Host Test — PASS; existing `PENDING → TRIAL` atomic marker ordering and compatibility remain green after private core extraction.
 - Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below 64 KiB.
-- Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; no target Reset Cause, rollback restore, RTT or GDB evidence has been executed yet — NOT_EXECUTED; pending Task 8/9 board verification.
+- Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; target rollback restore, IWDG, reset-cause and power-cycle evidence remains pending.
 
 ## Task 8 Evidence
 
 - Host regression matrix — PASS: S02 SPI chunking; S04 CRC, firmware format and storage; S05 storage write, YMODEM parser/receiver and flash sink; S07A startup; S07 IRQ, Key, Worker, Display, Metadata, sink and OTA service; S09 contract, prevalidate, installer and Metadata commit; S10 health, lifecycle, Metadata invariant, boot recovery and rollback transaction.
 - Python tests — PASS: `05_Tools/Firmware/test_pack_firmware.py` 2/2; `05_Tools/Ymodem/tests` 24/24; `04_Test/Host/S04_Firmware_Image_Storage/test_s04_persistence_log.py` 15/15.
-- Static contracts — PASS: all 11 scripts under `05_Tools/Contracts`; GDB automation, CmBacktrace integration/fault diagnostics, tool sequence and S05C parser fixture checks also PASS.
+- Static contracts — PASS: all 12 scripts under `05_Tools/Contracts`; GDB automation, CmBacktrace integration/fault diagnostics, tool sequence and S05C parser fixture checks also PASS.
 - Host fixture maintenance — commit `54c9827`; S04 test stubs now expose the current AT24C02/W25Q64 initializer contracts and the Metadata recovery fixture uses a distinct valid confirmed/pending Slot pair. The S07 UART test double uses independent test-owned TX storage instead of removed production struct fields. No production API or behavior was changed by this fixture commit.
-- Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 84596 bytes (82.61 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
+- Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Current map reports `Total ROM Size = 84616 bytes (82.63 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
 - Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below the 64 KiB limit.
-- Real-board automation — NOT_EXECUTED/PENDING: no Flash, RTT, GDB target session, IWDG target observation, reset/power-cycle or rollback fault-injection evidence was produced.
-- S05C result-file checks — NOT_EXECUTED/PENDING: `test_i2c.ps1` and `test_spi.ps1` require a real logic-analyzer result file; the fixture parser check passed, but no target capture was available.
-- Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches were removed after evidence collection.
+- Real-board automation — PARTIAL/PENDING: formal NONE startup, v1.1 YMODEM transfer, READY_TO_INSTALL, Runtime Ready and strict Confirm were captured; IWDG target observation, reset/power-cycle and rollback fault-injection evidence remain pending.
+- S05C result-file checks — fixture-level SPI/I²C project assertions PASS after parser normalization; no real target capture result file is available, so board capture remains `PENDING / NOT_EXECUTED`.
+- Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches are not part of the commit; local untracked cache cleanup remains pending safe user-approved cleanup.
 
 ## Task 9 Evidence
 
 - Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
-- Hardware execution status — `PENDING / NOT_EXECUTED`: this implementation run produced no new Flash, RTT, GDB target, IWDG, reset/power-cycle or visual board evidence. Existing historical S04/S07/S09 logs are not reused as S10 evidence.
-- S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; only the parser fixture contract was executed.
+- Hardware execution status — `PARTIAL / PENDING`: this run produced formal NONE GDB evidence and a real v1.1 transfer through Runtime Ready/strict Confirm; IWDG, rollback, reset/power-cycle and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
+- S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; parser and fixture-level project assertions are complete.
 
 ## Task 10 Exit Evidence
 
 - Production warning cleanup — commit `a5295c2`; explicit enum initialization and signed range comparisons remove compiler diagnostics without changing public APIs or lifecycle semantics.
-- Final Application Clean Build — `05_Tools\toolkit.bat build application` PASS; raw UV4 clean-build log reports `0 Error(s), 0 Warning(s)`. Total ROM remains `84596 bytes (82.61 KiB)`; configured FreeRTOS heap remains `24576 bytes`, startup stack remains `1024 bytes`.
+- Final Application Clean Build — `05_Tools\toolkit.bat build application` PASS; raw UV4 clean-build log reports `0 Error(s), 0 Warning(s)`. Current map Total ROM is `84616 bytes (82.63 KiB)`; configured FreeRTOS heap remains `24576 bytes`, startup stack remains `1024 bytes`.
 - Final Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; `0 Error(s), 0 Warning(s)`. Total ROM remains `22372 bytes (21.85 KiB)`, below 64 KiB.
-- Final static, Python and Host evidence is recorded in Task 8; no production source changes occurred after the last Host fixture regression except the warning-only cleanup above.
+- Final static, Python and Host evidence is recorded in Task 8; the nonblocking Event Flags mapping fix is committed as `5ca2d14`, and the final formal build was rerun afterward.
 - Code verification — `PASS`; hardware verification — `PENDING`.
 - Temporary production test code — `NONE`; no test-only production hook or forced-failure behavior remains in the final build.
 - S09 Deferred Fault Injection — not executed in S10; remains S09-owned and is not counted in this stage.

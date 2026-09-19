@@ -8,6 +8,7 @@
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
+- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`
 - Code Verification: `PASS`
 - Hardware Verification: `PENDING`
 
@@ -37,10 +38,10 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 
 - S02/S04/S05/S07/S07A/S09 regression Host Tests：`PASS`。
 - S10 Runtime Health、Lifecycle Confirm、Metadata Invariant、Boot Recovery、Rollback Transaction Host Tests：`PASS`。
-- `05_Tools/Contracts` 中 11 项 Application/Bootloader/兼容性/调试/工具流程 contract：`PASS`。
+- `05_Tools/Contracts` 中 12 项 Application/Bootloader/兼容性/调试/工具流程 contract：`PASS`。
 - S10 Boot Decision contract、GDB automation、CmBacktrace/fault diagnostics、tool sequence contract：`PASS`。
 - S05C parser fixture：`PASS`。
-- S05C `test_i2c.ps1` / `test_spi.ps1` 需要真实逻辑分析仪结果文件，本次无结果文件：`PENDING / NOT_EXECUTED`。
+- S05C SPI/I²C 项目断言：使用解析器夹具结果执行，`test_spi.ps1` 两套 SPI 夹具 `PASS`，`test_i2c.ps1` I²C 夹具 `PASS`；真实逻辑分析仪采集仍待板测。
 
 ### Python Tests
 
@@ -53,31 +54,39 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - Application `05_Tools\\toolkit.bat build application`：`PASS`，0 errors / 0 warnings。
 - Bootloader `05_Tools\\toolkit.bat build bootloader`：`PASS`，0 errors / 0 warnings。
 - Application true clean raw UV4 build：`PASS`，0 errors / 0 warnings。
-- Application Total ROM：`84596 bytes (82.61 KiB)`；`configTOTAL_HEAP_SIZE=24576`，startup stack `1024 bytes`。
+- Application Total ROM：`84616 bytes (82.63 KiB)`；`configTOTAL_HEAP_SIZE=24576`，startup stack `1024 bytes`。
 - Bootloader Total ROM：`22372 bytes (21.85 KiB)`，低于 `64 KiB` 限制。
 
 ## Board Verification Boundary
 
-本次实现运行未产生新的真实目标板证据。以下项目均不得从历史日志推断为通过：
+本轮已取得部分真实目标板证据，但尚未完成完整 S10 板级验收。以下状态只依据本轮可回读的 RTT/GDB/传输结果，不把历史日志或发送端单方面成功当作通过：
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `PENDING / NOT_EXECUTED` |
-| RTT capture / Reset Cause | `PENDING / NOT_EXECUTED` |
-| GDB target session / snapshot | `PENDING / NOT_EXECUTED` |
+| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists, latest retry unfinished` |
+| RTT capture / Reset Cause | `PARTIAL; formal NONE and Trial/Confirm RTT captured, Reset Cause/IWDG pending` |
+| GDB target session / snapshot | `PARTIAL PASS; stable NONE and Trial/Confirm symbols read` |
 | IWDG timeout / debug freeze | `PENDING / NOT_EXECUTED` |
-| Trial runtime Ready / strict Confirm | `PENDING / NOT_EXECUTED` |
+| Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
 | software reset / IWDG reset / power-cycle | `PENDING / NOT_EXECUTED` |
 | interrupted rollback and restart-from-zero | `PENDING / NOT_EXECUTED` |
-| PA0 / LED / LCD manual observation | `PENDING / NOT_EXECUTED` |
+| PA0 OTA/install input | `PASS; two PA0 actions reached install and Confirm flow` |
+| LED / LCD manual observation | `PENDING / NOT_EXECUTED` |
 | S05C real I2C/SPI capture | `PENDING / NOT_EXECUTED` |
 
-Verification Role 需要集中完成上述板级场景；完成后再由 Review Role 判定阶段是否可以关闭。
+### Real Target Evidence Collected
+
+- Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.
+- `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
+- After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove the persisted Metadata after a later power-cycle.
+- The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
+
+Verification Role still needs the consolidated IWDG, software-reset, power-cycle, rollback-interruption, and visual LED/LCD scenarios; Review Role must decide closure afterward.
 
 ## S09 Deferred Boundary
 
-S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata body/marker 和 Power Loss）本次未执行，仍归属 S09 supplementary verification，不计入 S10 PASS，也未被临时测试代码替代。
+S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata body/marker 和 Power Loss）本次未完成。最新 Factory Restore 重试的目标端 `worker result=2` / `ERROR/TIMEOUT` 证据不覆盖此前 baseline PASS，也不计入 S10；这些项目仍归属 S09 supplementary verification。
 
 ## Handoff Result
 
-代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段状态切换为 `READY_FOR_VERIFICATION`。硬件验证仍为 `PENDING`，阶段不得标记 `CLOSED`。未跟踪的构建缓存、Python cache 和临时测试输出已从提交范围清理；本报告和 `verification_matrix.md` 是当前可回读证据入口。
+代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。硬件验证仍为 `PARTIAL / PENDING`，阶段不得标记 `CLOSED`。本轮生成的构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。
