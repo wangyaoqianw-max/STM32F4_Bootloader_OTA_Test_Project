@@ -8,6 +8,7 @@
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Design Owner: Project Owner
 - Updated At: `2026-09-19`
+- Design Review: `PASS_WITH_AMENDMENTS / READY_FOR_OWNER_APPROVAL`
 
 ## 1. Goal
 
@@ -343,6 +344,24 @@ Platform API
 
 不得为了 IWDG 重新生成 CubeMX 工程并引入 heap、CmBacktrace、Task Stack 等无关回归。
 
+Design Review 已确认当前仓库：
+
+```text
+HAL_IWDG_MODULE_ENABLED      currently disabled
+stm32f4xx_hal_iwdg.c         exists in Vendor
+Keil OTA_APP.uvprojx         currently does not include IWDG source
+```
+
+因此“不使用 CubeMX”仍然可行，但 Implementation Plan 必须显式处理 HAL IWDG 的工程接入。第一版优先沿用现有 HAL 风格：
+
+```text
+enable HAL IWDG module manually
++ add stm32f4xx_hal_iwdg.c to Application build
++ Platform/Impl wraps HAL_IWDG_Init / HAL_IWDG_Refresh
+```
+
+不得假定当前工程已经具备 IWDG HAL 链接能力。
+
 ### 5.3 Start Point
 
 Application 每次启动都启用 IWDG，不只在 TRIAL 时启用。
@@ -352,9 +371,9 @@ Application 每次启动都启用 IWDG，不只在 TRIAL 时启用。
 ```text
 HAL_Init()
 ↓
-SystemClock_Config()
-↓
 Watchdog START
+↓
+SystemClock_Config()
 ↓
 configured peripheral init
 ↓
@@ -365,7 +384,23 @@ MX_FREERTOS_Init()
 osKernelStart()
 ```
 
-实际实现应放在 CubeMX USER CODE 安全区域或 App Early Startup 编排中，禁止直接污染 Vendor 生成区。
+理由：
+
+- IWDG 使用独立 LSI，不依赖 System Clock；
+- 放在 `SystemClock_Config()` 前可以覆盖 Clock Init 卡死或进入 `Error_Handler()` 的场景；
+- `HAL_Init()` 已建立 HAL 基础时基，可作为第一版代码初始化 IWDG 的安全边界。
+
+第一版仍不覆盖：
+
+```text
+Reset_Handler
+SystemInit
+HAL_Init itself
+```
+
+这部分属于未来 Bootloader→Application Watchdog Handover / Earlier Boot Watchdog 增强，不作为 S10 阻塞项。
+
+实际调用应放在 CubeMX USER CODE 安全区域或 App Early Startup 编排中，禁止直接污染 Vendor 生成区。
 
 Watchdog 是系统基础可靠性机制：
 
@@ -564,18 +599,20 @@ Trial Health FAIL
 
 ```text
 appMainTask
-→ completes at least one normal foreground work cycle
+→ after SYSTEM_RUN, completes at least one normal foreground work cycle
 
 otaWorker
-→ completes startup and reaches normal waiting/blocked state
+→ after SYSTEM_RUN, reaches its normal command-wait / blocked loop
 
 displayTask
-→ completes at least one normal display update
+→ after SYSTEM_RUN, reaches its normal display-queue wait / blocked loop
 ```
 
 不要要求 OTA Worker 实际完成一次 OTA，因为无升级请求时 Blocking 是正常健康状态。
 
-第一版可增加轻量 `app_health` 状态模块，但不重新定义组件 enum。
+注意：当前 displayTask 的 initial render 已在 Startup local init 阶段完成，因此“完成第一次 initial render”不能作为新的 Runtime Ready 证据；Runtime Ready 必须证明 Task 已经跨过 SYSTEM_RUN 并进入长期运行循环。
+
+第一版增加轻量 `app_health` 状态模块，但不重新定义组件 enum。
 
 建议语义：
 
@@ -585,6 +622,33 @@ OTA_RUNTIME_READY
 DISPLAY_RUNTIME_READY
 → RUNTIME_HEALTH_READY
 ```
+
+### 8.2.1 Runtime Ready Deadline
+
+Design Review 增加硬性边界：
+
+```text
+TRIAL_RUNTIME_READY_TIMEOUT = 5 s
+```
+
+原因：如果 RUNNING 已发布，而 MAIN / OTA / DISPLAY 中某个 Task 永远没有进入 Runtime Ready，系统不能因为 appMainTask 仍在运行并 Feed IWDG 而永久停留在 TRIAL。
+
+冻结行为：
+
+```text
+RUNNING
+↓
+start Runtime Ready deadline
+├─ all Ready within 5 s → Observation
+└─ timeout / explicit health failure
+      → Trial Health FAIL
+      → controlled reset when possible
+      → otherwise stop valid Feed
+      → Bootloader sees TRIAL
+      → Rollback
+```
+
+IWDG 仍是 Hang/Fatal 的最终恢复手段；对于已经被软件明确检测到的 Health Failure，允许直接请求 MCU Reset，避免无意义等待完整 watchdog timeout。
 
 ### 8.3 Observation Window
 
@@ -614,7 +678,40 @@ no reset
 Watchdog is still serviced by valid health progress
 ```
 
-窗口通过后才允许 `firmware_confirm()`。
+窗口通过后才允许发起 `firmware_confirm()`。
+
+### 8.4 Feed Policy Across Trial Health
+
+appMainTask 是实际长期 Feed 执行者，但 Feed 权限由 Health State 决定：
+
+```text
+STARTUP / WAIT_RUNTIME_READY
+→ only feed while health progress is still valid and deadline not expired
+
+OBSERVING
+→ feed after valid main work cycles
+
+CONFIRMING
+→ appMainTask does not unconditionally feed
+→ confirmation transaction must complete within the watchdog safety window
+
+STABLE / NONE
+→ normal long-term appMainTask feed
+
+FAILED
+→ no valid feed; request reset when possible
+```
+
+该规则避免以下死角：
+
+```text
+otaWorker/displayTask not ready
++
+appMainTask keeps feeding forever
+→ permanent TRIAL
+```
+
+也避免 strict Confirm 自身若异常卡死时被另一个正常循环永久喂狗掩盖。
 
 ## 9. Firmware Lifecycle Service
 
@@ -648,6 +745,44 @@ strict firmware_confirm transaction
 
 它不负责 Watchdog 策略，不负责 Task Health，也不负责 Firmware Download。
 
+### 9.1 Storage Ownership and Confirm Execution Context
+
+Design Review 确认当前 Firmware Storage 真实资源：
+
+```text
+W25Q64 / Soft-I2C / AT24C02 / firmware_storage_t
+→ currently private to app_ota_runtime
+→ accessed in otaWorker context
+```
+
+S10 不允许 appMainTask/app_health 直接取得该私有 Storage 指针并并发访问 W25Q64/EEPROM。
+
+冻结原则：
+
+```text
+app_health
+→ decides WHEN confirmation is allowed
+→ requests confirmation
+
+otaWorker
+→ remains Application-side Firmware Storage execution owner
+→ executes strict firmware lifecycle transaction in its own task context
+
+firmware_lifecycle
+→ provides confirmation rules/transaction logic
+→ does not depend on app_ota_runtime
+```
+
+Application Runtime 可以提供窄接口把现有 `g_otaFirmwareStorage` 传给 `firmware_lifecycle`，但不得把 Storage Raw Driver ownership 暴露给多个 Task。
+
+这样保持：
+
+```text
+Health policy ownership ≠ Storage I/O ownership
+```
+
+并避免为了 S10 给 Firmware Storage 引入无计划的多任务 mutex / 并发访问模型。
+
 ## 10. Strict firmware_confirm Transaction
 
 ### 10.1 Preconditions
@@ -659,13 +794,19 @@ strict firmware_confirm transaction
 ```text
 Metadata latest copy valid
 upgradeState == TRIAL
+confirmedSlot is A/B
 pendingSlot is A/B
+pendingSlot != confirmedSlot
 pending slot state == VALID
 pending image Header valid
+pending imageSize <= Internal APP capacity
+pending Payload CRC valid
 pending image version readable
 ```
 
 不得只相信启动阶段缓存的 Metadata。
+
+由于成功 Confirm 后 `pendingSlot` 会立即成为新的 `confirmedSlot` 和未来 Rollback Source，因此 strict Confirm 必须调用完整只读 Image Validation（Header + Payload CRC），而不是只读取 Header/Version 后直接提升为 Known-Good。
 
 ### 10.2 Confirm Result
 
@@ -801,6 +942,8 @@ Confirmed Image Gate：
 
 ```text
 confirmedSlot is A/B
+pendingSlot is A/B
+pendingSlot != confirmedSlot
 confirmed slot state == VALID
 Header valid
 Header.version == confirmedVersion
@@ -835,7 +978,25 @@ boot_installer_run()
 
 S10 必须复用同一安装核心，而不是复制一套 rollback installer。
 
-### 13.1 Prevalidate Split
+### 13.1 A/B Recovery Invariant
+
+S10 Rollback 成立的前提是 Candidate 不得覆盖当前 Known-Good Slot。
+
+虽然现有 OTA Service 正常路径已经选择 inactive Slot，Bootloader 仍必须在 destructive install / recovery gate 处独立验证：
+
+```text
+confirmedSlot is A/B
+pendingSlot is A/B
+pendingSlot != confirmedSlot
+confirmed slot state == VALID
+pending slot state == VALID
+```
+
+若 `pendingSlot == confirmedSlot`，必须在任何 Internal APP erase 前拒绝 PENDING/TRIAL 流程，因为此时系统已经失去独立的 rollback source。
+
+该检查不改变 Metadata V2 Binary Format，只增强跨字段安全约束。
+
+### 13.2 Prevalidate Split
 
 建议抽取通用只读镜像验证核心：
 
@@ -863,7 +1024,7 @@ boot_prevalidate_confirmed()
 → common image validation
 ```
 
-### 13.2 Installer Split
+### 13.3 Installer Split
 
 建议保留安全入口：
 
@@ -1277,8 +1438,30 @@ S10 第一版不实现：
 44. Rollback power-loss / reset fault injection 有可回读证据；
 45. S09 Deferred Fault Injection 若补测，结果回填原 S09 证据，不混淆阶段归属。
 
-## 22. Approval
+## 22. Design Review Result
 
-- Decision: `NOT_REVIEWED`
+Design Review 结论：
+
+```text
+Blocking Findings : 0
+Important Findings: 5
+Important Findings: resolved in design amendment
+Result            : READY_FOR_OWNER_APPROVAL
+```
+
+Review 修订项：
+
+1. IWDG Start 前移到 `HAL_Init()` 后、`SystemClock_Config()` 前；
+2. 明确当前 HAL IWDG 模块/Keil Source 尚未接入，实施计划必须手工接入且不使用 CubeMX regeneration；
+3. 增加 Trial Runtime Ready 5 s deadline 与 Feed gating，禁止永久 TRIAL；
+4. 保持 otaWorker 为 Firmware Storage I/O owner，Health 只决定 Confirm 时机；
+5. strict Confirm 增加完整 Candidate Payload CRC/size/slot identity 校验，并强制 `pendingSlot != confirmedSlot`。
+
+经上述修订，未发现需要推翻 S10 生命周期、Metadata V2 或 rollback transaction 的 Blocking 问题。
+
+## 23. Approval
+
+- Decision: `PENDING_PROJECT_OWNER_APPROVAL`
 - Approved By: `Not approved yet`
-- Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
+- Initial Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
+- Design Review Amendment Commit: `Will be recorded after this update`
