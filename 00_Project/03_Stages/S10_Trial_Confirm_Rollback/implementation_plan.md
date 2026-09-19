@@ -3,11 +3,11 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `READY_FOR_IMPLEMENTATION`
+- Workflow Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
-- Status: `NOT_STARTED`
+- Status: `IN_PROGRESS`
 - Updated At: `2026-09-19`
 
 ## Required Reading

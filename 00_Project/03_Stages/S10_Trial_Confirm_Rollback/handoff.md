@@ -3,9 +3,11 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `READY_FOR_IMPLEMENTATION`
+- Workflow Status: `IN_PROGRESS`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
+- Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
+- Plan Baseline Ancestor: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
 - Design Metadata Commit: `d054f165553ed320561d726fe736f8bea7ec525e`
 - Initial Handoff Commit: `6a5d2fadabf5ee7face632e90cc18e1daab02f47`
@@ -310,16 +312,9 @@ ESP-IDF OTA rollback
 
 不直接复制 GPL 代码，也不引入 MCUboot swap/scratch/trailer 体系。
 
-## Open Work Before Implementation
+## Implementation Progress
 
-当前设计主架构已收束，但实施前仍需要完成：
-
-1. 等待 Project Owner 明确批准 Design；
-2. 批准后创建 `implementation_plan.md`；
-3. Implementation Plan 中落实当前已确认的 HAL IWDG 手工接入、Pre-RTOS/Startup checkpoint、otaWorker Storage ownership、Health/Confirm handshake 和 Bootloader Installer 重构任务；
-4. 实施前继续以真实文件/API 为准，不机械照抄设计中的建议命名。
-
-上述项目允许在 Design Role 调查，但不得提前修改生产代码。
+Project Owner 已批准 Design，Implementation Plan 已冻结。Task 0 已完成：同步并核对 `main`/`origin/main`、确认实际施工基线、完成 Application/Bootloader Clean Build、执行现有 Host/契约检查并建立 `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`。后续按 Implementation Plan Task 1→10 执行，继续以真实文件/API 为准，不机械照抄建议命名。
 
 ## S09 Deferred Verification Carried Forward
 
@@ -397,35 +392,35 @@ Bootloader < 64 KiB
 
 ## Implementation Output
 
-- Status: `NOT_STARTED`
+- Status: `IN_PROGRESS`
 
 ### Completed Work
 
 ```text
-S10 design discussion completed to DRAFT baseline.
-No production implementation has started.
+Task 0 baseline, tool/Host contract checks, verification matrix and S09 Deferred boundary completed.
+Production implementation has not started yet.
 ```
 
 ### Changed Files
 
 ```text
-00_Project/03_Stages/S10_Trial_Confirm_Rollback/design.md
+00_Project/03_Stages/S10_Trial_Confirm_Rollback/implementation_plan.md
 00_Project/03_Stages/S10_Trial_Confirm_Rollback/handoff.md
 PROJECT_CONTEXT.md
 00_Project/05_Status/current_status.md
+04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md
 ```
 
 ### Deviations From Plan
 
 ```text
-None.
-No implementation plan exists yet.
+The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b95d1`; only stage-document commits intervene. No design or production scope was changed.
 ```
 
 ### Verification Results
 
 ```text
-NOT_APPLICABLE at design-only stage.
+Task 0 baseline evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md`. Real target RTT/GDB/Factory Restore and manual board evidence remain pending.
 ```
 
 ### Design Review Status

@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S10_Trial_Confirm_Rollback`
-- Status: `READY_FOR_IMPLEMENTATION`
+- Status: `IN_PROGRESS`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -72,7 +72,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已进入 Design Role，当前状态为 `DRAFT`。S10 设计已建立一次 Trial、Application-controlled Confirm、IWDG 恢复和 Bootloader 自动 Rollback 主链；保持 Metadata V2，不新增 `CONFIRMED` 状态或 Failure Counter 回滚阈值。Application Watchdog 计划在 RTOS Scheduler 前启动，约 10 s timeout，Debug Halt 冻结；Trial Confirm 采用 Startup RUNNING + Runtime Ready + 5 s Observation；Bootloader Rollback 在 Known-Good Image 预校验和 `TRIAL → ROLLBACK` 原子提交后才跨过 destructive gate，并复用 S09 Installer 核心。Design Review 已完成：0 Blocking、5 Important，全部已回写设计解决。Project Owner 已批准当前方案，Implementation Plan 已创建，阶段状态为 `READY_FOR_IMPLEMENTATION`。尚未开始生产代码施工。测试策略为自动化优先，需人工按键/肉眼观察/真实断电的场景统一放到最后集中验证；临时测试代码允许加入但最终必须移除。S09 Deferred Fault Injection 保持跨阶段补充验证，不视为已通过。
+`S10_Trial_Confirm_Rollback` 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。Task 0 已完成两工程 Clean Build、现有 Host/契约工具检查、自动/人工验证矩阵和 S09 Deferred 边界记录；后续按 Task 1→10 小步实现。测试仍采用自动化优先、人工场景最后集中验收；临时测试代码最终必须移除。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 

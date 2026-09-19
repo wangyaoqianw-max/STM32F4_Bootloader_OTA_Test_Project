@@ -5,7 +5,7 @@
 ## Context Metadata
 
 - Active Stage: `S10_Trial_Confirm_Rollback`
-- Active Stage Status: `READY_FOR_IMPLEMENTATION`
+- Active Stage Status: `IN_PROGRESS`
 - Branch: `main`
 - S07A Baseline Commit: `254f510498748294f44b0c059796dbaeaccdea3e`
 - S07A Design Commit: `e4ae9dea8f6ab0088829fb4acda29ab89c734132`
@@ -66,7 +66,7 @@
 
 ## Current Goal
 
-S10 已进入 Design Role，当前状态为 `DRAFT`。设计基线已建立 Trial / Confirm / Watchdog / Rollback 闭环：保持 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`，采用一次 Trial、未 Confirm 再次启动即回滚；Application IWDG 作为 Platform MCU Capability 在 RTOS Scheduler 前启动，约 10 s timeout，Runtime 长期 Feed Owner 为 `appMainTask`，Debug Halt 时冻结；Trial Confirm 需要 Startup RUNNING + MAIN/OTA/DISPLAY Runtime Ready + 5 s Observation，并执行严格原子 `firmware_confirm()`；Bootloader Rollback 在 confirmed image 完整预校验后先原子提交 `TRIAL → ROLLBACK`，再复用统一 Installer 从 `confirmedSlot` 恢复，最后原子提交 `ROLLBACK → NONE`。Design Review 已完成：0 Blocking、5 Important，5 项均已回写设计并解决。Project Owner 已正式批准当前方案，Implementation Plan 已创建并冻结，阶段状态进入 `READY_FOR_IMPLEMENTATION`。生产代码尚未开始修改。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已进入 Implementation Role，当前状态为 `IN_PROGRESS`。实施严格以已批准的 `implementation_plan.md` 为基线，按 Task 0→10 落实 Metadata V2 的 `NONE / PENDING / TRIAL / ROLLBACK`、一次 Trial 未 Confirm 即回滚、Application-controlled strict Confirm、Application IWDG、otaWorker Storage ownership 和共用 Installer Core。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。Task 0 已完成基线构建、工具/Host 合同检查和验证矩阵建立；生产代码尚未开始修改。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
