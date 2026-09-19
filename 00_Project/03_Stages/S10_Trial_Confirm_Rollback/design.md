@@ -1281,4 +1281,4 @@ S10 第一版不实现：
 
 - Decision: `NOT_REVIEWED`
 - Approved By: `Not approved yet`
-- Design Commit: `Created by this design update; record after commit is returned`
+- Design Commit: `223fae71d3c641cf9e36d6048d22a73815152b94`
