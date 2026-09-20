@@ -200,7 +200,8 @@ $originalSystem = [System.IO.File]::ReadAllText($appSystemPath, [System.Text.Enc
 $originalProject = [System.IO.File]::ReadAllText($projectPath, [System.Text.Encoding]::UTF8)
 $originalProjectConfig = $configText
 $sender = $null
-$success = $false
+$preRtt = $null
+$failure = $null
 try {
     Write-Host "[FACTORY][WARN] destructive restore: Internal APP, Slot A/B and Metadata will be reset"
     $buildExit = Invoke-FactoryBuild -LogName "formal_build_before_restore.log"
@@ -224,20 +225,52 @@ try {
         throw "Temporary Factory Restore build failed: $testBuildExit"
     }
 
-    $senderLog = Join-Path $factoryLogDirectory "ymodem.log"
-    $senderErrorLog = Join-Path $factoryLogDirectory "ymodem_error.log"
-    $senderArguments = @(
-        "ymodem", "python", "send", (Resolve-Path -LiteralPath $Image).Path,
-        "--port", $Port, "--baud", [string]$Baud, "--timeout", "90", "--json"
-    )
-    $sender = Start-Process -FilePath $toolkitPath -ArgumentList $senderArguments `
-        -RedirectStandardOutput $senderLog -RedirectStandardError $senderErrorLog -PassThru -WindowStyle Hidden
-    Start-Sleep -Milliseconds 750
-
     $flashExit = Invoke-FactoryCommand -Arguments @("flash", "application", "run") -LogName "provision_flash.log"
     if ($flashExit -ne 0) {
         throw "Temporary Factory Restore flash failed: $flashExit"
     }
+
+    # 烧录复位会影响串口打开状态，必须等临时接收固件启动后再打开 Sender。
+    Start-Sleep -Milliseconds 750
+    $rttDataPath = Join-Path $logDirectory "OTA_APP_rtt.log"
+    Remove-Item -LiteralPath $rttDataPath -Force -ErrorAction SilentlyContinue
+    $preRttLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "pre_transfer_rtt.log"))
+    $preRttErrorLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "pre_transfer_rtt_error.log"))
+    $preRttArguments = @("rtt", "application", "30")
+    $preRtt = Start-Process -FilePath $toolkitPath -ArgumentList $preRttArguments `
+        -RedirectStandardOutput ([string]$preRttLog) `
+        -RedirectStandardError ([string]$preRttErrorLog) -PassThru -WindowStyle Hidden
+    $readyDeadline = [DateTime]::UtcNow.AddSeconds(25)
+    $readyDetected = $false
+    while ([DateTime]::UtcNow -lt $readyDeadline) {
+        if (Test-Path -LiteralPath $rttDataPath -PathType Leaf) {
+            $rttText = [System.IO.File]::ReadAllText($rttDataPath, [System.Text.Encoding]::UTF8)
+            if ($rttText.Contains("[S09-FACTORY] YMODEM_READY")) {
+                $readyDetected = $true
+                break
+            }
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if (-not $readyDetected) {
+        throw "Factory Restore temporary receiver did not reach YMODEM_READY"
+    }
+
+    # toolkit 外部进程默认 60 秒超时，Sender 必须在该窗口内完成并返回 JSON。
+    $senderLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "ymodem.log"))
+    $senderErrorLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "ymodem_error.log"))
+    if ([string]::IsNullOrWhiteSpace($senderLog) -or
+        [string]::IsNullOrWhiteSpace($senderErrorLog)) {
+        throw "Factory Restore Sender log paths are empty"
+    }
+    Write-Host "[FACTORY] Sender logs: $senderLog"
+    $senderArguments = @(
+        "ymodem", "python", "send", (Resolve-Path -LiteralPath $Image).Path,
+        "--port", $Port, "--baud", [string]$Baud, "--timeout", "45", "--json"
+    )
+    $sender = Start-Process -FilePath $toolkitPath -ArgumentList $senderArguments `
+        -RedirectStandardOutput ([string]$senderLog) `
+        -RedirectStandardError ([string]$senderErrorLog) -PassThru -WindowStyle Hidden
     $sender.WaitForExit()
     $senderResult = Get-Content -LiteralPath $senderLog -Encoding UTF8 |
         Where-Object { $_ -match '^\s*\{' } |
@@ -247,6 +280,7 @@ try {
         $senderReason = if ($null -eq $senderResult) { "no JSON result" } else { [string]$senderResult.error }
         throw "Factory Restore YMODEM failed: $senderReason"
     }
+    $preRtt.WaitForExit()
 
     $rttExit = Invoke-FactoryCommand -Arguments @("rtt", "application", "15") -LogName "provision_rtt.log"
     if ($rttExit -ne 0) {
@@ -254,18 +288,23 @@ try {
     }
     Copy-Item -LiteralPath (Join-Path $logDirectory "OTA_APP_rtt.log") `
         -Destination (Join-Path $factoryLogDirectory "provision_rtt_raw.log") -Force
-    $success = $true
+}
+catch {
+    $failure = $_
 }
 finally {
     if ($null -ne $sender -and -not $sender.HasExited) {
         Stop-Process -Id $sender.Id -Force
+    }
+    if ($null -ne $preRtt -and -not $preRtt.HasExited) {
+        Stop-Process -Id $preRtt.Id -Force
     }
     [System.IO.File]::WriteAllText($appSystemPath, $originalSystem, (New-Object System.Text.UTF8Encoding($false)))
     [System.IO.File]::WriteAllText($projectPath, $originalProject, (New-Object System.Text.UTF8Encoding($false)))
     [System.IO.File]::WriteAllText($projectConfigPath, $originalProjectConfig, (New-Object System.Text.UTF8Encoding($false)))
 }
 
-if (-not $success) {
+if ($null -ne $failure) {
     try {
         Write-Host "[FACTORY][RECOVERY] restoring formal Application after failed restore"
         $recoveryBuildExit = Invoke-FactoryBuild -LogName "formal_build_after_failure.log"
@@ -282,7 +321,7 @@ if (-not $success) {
     catch {
         Write-Host "[FACTORY][RECOVERY][WARN] formal Application recovery failed: $($_.Exception.Message)"
     }
-    throw "Factory Restore stopped before baseline verification"
+    throw "Factory Restore stopped before baseline verification: $($failure.Exception.Message)"
 }
 
 $formalBuildExit = Invoke-FactoryBuild -LogName "formal_build_after_restore.log"
