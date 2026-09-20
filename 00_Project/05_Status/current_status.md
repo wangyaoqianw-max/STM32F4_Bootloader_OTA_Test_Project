@@ -73,7 +73,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。Application/Bootloader Clean Build、Host/Contract 和 Python 回归均已有通过证据；正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读；代码验证为 `PASS`，真实硬件验证为 `PARTIAL / PENDING`。下一步集中执行真实 IWDG、Trial reset/Rollback、复位/掉电和 LED/LCD 人工观察场景，完成后进入 Review，不直接关闭阶段。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读；代码验证为 `PASS`，真实硬件验证为 `PARTIAL / PENDING`。最新板测被 Bootloader `Soft-I2C init FAIL: BUSY` 阻塞，需物理断电/复位后再集中执行真实 IWDG、Trial reset/Rollback、复位/掉电和 LED/LCD 人工观察场景，完成后进入 Review，不直接关闭阶段。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 

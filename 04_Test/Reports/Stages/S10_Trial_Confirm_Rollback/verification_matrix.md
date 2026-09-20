@@ -8,7 +8,7 @@
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Clean Execution Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Remote Check at implementation start: `HEAD == origin/main`, ahead/behind `0/0`
-- Date: `2026-09-19`
+- Date: `2026-09-20`
 
 ## Baseline Evidence
 
@@ -21,10 +21,10 @@
 | Compatibility/core contracts | `05_Tools\Contracts\Compatibility`, `05_Tools\Contracts\Core` | PASS |
 | S04/S05/S07A Host tests | format, CRC, storage, YMODEM, receiver, startup | PASS |
 | S09 Host contracts | prevalidate, installer, metadata commit | PASS |
-| Factory Restore | destructive board operation | PARTIAL; earlier S09 baseline PASS, latest retry unfinished |
+| Factory Restore | destructive board operation | PARTIAL; earlier S09 baseline PASS, latest retry blocked by Bootloader Soft-I2C BUSY/fault |
 | Ymodem board transport | real target v1.1 transfer | PASS for transfer/READY_TO_INSTALL; rollback transport pending |
-| RTT capture | real target capture | PARTIAL; formal NONE and Trial/Confirm evidence captured |
-| GDB snapshot/fault on target | real target session | PARTIAL PASS; startup and Trial/Confirm symbols read, fault scenarios pending |
+| RTT capture | real target capture | PARTIAL; formal NONE and Trial/Confirm evidence captured; latest Bootloader startup halts at Soft-I2C init |
+| GDB snapshot/fault on target | real target session | PARTIAL; startup and Trial/Confirm symbols read; latest snapshot stops in diagnostics_fault_entry |
 
 The current baseline contains no identified S10 production test hook or fault-injection macro. Temporary S10 hooks, if required later, must be isolated, marked `TEST ONLY`, compile-time disabled by default, and removed before the final clean build.
 
@@ -34,6 +34,8 @@ The current baseline contains no identified S10 production test hook or fault-in
 - `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
 - After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove persisted Metadata after a later power-cycle.
 - The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
+- The 2026-09-20 Factory Restore workflow follow-up is committed as `0ee7f5d`; it now flashes the temporary receiver before starting YMODEM, waits for a fresh RTT readiness marker, bounds the sender timeout below the toolkit process limit, and reaches recovery on failure. The target still did not reach Application because Bootloader startup reported `Soft-I2C init FAIL: BUSY` and halted.
+- A clean Bootloader flash followed by GDB snapshot stopped in `diagnostics_fault_entry`; the backtrace reaches `boot_soft_i2c_init()` line 287. The current clean configuration has `DIAG_FAULT_TEST_ENABLE=0`, so the observation is a board startup fault and not a valid S10 fault-injection result.
 
 ## Task 3 Evidence
 
@@ -91,13 +93,14 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Current map reports `Total ROM Size = 84616 bytes (82.63 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
 - Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below the 64 KiB limit.
 - Real-board automation — PARTIAL/PENDING: formal NONE startup, v1.1 YMODEM transfer, READY_TO_INSTALL, Runtime Ready and strict Confirm were captured; IWDG target observation, reset/power-cycle and rollback fault-injection evidence remain pending.
+- Automated follow-up on 2026-09-20 — PASS: S10 Host Tests, Python regressions, static contracts, Application build and Bootloader build were rerun; hardware claims were not upgraded from the existing partial evidence.
 - S05C result-file checks — fixture-level SPI/I²C project assertions PASS after parser normalization; no real target capture result file is available, so board capture remains `PENDING / NOT_EXECUTED`.
 - Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches are not part of the commit; local untracked cache cleanup remains pending safe user-approved cleanup.
 
 ## Task 9 Evidence
 
 - Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
-- Hardware execution status — `PARTIAL / PENDING`: this run produced formal NONE GDB evidence and a real v1.1 transfer through Runtime Ready/strict Confirm; IWDG, rollback, reset/power-cycle and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
+- Hardware execution status — `PARTIAL / PENDING`: formal NONE GDB evidence and a real v1.1 transfer through Runtime Ready/strict Confirm remain valid; the current board is blocked in Bootloader Soft-I2C initialization, so IWDG, rollback, reset/power-cycle and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
 - S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; parser and fixture-level project assertions are complete.
 
 ## Task 10 Exit Evidence
@@ -106,6 +109,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Final Application Clean Build — `05_Tools\toolkit.bat build application` PASS; raw UV4 clean-build log reports `0 Error(s), 0 Warning(s)`. Current map Total ROM is `84616 bytes (82.63 KiB)`; configured FreeRTOS heap remains `24576 bytes`, startup stack remains `1024 bytes`.
 - Final Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; `0 Error(s), 0 Warning(s)`. Total ROM remains `22372 bytes (21.85 KiB)`, below 64 KiB.
 - Final static, Python and Host evidence is recorded in Task 8; the nonblocking Event Flags mapping fix is committed as `5ca2d14`, and the final formal build was rerun afterward.
+- Verification follow-up commit `0ee7f5d` fixes Factory Restore sequencing/recovery; its real-board retry exposed the current Bootloader Soft-I2C startup fault described above.
 - Code verification — `PASS`; hardware verification — `PENDING`.
 - Temporary production test code — `NONE`; no test-only production hook or forced-failure behavior remains in the final build.
 - S09 Deferred Fault Injection — not executed in S10; remains S09-owned and is not counted in this stage.

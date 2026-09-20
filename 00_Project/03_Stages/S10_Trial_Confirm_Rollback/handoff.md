@@ -18,10 +18,10 @@
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`
+- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`
 - Verification Commit: `Pending final consolidated board verification`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-19`
+- Updated At: `2026-09-20`
 
 ## Current Role
 
@@ -47,6 +47,12 @@ unapproved Metadata V3 / CONFIRMED enum / failure-threshold rollback
 claiming hardware PASS without evidence
 leaving temporary test code in the final production build
 ```
+
+## Latest Verification Follow-up
+
+2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`，但真实目标板最新启动仍报告 `Soft-I2C init FAIL: BUSY` 并停在 Bootloader；GDB snapshot 的回溯到达 `boot_soft_i2c_init()` 第 287 行。当前板级故障未被当作 S10 Fault Injection，也未升级任何硬件验证结论。
+
+恢复板测前需要一次物理断电/复位，然后重新确认 Bootloader 能进入 Application。IWDG、Trial reset/Rollback、真实掉电、回滚中断恢复、LED/LCD 和真实 SPI/I²C capture 仍为 `PENDING / NOT_EXECUTED`。
 
 ## Required Reading
 

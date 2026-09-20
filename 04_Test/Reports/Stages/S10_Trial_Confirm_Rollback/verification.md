@@ -8,7 +8,7 @@
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`
+- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`
 - Code Verification: `PASS`
 - Hardware Verification: `PENDING`
 
@@ -38,7 +38,7 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 
 - S02/S04/S05/S07/S07A/S09 regression Host Tests：`PASS`。
 - S10 Runtime Health、Lifecycle Confirm、Metadata Invariant、Boot Recovery、Rollback Transaction Host Tests：`PASS`。
-- `05_Tools/Contracts` 中 12 项 Application/Bootloader/兼容性/调试/工具流程 contract：`PASS`。
+- `05_Tools/Contracts` 中 Application/Bootloader/兼容性/调试/工具流程 contract：`PASS`；本轮重新执行的 Application workflow、Runtime Health、Watchdog、Task Lifecycle、Boot Decision、Transport、Compatibility、Core、Debug、Logic Analyzer 和 S04 isolation contract 均通过。
 - S10 Boot Decision contract、GDB automation、CmBacktrace/fault diagnostics、tool sequence contract：`PASS`。
 - S05C parser fixture：`PASS`。
 - S05C SPI/I²C 项目断言：使用解析器夹具结果执行，`test_spi.ps1` 两套 SPI 夹具 `PASS`，`test_i2c.ps1` I²C 夹具 `PASS`；真实逻辑分析仪采集仍待板测。
@@ -48,6 +48,7 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - Firmware pack tests：`2/2 PASS`。
 - YMODEM tests：`24/24 PASS`。
 - S04 persistence tests：`15/15 PASS`。
+- 本轮重新执行结果保持一致：Firmware pack `2/2`、YMODEM `24/24`、S04 persistence `15/15`。
 
 ### Build Verification
 
@@ -63,9 +64,9 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists, latest retry unfinished` |
-| RTT capture / Reset Cause | `PARTIAL; formal NONE and Trial/Confirm RTT captured, Reset Cause/IWDG pending` |
-| GDB target session / snapshot | `PARTIAL PASS; stable NONE and Trial/Confirm symbols read` |
+| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists; latest retry is blocked by Bootloader Soft-I2C BUSY/fault` |
+| RTT capture / Reset Cause | `PARTIAL; formal NONE and Trial/Confirm RTT captured; latest Bootloader capture halts at Soft-I2C init` |
+| GDB target session / snapshot | `PARTIAL; stable NONE and Trial/Confirm symbols read; latest snapshot stops in diagnostics_fault_entry` |
 | IWDG timeout / debug freeze | `PENDING / NOT_EXECUTED` |
 | Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
 | software reset / IWDG reset / power-cycle | `PENDING / NOT_EXECUTED` |
@@ -80,8 +81,10 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
 - After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove the persisted Metadata after a later power-cycle.
 - The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
+- Verification follow-up on 2026-09-20 reran the S10 Host Tests, static contracts, Python regressions and both Keil builds successfully; no production source was changed in this follow-up. Application ROM remains `84616 bytes (82.63 KiB)` and Bootloader ROM remains `22372 bytes (21.85 KiB)`.
+- The Factory Restore workflow sequencing/recovery fix is committed as `0ee7f5d`. A subsequent clean Bootloader flash still produced fresh RTT `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`; GDB stopped in `diagnostics_fault_entry` with the backtrace reaching `boot_soft_i2c_init()` line 287. `DIAG_FAULT_TEST_ENABLE` remains `0` and the clean Bootloader disassembly contains no test-trigger call, so this is recorded as a current board startup fault rather than S10 Fault Injection evidence.
 
-Verification Role still needs the consolidated IWDG, software-reset, power-cycle, rollback-interruption, and visual LED/LCD scenarios; Review Role must decide closure afterward.
+Verification Role still needs a physical power-cycle/reset to recover the board, then the consolidated IWDG, software-reset, Trial/Rollback, rollback-interruption, and visual LED/LCD scenarios; Review Role must decide closure afterward. Until the board recovers, these remain `PENDING / NOT_EXECUTED`.
 
 ## S09 Deferred Boundary
 

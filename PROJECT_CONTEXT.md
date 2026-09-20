@@ -533,7 +533,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build 均已完成并通过；正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。下一步由 Verification Role 集中执行真实 IWDG、Trial reset/Rollback、复位/掉电和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。最新板测被 Bootloader `Soft-I2C init FAIL: BUSY` 阻塞，需物理断电/复位后再集中执行真实 IWDG、Trial reset/Rollback、复位/掉电和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 
