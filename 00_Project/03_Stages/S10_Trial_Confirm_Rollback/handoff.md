@@ -50,7 +50,7 @@ leaving temporary test code in the final production build
 
 ## Latest Verification Follow-up
 
-2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 证据已采集。当前硬件仍未完成 Trial Confirm 前断电、Rollback 和 no-feed IWDG reset。
+2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 和 direct no-feed IWDG reset 证据已采集。当前硬件仍未完成 Trial Confirm 前断电和 Rollback；最新 Factory Restore 重试再次暴露 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。
 
 一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
 
@@ -436,7 +436,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup and Trial/Confirm handshake evidence are PARTIAL/PASS, while IWDG, rollback, reset/power-cycle and manual board evidence remain PENDING.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup and Trial/Confirm handshake evidence are PARTIAL/PASS, direct no-feed IWDG reset is PASS, while rollback, Trial reset/power-cycle and manual board evidence remain PENDING.
 ```
 
 ### Design Review Status
@@ -459,7 +459,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification is partially evidenced for NONE startup and Trial/Confirm; the remaining IWDG, rollback, reset/power-cycle and visual scenarios are still pending for the Verification Role. Historical logs were not reused as S10 evidence.
+- S10 real board verification is partially evidenced for NONE startup, Trial/Confirm and no-feed IWDG reset; the remaining Rollback, Trial reset/power-cycle and visual scenarios are still pending for the Verification Role. Latest Factory Restore retry is blocked by Soft-I2C BUSY / Boot halt. Historical logs were not reused as S10 evidence.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 

@@ -64,12 +64,12 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists; current post-power-cycle recovery reached Application, latest retry is not counted as a new Factory Restore PASS` |
+| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists; latest retry was blocked by fresh Soft-I2C BUSY / Boot halt and Sender initial-C timeout, so no new Factory Restore PASS is claimed` |
 | RTT capture / Reset Cause | `PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending` |
 | GDB target session / snapshot | `PASS for Application idle and IWDG probe; pre-Confirm Rollback breakpoint evidence pending` |
-| IWDG timeout / debug freeze | `PARTIAL; register/config and >10 s Debug Halt evidence PASS, no-feed timeout pending` |
+| IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
 | Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
-| software reset / IWDG reset / power-cycle | `PARTIAL; recovery power-cycle PASS and reset-to-NONE observed, but Trial power-cycle before Confirm and IWDG reset remain pending` |
+| software reset / IWDG reset / power-cycle | `PARTIAL; recovery power-cycle and no-feed IWDG reset PASS, but Trial power-cycle before Confirm remains pending` |
 | interrupted rollback and restart-from-zero | `PENDING / NOT_EXECUTED` |
 | PA0 OTA/install input | `PASS; two PA0 actions reached install and Confirm flow` |
 | LED / LCD manual observation | `PENDING / NOT_EXECUTED` |
@@ -80,14 +80,14 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.
 - `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
 - After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove the persisted Metadata after a later power-cycle.
-- The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
+- The latest S09 Factory Restore retry opened Sender before flash but the target still reported `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`; Sender then timed out waiting for the initial `C`. It is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
 - Verification follow-up on 2026-09-20 reran the S10 Host Tests, static contracts, Python regressions and both Keil builds successfully; no production source was changed in this follow-up. Application ROM remains `84616 bytes (82.63 KiB)` and Bootloader ROM remains `22372 bytes (21.85 KiB)`.
 - The Factory Restore workflow sequencing/recovery fix is committed as `0ee7f5d`. A subsequent clean Bootloader flash produced fresh RTT `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`; GDB stopped in `diagnostics_fault_entry` with the backtrace reaching `boot_soft_i2c_init()` line 287. `DIAG_FAULT_TEST_ENABLE` remains `0` and the clean Bootloader disassembly contains no test-trigger call, so this is retained as historical board startup fault evidence rather than S10 Fault Injection evidence.
 - User-performed power-cycle recovery on 2026-09-20 cleared the observed startup blockage: fresh Bootloader/Application RTT reached Application initialization, with Storage SPI, OTA UART, Display SPI and backlight all reporting `result: 0`; a subsequent GDB snapshot stopped in the FreeRTOS idle task, not a fault handler.
-- Real IWDG probe evidence: `IWDG.PR=0x00000006`, `IWDG.RLR=0x000004E1`, `IWDG.SR=0`, and `DBGMCU.APB1FZ=0x00001800`. The target stayed in Application while halted for 12 seconds (longer than the approximately 10-second timeout), then the existing GDB resume workflow returned `PASS`; this proves Debug Freeze/configuration and resume path, but not a no-feed IWDG reset.
+- Real IWDG evidence: register/config probe read `IWDG.PR=0x00000006`, `IWDG.RLR=0x000004E1`, `IWDG.SR=0`, and `DBGMCU.APB1FZ=0x00001800`; the target stayed in Application while halted for 12 seconds and resumed successfully. The direct no-feed GDB run then hit `IWDG_RESET_HANDLER_HIT` with `RCC_CSR=0x24000000` (`IWDGRSTF + PINRSTF`), recorded in `06_Output/Logs/S10_iwdg_no_feed_gdb.log`; the wrapper-only halt marker warning does not invalidate the raw reset evidence.
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 
-Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, no-feed IWDG reset, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case.
+Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case.
 
 ## S09 Deferred Boundary
 

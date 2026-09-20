@@ -33,10 +33,11 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.
 - `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
 - After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove persisted Metadata after a later power-cycle.
-- The latest S09 Factory Restore retry reported sender-side success but the target receiver remained `ERROR/TIMEOUT` with `packetReceivedCount=0`; it is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
+- The latest S09 Factory Restore retry opened Sender before flash but the target still reported `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`; Sender then timed out waiting for the initial `C`. It is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
 - The 2026-09-20 Factory Restore workflow follow-up is committed as `0ee7f5d`; it now flashes the temporary receiver before starting YMODEM, waits for a fresh RTT readiness marker, bounds the sender timeout below the toolkit process limit, and reaches recovery on failure. The target still did not reach Application because Bootloader startup reported `Soft-I2C init FAIL: BUSY` and halted.
 - A clean Bootloader flash followed by GDB snapshot stopped in `diagnostics_fault_entry`; the backtrace reaches `boot_soft_i2c_init()` line 287. The current clean configuration has `DIAG_FAULT_TEST_ENABLE=0`, so the observation is a board startup fault and not a valid S10 fault-injection result.
 - After the user power-cycled the board, fresh RTT reached Application initialization with all observed initialization results equal to `0`; GDB then stopped in `prvIdleTask`. The earlier Soft-I2C startup observation is retained as historical failure evidence and is not treated as the current board state.
+- A later Factory Restore attempt reproduced the startup boundary: fresh RTT captured `[BOOT][E] Soft-I2C init FAIL: BUSY` and `[BOOT][E] BOOT halt: external device init`; no YMODEM `C` was emitted, so the Sender timeout is a board-startup blocker, not a protocol PASS/FAIL result.
 
 ## Task 3 Evidence
 
@@ -45,7 +46,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_lifecycle_host_test.c` — PASS; strict state/slot gates, Header/size/Payload CRC/Version gates, commit body/marker failure propagation, reload mismatch, normal `TRIAL → NONE`, and confirmed Slot/Version update.
 - Application project XML parse — PASS.
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; no errors or warnings.
-- Real target Confirm transaction, RTT and GDB evidence — PASS for the runtime handshake; no-feed IWDG and Trial reset/power-cycle evidence remain pending.
+- Real target Confirm transaction, RTT and GDB evidence — PASS for the runtime handshake; direct no-feed IWDG reset is PASS, while Trial reset/power-cycle evidence remains pending.
 
 ## Task 4 Evidence
 
@@ -53,7 +54,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Health Host Test: `04_Test/Host/S10_Trial_Confirm_Rollback/s10_health_host_test.c` — PASS; Ready deadline, Observation Window, Confirm success/failure states, feed permission and stable `NONE` behavior.
 - Application Build: `05_Tools\toolkit.bat build application` — PASS; `OTA_APP_build.log` reports `ExitCode=0`, no errors or warnings.
 - Runtime task changes: appMainTask is the only long-term Watchdog Feed owner; otaWorker remains the Confirm Storage transaction owner; display/OTA Ready reports occur after the startup decision.
-- Real Runtime Ready/Confirm RTT and GDB evidence — PASS for `readyMask=0x7`, stable Trial health and `PLATFORM_ERR_OK` Confirm result; watchdog and reset evidence remain pending.
+- Real Runtime Ready/Confirm RTT and GDB evidence — PASS for `readyMask=0x7`, stable Trial health and `PLATFORM_ERR_OK` Confirm result; Trial reset/power-cycle and Rollback evidence remain pending.
 
 ## Task 5 Evidence
 
@@ -83,7 +84,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Boot decision contract: `05_Tools\Contracts\Bootloader\test_s10_boot_decision_contract.ps1` — PASS; verifies PENDING/TRIAL/ROLLBACK ordering, confirmed prevalidation before destructive restore, persisted ROLLBACK before erase, restart-from-zero ROLLBACK path, and diagnostic-only Reset Cause.
 - S09 Metadata commit Host Test — PASS; existing `PENDING → TRIAL` atomic marker ordering and compatibility remain green after private core extraction.
 - Bootloader Clean Build: `05_Tools\toolkit.bat build bootloader` — PASS; no errors or warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below 64 KiB.
-- Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; target rollback restore, no-feed IWDG, reset-cause and Trial power-cycle evidence remains pending; Debug Freeze/resume and recovery power-cycle evidence are recorded separately.
+- Reset Cause snapshot/log includes BOR, POR, PIN, Software and IWDG flags; direct no-feed IWDG reset is PASS, while target rollback restore and Trial power-cycle evidence remain pending; Debug Freeze/resume and recovery power-cycle evidence are recorded separately.
 
 ## Task 8 Evidence
 
@@ -93,7 +94,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Host fixture maintenance — commit `54c9827`; S04 test stubs now expose the current AT24C02/W25Q64 initializer contracts and the Metadata recovery fixture uses a distinct valid confirmed/pending Slot pair. The S07 UART test double uses independent test-owned TX storage instead of removed production struct fields. No production API or behavior was changed by this fixture commit.
 - Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Current map reports `Total ROM Size = 84616 bytes (82.63 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
 - Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below the 64 KiB limit.
-- Real-board automation — PARTIAL/PENDING: formal NONE startup, repeated v1.1 YMODEM transfer, Runtime Ready/strict Confirm state and IWDG Debug Freeze/resume evidence were captured; no-feed IWDG reset, Trial power-cycle before Confirm and Rollback evidence remain pending.
+- Real-board automation — PARTIAL/PENDING: formal NONE startup, repeated v1.1 YMODEM transfer, Runtime Ready/strict Confirm state, IWDG Debug Freeze/resume and direct no-feed IWDG reset evidence were captured; Trial power-cycle before Confirm and Rollback evidence remain pending.
 - Automated follow-up on 2026-09-20 — PASS: S10 Host Tests, Python regressions, static contracts, Application build and Bootloader build were rerun; hardware claims were not upgraded from the existing partial evidence.
 - S05C result-file checks — fixture-level SPI/I²C project assertions PASS after parser normalization; no real target capture result file is available, so board capture remains `PENDING / NOT_EXECUTED`.
 - Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches are not part of the commit; local untracked cache cleanup remains pending safe user-approved cleanup.
@@ -101,7 +102,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 ## Task 9 Evidence
 
 - Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
-- Hardware execution status — `PARTIAL / PENDING`: formal NONE GDB evidence, repeated v1.1 transfer through Runtime Ready/strict Confirm, recovery power-cycle and IWDG Debug Freeze evidence are recorded; Trial power-cycle before Confirm, Rollback, no-feed IWDG reset and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
+- Hardware execution status — `PARTIAL / PENDING`: formal NONE GDB evidence, repeated v1.1 transfer through Runtime Ready/strict Confirm, recovery power-cycle, IWDG Debug Freeze and direct no-feed IWDG reset evidence are recorded; Trial power-cycle before Confirm, Rollback and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
 - S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; parser and fixture-level project assertions are complete.
 
 ## Task 10 Exit Evidence
@@ -111,7 +112,7 @@ The current baseline contains no identified S10 production test hook or fault-in
 - Final Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; `0 Error(s), 0 Warning(s)`. Total ROM remains `22372 bytes (21.85 KiB)`, below 64 KiB.
 - Final static, Python and Host evidence is recorded in Task 8; the nonblocking Event Flags mapping fix is committed as `5ca2d14`, and the final formal build was rerun afterward.
 - Verification follow-up commit `0ee7f5d` fixes Factory Restore sequencing/recovery; its real-board retry exposed the historical Bootloader Soft-I2C startup fault described above.
-- Verification follow-up also captured IWDG `PR/RLR/DBGMCU` values and a 12-second halted target with successful resume. The observed reset-to-`trial=0` sequence is not counted as Rollback because the pre-Confirm boundary and Bootloader decision log were not captured.
+- Verification follow-up captured IWDG `PR/RLR/DBGMCU` values, a 12-second halted target with successful resume, and a direct no-feed GDB reset with `IWDG_RESET_HANDLER_HIT` / `RCC_CSR=0x24000000`. The observed reset-to-`trial=0` sequence is not counted as Rollback because the pre-Confirm boundary and Bootloader decision log were not captured.
 - Code verification — `PASS`; hardware verification — `PENDING`.
 - Temporary production test code — `NONE`; no test-only production hook or forced-failure behavior remains in the final build.
 - S09 Deferred Fault Injection — not executed in S10; remains S09-owned and is not counted in this stage.
