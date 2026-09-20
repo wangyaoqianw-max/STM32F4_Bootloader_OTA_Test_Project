@@ -236,37 +236,20 @@ try {
     Remove-Item -LiteralPath $rttDataPath -Force -ErrorAction SilentlyContinue
     $preRttLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "pre_transfer_rtt.log"))
     $preRttErrorLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "pre_transfer_rtt_error.log"))
+    $senderLog = Join-Path -Path $factoryLogDirectory -ChildPath "ymodem.log"
+    $senderErrorLog = Join-Path -Path $factoryLogDirectory -ChildPath "ymodem_error.log"
     $preRttArguments = @("rtt", "application", "30")
     $preRtt = Start-Process -FilePath $toolkitPath -ArgumentList $preRttArguments `
         -RedirectStandardOutput ([string]$preRttLog) `
         -RedirectStandardError ([string]$preRttErrorLog) -PassThru -WindowStyle Hidden
-    $readyDeadline = [DateTime]::UtcNow.AddSeconds(25)
-    $readyDetected = $false
-    while ([DateTime]::UtcNow -lt $readyDeadline) {
-        if (Test-Path -LiteralPath $rttDataPath -PathType Leaf) {
-            $rttText = [System.IO.File]::ReadAllText($rttDataPath, [System.Text.Encoding]::UTF8)
-            if ($rttText.Contains("[S09-FACTORY] YMODEM_READY")) {
-                $readyDetected = $true
-                break
-            }
-        }
-        Start-Sleep -Milliseconds 250
-    }
-    if (-not $readyDetected) {
-        throw "Factory Restore temporary receiver did not reach YMODEM_READY"
-    }
+    # RTT Logger 持有输出文件句柄，Sender 用长等待窗口直接等待接收端的 C。
+    Start-Sleep -Milliseconds 1500
 
-    # toolkit 外部进程默认 60 秒超时，Sender 必须在该窗口内完成并返回 JSON。
-    $senderLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "ymodem.log"))
-    $senderErrorLog = [System.IO.Path]::GetFullPath((Join-Path -Path $factoryLogDirectory -ChildPath "ymodem_error.log"))
-    if ([string]::IsNullOrWhiteSpace($senderLog) -or
-        [string]::IsNullOrWhiteSpace($senderErrorLog)) {
-        throw "Factory Restore Sender log paths are empty"
-    }
+    # Sender 使用 120 秒等待窗口，允许设备启动和人工/工具反应延迟。
     Write-Host "[FACTORY] Sender logs: $senderLog"
     $senderArguments = @(
         "ymodem", "python", "send", (Resolve-Path -LiteralPath $Image).Path,
-        "--port", $Port, "--baud", [string]$Baud, "--timeout", "45", "--json"
+        "--port", $Port, "--baud", [string]$Baud, "--timeout", "120", "--json"
     )
     $sender = Start-Process -FilePath $toolkitPath -ArgumentList $senderArguments `
         -RedirectStandardOutput ([string]$senderLog) `
