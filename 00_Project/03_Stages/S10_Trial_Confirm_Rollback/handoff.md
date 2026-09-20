@@ -54,6 +54,17 @@ leaving temporary test code in the final production build
 
 一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
 
+## S10 Test Plan Execution Stop
+
+2026-09-20 `19:07`，在用户确认破坏性 Factory Restore 后按独立测试方案执行 `20260920-185951`：
+
+- `S10-00` 只读前置检查 `PASS`；
+- `S10-01` `BLOCKED`：临时测试固件构建、烧录和 `app_v1.0.img` 的 COM9 YMODEM 传输均成功，但目标 RTT 只到 `destructive erase Slot A/B start`，RTT 捕获返回错误码 `32`；
+- 失败后的正式 Application 恢复、正式 RTT、GDB halt/resume 均 `PASS`；
+- 因 F0 Known-Good 基线未证明，按停止条件未执行 `S10-02` 至 `S10-09`，不得把既有 Trial/Confirm 运行时证据升级为 Rollback 通过。
+
+本轮证据目录为 `06_Output/Logs/S10/20260920-185951/`。下一步应先定位并恢复 Factory Restore 测试固件在擦除起点后的目标板/RTT运行条件，再从 `S10-01` 重新开始；不得跳过 F0 或随机改测其他场景。
+
 ## Verification Pause and Stable Firmware State
 
 2026-09-20 按 Project Owner 要求暂停人工板测。临时 S10 Trial 验证开关已移除，恢复脚本已删除；正式 Application 重新执行以下流程：

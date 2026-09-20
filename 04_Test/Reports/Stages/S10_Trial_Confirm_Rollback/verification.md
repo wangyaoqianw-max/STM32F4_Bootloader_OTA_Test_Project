@@ -80,13 +80,22 @@ Display backlight on result: 0
 
 该证据表示正式 Application 已重新烧录并完成正常启动初始化；LED 肉眼现象未在本轮重新确认。之后未继续发包、按键或断电，S10 硬件验证仍保持 `PARTIAL / PENDING`，不得升级为 Rollback PASS。
 
+### S10 Test Plan Execution (Run `20260920-185951`)
+
+本轮按 `00_Project/03_Stages/S10_Trial_Confirm_Rollback/test_plan.md` 的固定顺序执行，用户已明确确认 Factory Restore 的破坏性操作。
+
+- `S10-00`：`PASS`。只读前置检查确认 COM9、工具路径、J-Link 独占状态、测试镜像结构与 CRC 均满足前置条件；证据目录：`06_Output/Logs/S10/20260920-185951/S10-00/`。
+- `S10-01`：`BLOCKED`。Factory Restore 使用 `app_v1.0.img`、COM9、115200 启动；临时测试固件构建和烧录 `PASS`，YMODEM 传输 `81412 bytes / 80 blocks / exit 0`，但目标 RTT 只输出到 `destructive erase Slot A/B start`，随后 RTT 捕获返回错误码 `32`。因此未取得 F0 的 Internal APP、Slot A/B、Metadata 和 Application `RUNNING/STABLE` 完整证据，不能将 Known-Good Factory Baseline 记为 `PASS`。
+- 失败后的恢复动作：正式 Application 重新构建、烧录、RTT 捕获、GDB halt 快照和 GDB resume 均 `PASS`；这只证明测试失败后恢复到可运行正式固件，不替代 S10-01 基线通过。
+- 依据停止条件，`S10-02` 至 `S10-09` 本轮均未执行；没有在未证明 F0 的情况下继续改变 Trial/Metadata 状态。完整输出见 `06_Output/Logs/S10/20260920-185951/S10-01/`，临时测试 RTT 原始输出见 `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`。
+
 ## Board Verification Boundary
 
 本轮已取得部分真实目标板证据，但尚未完成完整 S10 板级验收。以下状态只依据本轮可回读的 RTT/GDB/传输结果，不把历史日志或发送端单方面成功当作通过：
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `PARTIAL; S09 baseline PASS evidence exists; latest retry was blocked by fresh Soft-I2C BUSY / Boot halt and Sender initial-C timeout, so no new Factory Restore PASS is claimed` |
+| Factory Restore / Flash | `PARTIAL; S10-01 temporary build/flash/YMODEM passed, but baseline RTT stopped after Slot A/B erase start and returned error 32; formal firmware recovery passed, no new Factory Restore PASS is claimed` |
 | RTT capture / Reset Cause | `PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending` |
 | GDB target session / snapshot | `PASS for Application idle and IWDG probe; pre-Confirm Rollback breakpoint evidence pending` |
 | IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
@@ -108,6 +117,7 @@ Display backlight on result: 0
 - User-performed power-cycle recovery on 2026-09-20 cleared the observed startup blockage: fresh Bootloader/Application RTT reached Application initialization, with Storage SPI, OTA UART, Display SPI and backlight all reporting `result: 0`; a subsequent GDB snapshot stopped in the FreeRTOS idle task, not a fault handler.
 - Real IWDG evidence: register/config probe read `IWDG.PR=0x00000006`, `IWDG.RLR=0x000004E1`, `IWDG.SR=0`, and `DBGMCU.APB1FZ=0x00001800`; the target stayed in Application while halted for 12 seconds and resumed successfully. The direct no-feed GDB run then hit `IWDG_RESET_HANDLER_HIT` with `RCC_CSR=0x24000000` (`IWDGRSTF + PINRSTF`), recorded in `06_Output/Logs/S10_iwdg_no_feed_gdb.log`; the wrapper-only halt marker warning does not invalidate the raw reset evidence.
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
+- In run `20260920-185951`, S10-01 Factory Restore transferred `app_v1.0.img` successfully but the temporary target RTT stopped immediately after the destructive erase start; RTT capture returned error `32`. The workflow then restored formal Application, and the follow-up formal RTT plus GDB halt/resume snapshots passed. This run is recorded as `BLOCKED`, not as a new Factory Restore baseline pass.
 
 Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case. These checks are paused and will resume in a new conversation.
 
