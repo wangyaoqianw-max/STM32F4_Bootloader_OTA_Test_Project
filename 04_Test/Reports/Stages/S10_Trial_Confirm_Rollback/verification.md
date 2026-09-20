@@ -8,7 +8,7 @@
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`
+- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - Code Verification: `PASS`
 - Hardware Verification: `PENDING`
 
@@ -58,6 +58,28 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - Application Total ROM：`84616 bytes (82.63 KiB)`；`configTOTAL_HEAP_SIZE=24576`，startup stack `1024 bytes`。
 - Bootloader Total ROM：`22372 bytes (21.85 KiB)`，低于 `64 KiB` 限制。
 
+### Verification Pause and Stable Firmware Recovery
+
+2026-09-20 按用户要求暂停 S10 人工板测。临时 `S10_TEST_MANUAL_TRIAL_WINDOW_ENABLE` 开关、`S10-TEST ONLY` 标记和临时恢复脚本均已移除；在 Application 生产源文件中未发现相关测试开关或标记，正式 Application 重新构建后执行：
+
+```text
+05_Tools\toolkit.bat build application       PASS; 0 error / 0 warning
+05_Tools\toolkit.bat flash application run  PASS
+05_Tools\toolkit.bat rtt application 8     PASS
+```
+
+最新 RTT 证据：
+
+```text
+OTA runtime init result=0
+Application init result: 0
+Display init result: 0
+Display initial render result: 0
+Display backlight on result: 0
+```
+
+该证据表示正式 Application 已重新烧录并完成正常启动初始化；LED 肉眼现象未在本轮重新确认。之后未继续发包、按键或断电，S10 硬件验证仍保持 `PARTIAL / PENDING`，不得升级为 Rollback PASS。
+
 ## Board Verification Boundary
 
 本轮已取得部分真实目标板证据，但尚未完成完整 S10 板级验收。以下状态只依据本轮可回读的 RTT/GDB/传输结果，不把历史日志或发送端单方面成功当作通过：
@@ -87,7 +109,7 @@ Implementation Plan Task 0→10 已完成，核心结果如下：
 - Real IWDG evidence: register/config probe read `IWDG.PR=0x00000006`, `IWDG.RLR=0x000004E1`, `IWDG.SR=0`, and `DBGMCU.APB1FZ=0x00001800`; the target stayed in Application while halted for 12 seconds and resumed successfully. The direct no-feed GDB run then hit `IWDG_RESET_HANDLER_HIT` with `RCC_CSR=0x24000000` (`IWDGRSTF + PINRSTF`), recorded in `06_Output/Logs/S10_iwdg_no_feed_gdb.log`; the wrapper-only halt marker warning does not invalidate the raw reset evidence.
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 
-Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case.
+Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case. These checks are paused and will resume in a new conversation.
 
 ## S09 Deferred Boundary
 
@@ -95,4 +117,4 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 
 ## Handoff Result
 
-代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。硬件验证仍为 `PARTIAL / PENDING`，阶段不得标记 `CLOSED`。本轮生成的构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。
+代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。人工板测已按用户要求暂停，后续新对话继续剩余 Trial 断电、Rollback 和视觉验收。硬件验证仍为 `PARTIAL / PENDING`，阶段不得标记 `CLOSED`。本轮生成的构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。

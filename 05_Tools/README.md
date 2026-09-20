@@ -10,7 +10,7 @@ PC 固件文件 → YMODEM 发送 → STM32F411 → External Flash
 Keil .bin → Firmware Image V1 .img
 ```
 
-当前文档基于 `2026-09-16` 的仓库状态。机器相关路径只保存在被 Git
+当前文档基于 `2026-09-20` 的仓库状态。机器相关路径只保存在被 Git
 忽略的 `Config/toolchain.local.bat`，不能把本机路径写入脚本或提交到 Git。
 
 ## 统一入口
@@ -303,8 +303,6 @@ Host Test/Contract Test 只能验证脚本、协议和解析逻辑；真实板�
 
 ```text
 完整 Core Dump、GCC/CMake 构建迁移和 FreeRTOS 全任务栈解析
-Bootloader 内部 Flash 安装
-Trial / Confirm / Rollback
 ```
 
-这些功能属于后续阶段，不应从当前工具目录说明中推断为已实现。
+S09/S10 的 Bootloader 内部 Flash 安装、Trial / Confirm / Rollback 已在固件和阶段验证文档中实现；本目录提供构建、烧录、RTT、GDB、Factory Restore 和 YMODEM 等工具入口，但工具链动作成功不等价于 S10 硬件闭环通过。当前 S10 仍处于 `READY_FOR_VERIFICATION`，剩余 Trial 断电、Rollback 和 LED/LCD 人工验收将在后续会话继续。

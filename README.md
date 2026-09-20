@@ -159,4 +159,4 @@ DRAFT
 - Application 构建：`03_Firmware/Application/README.md`；
 - Bootloader 构建：`03_Firmware/Bootloader/README.md`；
 - 测试方法：`04_Test/README.md`；
-- 当前阶段验证：`04_Test/Reports/Stages/<stage>/verification_report.md`。
+- 当前阶段验证：`04_Test/Reports/Stages/<stage>/verification.md`。

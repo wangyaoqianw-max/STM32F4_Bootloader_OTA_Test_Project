@@ -18,7 +18,7 @@
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`
+- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - Verification Commit: `Pending final consolidated board verification`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-20`
@@ -31,11 +31,11 @@
 Verification Role
 ```
 
-当前允许继续：
+下一次会话允许继续：
 
 ```text
-execute the consolidated S10 board-verification checklist
-collect Flash / RTT / GDB / IWDG / reset / power-cycle evidence
+resume the consolidated S10 board-verification checklist
+collect the remaining RTT / GDB / reset / power-cycle / visual evidence
 record Verification Role results and hand off to Review Role
 ```
 
@@ -53,6 +53,35 @@ leaving temporary test code in the final production build
 2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 和 direct no-feed IWDG reset 证据已采集。当前硬件仍未完成 Trial Confirm 前断电和 Rollback；最新 Factory Restore 重试再次暴露 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。
 
 一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
+
+## Verification Pause and Stable Firmware State
+
+2026-09-20 按 Project Owner 要求暂停人工板测。临时 S10 Trial 验证开关已移除，恢复脚本已删除；正式 Application 重新执行以下流程：
+
+```text
+05_Tools\toolkit.bat build application       PASS; 0 error / 0 warning
+05_Tools\toolkit.bat flash application run  PASS
+05_Tools\toolkit.bat rtt application 8     PASS
+```
+
+最新 RTT 已确认：
+
+```text
+OTA runtime init result=0
+Application init result: 0
+Display init result: 0
+Display initial render result: 0
+Display backlight on result: 0
+```
+
+当前只确认正式 Application 已烧录并正常完成启动初始化；LED 肉眼状态未在本轮重新验收。未继续发包、按键或断电。后续新对话从以下未完成项目继续：
+
+```text
+Trial 自动 Confirm 前真实断电
+Bootloader TRIAL → ROLLBACK → NONE
+Rollback 中断后的 restart-from-zero
+LED / LCD 人工观察
+```
 
 ## Required Reading
 

@@ -35,6 +35,7 @@
 - S10 Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - S10 Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - S10 Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
+- S10 Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -66,7 +67,7 @@
 
 ## Current Goal
 
-S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。主要提交为 `dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`、`c237361`、`54c9827`、`b40d1b4`、`a5295c2`；验证跟进提交为 `5ca2d14`、`f0e5d88`、`25d2acc`、`0ee7f5d`、`ba6ce6f`。已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision；Application/Bootloader 代码验证为 `PASS`，真实板级已取得正式 NONE 启动、Trial/Confirm 运行时、IWDG Debug Freeze/Resume 以及 direct no-feed IWDG reset 证据，但 Trial 期间 Rollback、Trial 断电/复位和视觉验收仍待完成。当前转入 Verification Role，等待集中执行剩余板级场景后再进入 Review。最新 Factory Restore 重试因 Soft-I2C BUSY 导致 Boot halt，未形成新的 baseline PASS。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。主要提交为 `dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`、`c237361`、`54c9827`、`b40d1b4`、`a5295c2`；验证跟进提交为 `5ca2d14`、`f0e5d88`、`25d2acc`、`0ee7f5d`、`ba6ce6f`、`7eab4cc`。已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision；Application/Bootloader 代码验证为 `PASS`，真实板级已取得正式 NONE 启动、Trial/Confirm 运行时、IWDG Debug Freeze/Resume 以及 direct no-feed IWDG reset 证据，但 Trial 期间 Rollback、Trial 断电/复位和视觉验收仍待完成。2026-09-20 已移除临时 S10 测试开关并重新构建、烧录正式 Application，RTT 已确认 OTA、Application、Display 初始化均成功；随后按用户要求暂停人工板测。当前转入 Verification Role，下一次新对话从集中执行剩余板级场景继续，再进入 Review。最新 Factory Restore 重试因 Soft-I2C BUSY 导致 Boot halt，未形成新的 baseline PASS。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -533,7 +534,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。恢复性断电曾使目标重新进入 Application；最新 Factory Restore 尝试再次捕获 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。下一步集中执行 Trial 自动 Confirm 前真实断电、Rollback 和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。用户要求暂停测试后，已移除临时 S10 测试开关，重新构建并烧录正式 Application，RTT 确认 OTA、Application、Display 初始化成功。下一次新对话继续执行 Trial 自动 Confirm 前真实断电、Rollback 和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

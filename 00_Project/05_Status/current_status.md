@@ -24,7 +24,7 @@
 - S10 Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - S10 Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - S10 Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
-- S10 Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`
+- S10 Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -73,7 +73,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据已取得；代码验证为 `PASS`，真实硬件验证为 `PARTIAL / PENDING`。恢复性断电后目标曾重新进入 Application；最新 Factory Restore 重试再次捕获 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。Trial 自动 Confirm 前真实断电、Rollback 和 LED/LCD 人工观察仍待完成，完成后进入 Review，不直接关闭阶段。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据已取得；代码验证为 `PASS`，真实硬件验证为 `PARTIAL / PENDING`。用户要求暂停测试后，已移除临时 S10 测试开关，重新构建并烧录正式 Application，RTT 确认 OTA、Application、Display 初始化成功。下一次新对话继续 Trial 自动 Confirm 前真实断电、Rollback 和 LED/LCD 人工观察，完成后进入 Review，不直接关闭阶段。最新 Factory Restore 重试再次捕获 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS；S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
@@ -527,7 +527,7 @@ PENDING     install/retry state
 TRIAL       installed, not confirmed
 ```
 
-S10 继续负责 Confirm / Watchdog / Failure Counter / Rollback。
+S10 继续负责 Confirm / Watchdog / Rollback。
 
 施工与验证摘要：
 

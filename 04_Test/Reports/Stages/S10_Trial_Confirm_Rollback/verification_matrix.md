@@ -28,6 +28,19 @@
 
 The current baseline contains no identified S10 production test hook or fault-injection macro. Temporary S10 hooks, if required later, must be isolated, marked `TEST ONLY`, compile-time disabled by default, and removed before the final clean build.
 
+## Latest Verification Pause
+
+2026-09-20 按用户要求暂停人工 S10 板测。临时 Trial 测试开关已移除，恢复脚本已删除，正式 Application 已重新构建、烧录并通过 RTT 启动冒烟：
+
+```text
+build application       PASS; 0 error / 0 warning
+flash application run   PASS
+rtt application 8       PASS
+OTA/Application/Display init and initial render/backlight  PASS
+```
+
+这只证明正式固件恢复到可正常启动状态，不替代 Trial 期间断电、Rollback、Rollback 中断恢复或 LED/LCD 肉眼验收。下一次新对话继续这些未完成项目；S10 硬件验证仍为 `PARTIAL / PENDING`。
+
 ## Real Target Evidence Collected
 
 - Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.

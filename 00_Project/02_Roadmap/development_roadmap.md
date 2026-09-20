@@ -95,8 +95,8 @@ S12  增加 OTA 安全机制实验
 | `S07A_RTOS_Startup_Refactor` | 整理 Application RTOS 启动生命周期并验证 RAM 安全 | `defaultTask → app_system_bootstrap() → appMainTask/otaWorker/displayTask`；Event Flags Startup Barrier；RUNNING/DEGRADED/FAILED；App 目录整理；Stack/Heap High Water | S06；S07 | `CLOSED` | 不再创建 appSystem Task；defaultTask Bootstrap 后退出；长期 Task 在显式 `SYSTEM_RUN` 后运行；无启动竞态；Stack/Heap 有真实证据；S07 全链路无回归 |
 | `S08_Bootloader_Foundation` | 建立独立精简 Bootloader，并可靠启动 Application | 64 KiB/448 KiB Internal Flash Layout；Bare-metal HAL/CMSIS；RTT + lightweight boot_log + CmBacktrace；MSP / Reset_Handler / VTOR；SysTick/NVIC cleanup；APP Jump | S01；S04；S07A | `CLOSED` | 双工程地址无重叠；诊断可用；合法 APP 稳定启动；非法 APP 被拒绝；跳转后 FreeRTOS/中断正常 |
 | `S09_Firmware_Installation` | Bootloader 从 External Flash 安装 Pending Firmware | 轻量 Header/Metadata/CRC consumer；Bus→Device 初始化；W25Q64 read-only；AT24C02 Metadata commit；APP-only Internal Flash；Candidate pre-validation；PENDING→TRIAL 原子提交；Fault Injection | S07；S08 | `CLOSED` | v1.0→v1.1 安装通过；Invalid Candidate 不擦 APP；TRIAL commit 前 reset 可重装、commit 后不重复安装；写入/校验失败不误标成功 |
-| `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `TRIAL / CONFIRMED / ROLLBACK`；`firmware_confirm()`；IWDG；Reset Cause；Failure Counter；Previous Confirmed Image | S09 | `ACTIVE` | 正常 Trial 可 Confirm；故障/未 Confirm 可检测；达到阈值可自动回滚 |
-| `S11_Diagnostics_UI` | 在完整 OTA/Bootloader 可靠性闭环上扩展高级诊断与演示 UI | 复用 S06 Display Runtime；增加 Version、Slot、CRC、Boot State、Trial/Confirmed/Rollback、Reset Cause、Error History；可选 CTP/LVGL | S10；S06 Display Runtime；必要的 LCD/CTP 资料 | `PLANNED` | 不依赖 RTT 即可观察完整 OTA/Bootloader 关键状态；UI 故障不影响 OTA 核心逻辑；不重复实现底层 LCD Driver |
+| `S10_Trial_Confirm_Rollback` | 建立 Trial / Confirm / Watchdog / Rollback 可靠性闭环 | `NONE / PENDING / TRIAL / ROLLBACK`；strict `firmware_confirm()`；IWDG；Reset Cause；Previous Confirmed Image | S09 | `ACTIVE` | 正常 Trial 可 Confirm；未 Confirm 的复位可检测并恢复 confirmed image；Rollback 事务可重启恢复 |
+| `S11_Diagnostics_UI` | 在完整 OTA/Bootloader 可靠性闭环上扩展高级诊断与演示 UI | 复用 S06 Display Runtime；增加 Version、Slot、CRC、Boot State、Trial/Confirmed Slot/Rollback、Reset Cause、Error History；可选 CTP/LVGL | S10；S06 Display Runtime；必要的 LCD/CTP 资料 | `PLANNED` | 不依赖 RTT 即可观察完整 OTA/Bootloader 关键状态；UI 故障不影响 OTA 核心逻辑；不重复实现底层 LCD Driver |
 | `S12_Security_Extension` | 在可靠 OTA 基础上学习和验证安全升级机制 | SHA-256、AES、HMAC / Digital Signature、CK02AT API、STM32 RDP | S10；安全资料 | `PLANNED` | 每项安全机制有独立设计、边界和验证证据；不破坏可靠 OTA 主链 |
 
 ## 4. Stage Boundaries
@@ -145,12 +145,14 @@ Bootloader Validate
 Install
  ↓
 TRIAL
- ├─ Confirm → CONFIRMED
- └─ Fail / IWDG Reset
+ ├─ Health PASS + strict Confirm → NONE
+ └─ Reset before Confirm
           ↓
-      Failure Count
+      ROLLBACK
           ↓
-       ROLLBACK
+   restore confirmed image
+          ↓
+         NONE
 ```
 
 完成 S10 后，V1 的核心可靠 OTA 目标基本实现。
@@ -230,4 +232,4 @@ Code Verification: PASS
 Hardware Verification: PENDING
 ```
 
-S09 剩余 erase/program/CRC/Metadata marker/Power Loss 真实板级 Fault Injection 由 Project Owner 接受为跨阶段 Deferred Follow-up，不视为已通过；S10 的生产职责仍为 Trial Confirm、Watchdog、Failure Counter 和 Rollback。
+S09 剩余 erase/program/CRC/Metadata marker/Power Loss 真实板级 Fault Injection 由 Project Owner 接受为跨阶段 Deferred Follow-up，不视为已通过；S10 的生产职责仍为 Trial Confirm、Watchdog 和 Rollback。当前 S10 保持 `READY_FOR_VERIFICATION`，人工板测已暂停，后续从新对话继续。
