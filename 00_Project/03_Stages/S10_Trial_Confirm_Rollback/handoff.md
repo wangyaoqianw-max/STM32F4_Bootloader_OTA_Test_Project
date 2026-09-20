@@ -63,7 +63,19 @@ leaving temporary test code in the final production build
 - 失败后的正式 Application 恢复、正式 RTT、GDB halt/resume 均 `PASS`；
 - 因 F0 Known-Good 基线未证明，按停止条件未执行 `S10-02` 至 `S10-09`，不得把既有 Trial/Confirm 运行时证据升级为 Rollback 通过。
 
-本轮证据目录为 `06_Output/Logs/S10/20260920-185951/`。下一步应先定位并恢复 Factory Restore 测试固件在擦除起点后的目标板/RTT运行条件，再从 `S10-01` 重新开始；不得跳过 F0 或随机改测其他场景。
+本轮证据目录为 `06_Output/Logs/S10/20260920-185951/`。在后续根因隔离中确认，不能继续把一键 Factory Restore 的工具成功作为 F0；必须先完成预烧录物理检查点，再从 `S10-01` 重新开始；不得跳过 F0 或随机改测其他场景。
+
+## Pre-burn Root Cause and Stop Point
+
+2026-09-20 的根因隔离结果：
+
+- 直接 W25Q64 Header/载荷写入实验立即读回、复位后读回均通过，物理写路径不是首要问题；
+- Factory Restore 失败批次的 YMODEM 数据块均已 ACK，但 EOT 后结束 Header 未完成；
+- 失败后独立读回显示 Slot A Payload 已写入，而 Slot A Header、Slot B Header 均为 `0xFF`；
+- `factory_restore.ps1` 的 Sender 等待窗口为 120 s，但外层工具进程默认 60 s，外层先杀掉 Sender；
+- `ota_firmware_sink` 采用 Header-last，因此结束 Header 未完成会留下不可用的半成品，正是后续 `confirmed prevalidate` 失败的直接原因。
+
+当前停止边界：S10-01 仍为 `BLOCKED`，S10-02～S10-09 不执行。下一次只允许先修正/验证 Factory Restore 的超时配置，并按测试方案 C0～C2 独立读取 W25Q64；C1、C2 均通过后，才恢复 Trial/Rollback 测试。
 
 ## Verification Pause and Stable Firmware State
 

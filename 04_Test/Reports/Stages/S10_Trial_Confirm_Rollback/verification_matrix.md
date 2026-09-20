@@ -21,7 +21,7 @@
 | Compatibility/core contracts | `05_Tools\Contracts\Compatibility`, `05_Tools\Contracts\Core` | PASS |
 | S04/S05/S07A Host tests | format, CRC, storage, YMODEM, receiver, startup | PASS |
 | S09 Host contracts | prevalidate, installer, metadata commit | PASS |
-| Factory Restore | destructive board operation | PARTIAL; earlier S09 baseline PASS; post-power-cycle recovery reached Application, no new Factory Restore PASS claimed |
+| Factory Restore | destructive board operation | BLOCKED; failed batch wrote Slot A Payload but timed out before Header-last commit; F0 not established |
 | Ymodem board transport | real target v1.1 transfer | PASS for transfer/READY_TO_INSTALL; rollback transport pending |
 | RTT capture | real target capture | PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending |
 | GDB snapshot/fault on target | real target session | PARTIAL; Application idle and IWDG evidence captured; pre-Confirm Rollback breakpoint pending |
@@ -51,6 +51,17 @@ OTA/Application/Display init and initial render/backlight  PASS
 - A clean Bootloader flash followed by GDB snapshot stopped in `diagnostics_fault_entry`; the backtrace reaches `boot_soft_i2c_init()` line 287. The current clean configuration has `DIAG_FAULT_TEST_ENABLE=0`, so the observation is a board startup fault and not a valid S10 fault-injection result.
 - After the user power-cycled the board, fresh RTT reached Application initialization with all observed initialization results equal to `0`; GDB then stopped in `prvIdleTask`. The earlier Soft-I2C startup observation is retained as historical failure evidence and is not treated as the current board state.
 - A later Factory Restore attempt reproduced the startup boundary: fresh RTT captured `[BOOT][E] Soft-I2C init FAIL: BUSY` and `[BOOT][E] BOOT halt: external device init`; no YMODEM `C` was emitted, so the Sender timeout is a board-startup blocker, not a protocol PASS/FAIL result.
+
+## S10-01 Root Cause and Revised Physical Checkpoints
+
+The root cause was isolated in `06_Output/Logs/S10/20260920-continue-root-cause/`:
+
+- A direct W25Q64 erase/write/read test passed immediately and after reset, so the physical write path and retention are usable.
+- The failed Factory Restore `ymodem.log` acknowledged data blocks 0–80 and then stopped during the EOT/end-Header phase without a JSON result.
+- Independent readback after recovery found Slot A Header all `0xFF`, Slot A `+0x1000` containing the v1.0 payload vector (`0x2000E690, 0x08010281, ...`), and Slot B Header all `0xFF`.
+- `factory_restore.ps1` passes Sender `--timeout 120`, while the outer `Invoke-ToolkitProcess` default is `60000 ms`; the outer timeout kills Sender before `ota_firmware_sink_end()` can commit the Header. This is the direct cause of the invalid pre-burn baseline.
+
+The revised S10 plan adds independent physical checkpoints C0–C5. C1 is required after YMODEM/end-Header commit and before formal Application flash; C2 is required immediately after formal Application flash/reset; C3–C5 protect Slot A across B receive, Bootloader PENDING→TRIAL, and pre-Confirm B runtime. No Trial/Rollback test may start without C1 and C2.
 
 ## Task 3 Evidence
 

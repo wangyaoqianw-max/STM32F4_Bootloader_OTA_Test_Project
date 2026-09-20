@@ -5,9 +5,9 @@
 - Stage: S10_Trial_Confirm_Rollback
 - Stage status: READY_FOR_VERIFICATION
 - Test role: Verification Role
-- Plan status: READY_FOR_EXECUTION
+- Plan status: REVISED_ON_2026-09-20
 - Created: 2026-09-20
-- Scope: 本阶段尚未形成正式证据的板级 Trial / Rollback / 视觉验收，以及完成后的回归和证据整理
+- Scope: 本阶段尚未形成正式证据的预烧录、板级 Trial / Rollback / 视觉验收，以及完成后的回归和证据整理
 - Formal design: design.md
 - Implementation plan: implementation_plan.md
 - Current evidence: 04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification.md
@@ -52,7 +52,7 @@
 | 编号 | 测试批次 | 当前状态 | 目标证据 |
 |---|---|---|---|
 | S10-00 | 测试前只读预检 | 未执行 | 工具、端口、Probe、输出目录和测试资产可用 |
-| S10-01 | Known-Good Factory Baseline | 最新重试失败，需重新建立 | Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
+| S10-01 | Known-Good Factory Baseline | BLOCKED；预烧录后 W25Q64 内容未被独立证明，禁止进入 F1 | 预烧录写入、复位保持、Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
 | S10-02 | Trial 软件复位回滚 | 未形成正式 PASS | Confirm 前 TRIAL 复位后自动 Rollback |
 | S10-03 | Trial IWDG 复位回滚 | 只有无 Trial 边界的 IWDG 证据 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
 | S10-04 | Trial 真实断电回滚 | PENDING | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
@@ -63,6 +63,8 @@
 | S10-09 | 最终全回归和证据收口 | 待上述批次完成 | 自动化回归、Build、差异检查、报告和交接一致 |
 
 S10-02 至 S10-04 必须分别执行。一个复位原因的 PASS 不得替代另外两个复位原因的证据。
+
+本轮新增的前置门禁：S10-01 必须先完成“预烧录物理写入验证”，再允许进入 S10-02。临时 Factory Restore 固件自己的 `baseline PASS`、YMODEM Sender `exit 0`、工具包装器 `[FACTORY][PASS]` 均不能单独证明 W25Q64 已写入并保持。
 
 ## 3. 固定状态模型
 
@@ -129,6 +131,17 @@ F2  next boot restarts restore from confirmed Slot
 ~~~
 
 run-id 使用本轮日期时间，case-id 使用本方案编号。工具可能写入固定名称的根日志；每次动作完成后立即复制到当前批次目录，并记录命令、开始/结束时间、退出码和目标状态。未复制前不得开始下一次会覆盖同名输出的工具动作。
+
+### 4.4 Factory Restore 传输超时门禁
+
+Factory Restore 的 Python Sender 自身等待窗口与外层工具进程超时必须同时满足：
+
+~~~text
+Sender --timeout <N>
+外层 Invoke-ToolkitProcess timeout > Sender 等待窗口 + 写入/结束 Header 裕量
+~~~
+
+当前已发现 `factory_restore.ps1` 为 Sender 设置 `--timeout 120`，而统一进程入口默认 `60000 ms`。在该配置修正并验证前，Factory Restore 不得作为 F0 建立入口；尤其不能把“数据块已发完但结束 Header 未完成”的 Sender 日志记为传输成功。Header-last 约束要求在结束 Header ACK、目标 `ota_firmware_sink_end()` 完成并独立读回 A Header 后，才可判定 Slot A 有效。
 
 ## 5. 总执行顺序
 
@@ -214,11 +227,37 @@ Test-Path .\06_Output\Logs\toolkit_jlink.lock
 #### 固定动作
 
 1. 关闭所有额外 J-Link 客户端，保留串口和目标电源；
-2. 执行上面的 Factory Restore；
-3. 保存 Factory Restore 的临时构建、烧录、YMODEM、RTT 和恢复日志；
-4. 使用正式 Application 做一次 rtt application，再做一次 snapshot application halt 和 snapshot application resume；
-5. 读取并记录 Bootloader/应用 RTT 中的 Slot、Metadata、版本、CRC/vector 和启动状态；
-6. 现场记录 v1.0 LED、LCD 初始画面和正常运行状态。
+2. 执行上面的 Factory Restore，但将“临时接收固件完成 YMODEM/基线校验”和“正式 Application 烧录/复位”视为两个独立阶段；
+3. 在临时接收固件报告 YMODEM 完成后、任何正式 Application 烧录或目标复位前，释放 RTT/J-Link 客户端，使用独立 GDB/AXF 读取 W25Q64；
+4. 保存每个检查点的 A/B 原始 64-byte Header、A `+0x1000` 载荷起点、JEDEC ID、Header 解析结果、Payload CRC/Metadata 和时间戳；
+5. 只有检查点 C1 通过后，才允许烧录正式 Application；烧录/复位后立即执行检查点 C2，不得先开始 Trial；
+6. 读取并记录 Bootloader/应用 RTT 中的 Slot、Metadata、版本、CRC/vector 和启动状态；
+7. 现场记录 v1.0 LED、LCD 初始画面和正常运行状态。
+
+#### 预烧录与 Slot A 不变量检查点
+
+所有检查点都必须通过独立的 W25Q64 读取确认，不能只引用 Sender 或目标端自检日志。每次至少读取：
+
+~~~text
+Slot A + 0x0000       = 64-byte Header 原始值
+Slot A + 0x1000       = Payload 起始数据
+Slot B + 0x0000       = 64-byte Header 原始值
+W25Q64 JEDEC          = EF 40 17
+Header                 = Magic/Format/HeaderSize/ImageSize/CRC 可解析
+~~~
+
+固定检查点：
+
+| 检查点 | 时机 | 预期 | 失败定位 |
+|---|---|---|---|
+| C0 | Slot A/B 破坏性擦除完成、发送前 | A/B Header 均为 EMPTY/擦除态 | 擦除阶段异常，停止，不发送 |
+| C1 | `app_v1.0.img` 接收、Header-last 提交和目标自检完成；正式 Application 烧录前 | A=VALID v1.0，A 载荷起点非全 FF；B=EMPTY；Metadata=NONE/A | 预烧录写入、Header 提交或自检链异常 |
+| C2 | 正式 Application 烧录并复位后、任何 OTA/按键前 | A 仍为 VALID v1.0，B 仍 EMPTY，Metadata 不变 | C1→C2 边界：正式烧录、复位或启动链影响 W25Q64 |
+| C3 | B 接收完成、尚未安装/Confirm 前 | A Header 与 A 载荷起点不变；B=VALID v1.1 或项目定义的待安装态 | OTA 写 B 时误擦 A |
+| C4 | Bootloader 完成 PENDING→TRIAL 后、进入 B 前 | A 仍为 VALID v1.0；B=VALID v1.1；Metadata=TRIAL/confirmed=A | Bootloader 状态转换或安装边界影响 A |
+| C5 | 已进入 B、尚未确认 B 可用/提交 Confirm 前 | A 仍为 VALID v1.0；confirmed 仍为 A | B 启动或 Confirm 前运行阶段影响 A |
+
+其中 C1～C5 任一点发现 A Header 全 `0xFF`、Magic/CRC 失效或 A 载荷起点全 `0xFF`，立即停止后续测试并保留现场。C1 通过而 C2 失败，不能归因于 YMODEM 写入；C2 通过而 C3 失败，优先排查 OTA 写入目标地址和擦除范围；C3/C4/C5 分别对应 Bootloader 转换和 Trial 运行边界。
 
 #### 必须同时成立的结果
 
@@ -233,11 +272,14 @@ upgradeState       = NONE
 Application        = RUNNING / STABLE
 ~~~
 
+此外必须存在 C1、C2 两份独立物理读取证据。没有 C1/C2，只有临时固件 RTT 的 `baseline PASS`，S10-01 仍为 BLOCKED。
+
 #### 判定和停止条件
 
 - Soft-I2C BUSY、BOOT halt、没有初始 C、YMODEM 超时或 Metadata 不可读：BLOCKED，不进入 S10-02；
 - 发送端成功但目标没有对应 RTT/Metadata：FAIL，不进入 S10-02；
-- 只有上述全部字段和现场启动证据都满足，才把状态记为 F0。
+- C1/C2 任一物理 Header 检查失败：BLOCKED，禁止进入 S10-02；
+- 只有上述全部字段、C1/C2 物理读取和现场启动证据都满足，才把状态记为 F0。
 
 ### S10-02：Trial 软件复位回滚
 

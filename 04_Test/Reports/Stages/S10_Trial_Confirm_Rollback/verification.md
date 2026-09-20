@@ -89,13 +89,25 @@ Display backlight on result: 0
 - 失败后的恢复动作：正式 Application 重新构建、烧录、RTT 捕获、GDB halt 快照和 GDB resume 均 `PASS`；这只证明测试失败后恢复到可运行正式固件，不替代 S10-01 基线通过。
 - 依据停止条件，`S10-02` 至 `S10-09` 本轮均未执行；没有在未证明 F0 的情况下继续改变 Trial/Metadata 状态。完整输出见 `06_Output/Logs/S10/20260920-185951/S10-01/`，临时测试 RTT 原始输出见 `06_Output/Logs/S09_Factory_Restore/provision_rtt_raw.log`。
 
+### S10-01 根因隔离与停止（Run `20260920-continue-root-cause`）
+
+为区分 W25Q64 写路径和 Factory Restore 传输链，本轮先做了最小物理写入，再做了独立的失败后读回：
+
+1. 直接通过正式 Application 的 W25Q64 API 擦除 Slot A，写入 64-byte Header 和 16-byte 载荷；立即读回正确，复位后再次读回仍正确，证明 W25Q64、SPI 写驱动和非易失保持能力正常。
+2. Factory Restore 失败批次的 `ymodem.log` 显示数据块 0～80 均完成 ACK，随后进入 EOT；结束 Header 阶段没有完成，也没有生成 JSON 结果。该批次的 Payload 已实际写入，随后目标被恢复为正式 Application。
+3. 恢复后独立 GDB 读取结果：Slot A Header 64 byte 全为 `0xFF`；Slot A `+0x1000` 读到 `0x2000E690, 0x08010281, ...`，与 `app_v1.0.img` Payload 开头一致；Slot B Header 全为 `0xFF`。证据：`06_Output/Logs/S10/20260920-continue-root-cause/factory-failed-slot-read.gdb.log`。
+
+根因确定为 Factory Restore 的外层进程超时：`factory_restore.ps1` 给 Sender 设置 `--timeout 120`，但统一 `Invoke-ToolkitProcess` / `Complete-ToolkitProcess` 默认只等待 `60000 ms`。Sender 在结束 Header 尚未完成时被外层进程杀掉；而 `ota_firmware_sink` 使用 Header-last，故形成“Payload 已写、Slot A Header 未提交”的半成品。后续 Bootloader `confirmed prevalidate` 失败是该半成品的下游表现，不是 Rollback 擦除了 A。
+
+因此，`baseline PASS`、Sender 已完成数据块、Sender/工具退出码以及一键流程 `[FACTORY][PASS]` 均不足以建立 F0。必须在结束 Header ACK 后独立读回 A/B Header 和 A `+0x1000`，并在正式 Application 烧录/复位后再次复读，才能进入 S10-02。
+
 ## Board Verification Boundary
 
 本轮已取得部分真实目标板证据，但尚未完成完整 S10 板级验收。以下状态只依据本轮可回读的 RTT/GDB/传输结果，不把历史日志或发送端单方面成功当作通过：
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `PARTIAL; S10-01 temporary build/flash/YMODEM passed, but baseline RTT stopped after Slot A/B erase start and returned error 32; formal firmware recovery passed, no new Factory Restore PASS is claimed` |
+| Factory Restore / Flash | `BLOCKED; root cause is outer 60 s process timeout killing the 120 s Sender before end Header commit; failed batch left Slot A Payload present but Header erased; formal recovery passed` |
 | RTT capture / Reset Cause | `PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending` |
 | GDB target session / snapshot | `PASS for Application idle and IWDG probe; pre-Confirm Rollback breakpoint evidence pending` |
 | IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
