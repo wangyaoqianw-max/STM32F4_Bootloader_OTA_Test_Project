@@ -66,7 +66,7 @@
 
 ## Current Goal
 
-S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。主要提交为 `dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`、`c237361`、`54c9827`、`b40d1b4`、`a5295c2`；验证跟进提交为 `5ca2d14`、`f0e5d88`、`25d2acc`。已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision；Application/Bootloader 代码验证为 `PASS`，真实板级已取得正式 NONE 启动与 Trial/Confirm 运行时证据，但 IWDG、Rollback、复位/掉电和视觉验收仍为 `PENDING`。当前转入 Verification Role，等待集中执行剩余板级场景后再进入 Review。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
+S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档。实际施工基线为当前已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`；计划记录的 `651b3001` 是其祖先，之间仅有阶段文档提交。主要提交为 `dfb012b`、`cd15bad`、`e245e21`、`26ce0ee`、`1ae57ef`、`d1b08b2`、`a43086c`、`352ee62`、`c237361`、`54c9827`、`b40d1b4`、`a5295c2`；验证跟进提交为 `5ca2d14`、`f0e5d88`、`25d2acc`、`0ee7f5d`、`ba6ce6f`。已完成 Watchdog、Runtime Health、strict Confirm、Metadata A/B invariant、Pending/Confirmed 共用 Bootloader 验证/安装核心、TRIAL/ROLLBACK 原子事务和 Boot decision；Application/Bootloader 代码验证为 `PASS`，真实板级已取得正式 NONE 启动、Trial/Confirm 运行时以及 IWDG Debug Freeze/Resume 的部分证据，但 Trial 期间 Rollback、no-feed IWDG reset、复位/掉电和视觉验收仍待完成。当前转入 Verification Role，等待集中执行剩余板级场景后再进入 Review。S09 剩余 Fault Injection 继续作为独立 Deferred Follow-up，不视为已通过。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -533,7 +533,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。最新板测被 Bootloader `Soft-I2C init FAIL: BUSY` 阻塞，需物理断电/复位后再集中执行真实 IWDG、Trial reset/Rollback、复位/掉电和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 也已取得部分真实证据，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。恢复性断电已使目标重新进入 Application；下一步集中执行 Trial 自动 Confirm 前真实断电、Rollback、no-feed IWDG reset 和 LED/LCD 人工观察场景，完成后交 Review；不得直接标记 `CLOSED`。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

@@ -18,7 +18,7 @@
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`
+- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`
 - Verification Commit: `Pending final consolidated board verification`
 - Review Commit: `Not created yet`
 - Updated At: `2026-09-20`
@@ -50,9 +50,9 @@ leaving temporary test code in the final production build
 
 ## Latest Verification Follow-up
 
-2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`，但真实目标板最新启动仍报告 `Soft-I2C init FAIL: BUSY` 并停在 Bootloader；GDB snapshot 的回溯到达 `boot_soft_i2c_init()` 第 287 行。当前板级故障未被当作 S10 Fault Injection，也未升级任何硬件验证结论。
+2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 证据已采集。当前硬件仍未完成 Trial Confirm 前断电、Rollback 和 no-feed IWDG reset。
 
-恢复板测前需要一次物理断电/复位，然后重新确认 Bootloader 能进入 Application。IWDG、Trial reset/Rollback、真实掉电、回滚中断恢复、LED/LCD 和真实 SPI/I²C capture 仍为 `PENDING / NOT_EXECUTED`。
+一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
 
 ## Required Reading
 
