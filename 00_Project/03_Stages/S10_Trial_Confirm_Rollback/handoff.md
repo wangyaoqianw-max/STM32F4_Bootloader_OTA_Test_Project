@@ -80,7 +80,17 @@ Run `20260921-141517-breakpoint` 已证明确认前 GDB 断点和断电窗口安
 
 功能接受：`PASS (Project Owner/user manual acceptance)`。正式硬件证据：`PARTIAL`，因为 Bootloader 原始 RTT 中间链未捕获；阶段不标记 `CLOSED`。本轮未加入临时 Bootloader 延时或其他生产测试钩子。
 
-S10-02、S10-03、S10-04、S10-05 的功能行为均按用户验收通过；其中部分 Reset Cause、Metadata 和 Bootloader RTT 中间过程证据未连续采集，不判定为软件失败。真正剩余的是：S10-06 Rollback 破坏性阶段中断后从头恢复、S10-07 无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，以及 S10-09 最终回归、报告和 Review 收口。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 不属于本轮功能通过范围。
+S10-02、S10-03、S10-04、S10-05 的功能行为均按用户验收通过；其中部分 Reset Cause、Metadata 和 Bootloader RTT 中间过程证据未连续采集，不判定为软件失败。后续 S10-06 的双断电功能行为也已接受通过；当前剩余的是 S10-07 无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，以及 S10-09 最终回归、报告和 Review 收口。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 不属于本轮功能通过范围。
+
+## 2026-09-21 S10-06 Interrupted Rollback Functional Acceptance
+
+本轮使用当前 v1.0 基线执行 `20260921-two-power-cycle-manual`：发送 `06_Output/Packages/app_v1.1.img` 后，第一次断电上电；在随后的 Bootloader 恢复窗口内立即再次断电；最后一次上电观察最终状态。
+
+- Sender：COM9/115200，`84680` bytes，83 blocks，retries=2，exit code 0；
+- 用户现场观察：最终 LED 恢复 v1.0 闪烁频率，LCD 显示正常；
+- 功能结论：S10-06 功能行为 `PASS`；
+- 证据边界：本轮没有独立采集断电前、第二次上电后的连续 Bootloader RTT/GDB，因此正式硬件验证仍为 `PARTIAL`；
+- 本轮未加入临时 Bootloader 延时、生产代码测试钩子或未记录的内存注入操作。
 
 ## S10 Test Plan Execution Stop
 
@@ -516,7 +526,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; S10-02/S10-03/S10-04/S10-05 functional behavior is accepted, while some intermediate RTT/Reset Cause/Metadata evidence is incomplete. S10-06, S10-07 and S10-09 remain for formal closure, so hardware verification stays PARTIAL.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; S10-02/S10-03/S10-04/S10-05 functional behavior is accepted, and the S10-06 two-power-cycle functional behavior is also accepted, while some intermediate RTT/Reset Cause/Metadata evidence is incomplete. S10-07 is BLOCKED at the board-injection precondition and S10-09 remains for formal closure, so hardware verification stays PARTIAL.
 ```
 
 ### Design Review Status
@@ -539,7 +549,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification has functional acceptance for NONE startup, Trial/Confirm, software/IWDG/power-cycle rollback behavior and LED/LCD recovery. Some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete; Rollback interrupted restart, invalid-confirmed-image destructive gate and final Review remain outstanding. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
+- S10 real board verification has functional acceptance for NONE startup, Trial/Confirm, software/IWDG/power-cycle rollback behavior, interrupted two-power-cycle recovery and LED/LCD recovery. Some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete; the invalid-confirmed-image destructive gate is BLOCKED because no approved board injection entry exists, and final Review remains outstanding. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 

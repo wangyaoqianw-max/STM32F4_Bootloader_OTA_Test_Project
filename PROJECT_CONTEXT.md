@@ -75,7 +75,11 @@ S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归�
 
 同日重试 `20260921-143727` 中，External Loader Slot A Header/Payload 读回通过，但 Metadata baseline 被 Bootloader `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init` 阻塞，未进入 OTA。硬复位保持 CPU 停止时读到 `GPIOB_IDR=0x0000F757`，PB7 为低，确认当前阻塞在 AT24C02 总线 Idle 检查；该重试不改变 Slot A 预烧录读回 PASS，阶段仍为 `READY_FOR_VERIFICATION`。
 
-2026-09-21 用户决定停止继续 S10 板测，并接受确认前断电后的功能行为：设备回滚到 v1.0，LED 恢复 v1.0 闪烁频率，LCD 正常显示。后续 `20260921-150308` 已完成 Metadata baseline PASS；`20260921-150545` 和 `20260921-151853` 只暴露出掉电清除 GDB 硬件断点、GDB Python 不可用和主机重挂过晚等观测链限制。功能接受记为 `PASS`，代码验证仍为 `PASS`，正式硬件验证保持 `PARTIAL`；未加入临时 Bootloader 延时钩子，S10 不标记 `CLOSED`。
+2026-09-21 确认前断电功能行为已接受：设备回滚到 v1.0，LED 恢复 v1.0 闪烁频率，LCD 正常显示。后续 `20260921-150308` 已完成 Metadata baseline PASS；`20260921-150545` 和 `20260921-151853` 只暴露出掉电清除 GDB 硬件断点、GDB Python 不可用和主机重挂过晚等观测链限制。功能接受记为 `PASS`，代码验证仍为 `PASS`，正式硬件验证保持 `PARTIAL`；未加入临时 Bootloader 延时钩子。
+
+2026-09-21 S10-06 双断电功能验收：当前 v1.0 基线发送 `app_v1.1.img`（COM9/115200，84680 bytes，83 blocks，retries=2，exit 0）后，第一次断电上电，再在下一次 Bootloader 恢复窗口内立即第二次断电，最终上电后用户观察到 LED 恢复 v1.0 频率、LCD 正常。S10-06 功能行为接受为 `PASS`；连续 Bootloader RTT/GDB 中间证据未采集，正式硬件验证仍为 `PARTIAL`。S10 不标记 `CLOSED`。
+
+S10-02、S10-03、S10-04、S10-05、S10-06 的功能行为已接受通过，部分中间 RTT/Reset Cause/Metadata 证据未连续采集。S10-07 当前因没有已批准、可回读的板级坏镜像注入入口而 `BLOCKED`；S10-09 最终回归、报告和 Review 尚未完成。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 仍按原阶段归属。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -542,7 +546,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL`。独立测试方案已按根因隔离结果修订；新的 External Loader F0 和 Metadata baseline 已通过。S10-02/S10-03/S10-04/S10-05 功能行为已接受通过，部分中间 RTT/Reset Cause/Metadata 证据未连续采集。用户已决定停止继续板测；剩余是 S10-06 中断恢复、S10-07 destructive gate 和 S10-09 最终回归/Review，不再安排本批次板测。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL`。独立测试方案已按根因隔离结果修订；新的 External Loader F0 和 Metadata baseline 已通过。S10-02/S10-03/S10-04/S10-05/S10-06 功能行为已接受通过，部分中间 RTT/Reset Cause/Metadata 证据未连续采集。S10-07 因缺少已批准的板级坏镜像注入入口而 `BLOCKED`，剩余 S10-09 最终回归/Review。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

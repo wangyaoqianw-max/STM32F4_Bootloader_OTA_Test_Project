@@ -57,8 +57,8 @@
 | S10-03 | Trial IWDG 复位回滚 | 功能接受 PASS；Confirm 前 Trial 边界过程证据不完整 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
 | S10-04 | Trial 真实断电回滚 | 功能行为 PASS；正式 Bootloader 中间链 PARTIAL | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
 | S10-05 | Rollback 完成链 | 功能接受 PASS；Bootloader 连续过程证据不完整 | Bootloader RTT/GDB、CRC/vector、ROLLBACK → NONE、Metadata 保持 |
-| S10-06 | Rollback 中断后从头恢复 | PENDING / NOT_EXECUTED | 破坏性阶段复位/断电后重新从 confirmed Slot 恢复 |
-| S10-07 | Known-Good Image destructive gate | 板级证据未形成 | confirmed Header/CRC/Version 无效时，Internal APP 不得擦除 |
+| S10-06 | Rollback 中断后从头恢复 | 功能行为 PASS；两次电源动作后最终恢复 v1.0；正式中间过程证据未采集 | 破坏性阶段复位/断电后重新从 confirmed Slot 恢复 |
+| S10-07 | Known-Good Image destructive gate | BLOCKED；当前没有已批准的板级坏镜像注入入口 | confirmed Header/CRC/Version 无效时，Internal APP 不得擦除 |
 | S10-08 | LED/LCD 现场验收 | PASS；本轮恢复后的 LED/LCD 观察已通过，其余子场景未单独执行 | OTA、Trial、Rollback、恢复后的可见现象 |
 | S10-09 | 最终全回归和证据收口 | 待上述批次完成 | 自动化回归、Build、差异检查、报告和交接一致 |
 
@@ -557,13 +557,13 @@ RTT or GDB authoritative evidence
 
 本清单未确认前，本轮只能执行 S10-00 只读预检，不能执行破坏性批次。
 
-## 10. 本轮停止与剩余项（2026-09-21）
+## 10. 本轮执行结果与剩余项（2026-09-21）
 
-Project Owner 决定停止继续板级测试，并按真实现象接受 S10-04 的功能行为：确认前断电后设备回滚，重新上电后恢复 v1.0 LED 闪烁频率，LCD 显示正常。该结论与内部 v1.0 镜像、External Loader Slot A 读回结果一致。
+本轮在不增加临时 Bootloader 延时或生产测试钩子的前提下，继续执行了 S10-06 的双电源动作流程。发送 v1.1 后，第一次断电上电进入恢复流程，随后在下一次 Bootloader 恢复窗口内立即再次断电，最终上电后用户观察到设备恢复 v1.0 LED 闪烁频率，LCD 显示正常。
 
-本轮不再新增临时 Bootloader 延时或其他测试钩子。正式证据仍按以下边界记录：
+发送端结果为 `app_v1.1.img`、COM9/115200、`84680` bytes、83 blocks、retries=2、exit code 0。正式证据仍按以下边界记录：
 
 - S10-02/S10-03/S10-04/S10-05：功能行为按用户验收通过；其中 S10-02、S10-03、S10-05 的 Bootloader/Reset Cause/Metadata 中间过程证据不完整，不作为软件失败；
-- S10-06：Rollback 破坏性阶段中断后从头恢复，未执行；
-- S10-07：无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，未执行；
+- S10-06：双断电后的最终功能行为按用户验收通过；本轮没有采集连续 Bootloader RTT/GDB 中间过程，因此正式硬件证据仍为 `PARTIAL`；
+- S10-07：前置检查发现没有已批准、可回读的板级坏 Header/坏 CRC/版本注入入口，按方案记为 `BLOCKED`，不使用未记录的 J-Link 内存写入替代；
 - S10-09：最终自动化回归、报告一致性和 Review 尚未完成；完成前正式 S10 硬件验证保持 `PARTIAL`，不得将阶段标记为 `CLOSED`。

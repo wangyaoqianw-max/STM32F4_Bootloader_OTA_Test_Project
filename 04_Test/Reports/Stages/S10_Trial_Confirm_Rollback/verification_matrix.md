@@ -137,7 +137,7 @@ The revised S10 plan adds independent physical checkpoints C0–C5. C1 is requir
 ## Task 9 Evidence
 
 - Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
-- Hardware execution status — `PARTIAL`: Confirm-before-power-cut, final v1.0 internal image readback and LED/LCD recovery observation are recorded; the visual item is `PASS`, while the Bootloader Rollback RTT/GDB chain and interrupted rollback evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
+- Hardware execution status — `PARTIAL`: Confirm-before-power-cut, final v1.0 internal image readback, LED/LCD recovery observation and the S10-06 two-power-cycle functional recovery are recorded; the visual item is `PASS`, while continuous Bootloader Rollback RTT/GDB evidence remains pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
 - S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; parser and fixture-level project assertions are complete.
 
 ## Task 10 Exit Evidence
@@ -229,9 +229,16 @@ Run `20260921-143727` was stopped at the Metadata baseline gate: External Loader
 - Runs `20260921-150545` and `20260921-151853` are recorded as observation-method limitations, not software rollback failures; the latter also encountered unsupported GDB Python and a late host-side re-arm.
 - No temporary Bootloader delay or production test hook was added.
 
+## S10-06 Interrupted Rollback Functional Acceptance
+
+- Run `20260921-two-power-cycle-manual` completed the direct Python YMODEM send on COM9/115200: `84680` bytes, 83 blocks, 2 retries, exit code `0`.
+- The user performed the first power-off/on and then an immediate second power-off during the following Bootloader recovery window. On the final power-on, the user observed v1.0 LED cadence and normal LCD output.
+- Functional behavior: `PASS`. Continuous Bootloader RTT/GDB evidence across the interruption was not captured, so the formal hardware result remains `PARTIAL`.
+- S10-07 preflight found no approved board-level bad-image injection entry; unrecorded J-Link memory writes are not permitted by the test plan.
+
 ## Remaining S10 Evidence
 
 - S10-02/S10-03/S10-04/S10-05 functional behavior: accepted PASS; intermediate RTT/Reset Cause/Metadata evidence is incomplete.
-- S10-06 interrupted Rollback restart-from-zero: not executed.
-- S10-07 invalid confirmed-image destructive gate: board-level gate not executed.
+- S10-06 interrupted Rollback restart-from-zero: functional behavior accepted PASS; intermediate Bootloader evidence is incomplete.
+- S10-07 invalid confirmed-image destructive gate: BLOCKED at the missing approved board-level injection precondition.
 - S10-09 final report/review can be completed, but formal hardware verification remains `PARTIAL`.

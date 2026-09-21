@@ -126,7 +126,7 @@ Display backlight on result: 0
 | IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
 | Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
 | software reset / IWDG reset / power-cycle | `Functional acceptance PASS; intermediate Reset Cause/Bootloader evidence is incomplete` |
-| interrupted rollback and restart-from-zero | `PENDING / NOT_EXECUTED` |
+| interrupted rollback and restart-from-zero | `Functional acceptance PASS for two-power-cycle recovery; intermediate Bootloader evidence not captured` |
 | PA0 OTA/install input | `PASS; two PA0 actions reached install and Confirm flow` |
 | LED / LCD manual observation | `PASS for observed v1.0 recovery; other subscenarios not separately executed` |
 | S05C real I2C/SPI capture | `PENDING / NOT_EXECUTED` |
@@ -135,6 +135,7 @@ Display backlight on result: 0
 
 - Formal Application `NONE` startup after the Event Flags mapping fix: startup result fields are `PLATFORM_ERR_OK`, system state is `RUNNING`, Health is `STABLE`, and `trial=0`; GDB stopped at the FreeRTOS idle path without the previous controlled-reset loop.
 - `app_v1.1.img` was rebuilt as `84680 bytes` (`84616-byte payload`, `83` YMODEM blocks). The real target transfer completed with `84680 bytes`, `retries=2`, sender exit code `0`; RTT reached `READY_TO_INSTALL` with `84680/84680` bytes.
+- In run `20260921-two-power-cycle-manual`, the same `app_v1.1.img` transfer completed on COM9/115200 with `84680` bytes, 83 blocks, 2 retries and sender exit code `0`; after a first power-off/on and an immediate second power-off during the following Bootloader recovery window, the user observed final v1.0 LED cadence and normal LCD output. This is functional S10-06 acceptance, not continuous Bootloader process evidence.
 - After the second PA0 action, GDB read `g_appHealthContext.readyMask=0x7`, `state=APP_HEALTH_STATE_STABLE`, `trial=1`, `g_appHealthConfirmResult=PLATFORM_ERR_OK`, and `g_appStartupContext.systemState=APP_SYSTEM_STATE_RUNNING`. This proves the runtime Ready/strict Confirm handshake, but does not by itself prove the persisted Metadata after a later power-cycle.
 - The latest S09 Factory Restore retry opened Sender before flash but the target still reported `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`; Sender then timed out waiting for the initial `C`. It is not counted as a new Factory Restore PASS. The earlier S09 baseline evidence remains S09-owned.
 - Verification follow-up on 2026-09-20 reran the S10 Host Tests, static contracts, Python regressions and both Keil builds successfully; no production source was changed in this follow-up. Application ROM remains `84616 bytes (82.63 KiB)` and Bootloader ROM remains `22372 bytes (21.85 KiB)`.
@@ -144,7 +145,7 @@ Display backlight on result: 0
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 - In run `20260920-185951`, S10-01 Factory Restore transferred `app_v1.0.img` successfully but the temporary target RTT stopped immediately after the destructive erase start; RTT capture returned error `32`. The workflow then restored formal Application, and the follow-up formal RTT plus GDB halt/resume snapshots passed. This run is recorded as `BLOCKED`, not as a new Factory Restore baseline pass.
 
-Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted S10-02/S10-03/S10-04/S10-05 functional behavior as `PASS`; some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete. S10-06 interrupted rollback, S10-07 destructive gate and S10-09 final Review remain outstanding; this report does not mark the stage `CLOSED`.
+Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted S10-02/S10-03/S10-04/S10-05 functional behavior and the S10-06 two-power-cycle recovery behavior as `PASS`; some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete. S10-07 is `BLOCKED` at the missing approved board-injection precondition, and S10-09 final Review remains outstanding; this report does not mark the stage `CLOSED`.
 
 ## S09 Deferred Boundary
 
@@ -191,9 +192,17 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 - 功能接受：`PASS (Project Owner/user manual acceptance)`；代码验证：`PASS`；正式硬件验证：`PARTIAL`。
 - 本轮未加入临时 Bootloader 延时或其他生产测试钩子；用户决定停止继续板测。
 
+### S10-06 Interrupted Rollback Functional Acceptance (Run `20260921-two-power-cycle-manual`)
+
+- 初始状态：当前 v1.0 基线；发送目标为 `06_Output/Packages/app_v1.1.img`。
+- YMODEM：COM9/115200，`84680` bytes，83 blocks，retries=2，exit code 0。
+- 人工动作：第一次断电上电后，在下一次 Bootloader 恢复窗口内立即再次断电，最后一次上电观察最终状态。
+- 现场结果：用户观察到 LED 恢复 v1.0 闪烁频率，LCD 显示正常；S10-06 功能行为记为 `PASS`。
+- 证据边界：本轮未保存断电前和第二次上电后的连续 Bootloader RTT/GDB 中间链，正式硬件验证仍为 `PARTIAL`。
+
 ### Remaining S10 Evidence
 
 - S10-02/S10-03/S10-04/S10-05：功能接受 `PASS`；部分中间 RTT/Reset Cause/Metadata 证据不完整。
-- S10-06 Rollback 破坏性阶段中断后从头恢复：未执行。
-- S10-07 无效 confirmed 镜像下禁止擦除 Internal APP：未执行板级门禁。
+- S10-06 Rollback 破坏性阶段中断后从头恢复：功能行为已接受 `PASS`，但连续 Bootloader 中间证据未采集。
+- S10-07 无效 confirmed 镜像下禁止擦除 Internal APP：`BLOCKED`；工程当前没有已批准、可回读的板级坏 Header/坏 CRC/版本注入入口。
 - S10-09 自动化回归、报告一致性和 Review 收口尚未完成；正式 S10 硬件验证仍保持 `PARTIAL`。
