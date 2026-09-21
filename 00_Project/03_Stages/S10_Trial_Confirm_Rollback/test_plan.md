@@ -53,10 +53,10 @@
 |---|---|---|---|
 | S10-00 | 测试前只读预检 | PASS | 工具、端口、Probe、输出目录和测试资产可用 |
 | S10-01 | Known-Good Baseline | PASS；新的 External Loader + Metadata Baseline 已完成独立物理读回 | Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
-| S10-02 | Trial 软件复位回滚 | 未形成正式 PASS | Confirm 前 TRIAL 复位后自动 Rollback |
-| S10-03 | Trial IWDG 复位回滚 | 只有无 Trial 边界的 IWDG 证据 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
+| S10-02 | Trial 软件复位回滚 | 功能接受 PASS；过程证据不完整 | Confirm 前 TRIAL 复位后自动 Rollback |
+| S10-03 | Trial IWDG 复位回滚 | 功能接受 PASS；Confirm 前 Trial 边界过程证据不完整 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
 | S10-04 | Trial 真实断电回滚 | 功能行为 PASS；正式 Bootloader 中间链 PARTIAL | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
-| S10-05 | Rollback 完成链 | PENDING | Bootloader RTT/GDB、CRC/vector、ROLLBACK → NONE、Metadata 保持 |
+| S10-05 | Rollback 完成链 | 功能接受 PASS；Bootloader 连续过程证据不完整 | Bootloader RTT/GDB、CRC/vector、ROLLBACK → NONE、Metadata 保持 |
 | S10-06 | Rollback 中断后从头恢复 | PENDING / NOT_EXECUTED | 破坏性阶段复位/断电后重新从 confirmed Slot 恢复 |
 | S10-07 | Known-Good Image destructive gate | 板级证据未形成 | confirmed Header/CRC/Version 无效时，Internal APP 不得擦除 |
 | S10-08 | LED/LCD 现场验收 | PASS；本轮恢复后的 LED/LCD 观察已通过，其余子场景未单独执行 | OTA、Trial、Rollback、恢复后的可见现象 |
@@ -563,9 +563,7 @@ Project Owner 决定停止继续板级测试，并按真实现象接受 S10-04 �
 
 本轮不再新增临时 Bootloader 延时或其他测试钩子。正式证据仍按以下边界记录：
 
-- S10-02 Trial 软件复位回滚：未形成正式板级闭环；
-- S10-03 Trial IWDG 复位回滚：已有独立 IWDG 证据，但未在 Confirm 前 Trial 边界完成闭环；
-- S10-04/S10-05：功能行为已接受，但掉电后 GDB 硬件断点丢失，Bootloader RTT 连续链未捕获；
+- S10-02/S10-03/S10-04/S10-05：功能行为按用户验收通过；其中 S10-02、S10-03、S10-05 的 Bootloader/Reset Cause/Metadata 中间过程证据不完整，不作为软件失败；
 - S10-06：Rollback 破坏性阶段中断后从头恢复，未执行；
 - S10-07：无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，未执行；
-- S10-09：自动化回归和文档收口可完成，但正式 S10 硬件验证保持 `PARTIAL`，不得将阶段标记为 `CLOSED`。
+- S10-09：最终自动化回归、报告一致性和 Review 尚未完成；完成前正式 S10 硬件验证保持 `PARTIAL`，不得将阶段标记为 `CLOSED`。

@@ -231,9 +231,7 @@ Run `20260921-143727` was stopped at the Metadata baseline gate: External Loader
 
 ## Remaining S10 Evidence
 
-- S10-02 Trial software-reset rollback: not formally closed.
-- S10-03 Trial IWDG-reset rollback: not formally closed at the Confirm-before boundary.
-- S10-05 complete Bootloader Rollback RTT/Metadata/CRC/vector chain: not captured.
+- S10-02/S10-03/S10-04/S10-05 functional behavior: accepted PASS; intermediate RTT/Reset Cause/Metadata evidence is incomplete.
 - S10-06 interrupted Rollback restart-from-zero: not executed.
 - S10-07 invalid confirmed-image destructive gate: board-level gate not executed.
 - S10-09 final report/review can be completed, but formal hardware verification remains `PARTIAL`.

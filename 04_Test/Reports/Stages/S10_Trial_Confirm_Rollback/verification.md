@@ -125,7 +125,7 @@ Display backlight on result: 0
 | GDB target session / snapshot | `PASS for Application confirm boundary and IWDG probe; Bootloader breakpoint chain not captured after power loss` |
 | IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
 | Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
-| software reset / IWDG reset / power-cycle | `PARTIAL; user-accepted Trial power-cycle recovery PASS, but Trial software/IWDG reset closures are not formed` |
+| software reset / IWDG reset / power-cycle | `Functional acceptance PASS; intermediate Reset Cause/Bootloader evidence is incomplete` |
 | interrupted rollback and restart-from-zero | `PENDING / NOT_EXECUTED` |
 | PA0 OTA/install input | `PASS; two PA0 actions reached install and Confirm flow` |
 | LED / LCD manual observation | `PASS for observed v1.0 recovery; other subscenarios not separately executed` |
@@ -144,7 +144,7 @@ Display backlight on result: 0
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 - In run `20260920-185951`, S10-01 Factory Restore transferred `app_v1.0.img` successfully but the temporary target RTT stopped immediately after the destructive erase start; RTT capture returned error `32`. The workflow then restored formal Application, and the follow-up formal RTT plus GDB halt/resume snapshots passed. This run is recorded as `BLOCKED`, not as a new Factory Restore baseline pass.
 
-Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted the functional behavior as `PASS`; the formal Bootloader Rollback RTT/GDB chain, Trial software/IWDG reset closures and interrupted rollback/restart-from-zero evidence remain outstanding. Review Role must decide whether the remaining evidence is required for formal closure; this report does not mark the stage `CLOSED`.
+Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted S10-02/S10-03/S10-04/S10-05 functional behavior as `PASS`; some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete. S10-06 interrupted rollback, S10-07 destructive gate and S10-09 final Review remain outstanding; this report does not mark the stage `CLOSED`.
 
 ## S09 Deferred Boundary
 
@@ -193,9 +193,7 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 
 ### Remaining S10 Evidence
 
-- S10-02 Trial 软件复位回滚：未形成正式板级闭环。
-- S10-03 Trial IWDG 复位回滚：未在 Confirm 前 Trial 边界形成正式闭环。
-- S10-05 完整 Rollback RTT、Metadata、CRC/vector 链：未捕获。
+- S10-02/S10-03/S10-04/S10-05：功能接受 `PASS`；部分中间 RTT/Reset Cause/Metadata 证据不完整。
 - S10-06 Rollback 破坏性阶段中断后从头恢复：未执行。
 - S10-07 无效 confirmed 镜像下禁止擦除 Internal APP：未执行板级门禁。
-- S10-09 自动化回归和文档收口可完成，但正式 S10 硬件验证仍保持 `PARTIAL`。
+- S10-09 自动化回归、报告一致性和 Review 收口尚未完成；正式 S10 硬件验证仍保持 `PARTIAL`。

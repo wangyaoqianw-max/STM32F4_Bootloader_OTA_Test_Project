@@ -77,7 +77,7 @@
 
 2026-09-21 S10-04：新的 External Loader 和 Metadata baseline 已成功建立 F0；v1.1 通过 COM9 YMODEM 完成发送和第二次 PA0 安装；用户在确认前断电上电后观察到设备回滚到 v1.0，LED 恢复 v1.0 频率，LCD 显示正常，内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配。功能行为接受记为 `PASS`。掉电清除 GDB 硬件断点，未捕获 Bootloader RTT 地址 `0x200000E0` 的连续 `TRIAL → ROLLBACK → restore → NONE` 证据；因此正式硬件验证保持 `PARTIAL`，不标记 S10 `CLOSED`。用户决定停止继续板测，未加入临时 Bootloader 延时钩子。
 
-本阶段尚未形成正式板级闭环的项目：Trial 软件复位回滚、Confirm 前 Trial IWDG 复位回滚、完整 Bootloader Rollback RTT/Metadata/CRC/vector 链、Rollback 破坏性阶段中断后从头恢复、无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 仍按原阶段归属，不计入本次功能通过。
+S10-02、S10-03、S10-04、S10-05 的功能行为已接受通过，部分中间 RTT/Reset Cause/Metadata 证据未连续采集。真正尚未完成的是：S10-06 Rollback 破坏性阶段中断后从头恢复、S10-07 无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，以及 S10-09 最终回归、报告和 Review 收口。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 仍按原阶段归属。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 

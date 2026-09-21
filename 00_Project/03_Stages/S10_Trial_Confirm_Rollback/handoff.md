@@ -80,7 +80,7 @@ Run `20260921-141517-breakpoint` 已证明确认前 GDB 断点和断电窗口安
 
 功能接受：`PASS (Project Owner/user manual acceptance)`。正式硬件证据：`PARTIAL`，因为 Bootloader 原始 RTT 中间链未捕获；阶段不标记 `CLOSED`。本轮未加入临时 Bootloader 延时或其他生产测试钩子。
 
-剩余未形成正式板级闭环的项目：Trial 软件复位回滚、Confirm 前 Trial IWDG 复位回滚、完整 Bootloader Rollback RTT/Metadata/CRC/vector 链、Rollback 破坏性阶段中断后从头恢复、无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 不属于本轮功能通过范围。
+S10-02、S10-03、S10-04、S10-05 的功能行为均按用户验收通过；其中部分 Reset Cause、Metadata 和 Bootloader RTT 中间过程证据未连续采集，不判定为软件失败。真正剩余的是：S10-06 Rollback 破坏性阶段中断后从头恢复、S10-07 无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，以及 S10-09 最终回归、报告和 Review 收口。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 不属于本轮功能通过范围。
 
 ## S10 Test Plan Execution Stop
 
@@ -516,7 +516,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup, Trial/Confirm handshake and user-accepted confirm-before-power-cut recovery are recorded, while the formal Bootloader RTT chain and remaining reset/interruption gates keep hardware verification at PARTIAL.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; S10-02/S10-03/S10-04/S10-05 functional behavior is accepted, while some intermediate RTT/Reset Cause/Metadata evidence is incomplete. S10-06, S10-07 and S10-09 remain for formal closure, so hardware verification stays PARTIAL.
 ```
 
 ### Design Review Status
@@ -539,7 +539,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification is partially evidenced for NONE startup, Trial/Confirm, confirm-before-power-cut recovery and no-feed IWDG reset. User-accepted functional rollback is PASS, but the formal Bootloader RTT chain, Trial software/IWDG reset closures, interrupted rollback restart and invalid-confirmed-image destructive gate remain unverified. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
+- S10 real board verification has functional acceptance for NONE startup, Trial/Confirm, software/IWDG/power-cycle rollback behavior and LED/LCD recovery. Some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete; Rollback interrupted restart, invalid-confirmed-image destructive gate and final Review remain outstanding. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 

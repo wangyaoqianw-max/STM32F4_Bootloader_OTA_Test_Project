@@ -542,7 +542,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL`。独立测试方案已按根因隔离结果修订；新的 External Loader F0 和 Metadata baseline 已通过。`20260921-141517-breakpoint` 已完成确认前断点保护回滚和 LED/LCD 视觉 `PASS`；后续双断点尝试确认掉电会清除 GDB 硬件断点，但未取得 Bootloader 原始 RTT 链。用户已决定停止继续板测并接受功能行为通过；下一步是 Review Role 对剩余证据做关闭决策，不再安排本批次板测。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL`。独立测试方案已按根因隔离结果修订；新的 External Loader F0 和 Metadata baseline 已通过。S10-02/S10-03/S10-04/S10-05 功能行为已接受通过，部分中间 RTT/Reset Cause/Metadata 证据未连续采集。用户已决定停止继续板测；剩余是 S10-06 中断恢复、S10-07 destructive gate 和 S10-09 最终回归/Review，不再安排本批次板测。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 
