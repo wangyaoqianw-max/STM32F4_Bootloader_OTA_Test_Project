@@ -3,7 +3,7 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Workflow Status: `READY_FOR_VERIFICATION`
+- Workflow Status: `CLOSED / PASS`
 - Branch: `main`
 - Baseline Commit: `de17162c179f3a6551c9edca0d5df35c03ffdc48`
 - Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
@@ -18,9 +18,9 @@
 - Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
-- Verification Commit: `Pending final consolidated board verification`
-- Review Commit: `Not created yet`
+- Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`, `9fb7f09`
+- Verification Commit: `Pending final consolidated verification documentation commit`
+- Review Commit: `Pending current review documentation commit`
 - Updated At: `2026-09-21`
 
 ## Current Role
@@ -28,15 +28,15 @@
 当前角色：
 
 ```text
-Verification Role
+Project Owner
 ```
 
 下一次会话允许继续：
 
 ```text
-no further board test in this batch
-review the recorded functional acceptance and remaining evidence boundary
-decide whether the project accepts formal S10 hardware verification as PARTIAL
+no further destructive S10 board test
+after J-Link USB recovery, confirm formal v1.0 RTT only
+keep hardware evidence as PARTIAL / DEFERRED FOLLOW-UP
 ```
 
 当前禁止：
@@ -488,7 +488,7 @@ Bootloader < 64 KiB
 
 ## Implementation Output
 
-- Status: `READY_FOR_VERIFICATION`
+- Status: `CLOSED / PASS`
 
 ### Completed Work
 
@@ -504,7 +504,7 @@ Task 7 Atomic Rollback Metadata Transactions and Boot Decision: 352ee62
 Task 8 regression fixtures and automated verification: 54c9827, b40d1b4
 Task 9 board-verification checklist and evidence boundary: included in verification_matrix.md
 Task 10 warning-free final build and exit evidence: a5295c2
-Implementation Plan Task 0→10 is complete; stage is READY_FOR_VERIFICATION.
+Implementation Plan Task 0→10 is complete; under the amended software-logic acceptance gate, stage is CLOSED / PASS.
 ```
 
 ### Changed Files
@@ -513,6 +513,7 @@ Implementation Plan Task 0→10 is complete; stage is READY_FOR_VERIFICATION.
 Application OTA_APP watchdog, health, lifecycle and runtime integration
 Bootloader prevalidate/installer/metadata commit/main integration
 S10 Host rollback transaction and Boot decision contracts; S09 Host fixture compatibility updates
+05_Tools/toolkit.ps1 YMODEM process-timeout policy; 05_Tools/Contracts/Compatibility/test_ymodem_process_timeout.ps1
 04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md
 PROJECT_CONTEXT.md / 00_Project/05_Status/current_status.md
 ```
@@ -526,7 +527,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; S10-02/S10-03/S10-04/S10-05 functional behavior is accepted, and the S10-06 two-power-cycle functional behavior is also accepted, while some intermediate RTT/Reset Cause/Metadata evidence is incomplete. S10-07 is BLOCKED at the board-injection precondition and S10-09 remains for formal closure, so hardware verification stays PARTIAL.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; S10-02/S10-03/S10-04/S10-05 functional behavior is accepted, and the S10-06 two-power-cycle functional behavior is also accepted, while some intermediate RTT/Reset Cause/Metadata evidence is incomplete. S10-07 remains BLOCKED at the board-injection precondition; under the amended software-logic acceptance gate, Review records S10 as CLOSED / PASS while hardware verification stays PARTIAL / DEFERRED FOLLOW-UP.
 ```
 
 ### Design Review Status
@@ -549,7 +550,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification has functional acceptance for NONE startup, Trial/Confirm, software/IWDG/power-cycle rollback behavior, interrupted two-power-cycle recovery and LED/LCD recovery. Some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete; the invalid-confirmed-image destructive gate is BLOCKED because no approved board injection entry exists, and final Review remains outstanding. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
+- S10 real board verification has functional acceptance for NONE startup, Trial/Confirm, software/IWDG/power-cycle rollback behavior, interrupted two-power-cycle recovery and LED/LCD recovery. Some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete; the invalid-confirmed-image destructive gate is BLOCKED because no approved board injection entry exists. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 
@@ -584,3 +585,10 @@ KEY press
 ```
 
 Temporary test code is allowed when needed. It must be clearly isolated, default-disabled, and removed after its evidence is captured. Final production Clean Build must contain no temporary test-only behavior.
+
+## Final Acceptance and Operational Handoff (2026-09-21)
+
+- Software verification: `PASS`；Review 未发现 Critical / Important 软件逻辑问题。
+- Hardware verification: `PARTIAL / DEFERRED FOLLOW-UP`；连续 Bootloader RTT/GDB 和 S10-07 板级门禁仍未形成完整证据，不改写为硬件 PASS。
+- Stage decision: `CLOSED / PASS`，依据为 Project Owner 批准的软件逻辑通过条件。
+- Board restoration: 当前恢复尝试在 J-Link USB 通道打开阶段阻塞，尚未取得新的正式 v1.0 RTT。连接恢复后只允许执行恢复性 v1.0 烧录/启动确认，不重新启动破坏性 S10 测试。

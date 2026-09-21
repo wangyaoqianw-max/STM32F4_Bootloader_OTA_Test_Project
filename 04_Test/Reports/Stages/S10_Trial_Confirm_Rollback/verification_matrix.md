@@ -3,12 +3,13 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `CLOSED / PASS`
 - Execution Branch: `main`
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Clean Execution Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Remote Check at implementation start: `HEAD == origin/main`, ahead/behind `0/0`
 - Date: `2026-09-21`
+- Acceptance Basis: `Software logic correctness; hardware verification remains separate`
 
 ## Baseline Evidence
 
@@ -242,3 +243,9 @@ Run `20260921-143727` was stopped at the Metadata baseline gate: External Loader
 - S10-06 interrupted Rollback restart-from-zero: functional behavior accepted PASS; intermediate Bootloader evidence is incomplete.
 - S10-07 invalid confirmed-image destructive gate: BLOCKED at the missing approved board-level injection precondition.
 - S10-09 final report/review can be completed, but formal hardware verification remains `PARTIAL`.
+
+## Final Verification Decision Under Amended Acceptance (2026-09-21)
+
+- Software verification: `PASS`。设计/状态机一致性、Host/Contract/Python 回归、Application/Bootloader Clean Build（0 error / 0 warning）和生产构建无临时测试钩子均已有证据；Review 未发现 Critical / Important 软件逻辑问题。
+- Hardware verification: `PARTIAL / DEFERRED FOLLOW-UP`。确认前断电、双断电后的 v1.0 LED/LCD 恢复现象按 Project Owner 观察接受，但连续 Bootloader RTT/GDB 中间链和 S10-07 无效 confirmed 镜像板级门禁没有形成完整证据。
+- 结论：按 2026-09-21 修订后的软件逻辑通过条件，S10 记录为 `CLOSED / PASS`；上述硬件缺口保留为延期项，不得描述为硬件 PASS。

@@ -1465,6 +1465,29 @@ Review 修订项：
 
 经上述修订，未发现需要推翻 S10 生命周期、Metadata V2 或 rollback transaction 的 Blocking 问题。
 
+## Acceptance Basis Amendment (2026-09-21)
+
+### 24.1 Project Owner decision
+
+Project Owner 同意将本阶段的主要通过条件收敛为“软件逻辑无误”。本修订只改变阶段验收和证据分类，不改变生产代码、Metadata V2、Trial/Confirm/Rollback 状态机、Flash Layout 或既有冻结设计条目。
+
+### 24.2 Software verification gate
+
+S10 的软件验证通过必须同时满足：
+
+1. 生产实现与冻结设计、接口约束和状态机语义一致，Review 未发现 Critical / Important 逻辑问题；
+2. S10 Host、Contract、Python 回归以及既有 S02/S04/S05/S07A/S09 回归通过；
+3. Application 与 Bootloader Clean Build 通过，错误数和警告数均为 0，Bootloader 仍小于 64 KiB；
+4. 最终生产构建不包含临时 S10 测试开关、Fault Hook、强制失败、强制复位或其他 TEST ONLY 行为。
+
+### 24.3 Hardware evidence boundary
+
+真实板级证据继续单独标记为 `PASS`、`PARTIAL`、`BLOCKED` 或 `NOT_EXECUTED`。没有连续 Bootloader RTT/GDB 或完整断电中间链时，不得把硬件验证写成 `PASS`；S10-07 无效 confirmed 镜像门禁和连续 Bootloader 中间观测属于 Deferred Follow-up，不阻塞本次软件逻辑结论。
+
+### 24.4 Closure rule
+
+在验证报告、矩阵、交接和状态入口同步后，由 Review Role 按本修订的门禁决定是否关闭阶段。软件验证为 `PASS`、硬件验证为 `PARTIAL / DEFERRED FOLLOW-UP` 时，阶段可以记录为 `CLOSED / PASS`，但延期硬件项不得被改写为硬件通过。
+
 ## 23. Approval
 
 - Decision: `APPROVED`

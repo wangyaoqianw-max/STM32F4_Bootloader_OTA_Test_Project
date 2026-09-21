@@ -567,3 +567,14 @@ RTT or GDB authoritative evidence
 - S10-06：双断电后的最终功能行为按用户验收通过；本轮没有采集连续 Bootloader RTT/GDB 中间过程，因此正式硬件证据仍为 `PARTIAL`；
 - S10-07：前置检查发现没有已批准、可回读的板级坏 Header/坏 CRC/版本注入入口，按方案记为 `BLOCKED`，不使用未记录的 J-Link 内存写入替代；
 - S10-09：最终自动化回归、报告一致性和 Review 尚未完成；完成前正式 S10 硬件验证保持 `PARTIAL`，不得将阶段标记为 `CLOSED`。
+
+## 11. Acceptance Basis Amendment and Batch Stop (2026-09-21)
+
+Project Owner 已批准本阶段以软件逻辑正确性作为主要通过条件。后续判定按以下边界执行：
+
+- 软件验证必须具备设计/状态机一致性、代码 Review 无 Critical / Important 逻辑问题、Host/Contract/Python 回归通过、Application/Bootloader Clean Build 0 error / 0 warning，以及最终生产构建无临时测试钩子；
+- 真实板级验证仍独立记录，缺少连续 Bootloader RTT/GDB 或完整断电中间链时保持 `PARTIAL`，不得升级为硬件 `PASS`；
+- S10-07 无效 confirmed 镜像门禁、连续 Bootloader 中间观测和其他未形成闭环的板测作为 Deferred Follow-up，不阻塞软件逻辑结论；
+- 本批次不再安排新的破坏性板测。板卡只做恢复性操作，目标是回到可正常运行的正式 v1.0，并以正式 Application RTT 作为恢复证据。
+
+因此，本方案的停止条件从“所有 BOARD_AUTO / BOARD_MANUAL 用例必须闭环”修订为“软件验证门禁闭环；板级缺口必须如实分类并保留证据边界”。

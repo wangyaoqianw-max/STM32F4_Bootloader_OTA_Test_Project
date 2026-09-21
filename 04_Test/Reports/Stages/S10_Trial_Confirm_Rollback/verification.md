@@ -3,14 +3,15 @@
 ## Metadata
 
 - Stage: `S10_Trial_Confirm_Rollback`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `CLOSED / PASS`
 - Branch: `main`
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Implementation Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
-- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
+- Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`, `9fb7f09`
 - Code Verification: `PASS`
 - Hardware Verification: `PARTIAL`
+- Acceptance Basis: `Software logic correctness; hardware evidence tracked separately`
 
 ## Coding Standard
 
@@ -145,7 +146,7 @@ Display backlight on result: 0
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 - In run `20260920-185951`, S10-01 Factory Restore transferred `app_v1.0.img` successfully but the temporary target RTT stopped immediately after the destructive erase start; RTT capture returned error `32`. The workflow then restored formal Application, and the follow-up formal RTT plus GDB halt/resume snapshots passed. This run is recorded as `BLOCKED`, not as a new Factory Restore baseline pass.
 
-Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted S10-02/S10-03/S10-04/S10-05 functional behavior and the S10-06 two-power-cycle recovery behavior as `PASS`; some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete. S10-07 is `BLOCKED` at the missing approved board-injection precondition, and S10-09 final Review remains outstanding; this report does not mark the stage `CLOSED`.
+Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted S10-02/S10-03/S10-04/S10-05 functional behavior and the S10-06 two-power-cycle recovery behavior as `PASS`; some intermediate Bootloader RTT/Reset Cause/Metadata evidence is incomplete. S10-07 is `BLOCKED` at the missing approved board-injection precondition. This was the pre-amendment verification snapshot; the final section records the later software-logic acceptance and Review decision.
 
 ## S09 Deferred Boundary
 
@@ -153,7 +154,7 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 
 ## Handoff Result
 
-代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。2026-09-21 的断点保护回滚运行已取得确认前断点、断电后 v1.0 镜像精确回读和 LED/LCD 视觉 `PASS`；由于缺少 Bootloader 原始 RTT 中间链，硬件验证仍为 `PARTIAL`，阶段不得标记 `CLOSED`。同日后续重试在 External Loader 读回通过后，于 Metadata 基线阶段因 `Soft-I2C init FAIL: BUSY` 停止，未进入 OTA。构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。
+代码和自动化证据满足 Implementation Plan 的实现退出条件。2026-09-21 的断点保护回滚运行已取得确认前断点、断电后 v1.0 镜像精确回读和 LED/LCD 视觉 `PASS`；由于缺少 Bootloader 原始 RTT 中间链，硬件验证仍为 `PARTIAL`。同日后续重试在 External Loader 读回通过后，于 Metadata 基线阶段因 `Soft-I2C init FAIL: BUSY` 停止，未进入 OTA。构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。最终阶段状态以本报告末尾的修订验收决定为准。
 
 ### S10-04 Confirm-Before-Power-Cut Protected Execution (Run `20260921-141517-breakpoint`)
 
@@ -206,3 +207,11 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 - S10-06 Rollback 破坏性阶段中断后从头恢复：功能行为已接受 `PASS`，但连续 Bootloader 中间证据未采集。
 - S10-07 无效 confirmed 镜像下禁止擦除 Internal APP：`BLOCKED`；工程当前没有已批准、可回读的板级坏 Header/坏 CRC/版本注入入口。
 - S10-09 自动化回归、报告一致性和 Review 收口尚未完成；正式 S10 硬件验证仍保持 `PARTIAL`。
+
+## Final Verification Decision Under Amended Acceptance (2026-09-21)
+
+- Software verification: `PASS`。设计/状态机一致性、Host/Contract/Python 回归、Application/Bootloader Clean Build（0 error / 0 warning）和生产构建无临时测试钩子均已有证据；Review 未发现 Critical / Important 软件逻辑问题。
+- Hardware verification: `PARTIAL / DEFERRED FOLLOW-UP`。确认前断电、双断电后的 v1.0 LED/LCD 恢复现象按 Project Owner 观察接受，但连续 Bootloader RTT/GDB 中间链和 S10-07 无效 confirmed 镜像板级门禁没有形成完整证据。
+- 本报告不把上述硬件缺口改写成硬件通过；软件逻辑通过条件改变的是阶段判定门禁，不是硬件证据规则。
+- YMODEM 外层进程超时策略已补充为独立合同：`05_Tools/Contracts/Compatibility/test_ymodem_process_timeout.ps1` 执行结果为 `PASS`，长等待不会再被固定 60 s 外层窗口提前终止。
+- 阶段结论：`CLOSED / PASS`，关闭依据为修订后的软件逻辑通过条件；硬件缺口作为 Deferred Follow-up 保留。

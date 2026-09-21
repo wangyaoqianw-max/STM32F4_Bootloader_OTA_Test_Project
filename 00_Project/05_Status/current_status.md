@@ -3,7 +3,7 @@
 ## Context Metadata
 
 - Active Stage: `S10_Trial_Confirm_Rollback`
-- Status: `READY_FOR_VERIFICATION`
+- Status: `CLOSED / PASS`
 - S08 Implementation Commit: `8ec0045`
 - S08 Verification Report: `04_Test/Reports/Stages/S08_Bootloader_Foundation/verification.md`
 - S08 Review Report: `00_Project/03_Stages/S08_Bootloader_Foundation/review.md`
@@ -24,7 +24,7 @@
 - S10 Design Review Acceptance Sync Commit: `c4f411f8a4dec926ebca0d9463ba9184ffc8af35`
 - S10 Design Approval Commit: `621df210a0fba930d05e32fe450a494b9b0c2cca`
 - S10 Implementation Plan Commit: `d63b1f8a9d1981cf1fb1e2a07a6a9af17829c1ac`
-- S10 Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
+- S10 Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`, `9fb7f09`
 - S06 Design Commit: `eb57291f9d506965bfc20acc4261ce7e01888094`
 - S06 Implementation Plan Commit: `9f304c731c06eafb842b50c3098702d4a842db2e`
 - S06 Implementation Commits: `f6f50fd`, `b90d462`, `6d0d323`, `38f7c60`, `20ec343`, `66e2934`, `014b617`
@@ -65,15 +65,17 @@
 - Previous Review Commit: `ec90dbb`
 - Review Commit: `b19c80d`
 - S05 Merge Commit: `5b2b42136e0d8f1eb2d54463fb5319996d6f6b5f`
-- Last Closed Stage: `S09_Firmware_Installation`
+- Last Closed Stage: `S10_Trial_Confirm_Rollback`
 - Last Closed Stage Status: `CLOSED / PASS`
-- Next Planned Stage: `Not selected; S10 is active`
-- Current Role: `Verification Role`
+- Next Planned Stage: `Not selected`
+- Current Role: `Project Owner`
 - Updated At: `2026-09-21`
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据已取得；代码验证为 `PASS`，真实硬件验证为 `PARTIAL`。正式 Application、External Loader F0 和 Metadata baseline 已恢复/验证成功；用户已接受确认前断电回滚功能，但由于 Bootloader 连续 RTT 和若干复位/中断门禁证据未形成，阶段不直接关闭。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归、板级功能观察和交接文档。依据 2026-09-21 Project Owner 批准的验收修订，本阶段主要通过条件为软件逻辑无误：代码验证为 `PASS`，Review 未发现 Critical / Important 软件逻辑问题，阶段关闭为 `CLOSED / PASS`。真实硬件验证仍单独记为 `PARTIAL / DEFERRED FOLLOW-UP`，缺失的连续 Bootloader RTT/GDB、S10-07 板级门禁和其他未闭环板测不被写成硬件 PASS。正式生产构建无临时 S10 测试钩子；板卡恢复性验证因当前 J-Link USB 通道无法打开而尚未取得新 RTT，待连接恢复后只确认正式 v1.0 可运行状态。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+
+最新 Review 已核对冻结设计、实施计划、代码验证证据、硬件证据边界、状态一致性和提交范围；没有需要返工的 Critical / Important 问题。
 
 2026-09-21 S10-04：新的 External Loader 和 Metadata baseline 已成功建立 F0；v1.1 通过 COM9 YMODEM 完成发送和第二次 PA0 安装；用户在确认前断电上电后观察到设备回滚到 v1.0，LED 恢复 v1.0 频率，LCD 显示正常，内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配。功能行为接受记为 `PASS`。掉电清除 GDB 硬件断点，未捕获 Bootloader RTT 地址 `0x200000E0` 的连续 `TRIAL → ROLLBACK → restore → NONE` 证据；因此正式硬件验证保持 `PARTIAL`，不标记 S10 `CLOSED`。未加入临时 Bootloader 延时钩子。
 
