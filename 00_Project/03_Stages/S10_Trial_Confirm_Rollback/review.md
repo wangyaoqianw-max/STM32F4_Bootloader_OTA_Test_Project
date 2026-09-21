@@ -5,8 +5,8 @@
 - Stage: `S10_Trial_Confirm_Rollback`
 - Status: `CLOSED / PASS`
 - Branch: `main`
-- Verification Commit: `Pending final consolidated verification documentation commit`
-- Review Commit: `Pending current review documentation commit`
+- Verification Commit: `745335a`
+- Review Commit: `745335a`
 - Review Date: `2026-09-21`
 - Reviewer Role: `Review Role / Project Owner`
 - Review Method: `Read-only self-review; no reviewer subagent is available in this environment`

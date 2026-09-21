@@ -12,6 +12,8 @@
 - Code Verification: `PASS`
 - Hardware Verification: `PARTIAL`
 - Acceptance Basis: `Software logic correctness; hardware evidence tracked separately`
+- Verification Commit: `745335a`
+- Review Commit: `745335a`
 
 ## Coding Standard
 
