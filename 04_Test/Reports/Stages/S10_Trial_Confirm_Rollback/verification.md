@@ -217,3 +217,11 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 - 本报告不把上述硬件缺口改写成硬件通过；软件逻辑通过条件改变的是阶段判定门禁，不是硬件证据规则。
 - YMODEM 外层进程超时策略已补充为独立合同：`05_Tools/Contracts/Compatibility/test_ymodem_process_timeout.ps1` 执行结果为 `PASS`，长等待不会再被固定 60 s 外层窗口提前终止。
 - 阶段结论：`CLOSED / PASS`，关闭依据为修订后的软件逻辑通过条件；硬件缺口作为 Deferred Follow-up 保留。
+
+### Operational Board Restoration After J-Link Reconnect (2026-09-21)
+
+- J-Link 拔插后重新枚举为 `602713300 / J-Link PLUS`，SWD 连接和目标电压读取正常。
+- External Loader 预烧录目录 `06_Output/Logs/ExternalLoader/Preburn-20260921-204936/` 中，Slot A Header 与 Payload 的独立读回 SHA-256 分别与源文件一致；Slot B Header 读回为 64 字节全 `0xFF`。
+- 独立正式 RTT `06_Output/Logs/OTA_APP_rtt.log` 显示 OTA Storage SPI、OTA UART、Application、Display SPI、初始渲染和背光初始化均为成功结果；因此板卡已恢复到可运行的正式 v1.0 状态。
+- 一键 Metadata baseline 流程在预烧录成功后因临时 Keil 工程 CMSIS group marker 不匹配而中止；其恢复分支已完成正式 Application 恢复，不能把本次一键流程记为 Metadata baseline `PASS`。
+- 本记录只关闭板卡恢复操作项，不改变 S10 `Hardware verification: PARTIAL / DEFERRED FOLLOW-UP`，也不补齐缺失的连续 Bootloader RTT/GDB 或 S10-07 板级门禁证据。

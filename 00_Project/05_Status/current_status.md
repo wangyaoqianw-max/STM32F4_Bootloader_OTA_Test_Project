@@ -73,7 +73,7 @@
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归、板级功能观察和交接文档。依据 2026-09-21 Project Owner 批准的验收修订，本阶段主要通过条件为软件逻辑无误：代码验证为 `PASS`，Review 未发现 Critical / Important 软件逻辑问题，阶段关闭为 `CLOSED / PASS`。真实硬件验证仍单独记为 `PARTIAL / DEFERRED FOLLOW-UP`，缺失的连续 Bootloader RTT/GDB、S10-07 板级门禁和其他未闭环板测不被写成硬件 PASS。正式生产构建无临时 S10 测试钩子；板卡恢复性验证因当前 J-Link USB 通道无法打开而尚未取得新 RTT，待连接恢复后只确认正式 v1.0 可运行状态。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归、板级功能观察和交接文档。依据 2026-09-21 Project Owner 批准的验收修订，本阶段主要通过条件为软件逻辑无误：代码验证为 `PASS`，Review 未发现 Critical / Important 软件逻辑问题，阶段关闭为 `CLOSED / PASS`。真实硬件验证仍单独记为 `PARTIAL / DEFERRED FOLLOW-UP`，缺失的连续 Bootloader RTT/GDB、S10-07 板级门禁和其他未闭环板测不被写成硬件 PASS。正式生产构建无临时 S10 测试钩子；J-Link 拔插后已完成正式 v1.0 板卡恢复性验证，证据见 `06_Output/Logs/ExternalLoader/Preburn-20260921-204936/` 与 `06_Output/Logs/OTA_APP_rtt.log`。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
 最新 Review 已核对冻结设计、实施计划、代码验证证据、硬件证据边界、状态一致性和提交范围；没有需要返工的 Critical / Important 问题。
 

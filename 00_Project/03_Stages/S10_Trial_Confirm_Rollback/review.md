@@ -66,3 +66,7 @@ Closure Basis:        Project Owner-approved software logic acceptance
 ```
 
 本次关闭不代表所有真实板级用例均已通过；它表示在修订后的阶段门禁下，软件逻辑验证通过，硬件缺口和板卡恢复性操作均已明确记录并保留后续边界。
+
+## Post-review Operational Update (2026-09-21)
+
+J-Link 拔插后已恢复探针连接。External Loader 完成 Slot A v1.0 Header/Payload 独立读回校验，Slot B Header 读回为全 `0xFF`；正式 v1.0 RTT 显示 Application、OTA Storage、OTA UART、Display 和背光初始化成功。该更新解决板卡恢复交接项，不改变 `Hardware Verification: PARTIAL / DEFERRED FOLLOW-UP`，也不改变阶段 `CLOSED / PASS` 的软件逻辑关闭依据。

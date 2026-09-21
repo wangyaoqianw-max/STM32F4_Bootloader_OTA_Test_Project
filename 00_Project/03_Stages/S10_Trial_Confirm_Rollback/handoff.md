@@ -591,4 +591,5 @@ Temporary test code is allowed when needed. It must be clearly isolated, default
 - Software verification: `PASS`；Review 未发现 Critical / Important 软件逻辑问题。
 - Hardware verification: `PARTIAL / DEFERRED FOLLOW-UP`；连续 Bootloader RTT/GDB 和 S10-07 板级门禁仍未形成完整证据，不改写为硬件 PASS。
 - Stage decision: `CLOSED / PASS`，依据为 Project Owner 批准的软件逻辑通过条件。
-- Board restoration: 当前恢复尝试在 J-Link USB 通道打开阶段阻塞，尚未取得新的正式 v1.0 RTT。连接恢复后只允许执行恢复性 v1.0 烧录/启动确认，不重新启动破坏性 S10 测试。
+- Board restoration: `PASS`。2026-09-21 J-Link 拔插后完成恢复性操作：Slot A Header/Payload 通过 External Loader 独立读回校验，Slot B Header 读回为全 `0xFF`，正式 v1.0 Application RTT 显示 OTA Storage、OTA UART、Application、Display 和背光初始化均成功。证据见 `06_Output/Logs/ExternalLoader/Preburn-20260921-204936/` 与 `06_Output/Logs/OTA_APP_rtt.log`。本次仅恢复板卡，不重新启动破坏性 S10 测试；S10 硬件验证仍为 `PARTIAL / DEFERRED FOLLOW-UP`。
+- Metadata baseline workflow note: 本次一键恢复流程在预烧录通过后，因临时 Keil 工程缺少脚本预期的 CMSIS group marker 中止；恢复分支已重新构建/烧录正式 Application，随后独立 RTT 验证通过。该工具流程问题未被记为 Metadata baseline `PASS`。
