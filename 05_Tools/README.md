@@ -28,7 +28,7 @@ toolkit.bat fault [application|bootloader] [capture|trigger]
 toolkit.bat firmware pack <pack_firmware.py arguments>
 toolkit.bat ymodem [python] <ymodem_sender.py arguments>
 toolkit.bat ymodem tera <COMx> <baud> <firmware.img>
-toolkit.bat factory restore -ConfirmDestructive [-Image <v1.0.img>] [-Port COMx] [-Baud 115200]
+toolkit.bat metadata baseline -ConfirmDestructive [-Image <v1.0.img>]
 ```
 
 Router 只负责参数校验、配置读取、Workflow/既有工具转发和统一退出码，不复制 Firmware
@@ -158,18 +158,17 @@ RTT Logger 与 J-Link Commander/GDB Server 不能同时占用同一个 Probe，�
 
 此工具只负责生成 `.img`，不负责串口传输、Flash 烧录或 Bootloader 安装。
 
-### 5.1 S09 Factory Restore
+### 5.1 S09 Metadata Baseline
 
-`factory restore` 是 destructive operation，会清空 External Flash Slot A/B 和 AT24C02 Metadata，使用独立的 S09 board test 通过正式 Firmware Storage / Metadata / YMODEM 路径写入 Slot A v1.0 baseline，然后重新构建并烧录正式 v1.0 Application 到 Internal APP。必须显式传入 `-ConfirmDestructive`：
+旧的 Factory Restore/W25Q64 YMODEM 预烧录流程已废弃。现在先由 External Loader 写入并独立读回 W25Q64 Slot A，再由 Metadata Baseline 临时固件只读取 W25Q64、写入并校验 AT24C02 Metadata。该操作会改写 AT24C02 和 Internal APP，必须显式传入 `-ConfirmDestructive`：
 
 ```powershell
-05_Tools\toolkit.bat factory restore `
+05_Tools\toolkit.bat metadata baseline `
   -ConfirmDestructive `
-  -Image .\06_Output\Packages\app_v1.0.img `
-  -Port COM9 -Baud 115200
+  -Image .\06_Output\Packages\app_v1.0.img
 ```
 
-该流程不会把 Factory Restore board test 加入正式 `OTA_APP.uvprojx`，流程结束后会恢复工程文件并执行正式 Application Build / Flash / RTT 验证。
+该流程不会把 Metadata Baseline board test 加入正式 `OTA_APP.uvprojx`，流程结束后会恢复工程文件并执行正式 Application Build / Flash / RTT 验证。完整证据写入 `06_Output/Logs/S09_Metadata_Baseline/`。
 
 ### 6. YMODEM 固件发送
 
@@ -305,4 +304,4 @@ Host Test/Contract Test 只能验证脚本、协议和解析逻辑；真实板�
 完整 Core Dump、GCC/CMake 构建迁移和 FreeRTOS 全任务栈解析
 ```
 
-S09/S10 的 Bootloader 内部 Flash 安装、Trial / Confirm / Rollback 已在固件和阶段验证文档中实现；本目录提供构建、烧录、RTT、GDB、Factory Restore 和 YMODEM 等工具入口，但工具链动作成功不等价于 S10 硬件闭环通过。当前 S10 仍处于 `READY_FOR_VERIFICATION`，剩余 Trial 断电、Rollback 和 LED/LCD 人工验收将在后续会话继续。
+ S09/S10 的 Bootloader 内部 Flash 安装、Trial / Confirm / Rollback 已在固件和阶段验证文档中实现；本目录提供构建、烧录、RTT、GDB、External Loader、Metadata Baseline 和 YMODEM 等工具入口，但工具链动作成功不等价于 S10 硬件闭环通过。当前 S10 仍处于 `READY_FOR_VERIFICATION`，剩余 Trial 断电、Rollback 和 LED/LCD 人工验收将在后续会话继续。

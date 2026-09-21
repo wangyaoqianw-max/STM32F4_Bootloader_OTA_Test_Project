@@ -5,7 +5,7 @@
 - Stage: S10_Trial_Confirm_Rollback
 - Stage status: READY_FOR_VERIFICATION
 - Test role: Verification Role
-- Plan status: REVISED_ON_2026-09-20
+- Plan status: REVISED_ON_2026-09-21
 - Created: 2026-09-20
 - Scope: 本阶段尚未形成正式证据的预烧录、板级 Trial / Rollback / 视觉验收，以及完成后的回归和证据整理
 - Formal design: design.md
@@ -52,7 +52,7 @@
 | 编号 | 测试批次 | 当前状态 | 目标证据 |
 |---|---|---|---|
 | S10-00 | 测试前只读预检 | 未执行 | 工具、端口、Probe、输出目录和测试资产可用 |
-| S10-01 | Known-Good Factory Baseline | BLOCKED；预烧录后 W25Q64 内容未被独立证明，禁止进入 F1 | 预烧录写入、复位保持、Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
+| S10-01 | Known-Good Baseline | BLOCKED；旧 YMODEM 预烧录流程已废弃，新的 External Loader + Metadata Baseline 尚未完成 | Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
 | S10-02 | Trial 软件复位回滚 | 未形成正式 PASS | Confirm 前 TRIAL 复位后自动 Rollback |
 | S10-03 | Trial IWDG 复位回滚 | 只有无 Trial 边界的 IWDG 证据 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
 | S10-04 | Trial 真实断电回滚 | PENDING | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
@@ -64,7 +64,7 @@
 
 S10-02 至 S10-04 必须分别执行。一个复位原因的 PASS 不得替代另外两个复位原因的证据。
 
-本轮新增的前置门禁：S10-01 必须先完成“预烧录物理写入验证”，再允许进入 S10-02。临时 Factory Restore 固件自己的 `baseline PASS`、YMODEM Sender `exit 0`、工具包装器 `[FACTORY][PASS]` 均不能单独证明 W25Q64 已写入并保持。
+本轮新增的前置门禁：S10-01 必须先完成 External Loader 的物理写入/读回，再由 Metadata Baseline 临时固件写入并校验 AT24C02，才允许进入 S10-02。旧 YMODEM 预烧录流程及其 Sender 结果不再作为入口证据。
 
 ## 3. 固定状态模型
 
@@ -132,16 +132,18 @@ F2  next boot restarts restore from confirmed Slot
 
 run-id 使用本轮日期时间，case-id 使用本方案编号。工具可能写入固定名称的根日志；每次动作完成后立即复制到当前批次目录，并记录命令、开始/结束时间、退出码和目标状态。未复制前不得开始下一次会覆盖同名输出的工具动作。
 
-### 4.4 Factory Restore 传输超时门禁
+### 4.4 External Loader + Metadata Baseline 门禁
 
-Factory Restore 的 Python Sender 自身等待窗口与外层工具进程超时必须同时满足：
+旧的 Factory Restore/YMODEM W25Q64 预烧录流程已删除。S10-01 固定使用：
 
 ~~~text
-Sender --timeout <N>
-外层 Invoke-ToolkitProcess timeout > Sender 等待窗口 + 写入/结束 Header 裕量
+External Loader 预烧录 Slot A
+→ External Loader 独立读回 Header/Payload
+→ Metadata Baseline 临时固件只读验证 W25Q64
+→ AT24C02 Metadata 写入、回读和基线校验
 ~~~
 
-当前已发现 `factory_restore.ps1` 为 Sender 设置 `--timeout 120`，而统一进程入口默认 `60000 ms`。在该配置修正并验证前，Factory Restore 不得作为 F0 建立入口；尤其不能把“数据块已发完但结束 Header 未完成”的 Sender 日志记为传输成功。Header-last 约束要求在结束 Header ACK、目标 `ota_firmware_sink_end()` 完成并独立读回 A Header 后，才可判定 Slot A 有效。
+External Loader 通过 `W25Q64_STM32F411.stldr` 写入 Payload `0x90001000`，再写入 Header `0x90000000`；Metadata Baseline 不擦除或写入 W25Q64。只有完整取得 Slot A、Slot B、Metadata 的结果后，才能建立 F0。
 
 ## 5. 总执行顺序
 
@@ -184,7 +186,7 @@ S10-09 最终自动化回归、报告、交接
 
 - 已读取 PROJECT_CONTEXT.md、S10 design.md、implementation_plan.md、handoff.md、本方案和当前验证报告；
 - 当前分支、HEAD 与交接记录一致；
-- 用户尚未要求执行 Factory Restore 或电源操作，本批次不改变目标状态。
+- 用户尚未要求执行 Metadata Baseline 或电源操作，本批次不改变目标状态。
 
 #### 固定动作
 
@@ -218,18 +220,18 @@ Test-Path .\06_Output\Logs\toolkit_jlink.lock
 
 #### 破坏性确认点
 
-该批次会清空并重写 Internal APP、External Flash Slot A/B 和 AT24C02 Metadata。没有现场确认时只准备命令，不执行：
+该批次会重写 External Flash Slot A、AT24C02 Metadata 和 Internal APP。没有现场确认时只准备命令，不执行：
 
 ~~~powershell
-05_Tools\toolkit.bat factory restore -ConfirmDestructive -Image .\06_Output\Packages\app_v1.0.img -Port COM9 -Baud 115200
+05_Tools\toolkit.bat metadata baseline -ConfirmDestructive -Image .\06_Output\Packages\app_v1.0.img
 ~~~
 
 #### 固定动作
 
 1. 关闭所有额外 J-Link 客户端，保留串口和目标电源；
-2. 执行上面的 Factory Restore，但将“临时接收固件完成 YMODEM/基线校验”和“正式 Application 烧录/复位”视为两个独立阶段；
-3. 在临时接收固件报告 YMODEM 完成后、任何正式 Application 烧录或目标复位前，释放 RTT/J-Link 客户端，使用独立 GDB/AXF 读取 W25Q64；
-4. 保存每个检查点的 A/B 原始 64-byte Header、A `+0x1000` 载荷起点、JEDEC ID、Header 解析结果、Payload CRC/Metadata 和时间戳；
+2. 执行上面的 Metadata Baseline；其内部先调用 External Loader 预烧录并读回，再启动临时固件写入 AT24C02；
+3. 在临时固件报告 Metadata baseline PASS 后、正式 Application 烧录或目标复位前，保存 External Loader 和 RTT 证据；
+4. 保存 A/B 原始 64-byte Header、A `+0x1000` 载荷起点、JEDEC ID、Header 解析结果、Payload CRC/Metadata 和时间戳；
 5. 只有检查点 C1 通过后，才允许烧录正式 Application；烧录/复位后立即执行检查点 C2，不得先开始 Trial；
 6. 读取并记录 Bootloader/应用 RTT 中的 Slot、Metadata、版本、CRC/vector 和启动状态；
 7. 现场记录 v1.0 LED、LCD 初始画面和正常运行状态。
@@ -357,13 +359,13 @@ Checkpoint 必须在 firmware_confirm() 事务执行前或等价的 Confirm 请�
 
 #### 固定动作
 
-1. 从 F0 重新安装 v1.1，并完成与 S10-02 相同的 Confirm 前 checkpoint；
-2. 确认所有 J-Link/GDB 客户端已退出，避免电源动作时残留锁和无效会话；
-3. 记录断电前时间、Metadata checkpoint 和 RTT 文件名；
-4. 关闭目标板电源，保持足够时间使 MCU 完全掉电；
-5. 启动 RTT/GDB 采集，再恢复目标板电源；
-6. 保存上电后的 Bootloader RTT、Application RTT、Reset Cause 和最终 Metadata；
-7. 断电只允许发生在 Confirm 前 checkpoint 之后；若已经看到 Confirm commit，取消本次用例，不得改名为 Trial power-cycle PASS。
+1. 先恢复 F0：使用新的 External Loader 建立 Slot A v1.0、Slot B 空白和 Metadata `confirmed=A/pending=NONE/upgrade=NONE`，并独立读回 A/B；旧 Factory Restore 不再作为 F0 入口；
+2. 在第一次 PA0 前同时启动 RTT 监听和 YMODEM Sender；Sender 必须自动等待初始 `C`，不能等人工回复后才打开串口；
+3. 提醒现场人员按第一次 PA0；测试编排继续运行并解析 YMODEM/RTT，发送达到 `READY_TO_INSTALL` 后才提醒第二次 PA0；
+4. 第二次 PA0 后保持监听，确认 v1.1 已启动；现场人员只依据当前轮次的状态提示，在 v1.1 LED 闪 3～4 下时断电；不得用固定延时或对话反应时间代替状态判断；
+5. 断电期间不关闭测试编排；现场人员恢复电源后，编排自动保存上电后的 Bootloader RTT、Application RTT、Reset Cause 和最终 Metadata；
+6. RTT 监听器必须能在 Application RTT 控制块 `0x2000DE04` 与 Bootloader RTT 控制块 `0x200000E0` 之间自动切换或并行归档；单个固定地址的 RTT Logger 不能声称覆盖跨复位/掉电的完整 Bootloader 链；
+7. 断电只允许发生在确认尚未提交的窗口之后；若已经看到 Confirm commit，取消本次用例，不得改名为 Trial power-cycle PASS。
 
 #### 通过判据
 
@@ -541,7 +543,7 @@ RTT or GDB authoritative evidence
 在真正执行 S10-01 前，现场确认以下事项：
 
 - [ ] 已阅读本方案并同意按 S10-00 → S10-09 顺序执行；
-- [ ] 已确认 Factory Restore 会清空 Internal APP、Slot A/B 和 Metadata；
+- [ ] 已确认新的 External Loader F0 会重写 Slot A、擦空 Slot B，Metadata baseline 会写入 AT24C02；旧 Factory Restore 不作为本阶段入口；
 - [ ] 已确认是否允许真实断电测试；
 - [ ] 已确认是否具备 Rollback 中断点的稳定注入/观测能力；
 - [ ] 已确认 COM9、J-Link、目标电源和 LED/LCD 均可用；

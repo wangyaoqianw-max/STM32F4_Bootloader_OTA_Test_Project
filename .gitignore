@@ -21,6 +21,8 @@
 03_Firmware/**/MDK-ARM/JLinkLog.txt
 03_Firmware/**/Debug/
 03_Firmware/**/Release/
+05_Tools/ExternalLoader/**/MDK-ARM/Objects/
+05_Tools/ExternalLoader/**/MDK-ARM/Listings/
 
 # Generated outputs
 06_Output/LogicAnalyzer/*

@@ -21,7 +21,7 @@
 - Verification Follow-up Commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - Verification Commit: `Pending final consolidated board verification`
 - Review Commit: `Not created yet`
-- Updated At: `2026-09-20`
+- Updated At: `2026-09-21`
 
 ## Current Role
 
@@ -53,6 +53,18 @@ leaving temporary test code in the final production build
 2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 和 direct no-feed IWDG reset 证据已采集。当前硬件仍未完成 Trial Confirm 前断电和 Rollback；最新 Factory Restore 重试再次暴露 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。
 
 一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
+
+## 2026-09-21 S10-04 Trial Power-Cycle Result
+
+本轮执行 `20260921-121213`，流程已改为：External Loader F0 → RTT/Sender 预启动 → 第一次 PA0 → 解析 `READY_TO_INSTALL` → 第二次 PA0 → v1.1 LED 窗口断电 → 上电核验。
+
+- F0：新的 External Loader 完成 Slot A v1.0 物理读回校验，Slot B 擦空，AT24C02 Metadata baseline PASS。
+- OTA：COM9/115200 发送 `84680` bytes、83 blocks、retries 2、exit 0；RTT 到 `OTA state=4 / 84680/84680 / error=0`。
+- 现场：用户观察到 v1.1 启动后断电，上电后 LED 频率恢复 v1.0。
+- 文件核验：`06_Output/Logs/S10/20260921-121213/F3/validation.txt` 显示内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 完全匹配；上电后 Application RTT 初始化均为 0。
+- 证据边界：本轮单个 RTT Logger 固定在 Application 地址 `0x2000DE04`，未能跨掉电捕获 Bootloader 地址 `0x200000E0`；因此本轮是 `PARTIAL`，不能替代完整 `TRIAL → ROLLBACK → restore → NONE` 链证据。
+
+下一步不是重复依赖 LED 计数，而是先完成双 RTT 地址自动监听/归档，再重复 S10-04；在此之前硬件验证保持 `PARTIAL`，不关闭阶段。
 
 ## S10 Test Plan Execution Stop
 

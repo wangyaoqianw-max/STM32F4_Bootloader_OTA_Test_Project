@@ -1,0 +1,15 @@
+LR_INFO 0x00000000 0x00000100
+{
+    ER_INFO 0x00000000 0x00000100
+    {
+        Dev_Inf.o (+RO)
+    }
+}
+
+LR_LOADER 0x20000004 0x0001FFFC
+{
+    ER_LOADER 0x20000004 0x0001FFFC
+    {
+        Loader_Src.o (+RO)
+    }
+}

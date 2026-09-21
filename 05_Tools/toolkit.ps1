@@ -207,11 +207,11 @@ try {
             }
             $workflowPath = Join-Path $toolsRoot "Workflows\S08_BootloaderFoundation\sync_generated.ps1"
         }
-        "factory" {
-            if ($Arguments.Count -lt 1 -or $Arguments[0].ToLowerInvariant() -ne "restore") {
-                throw "factory command must be: factory restore [options]"
+        "metadata" {
+            if ($Arguments.Count -lt 1 -or $Arguments[0].ToLowerInvariant() -ne "baseline") {
+                throw "metadata command must be: metadata baseline [options]"
             }
-            $workflowPath = Join-Path $toolsRoot "Workflows\Application\factory_restore.ps1"
+            $workflowPath = Join-Path $toolsRoot "Workflows\Application\metadata_baseline.ps1"
             $workflowArguments = @($Arguments | Select-Object -Skip 1)
         }
         "flash" {

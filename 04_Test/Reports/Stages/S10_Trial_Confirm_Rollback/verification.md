@@ -10,7 +10,7 @@
 - Implementation Commits: `dfb012b`, `cd15bad`, `e245e21`, `26ce0ee`, `1ae57ef`, `d1b08b2`, `a43086c`, `352ee62`, `c237361`, `54c9827`, `b40d1b4`, `a5295c2`
 - Verification follow-up commits: `5ca2d14`, `f0e5d88`, `25d2acc`, `0ee7f5d`, `ba6ce6f`, `7eab4cc`
 - Code Verification: `PASS`
-- Hardware Verification: `PENDING`
+- Hardware Verification: `PARTIAL`
 
 ## Coding Standard
 
@@ -100,6 +100,19 @@ Display backlight on result: 0
 根因确定为 Factory Restore 的外层进程超时：`factory_restore.ps1` 给 Sender 设置 `--timeout 120`，但统一 `Invoke-ToolkitProcess` / `Complete-ToolkitProcess` 默认只等待 `60000 ms`。Sender 在结束 Header 尚未完成时被外层进程杀掉；而 `ota_firmware_sink` 使用 Header-last，故形成“Payload 已写、Slot A Header 未提交”的半成品。后续 Bootloader `confirmed prevalidate` 失败是该半成品的下游表现，不是 Rollback 擦除了 A。
 
 因此，`baseline PASS`、Sender 已完成数据块、Sender/工具退出码以及一键流程 `[FACTORY][PASS]` 均不足以建立 F0。必须在结束 Header ACK 后独立读回 A/B Header 和 A `+0x1000`，并在正式 Application 烧录/复位后再次复读，才能进入 S10-02。
+
+### S10-04 Trial Power-Cycle Execution (Run `20260921-121213`)
+
+本轮按修正后的顺序执行：先用新的 External Loader 恢复 F0，再预启动 RTT 与 YMODEM Sender，解析完成后提醒第二次 PA0，随后在 v1.1 LED 闪动窗口执行真实断电。旧 Factory Restore 没有参与本轮 F0。
+
+- F0：`PASS`。External Loader 目录 `06_Output/Logs/S10/20260921-121213/F0/ExternalLoader/` 中 Slot A Header/Payload 读回 SHA256 与源文件一致；Metadata 原始 RTT 报告 `baseline PASS`；正式 Application 启动 RTT 通过。
+- OTA：`PASS`。COM9/115200 YMODEM 完成 `84680` bytes、83 blocks、retries 2、exit 0；实时 RTT 在第二次 PA0 前达到 `OTA state=4`、`progress=84680/84680`、`error=0`。
+- v1.1 启动：`OBSERVED`。第二次 PA0 后实时 RTT 重新出现 Application 初始化和 `Startup state=1 main=0 ota=0 display=0`；本轮没有用固定延时判断窗口。
+- 真实断电与视觉结果：`PASS for observed behavior`。用户观察到 v1.1 运行后 LED 闪动，断电上电后 LED 频率恢复为 v1.0；LCD/Bootloader 中间过程未在本轮重新完整记录。
+- 上电后内部镜像：`PASS`。`06_Output/Logs/S10/20260921-121213/F3/validation.txt` 记录从 `0x08010000` 读回的 `81348` bytes 与 v1.0 payload 逐字节匹配，`FIRST_MISMATCH=-1`；上电后 Application RTT 初始化结果均为 `0`。
+- Bootloader 中间证据：`MISSING`。Application RTT 控制块为 `0x2000DE04`，Bootloader RTT 控制块为 `0x200000E0`；保持单个固定地址的 J-Link RTT Logger 不能跨复位/掉电自动切换，因此没有取得 `TRIAL → ROLLBACK → restore → NONE` 的完整 Bootloader RTT 链。原始现场边界记录在 `06_Output/Logs/S10/20260921-121213/F1_F2_live_observation.md`。
+
+本轮结论为 `PARTIAL`：最终硬件行为和 v1.0 内部镜像读回支持“已回滚到 v1.0”，但按照 S10-04 通过判据，缺少 Bootloader 决策、Confirmed restore、CRC/vector 和 Metadata 最终状态的连续证据，不能升级为完整 Rollback PASS。下一轮必须先修正 RTT 监听编排，再重复该用例；不得依靠 LED 闪烁次数单独补齐中间证据。
 
 ## Board Verification Boundary
 

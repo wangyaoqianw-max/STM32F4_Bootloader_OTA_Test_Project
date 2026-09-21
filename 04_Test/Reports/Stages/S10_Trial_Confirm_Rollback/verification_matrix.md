@@ -63,6 +63,17 @@ The root cause was isolated in `06_Output/Logs/S10/20260920-continue-root-cause/
 
 The revised S10 plan adds independent physical checkpoints C0–C5. C1 is required after YMODEM/end-Header commit and before formal Application flash; C2 is required immediately after formal Application flash/reset; C3–C5 protect Slot A across B receive, Bootloader PENDING→TRIAL, and pre-Confirm B runtime. No Trial/Rollback test may start without C1 and C2.
 
+## S10-04 Execution Result (Run `20260921-121213`)
+
+- F0 Known-Good：`PASS`。新的 External Loader 完成 Slot A v1.0 Header/Payload 写入和 SHA256 读回；Slot B Header 擦空；AT24C02 Metadata 基线报告 `baseline PASS`。
+- First PA0 / YMODEM：`PASS`。COM9/115200 完成 `84680` bytes、83 blocks、retries 2、exit 0；实时 RTT 达到 `OTA state=4`、`84680/84680`、`error=0`。
+- Second PA0 / Trial start：`OBSERVED`。实时 RTT 重新出现 Application 初始化，用户确认 v1.1 LED 运行窗口。
+- Trial power-cycle visual result：`PASS for observed behavior`。用户在 v1.1 LED 闪动后断电上电，肉眼观察到 LED 频率恢复 v1.0。
+- Final internal image：`PASS`。`06_Output/Logs/S10/20260921-121213/F3/validation.txt` 证明从 `0x08010000` 读回 `81348` bytes 与 v1.0 payload 逐字节相同，`FIRST_MISMATCH=-1`；上电后 Application RTT 初始化结果均为 `0`。
+- Bootloader chain：`MISSING`。Application RTT 控制块为 `0x2000DE04`，Bootloader 为 `0x200000E0`；固定地址 Logger 未能跨掉电自动切换，所以没有 `TRIAL → ROLLBACK → restore → NONE` 的连续 Bootloader 证据。
+
+本轮整体分类：`PARTIAL`。硬件最终行为支持已回滚到 v1.0，但不能仅凭最终镜像和 LED 现象替代 Bootloader 中间状态证据。下一轮需先实现双 RTT 地址的自动监听/归档，再重复 S10-04。
+
 ## Task 3 Evidence
 
 - Strict Lifecycle API: `firmware_lifecycle_confirm(firmware_storage_t *)`; it reloads latest Metadata, validates the Trial/pending invariants, performs full pending-image validation, reuses the existing atomic Metadata commit, and reloads Metadata for field verification.
