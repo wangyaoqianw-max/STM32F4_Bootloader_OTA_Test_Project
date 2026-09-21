@@ -73,14 +73,38 @@ function Get-ConfiguredPython {
     return "python"
 }
 
+function Get-YmodemProcessTimeoutMilliseconds {
+    param(
+        [string[]]$Arguments = @()
+    )
+
+    $protocolTimeoutSeconds = 1.0
+    for ($index = 0; $index -lt ($Arguments.Count - 1); $index++) {
+        if ([string]$Arguments[$index] -ne "--timeout") {
+            continue
+        }
+
+        $parsedTimeout = 0.0
+        if ([double]::TryParse([string]$Arguments[$index + 1], [ref]$parsedTimeout) -and
+            ($parsedTimeout -gt 0.0)) {
+            $protocolTimeoutSeconds = $parsedTimeout
+        }
+        break
+    }
+
+    $protocolWindowMilliseconds = [math]::Ceiling(($protocolTimeoutSeconds * 1000.0) + 30000.0)
+    return [int][math]::Max(300000.0, $protocolWindowMilliseconds)
+}
+
 function Invoke-ExternalToolkitCommand {
     param(
         [string]$FilePath,
         [string[]]$CommandArguments = @(),
-        [string]$WorkingDirectory = $toolsRoot
+        [string]$WorkingDirectory = $toolsRoot,
+        [int]$TimeoutMilliseconds = 60000
     )
 
-    $result = Invoke-ToolkitProcess -FilePath $FilePath -Arguments $CommandArguments -WorkingDirectory $WorkingDirectory
+    $result = Invoke-ToolkitProcess -FilePath $FilePath -Arguments $CommandArguments -WorkingDirectory $WorkingDirectory -TimeoutMilliseconds $TimeoutMilliseconds
     if (-not [string]::IsNullOrEmpty([string]$result.Stdout)) {
         Write-Host ([string]$result.Stdout).TrimEnd()
     }
@@ -147,7 +171,8 @@ function Invoke-Ymodem {
     if (-not (Test-Path -LiteralPath $sender -PathType Leaf)) {
         throw "YMODEM sender not found: $sender"
     }
-    return Invoke-ExternalToolkitCommand -FilePath (Get-ConfiguredPython -Configuration $configuration) -CommandArguments (@($sender) + $YmodemArguments) -WorkingDirectory $configuration.PROJECT_ROOT
+    $processTimeoutMilliseconds = Get-YmodemProcessTimeoutMilliseconds -Arguments $YmodemArguments
+    return Invoke-ExternalToolkitCommand -FilePath (Get-ConfiguredPython -Configuration $configuration) -CommandArguments (@($sender) + $YmodemArguments) -WorkingDirectory $configuration.PROJECT_ROOT -TimeoutMilliseconds $processTimeoutMilliseconds
 }
 
 function New-WorkflowArguments {
