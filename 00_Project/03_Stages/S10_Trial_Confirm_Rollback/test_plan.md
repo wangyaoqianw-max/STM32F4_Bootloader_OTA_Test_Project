@@ -51,15 +51,15 @@
 
 | 编号 | 测试批次 | 当前状态 | 目标证据 |
 |---|---|---|---|
-| S10-00 | 测试前只读预检 | 未执行 | 工具、端口、Probe、输出目录和测试资产可用 |
-| S10-01 | Known-Good Baseline | BLOCKED；旧 YMODEM 预烧录流程已废弃，新的 External Loader + Metadata Baseline 尚未完成 | Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
+| S10-00 | 测试前只读预检 | PASS | 工具、端口、Probe、输出目录和测试资产可用 |
+| S10-01 | Known-Good Baseline | PASS；新的 External Loader + Metadata Baseline 已完成独立物理读回 | Slot A v1.0、Slot B 状态、Metadata NONE、Internal APP、LED/LCD |
 | S10-02 | Trial 软件复位回滚 | 未形成正式 PASS | Confirm 前 TRIAL 复位后自动 Rollback |
 | S10-03 | Trial IWDG 复位回滚 | 只有无 Trial 边界的 IWDG 证据 | Confirm 前 IWDG reset cause、Rollback、恢复结果 |
-| S10-04 | Trial 真实断电回滚 | PENDING | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
+| S10-04 | Trial 真实断电回滚 | 功能行为 PASS；正式 Bootloader 中间链 PARTIAL | Confirm 前断电、上电后 Rollback 和 v1.0 恢复 |
 | S10-05 | Rollback 完成链 | PENDING | Bootloader RTT/GDB、CRC/vector、ROLLBACK → NONE、Metadata 保持 |
 | S10-06 | Rollback 中断后从头恢复 | PENDING / NOT_EXECUTED | 破坏性阶段复位/断电后重新从 confirmed Slot 恢复 |
 | S10-07 | Known-Good Image destructive gate | 板级证据未形成 | confirmed Header/CRC/Version 无效时，Internal APP 不得擦除 |
-| S10-08 | LED/LCD 现场验收 | PENDING / NOT_EXECUTED | OTA、Trial、Rollback、恢复后的可见现象 |
+| S10-08 | LED/LCD 现场验收 | PASS；本轮恢复后的 LED/LCD 观察已通过，其余子场景未单独执行 | OTA、Trial、Rollback、恢复后的可见现象 |
 | S10-09 | 最终全回归和证据收口 | 待上述批次完成 | 自动化回归、Build、差异检查、报告和交接一致 |
 
 S10-02 至 S10-04 必须分别执行。一个复位原因的 PASS 不得替代另外两个复位原因的证据。
@@ -365,11 +365,16 @@ Checkpoint 必须在 firmware_confirm() 事务执行前或等价的 Confirm 请�
 4. 第二次 PA0 后保持监听，确认 v1.1 已启动；现场人员只依据当前轮次的状态提示，在 v1.1 LED 闪 3～4 下时断电；不得用固定延时或对话反应时间代替状态判断；
 5. 断电期间不关闭测试编排；现场人员恢复电源后，编排自动保存上电后的 Bootloader RTT、Application RTT、Reset Cause 和最终 Metadata；
 6. RTT 监听器必须能在 Application RTT 控制块 `0x2000DE04` 与 Bootloader RTT 控制块 `0x200000E0` 之间自动切换或并行归档；单个固定地址的 RTT Logger 不能声称覆盖跨复位/掉电的完整 Bootloader 链；
-7. 断电只允许发生在确认尚未提交的窗口之后；若已经看到 Confirm commit，取消本次用例，不得改名为 Trial power-cycle PASS。
+7. 在开始运行前同时设置两个 GDB 断点：Application 的 `app_ota_worker_handle_confirm`（确认事务前）和 Bootloader 的 `boot_main_validate_and_jump`（当前 map 约为 `0x0800329D`）；Application 断点命中后切换 RTT 到 Bootloader 控制块，Bootloader 断点命中后先读取 RTT，再通过同一 GDB 会话发送 `continue`；
+8. 断电只允许发生在确认尚未提交的窗口之后；若已经看到 Confirm commit，取消本次用例，不得改名为 Trial power-cycle PASS。
 
 #### 通过判据
 
 断电前权威状态为 TRIAL，上电后依次看到 Rollback 决策、Confirmed restore、CRC/vector PASS、NONE，最终状态为 F3。只看到 Application 重新启动或 trial=0 不足以通过。
+
+#### 2026-09-21 执行补充
+
+本轮 `20260921-141517-breakpoint` 已验证 Application 确认前断点可以稳定命中，但仅切换 RTT 地址仍可能错过执行很快的 Bootloader 日志；后续双断点尝试也确认掉电后硬件断点不持久。该观测链缺口已记录为正式证据 `PARTIAL`，用户已决定停止本批次板测，不再安排新的断点运行或依靠人工反应时间打开 RTT。
 
 ### S10-05：完整 Rollback 链和状态不变量
 
@@ -551,3 +556,16 @@ RTT or GDB authoritative evidence
 - [ ] 已确认 S09 Deferred 和 S05C follow-up 不混入 S10 PASS。
 
 本清单未确认前，本轮只能执行 S10-00 只读预检，不能执行破坏性批次。
+
+## 10. 本轮停止与剩余项（2026-09-21）
+
+Project Owner 决定停止继续板级测试，并按真实现象接受 S10-04 的功能行为：确认前断电后设备回滚，重新上电后恢复 v1.0 LED 闪烁频率，LCD 显示正常。该结论与内部 v1.0 镜像、External Loader Slot A 读回结果一致。
+
+本轮不再新增临时 Bootloader 延时或其他测试钩子。正式证据仍按以下边界记录：
+
+- S10-02 Trial 软件复位回滚：未形成正式板级闭环；
+- S10-03 Trial IWDG 复位回滚：已有独立 IWDG 证据，但未在 Confirm 前 Trial 边界完成闭环；
+- S10-04/S10-05：功能行为已接受，但掉电后 GDB 硬件断点丢失，Bootloader RTT 连续链未捕获；
+- S10-06：Rollback 破坏性阶段中断后从头恢复，未执行；
+- S10-07：无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁，未执行；
+- S10-09：自动化回归和文档收口可完成，但正式 S10 硬件验证保持 `PARTIAL`，不得将阶段标记为 `CLOSED`。

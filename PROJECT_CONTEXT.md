@@ -71,7 +71,11 @@ S10 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归�
 
 2026-09-20 根因隔离进一步确认：W25Q64 直接写入和复位保持正常；Factory Restore 的 Sender 在所有数据块 ACK 后停在 EOT/结束 Header 阶段，外层 60 s 进程超时先于 Sender 的 120 s 等待窗口终止进程。Header-last 使 Slot A 留下 Payload 已写、Header 全 `0xFF` 的无效半成品，后续 Rollback 的 confirmed prevalidate 失败是下游现象。S10-01 继续 `BLOCKED`；必须先修正/验证 Factory Restore 超时，并按 C0～C5 独立读取 W25Q64 后才能继续。
 
-2026-09-21 已使用新的 External Loader 建立 F0，完成 v1.1 YMODEM、第二次 PA0、Trial 窗口真实断电/上电。用户观察到 LED 频率恢复为 v1.0，且内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配；本轮硬件行为记录为 `PARTIAL`，因为固定地址 RTT Logger 未捕获 Bootloader `TRIAL → ROLLBACK → restore → NONE` 中间链。下一步先补双 RTT 地址自动监听/归档，再重复 S10-04；阶段仍为 `READY_FOR_VERIFICATION`。
+2026-09-21 已使用新的 External Loader 建立 F0，完成 v1.1 YMODEM、第二次 PA0、确认前断点和 Trial 窗口真实断电/上电。用户观察到 LED 频率恢复为 v1.0、LCD 显示正常；内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配，LED/LCD 恢复观察记为 `PASS`。本轮硬件行为整体仍为 `PARTIAL`，因为未预置 Bootloader `boot_main_validate_and_jump` 断点，固定地址 RTT Logger 未捕获 `TRIAL → ROLLBACK → restore → NONE` 中间链。下一轮必须同时设置 Application 确认前断点和 Bootloader 断点；Bootloader 断点命中后先读取 `0x200000E0` RTT，再由同一 GDB 会话 `continue`。
+
+同日重试 `20260921-143727` 中，External Loader Slot A Header/Payload 读回通过，但 Metadata baseline 被 Bootloader `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init` 阻塞，未进入 OTA。硬复位保持 CPU 停止时读到 `GPIOB_IDR=0x0000F757`，PB7 为低，确认当前阻塞在 AT24C02 总线 Idle 检查；该重试不改变 Slot A 预烧录读回 PASS，阶段仍为 `READY_FOR_VERIFICATION`。
+
+2026-09-21 用户决定停止继续 S10 板测，并接受确认前断电后的功能行为：设备回滚到 v1.0，LED 恢复 v1.0 闪烁频率，LCD 正常显示。后续 `20260921-150308` 已完成 Metadata baseline PASS；`20260921-150545` 和 `20260921-151853` 只暴露出掉电清除 GDB 硬件断点、GDB Python 不可用和主机重挂过晚等观测链限制。功能接受记为 `PASS`，代码验证仍为 `PASS`，正式硬件验证保持 `PARTIAL`；未加入临时 Bootloader 延时钩子，S10 不标记 `CLOSED`。
 
 S06 已建立三线程 Application Runtime / Concurrency Model，并完成 ST7789/LCD 板级适配，为 S07 OTA Service V1 提供稳定的任务、资源所有权和并发基础。
 
@@ -538,7 +542,7 @@ SPI2/W25Q64 与 PB6/PB7 软件 I2C GPIO 已预配置，但 S08 不实现 W25Q64�
 
 ## Next Action
 
-S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL / PENDING`。独立测试方案已按根因隔离结果修订；当前 `S10-00` 通过，`S10-01` 因 Factory Restore 外层 60 s 超时导致 Header-last 未提交而 `BLOCKED`，正式固件恢复确认通过。下一步只修正并验证 Factory Restore 的超时配置，按 C0～C2 独立读取预烧录后的 W25Q64；C1、C2 均通过后再按 `S10-02` 起顺序执行 Trial/Rollback/视觉场景。不得跳过基线或随机切换用例。S09 Deferred Fault Injection 继续保持原阶段归属。
+S10 Design 与 Implementation Plan 均已冻结，Task 0→10 已完成。2026-09-20 已重新通过自动化 Host/Contract、Python 回归和 Application/Bootloader Clean Build；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据仍有效，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据也已取得，代码验证为 `PASS`，硬件验证为 `PARTIAL`。独立测试方案已按根因隔离结果修订；新的 External Loader F0 和 Metadata baseline 已通过。`20260921-141517-breakpoint` 已完成确认前断点保护回滚和 LED/LCD 视觉 `PASS`；后续双断点尝试确认掉电会清除 GDB 硬件断点，但未取得 Bootloader 原始 RTT 链。用户已决定停止继续板测并接受功能行为通过；下一步是 Review Role 对剩余证据做关闭决策，不再安排本批次板测。S09 Deferred Fault Injection 继续保持原阶段归属。
 
 ## S09 Firmware Installation Current Design
 

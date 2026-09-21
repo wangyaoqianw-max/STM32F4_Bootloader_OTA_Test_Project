@@ -8,7 +8,7 @@
 - Plan Baseline: `651b3001b4c23cf4162e3367a91ae43307207bce`
 - Actual Clean Execution Baseline: `79b95d1f4681c2f7b5f961785079a112a3c62492`
 - Remote Check at implementation start: `HEAD == origin/main`, ahead/behind `0/0`
-- Date: `2026-09-20`
+- Date: `2026-09-21`
 
 ## Baseline Evidence
 
@@ -21,16 +21,16 @@
 | Compatibility/core contracts | `05_Tools\Contracts\Compatibility`, `05_Tools\Contracts\Core` | PASS |
 | S04/S05/S07A Host tests | format, CRC, storage, YMODEM, receiver, startup | PASS |
 | S09 Host contracts | prevalidate, installer, metadata commit | PASS |
-| Factory Restore | destructive board operation | BLOCKED; failed batch wrote Slot A Payload but timed out before Header-last commit; F0 not established |
-| Ymodem board transport | real target v1.1 transfer | PASS for transfer/READY_TO_INSTALL; rollback transport pending |
-| RTT capture | real target capture | PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending |
-| GDB snapshot/fault on target | real target session | PARTIAL; Application idle and IWDG evidence captured; pre-Confirm Rollback breakpoint pending |
+| Factory Restore / baseline | destructive board operation | PASS for new External Loader Slot A + Metadata baseline; historical one-click timeout remains BLOCKED |
+| Ymodem board transport | real target v1.1 transfer | PASS for transfer/READY_TO_INSTALL; user-accepted power-cycle recovery PASS |
+| RTT capture | real target capture | PARTIAL; Application/post-power-cycle evidence captured; continuous Bootloader Rollback RTT pending |
+| GDB snapshot/fault on target | real target session | PARTIAL; Application confirm boundary captured; power loss removed hardware breakpoints before Bootloader chain |
 
 The current baseline contains no identified S10 production test hook or fault-injection macro. Temporary S10 hooks, if required later, must be isolated, marked `TEST ONLY`, compile-time disabled by default, and removed before the final clean build.
 
-## Latest Verification Pause
+## Latest Verification Decision
 
-2026-09-20 按用户要求暂停人工 S10 板测。临时 Trial 测试开关已移除，恢复脚本已删除，正式 Application 已重新构建、烧录并通过 RTT 启动冒烟：
+2026-09-21 用户决定停止继续 S10 板测，并接受确认前断电后的功能行为。临时 Trial 测试开关已移除，正式 Application 已重新构建、烧录；新的 External Loader 和 Metadata baseline 门禁已通过，正式 Application 可正常启动：
 
 ```text
 build application       PASS; 0 error / 0 warning
@@ -39,7 +39,7 @@ rtt application 8       PASS
 OTA/Application/Display init and initial render/backlight  PASS
 ```
 
-这只证明正式固件恢复到可正常启动状态，不替代 Trial 期间断电、Rollback、Rollback 中断恢复或 LED/LCD 肉眼验收。下一次新对话继续这些未完成项目；S10 硬件验证仍为 `PARTIAL / PENDING`。
+用户观察到确认前断电后设备回滚到 v1.0，LED 恢复 v1.0 频率且 LCD 正常，功能接受记为 `PASS`。由于掉电清除了 GDB 硬件断点，Bootloader RTT 连续链未捕获；S10 正式硬件验证仍为 `PARTIAL`，阶段不标记 `CLOSED`。
 
 ## Real Target Evidence Collected
 
@@ -129,7 +129,7 @@ The revised S10 plan adds independent physical checkpoints C0–C5. C1 is requir
 - Host fixture maintenance — commit `54c9827`; S04 test stubs now expose the current AT24C02/W25Q64 initializer contracts and the Metadata recovery fixture uses a distinct valid confirmed/pending Slot pair. The S07 UART test double uses independent test-owned TX storage instead of removed production struct fields. No production API or behavior was changed by this fixture commit.
 - Application Clean Build — `05_Tools\toolkit.bat build application` PASS; 0 errors, 0 warnings. Current map reports `Total ROM Size = 84616 bytes (82.63 KiB)`; observed heap-4 `.bss` 24576 bytes and startup stack 1024 bytes.
 - Bootloader Clean Build — `05_Tools\toolkit.bat build bootloader` PASS; 0 errors, 0 warnings. Map reports `Total ROM Size = 22372 bytes (21.85 KiB)`, below the 64 KiB limit.
-- Real-board automation — PARTIAL/PENDING: formal NONE startup, repeated v1.1 YMODEM transfer, Runtime Ready/strict Confirm state, IWDG Debug Freeze/resume and direct no-feed IWDG reset evidence were captured; Trial power-cycle before Confirm and Rollback evidence remain pending.
+- Real-board automation — PARTIAL: formal NONE startup, repeated v1.1 YMODEM transfer, Runtime Ready/strict Confirm state, IWDG Debug Freeze/resume, direct no-feed IWDG reset, Confirm-before-power-cut breakpoint and final v1.0 image readback were captured; the Bootloader Rollback RTT chain remains pending.
 - Automated follow-up on 2026-09-20 — PASS: S10 Host Tests, Python regressions, static contracts, Application build and Bootloader build were rerun; hardware claims were not upgraded from the existing partial evidence.
 - S05C result-file checks — fixture-level SPI/I²C project assertions PASS after parser normalization; no real target capture result file is available, so board capture remains `PENDING / NOT_EXECUTED`.
 - Temporary production test code — none added; all Task 8 checks use existing Host/Contract test assets. Generated build outputs and Python caches are not part of the commit; local untracked cache cleanup remains pending safe user-approved cleanup.
@@ -137,7 +137,7 @@ The revised S10 plan adds independent physical checkpoints C0–C5. C1 is requir
 ## Task 9 Evidence
 
 - Consolidated manual board checklist prepared for the Verification Role: Factory baseline, PA0/OTA transfer, Trial runtime/Confirm, Trial software reset, real power-cycle during Trial, rollback interruption recovery, LED/LCD observation and Reset Cause RTT evidence.
-- Hardware execution status — `PARTIAL / PENDING`: formal NONE GDB evidence, repeated v1.1 transfer through Runtime Ready/strict Confirm, recovery power-cycle, IWDG Debug Freeze and direct no-feed IWDG reset evidence are recorded; Trial power-cycle before Confirm, Rollback and visual board evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
+- Hardware execution status — `PARTIAL`: Confirm-before-power-cut, final v1.0 internal image readback and LED/LCD recovery observation are recorded; the visual item is `PASS`, while the Bootloader Rollback RTT/GDB chain and interrupted rollback evidence remain pending. Historical S04/S07/S09 logs are not reused as S10 evidence.
 - S05C real I2C/SPI result-file checks remain `PENDING / NOT_EXECUTED`; parser and fixture-level project assertions are complete.
 
 ## Task 10 Exit Evidence
@@ -148,7 +148,7 @@ The revised S10 plan adds independent physical checkpoints C0–C5. C1 is requir
 - Final static, Python and Host evidence is recorded in Task 8; the nonblocking Event Flags mapping fix is committed as `5ca2d14`, and the final formal build was rerun afterward.
 - Verification follow-up commit `0ee7f5d` fixes Factory Restore sequencing/recovery; its real-board retry exposed the historical Bootloader Soft-I2C startup fault described above.
 - Verification follow-up captured IWDG `PR/RLR/DBGMCU` values, a 12-second halted target with successful resume, and a direct no-feed GDB reset with `IWDG_RESET_HANDLER_HIT` / `RCC_CSR=0x24000000`. The observed reset-to-`trial=0` sequence is not counted as Rollback because the pre-Confirm boundary and Bootloader decision log were not captured.
-- Code verification — `PASS`; hardware verification — `PENDING`.
+- Code verification — `PASS`; hardware verification — `PARTIAL`.
 - Temporary production test code — `NONE`; no test-only production hook or forced-failure behavior remains in the final build.
 - S09 Deferred Fault Injection — not executed in S10; remains S09-owned and is not counted in this stage.
 
@@ -213,3 +213,27 @@ The category is the primary evidence path. A later board result never replaces a
 ## S09 Deferred Boundary
 
 The following remain S09-owned until actually executed: erase-after checkpoints, approximately 25%/50%/complete programming checkpoints, Internal CRC before/after, metadata body/commit-marker interruption, and power-loss/retry. If executed during the S10 board window, the evidence must be appended to `04_Test/Reports/Stages/S09_Firmware_Installation/verification.md` and must not be counted as new S10 functionality.
+
+## Latest S10-04 Boundary-Controlled Run
+
+Run `20260921-141517-breakpoint` established the following evidence: the Application Confirm boundary was halted at `0x080169C6` with `g_appMainConfirmRequested=1`; after the user power-cycle, internal Application `0x08010000` and External Slot A Header/Payload matched v1.0 exactly; the user observed v1.0 LED frequency and normal LCD output. The visual LED/LCD item is therefore `PASS`.
+
+The run did not set a Bootloader breakpoint before `boot_main_validate_and_jump`, so switching RTT to `0x200000E0` after the Application breakpoint did not preserve the fast Bootloader log. The formal S10-04 chain remains `PARTIAL`; later re-arm attempts are recorded as observation-method limitations, and the user decided not to schedule another board run.
+
+Run `20260921-143727` was stopped at the Metadata baseline gate: External Loader readback passed, but Bootloader RTT reported `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`. Later run `20260921-150308` completed the Metadata baseline with `baseline PASS`, so the earlier bus-state blocker is historical and does not invalidate the current F0.
+
+## S10-04 Functional Acceptance Decision (2026-09-21)
+
+- User/manual acceptance: `PASS` — confirm-before-power-cut behavior was observed; after power cycle the device returned to v1.0 LED cadence and normal LCD output.
+- Formal evidence: `PARTIAL` — Application confirm boundary and final image readback are present, but power loss cleared GDB hardware breakpoints and the Bootloader RTT chain was not captured.
+- Runs `20260921-150545` and `20260921-151853` are recorded as observation-method limitations, not software rollback failures; the latter also encountered unsupported GDB Python and a late host-side re-arm.
+- No temporary Bootloader delay or production test hook was added.
+
+## Remaining S10 Evidence
+
+- S10-02 Trial software-reset rollback: not formally closed.
+- S10-03 Trial IWDG-reset rollback: not formally closed at the Confirm-before boundary.
+- S10-05 complete Bootloader Rollback RTT/Metadata/CRC/vector chain: not captured.
+- S10-06 interrupted Rollback restart-from-zero: not executed.
+- S10-07 invalid confirmed-image destructive gate: board-level gate not executed.
+- S10-09 final report/review can be completed, but formal hardware verification remains `PARTIAL`.

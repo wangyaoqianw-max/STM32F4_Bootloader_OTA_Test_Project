@@ -34,9 +34,9 @@ Verification Role
 下一次会话允许继续：
 
 ```text
-resume the consolidated S10 board-verification checklist
-collect the remaining RTT / GDB / reset / power-cycle / visual evidence
-record Verification Role results and hand off to Review Role
+no further board test in this batch
+review the recorded functional acceptance and remaining evidence boundary
+decide whether the project accepts formal S10 hardware verification as PARTIAL
 ```
 
 当前禁止：
@@ -50,7 +50,7 @@ leaving temporary test code in the final production build
 
 ## Latest Verification Follow-up
 
-2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 和 direct no-feed IWDG reset 证据已采集。当前硬件仍未完成 Trial Confirm 前断电和 Rollback；最新 Factory Restore 重试再次暴露 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS。
+2026-09-20 已完成不依赖人工操作的补充验证：S10 五个 Host Test、Python 回归、静态 contract 和 Application/Bootloader Build 均通过。Factory Restore 工具修复已提交为 `0ee7f5d`。用户完成恢复性断电后，目标已重新进入 Application；IWDG 寄存器、12 秒 Debug Halt/Resume 和 direct no-feed IWDG reset 证据已采集。该历史补充不替代后续 S10-04 板测。
 
 一次重复 v1.1 传输后观察到 Trial runtime `trial=1 / readyMask=0x7 / STABLE`，随后工具复位进入 `trial=0`；由于没有在自动 Confirm 前停住，也没有读到 Bootloader Rollback 决策日志，该次不能算 Rollback PASS。恢复性断电不能替代 Trial 期间真实断电。
 
@@ -64,7 +64,23 @@ leaving temporary test code in the final production build
 - 文件核验：`06_Output/Logs/S10/20260921-121213/F3/validation.txt` 显示内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 完全匹配；上电后 Application RTT 初始化均为 0。
 - 证据边界：本轮单个 RTT Logger 固定在 Application 地址 `0x2000DE04`，未能跨掉电捕获 Bootloader 地址 `0x200000E0`；因此本轮是 `PARTIAL`，不能替代完整 `TRIAL → ROLLBACK → restore → NONE` 链证据。
 
-下一步不是重复依赖 LED 计数，而是先完成双 RTT 地址自动监听/归档，再重复 S10-04；在此之前硬件验证保持 `PARTIAL`，不关闭阶段。
+用户随后决定停止继续板测；本轮不再依赖 LED 计数补证，也不加入临时 Bootloader 延时钩子。功能行为按用户观察记为 `PASS`，但由于掉电会清除 GDB 硬件断点且未捕获 Bootloader 连续 RTT，中间证据仍为 `PARTIAL`，不关闭阶段。
+
+## 2026-09-21 S10-04 Confirm-Boundary Result
+
+Run `20260921-141517-breakpoint` 已证明确认前 GDB 断点和断电窗口安排有效：Application 在 `0x080169C6` 命中，`g_appMainConfirmRequested=1` 且尚未进入 `firmware_lifecycle_confirm`；断电上电后内部 Application 和 External Slot A 均与 v1.0 精确匹配，用户观察到 LED 恢复 v1.0 频率、LCD 正常显示。LED/LCD 恢复观察记为 `PASS`。
+
+本轮缺口是没有预置 Bootloader 断点，固定 Application RTT 客户端未能保留快速执行的 Bootloader 文本，所以正式 S10-04 证据仍为 `PARTIAL`。后续曾尝试在 `boot_main_validate_and_jump`（当前 map 约 `0x0800329D`）设置第二断点，但掉电后硬件断点不持久；用户已决定停止本批次板测，不再安排新的双断点运行。
+
+同日重试 `20260921-143727` 在 Metadata baseline gate 停止：External Loader Slot A 物理读回通过，但 Bootloader 输出 `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`，未执行 OTA 或断电。硬复位诊断读取 `GPIOB_IDR=0x0000F757`，PB7 为低，确认当前阻塞在 AT24C02 总线 Idle 检查；该现象不改变 Slot A 预烧录读回 PASS。
+
+## 2026-09-21 Functional Acceptance and Stop Decision
+
+用户确认功能现象通过：确认前断电后设备直接回滚，重新上电后 LED 恢复 v1.0 闪烁频率，LCD 正常显示。`20260921-150308` 已完成 Metadata baseline PASS；`20260921-150545` 与 `20260921-151853` 的双断点尝试只暴露出掉电清除 GDB 硬件断点、当前 GDB 不支持 Python 以及主机侧重挂过晚等观测链限制，不判定为软件回滚失败。
+
+功能接受：`PASS (Project Owner/user manual acceptance)`。正式硬件证据：`PARTIAL`，因为 Bootloader 原始 RTT 中间链未捕获；阶段不标记 `CLOSED`。本轮未加入临时 Bootloader 延时或其他生产测试钩子。
+
+剩余未形成正式板级闭环的项目：Trial 软件复位回滚、Confirm 前 Trial IWDG 复位回滚、完整 Bootloader Rollback RTT/Metadata/CRC/vector 链、Rollback 破坏性阶段中断后从头恢复、无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 不属于本轮功能通过范围。
 
 ## S10 Test Plan Execution Stop
 
@@ -500,7 +516,7 @@ The plan baseline `651b3001` is an ancestor of the synchronized clean HEAD `79b9
 ### Verification Results
 
 ```text
-Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup and Trial/Confirm handshake evidence are PARTIAL/PASS, direct no-feed IWDG reset is PASS, while rollback, Trial reset/power-cycle and manual board evidence remain PENDING.
+Task 0→10 evidence is recorded in `04_Test/Reports/Stages/S10_Trial_Confirm_Rollback/verification_matrix.md` and `verification.md`. Application/Bootloader Clean Builds are PASS with 0 errors / 0 warnings; Host/Contract/Python regressions are PASS; real target NONE startup, Trial/Confirm handshake and user-accepted confirm-before-power-cut recovery are recorded, while the formal Bootloader RTT chain and remaining reset/interruption gates keep hardware verification at PARTIAL.
 ```
 
 ### Design Review Status
@@ -523,7 +539,7 @@ Technical Result   : APPROVED
 ### Known Issues
 
 - S09 deferred board-level fault injection remains outstanding as explicitly accepted follow-up; it was not executed or counted in S10.
-- S10 real board verification is partially evidenced for NONE startup, Trial/Confirm and no-feed IWDG reset; the remaining Rollback, Trial reset/power-cycle and visual scenarios are still pending for the Verification Role. Latest Factory Restore retry is blocked by Soft-I2C BUSY / Boot halt. Historical logs were not reused as S10 evidence.
+- S10 real board verification is partially evidenced for NONE startup, Trial/Confirm, confirm-before-power-cut recovery and no-feed IWDG reset. User-accepted functional rollback is PASS, but the formal Bootloader RTT chain, Trial software/IWDG reset closures, interrupted rollback restart and invalid-confirmed-image destructive gate remain unverified. Historical Factory Restore timeout and Soft-I2C BUSY logs are retained as diagnostics, not as current functional failures.
 - S10 Design has received formal Project Owner approval.
 - Implementation Plan has been created and approved for execution.
 

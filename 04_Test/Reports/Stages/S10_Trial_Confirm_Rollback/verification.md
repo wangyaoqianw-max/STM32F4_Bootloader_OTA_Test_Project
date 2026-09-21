@@ -120,15 +120,15 @@ Display backlight on result: 0
 
 | 项目 | 状态 |
 | --- | --- |
-| Factory Restore / Flash | `BLOCKED; root cause is outer 60 s process timeout killing the 120 s Sender before end Header commit; failed batch left Slot A Payload present but Header erased; formal recovery passed` |
-| RTT capture / Reset Cause | `PARTIAL; post-power-cycle Application startup and YMODEM evidence captured; pre-Confirm Rollback RTT pending` |
-| GDB target session / snapshot | `PASS for Application idle and IWDG probe; pre-Confirm Rollback breakpoint evidence pending` |
+| Factory Restore / Flash | `PASS for new External Loader Slot A Header/Payload and Metadata baseline; historical one-click Factory Restore timeout remains BLOCKED` |
+| RTT capture / Reset Cause | `PARTIAL; Application and post-power-cycle evidence captured; continuous Bootloader Rollback RTT pending` |
+| GDB target session / snapshot | `PASS for Application confirm boundary and IWDG probe; Bootloader breakpoint chain not captured after power loss` |
 | IWDG timeout / debug freeze | `PASS; register/config, >10 s Debug Halt evidence and direct no-feed IWDG reset evidence PASS` |
 | Trial runtime Ready / strict Confirm | `PASS for runtime handshake; persistent post-power-cycle state pending` |
-| software reset / IWDG reset / power-cycle | `PARTIAL; recovery power-cycle and no-feed IWDG reset PASS, but Trial power-cycle before Confirm remains pending` |
+| software reset / IWDG reset / power-cycle | `PARTIAL; user-accepted Trial power-cycle recovery PASS, but Trial software/IWDG reset closures are not formed` |
 | interrupted rollback and restart-from-zero | `PENDING / NOT_EXECUTED` |
 | PA0 OTA/install input | `PASS; two PA0 actions reached install and Confirm flow` |
-| LED / LCD manual observation | `PENDING / NOT_EXECUTED` |
+| LED / LCD manual observation | `PASS for observed v1.0 recovery; other subscenarios not separately executed` |
 | S05C real I2C/SPI capture | `PENDING / NOT_EXECUTED` |
 
 ### Real Target Evidence Collected
@@ -144,7 +144,7 @@ Display backlight on result: 0
 - A repeated v1.1 YMODEM transfer completed with `84680 bytes`, `83` blocks, `retries=2`, sender exit `0`. After install/reboot, GDB observed `trial=1`, `readyMask=0x7`, Health `STABLE`, System `RUNNING`, and Confirm result `PLATFORM_ERR_OK`; a later tool-controlled reset observed `trial=0`. Because the pre-Confirm checkpoint was not captured and no Bootloader Rollback RTT was read, this sequence is not counted as a `TRIAL → ROLLBACK` PASS; the application had likely reached its automatic Confirm window.
 - In run `20260920-185951`, S10-01 Factory Restore transferred `app_v1.0.img` successfully but the temporary target RTT stopped immediately after the destructive erase start; RTT capture returned error `32`. The workflow then restored formal Application, and the follow-up formal RTT plus GDB halt/resume snapshots passed. This run is recorded as `BLOCKED`, not as a new Factory Restore baseline pass.
 
-Verification Role still needs a Trial power-cycle before automatic Confirm, Bootloader Rollback RTT/GDB evidence, interrupted rollback/restart-from-zero, and visual LED/LCD scenarios; Review Role must decide closure afterward. The recovery power-cycle just completed is not substituted for the Trial power-cycle case. These checks are paused and will resume in a new conversation.
+Verification Role captured the Trial power-cycle before automatic Confirm and the LED/LCD recovery observation. The user accepted the functional behavior as `PASS`; the formal Bootloader Rollback RTT/GDB chain, Trial software/IWDG reset closures and interrupted rollback/restart-from-zero evidence remain outstanding. Review Role must decide whether the remaining evidence is required for formal closure; this report does not mark the stage `CLOSED`.
 
 ## S09 Deferred Boundary
 
@@ -152,4 +152,50 @@ S09 Deferred Fault Injection（erase/program 分段、Internal CRC、Metadata bo
 
 ## Handoff Result
 
-代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。人工板测已按用户要求暂停，后续新对话继续剩余 Trial 断电、Rollback 和视觉验收。硬件验证仍为 `PARTIAL / PENDING`，阶段不得标记 `CLOSED`。本轮生成的构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。
+代码和自动化证据满足 Implementation Plan 的实现退出条件，阶段保持 `READY_FOR_VERIFICATION`。2026-09-21 的断点保护回滚运行已取得确认前断点、断电后 v1.0 镜像精确回读和 LED/LCD 视觉 `PASS`；由于缺少 Bootloader 原始 RTT 中间链，硬件验证仍为 `PARTIAL`，阶段不得标记 `CLOSED`。同日后续重试在 External Loader 读回通过后，于 Metadata 基线阶段因 `Soft-I2C init FAIL: BUSY` 停止，未进入 OTA。构建缓存和 Python cache 仍可能存在于本地未跟踪状态，但未加入提交；本报告和 `verification_matrix.md` 是当前可回读证据入口。
+
+### S10-04 Confirm-Before-Power-Cut Protected Execution (Run `20260921-141517-breakpoint`)
+
+- F0：新的 External Loader 写入 Slot A v1.0、擦空 Slot B，并完成 Header/Payload 独立读回；AT24C02 Metadata baseline `PASS`。
+- OTA：COM9/115200 YMODEM 完成 `84680` bytes、83 blocks、2 retries、exit `0`，RTT 到达 `READY_TO_INSTALL`。
+- Confirm 前边界：GDB 在 Application `app_ota_worker_handle_confirm` 的 `0x080169C6` 命中，`g_appMainConfirmRequested=1`，尚未进入 `firmware_lifecycle_confirm`；断点期间保持暂停后执行断电。
+- 人工现象：上电后用户观察到 LED 恢复 v1.0 闪烁频率，LCD 显示正常；视觉验收项记为 `PASS`。
+- 内部 Flash：从 `0x08010000` 读回 `81348` bytes，与 v1.0 payload 逐字节匹配，`FIRST_MISMATCH=-1`。
+- 外部 Slot A：Header `64` bytes、Payload `81348` bytes 与 F0 预烧录源文件一致。
+- Bootloader RTT：已将监听地址切换为 `0x200000E0`，但 Bootloader 在没有独立断点时执行过快，未保留完整 `TRIAL → ROLLBACK → restore → NONE` 原始文本；本轮整体仍为 `PARTIAL`。
+
+### S10-01 Metadata Baseline Retry Stop (Run `20260921-143727`)
+
+- External Loader：Slot A Header/Payload 写入和独立读回均 `PASS`，SHA256 与源文件一致。
+- Metadata baseline：`BLOCKED`。临时 Application 启动后，Bootloader RTT 输出 `Soft-I2C init FAIL: BUSY` / `BOOT halt: external device init`，未出现 `[S09-METADATA] baseline PASS`，因此没有进入 OTA。
+- 只读诊断：硬复位并保持 CPU 停止时读取 `GPIOB_IDR=0x0000F757`，PB6 为高、PB7 为低；这与 Bootloader 的线路 Idle 检查失败一致。该证据确认当前阻塞在 AT24C02 总线空闲状态，不改变前一轮 Slot A 预烧录通过结论。
+- 处理：未继续 PA0、YMODEM 或断电；保留日志目录 `06_Output/Logs/S09_Metadata_Baseline/` 和 `06_Output/Logs/ExternalLoader/Preburn-20260921-143727/`。随后在 `20260921-150308` 完成 Metadata baseline，用户最终决定停止本批次板测。
+
+### MCU Recovery and External Flash Preburn (Run `20260921-145602`)
+
+- MCU Recovery：将已验证的 `app_v1.0.bin` 写入 Internal Application `0x08010000`；源文件 SHA256 为 `00BF0233F280765681D4DBB15ABE9CF5E4A6F3A2E4D896E4141EEF01D03FFD61`，读回 `81348` bytes 后 SHA256 一致。
+- MCU usable check：断电上电后 RTT 显示 OTA Storage SPI、OTA UART、Application、Display SPI、初始渲染和背光初始化均为 `result: 0`。
+- External Loader：使用 `W25Q64_STM32F411.stldr`，先擦空 Slot B Header Sector，再按 Payload 先写、Header 后写写入 Slot A；脚本完成 Header/Payload 独立读回。
+- Slot A Header：源文件和读回 SHA256 均为 `D427AFACEB6C37AD391134C2262B7CBE1ED55257078D3EC3BB875B227375B61CF`。
+- Slot A Payload：源文件和读回 SHA256 均为 `00BF0233F280765681D4DBB15ABE9CF5E4A6F3A2E4D896E44141EEF01D03FFD61`。
+- Preburn result：`PASS`；证据目录为 `06_Output/Logs/ExternalLoader/Preburn-20260921-145602/`，执行摘要为 `execution_summary.md`。
+- 预烧录后首次 RTT 捕获读到旧 Fault 缓冲；显式 MCU 复位后重新捕获到完整 Application 初始化日志，不能把旧缓冲误记为本轮失败。
+- `145602` 本轮未执行 AT24C02 Metadata baseline；随后 `20260921-150308` 已独立完成 Metadata baseline，原始 RTT 报告 `baseline PASS copy=2 sequence=205/207 Slot A=1.0.0 VALID Slot B=EMPTY confirmed=A pending=NONE upgrade=NONE`，证据为 `06_Output/Logs/S09_Metadata_Baseline/metadata_rtt_raw.log`。
+
+### Functional Acceptance and Stop Decision (Runs `20260921-150545` and `20260921-151853`)
+
+- 用户确认功能现象通过：确认前断电后设备回滚，重新上电后 LED 恢复 v1.0 闪烁频率，LCD 正常显示。
+- `20260921-150545` 已命中 Application 确认前断点；掉电后 GDB 硬件断点丢失，未取得 Bootloader 断点连续命中和 RTT 中间链。
+- `20260921-151853` 的 YMODEM 与 Application 确认前断点通过；GDB Python 自动重挂失败（当前 GDB 不支持 Python），主机侧手工重挂未赶上执行窗口。
+- 这两次结果说明观测链受掉电影响，不判定软件回滚失败，也不计为正式 Bootloader RTT 链 `PASS`。
+- 功能接受：`PASS (Project Owner/user manual acceptance)`；代码验证：`PASS`；正式硬件验证：`PARTIAL`。
+- 本轮未加入临时 Bootloader 延时或其他生产测试钩子；用户决定停止继续板测。
+
+### Remaining S10 Evidence
+
+- S10-02 Trial 软件复位回滚：未形成正式板级闭环。
+- S10-03 Trial IWDG 复位回滚：未在 Confirm 前 Trial 边界形成正式闭环。
+- S10-05 完整 Rollback RTT、Metadata、CRC/vector 链：未捕获。
+- S10-06 Rollback 破坏性阶段中断后从头恢复：未执行。
+- S10-07 无效 confirmed 镜像下禁止擦除 Internal APP：未执行板级门禁。
+- S10-09 自动化回归和文档收口可完成，但正式 S10 硬件验证仍保持 `PARTIAL`。

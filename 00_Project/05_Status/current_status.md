@@ -69,13 +69,15 @@
 - Last Closed Stage Status: `CLOSED / PASS`
 - Next Planned Stage: `Not selected; S10 is active`
 - Current Role: `Verification Role`
-- Updated At: `2026-09-20`
+- Updated At: `2026-09-21`
 
 ## Current Goal
 
-`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据已取得；代码验证为 `PASS`，真实硬件验证为 `PARTIAL / PENDING`。用户要求暂停测试后，已移除临时 S10 测试开关，重新构建并烧录正式 Application，RTT 确认 OTA、Application、Display 初始化成功。下一次新对话继续 Trial 自动 Confirm 前真实断电、Rollback 和 LED/LCD 人工观察，完成后进入 Review，不直接关闭阶段。最新 Factory Restore 重试再次捕获 Soft-I2C BUSY / Boot halt，未形成新的 baseline PASS；S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
+`S10_Trial_Confirm_Rollback` 已完成 Implementation Plan Task 0→10 的生产实现、自动化回归和交接文档，当前状态为 `READY_FOR_VERIFICATION`，角色转为 `Verification Role`。实际施工基线为已同步的 `79b95d1f4681c2f7b5f961785079a112a3c62492`，实施计划中的 `651b3001` 为其祖先文档基线。2026-09-20 已重新通过 Application/Bootloader Clean Build、S10 Host/Contract 和 Python 回归；正式 NONE 启动、重复 v1.1 YMODEM、Runtime Ready 和 strict Confirm 的 RTT/GDB 证据已回读，IWDG Debug Freeze/Resume 与 direct no-feed IWDG reset 证据已取得；代码验证为 `PASS`，真实硬件验证为 `PARTIAL`。正式 Application、External Loader F0 和 Metadata baseline 已恢复/验证成功；用户已接受确认前断电回滚功能，但由于 Bootloader 连续 RTT 和若干复位/中断门禁证据未形成，阶段不直接关闭。S09 Deferred Fault Injection 保持原阶段归属，不视为 S10 已通过。
 
-2026-09-21 S10-04 新一轮：新的 External Loader 已成功建立 F0；v1.1 通过 COM9 YMODEM 完成发送和第二次 PA0 安装；用户在 v1.1 LED 窗口断电上电后观察到 v1.0 LED 频率，且内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配。该轮记为 `PARTIAL` 而非完整 Rollback PASS：固定 Application RTT Logger 地址为 `0x2000DE04`，未捕获 Bootloader RTT 地址 `0x200000E0` 的 `TRIAL → ROLLBACK → restore → NONE` 中间证据。下一步先补双 RTT 地址自动监听/归档，再重复 S10-04。
+2026-09-21 S10-04：新的 External Loader 和 Metadata baseline 已成功建立 F0；v1.1 通过 COM9 YMODEM 完成发送和第二次 PA0 安装；用户在确认前断电上电后观察到设备回滚到 v1.0，LED 恢复 v1.0 频率，LCD 显示正常，内部 Application `0x08010000` 的 `81348` bytes 与 v1.0 payload 逐字节匹配。功能行为接受记为 `PASS`。掉电清除 GDB 硬件断点，未捕获 Bootloader RTT 地址 `0x200000E0` 的连续 `TRIAL → ROLLBACK → restore → NONE` 证据；因此正式硬件验证保持 `PARTIAL`，不标记 S10 `CLOSED`。用户决定停止继续板测，未加入临时 Bootloader 延时钩子。
+
+本阶段尚未形成正式板级闭环的项目：Trial 软件复位回滚、Confirm 前 Trial IWDG 复位回滚、完整 Bootloader Rollback RTT/Metadata/CRC/vector 链、Rollback 破坏性阶段中断后从头恢复、无效 confirmed 镜像下禁止擦除 Internal APP 的板级门禁。S05C 真实 I2C/SPI 采集和 S09 Deferred Fault Injection 仍按原阶段归属，不计入本次功能通过。
 
 当前 `S06_RTOS_Runtime` 已完成三线程 Runtime、ST7789 适配、OTA Display Queue、板级并发验证、Toolkit 回归、Verification、Handoff 和 Review，状态为 `CLOSED / PASS`。S06 已为下一阶段提供稳定的 Application Runtime / Concurrency Contract。
 
