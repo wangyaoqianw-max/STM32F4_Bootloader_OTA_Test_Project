@@ -59,6 +59,39 @@ STM32_Programmer_CLI.exe -c port=JLINK mode=HOTPLUG `
 
 脚本从 `05_Tools\Config\toolchain.local.bat` 读取 `STM32_PROGRAMMER_CLI`，不会把本机 CubeProgrammer 安装路径写入工程文件。
 
+## S10 Slot A 损坏注入
+
+`inject_slot_a_corruption.ps1` 用于 S10-07 的坏确认镜像测试。它先读取并校验当前 Slot A 的完整 Header Sector 和 Payload，再生成指定的损坏样本，通过 External Loader 写回 W25Q64，最后再次读回并做 SHA-256 比对。工具不修改 AT24C02 Metadata，也不自动恢复 Slot A；脚本会在 `06_Output/Logs/ExternalLoader/Corruption-*` 保存原始数据、损坏数据、CubeProgrammer 日志和 `mutation_manifest.json`。
+
+必须在确认当前板卡处于可恢复的基线状态后执行，并明确传入破坏性操作确认开关：
+
+```powershell
+# Header Magic 损坏：Header CRC 保持旧值，验证 Header 失效路径
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\05_Tools\ExternalLoader\W25Q64_STM32F411\inject_slot_a_corruption.ps1 `
+  -Case HeaderInvalid -ConfirmDestructive
+
+# Payload 单字节改变：Header 保持不变，验证 Payload CRC 失效路径
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\05_Tools\ExternalLoader\W25Q64_STM32F411\inject_slot_a_corruption.ps1 `
+  -Case PayloadCrcInvalid -ConfirmDestructive
+
+# 版本号改变并重算 Header CRC，验证已确认版本不匹配路径
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\05_Tools\ExternalLoader\W25Q64_STM32F411\inject_slot_a_corruption.ps1 `
+  -Case VersionMismatch -ConfirmDestructive
+```
+
+物理地址固定为 `0x90000000`（Slot A Header Sector）和 `0x90001000`（Slot A Payload）。工具获得工程统一的 J-Link 互斥锁后才访问 CubeProgrammer；如果读回基线与 `app_v1.0.img` 不一致，或写入后读回不一致，脚本会失败并停止，不进入后续升级测试。
+
+注入成功后不要继续执行普通升级步骤，先保留对应证据目录。测试结束后按清单中的恢复命令恢复 Slot A；恢复命令通常为：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\05_Tools\ExternalLoader\W25Q64_STM32F411\preburn_w25q64.ps1 `
+  -Image .\06_Output\Packages\app_v1.0.img -ClearSlotBHeader
+```
+
 ## 验证边界
 
 Keil Clean Rebuild 成功只代表代码和制品验证通过，不代表真实板级读写通过。板级验证应单独记录 JEDEC、A/B Header、Payload 起点、擦除后的 `0xFF`、Page 写入回读和 `app_v1.0` 物理镜像结果。
