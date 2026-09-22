@@ -7,6 +7,11 @@
 .vscode/
 .idea/
 
+# Local workflow state and Python caches
+.embeddedskills/
+**/__pycache__/
+*.pyc
+
 # Machine-local toolchain configuration
 05_Tools/Config/toolchain.local.bat
 05_Tools/Config/project.local.bat
@@ -18,11 +23,13 @@
 !05_Tools/Adapters/Build/**
 03_Firmware/**/MDK-ARM/Objects/
 03_Firmware/**/MDK-ARM/Listings/
+03_Firmware/**/MDK-ARM/*.lst
 03_Firmware/**/MDK-ARM/JLinkLog.txt
 03_Firmware/**/Debug/
 03_Firmware/**/Release/
 05_Tools/ExternalLoader/**/MDK-ARM/Objects/
 05_Tools/ExternalLoader/**/MDK-ARM/Listings/
+05_Tools/ExternalLoader/**/MDK-ARM/*.lst
 
 # Generated outputs
 06_Output/LogicAnalyzer/*
